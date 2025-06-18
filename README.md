@@ -1,16 +1,25 @@
-# uMath3D - Mathematics Library for Embedded Devices
+# uMath3D - Mathematics Library for Embedded and Non-Embedded Devices
 
 > **Work in progress** -- the structure may change without notice while working on the first major release.
 
-This code is currently being migrated from ProtoTracer to act as a submodule and generalize the functionality.
+This code is currently being migrated from ProtoTracer to act as a submodule and generalize the functionality for more use cases.
+- Project Goals:
+    - Have a generic C++ library that can be used as a backbone to speed up development on microcontrollers as well as desktop computers
+    - Re-integrate this functionality as a sub-module into ProtoTracer
+    - Create a desktop GUI application that can utilize and simulate the same functionality as the embedded pipeline. 
+
+---
 
 **uMath3D** is a C++17 library targeted for embedded microcontrollers that bundles mathematics, control, signals, and physics features:
 
 * vector, quaternion, matrix math, and rotation conversion
-* 2D / 3D geometry primitives
+* 2D / 3D / spatial geometry primitives
 * signal-processing helpers (FFT, Kalman, filters, noise)
 * lightweight physics utilities (springs, bounce, fluid-style vector fields)
 * time-step & PID control helpers
+* rendering with raytracing/rasterizing + post effects + shaders
+* scene creation with animations, mesh deformations, volumetric lighting
+* asset tools for custom fonts, images, meshes, and volumes
 
 ---
 
@@ -48,6 +57,8 @@ git clone https://github.com/coelacant1/uMath3D.git
 | **physics::simulation** | vector‐field, boundary motion sim                                                          |
 | **control**             | classic PID controller                                                                     |
 | **time**                | fixed/variable timestep helper, micro-wait                                                 |
+
+> WIP
 
 ---
 

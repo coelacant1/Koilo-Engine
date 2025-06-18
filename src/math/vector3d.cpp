@@ -1,4 +1,4 @@
-#include "Vector3D.h"
+#include "include/um3d/math/vector3d.hpp"
 
 Vector3D::Vector3D() : X(0.0f), Y(0.0f), Z(0.0f) {}
 
@@ -186,10 +186,10 @@ bool Vector3D::IsEqual(const Vector3D& vector) const {
 
 }
 
-String Vector3D::ToString() const {
-    String x = Mathematics::DoubleToCleanString(this->X);
-    String y = Mathematics::DoubleToCleanString(this->Y);
-    String z = Mathematics::DoubleToCleanString(this->Z);
+string_t Vector3D::ToString() const {
+    string_t x = Mathematics::DoubleToCleanString(this->X);
+    string_t y = Mathematics::DoubleToCleanString(this->Y);
+    string_t z = Mathematics::DoubleToCleanString(this->Z);
 
     return "[" + x + ", " + y + ", " + z + "]";
 }

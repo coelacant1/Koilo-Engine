@@ -13,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include "../lib/ProtoTracer/Utils/Math/Quaternion.h"
+#include "../include/um3d/math/quaternion.hpp"
 
 /**
  * @class TestQuaternion

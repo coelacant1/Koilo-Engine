@@ -1,12 +1,10 @@
-#include "Vector2D.h"
+#include "include/um3d/math/vector2d.hpp"
 
 Vector2D::Vector2D() : X(0.0f), Y(0.0f) {}
 
 Vector2D::Vector2D(const Vector2D& vector) : X(vector.X), Y(vector.Y) {}
 
 Vector2D::Vector2D(const float& X, const float& Y) : X(X), Y(Y) {}
-
-Vector2D::Vector2D(const Vector3D& vector) : X(vector.X), Y(vector.Y) {}
 
 Vector2D Vector2D::Absolute() const {
     return Vector2D{
@@ -59,7 +57,7 @@ Vector2D Vector2D::Divide(const Vector2D& vector) const {
 
 Vector2D Vector2D::Multiply(const float& scalar) const {
     if (Mathematics::IsClose(scalar, 1.0f, Mathematics::EPSILON)) return (*this);
-    if (Mathematics::IsClose(scalar, 0.0f, Mathematics::EPSILON)) return Vector3D();
+    if (Mathematics::IsClose(scalar, 0.0f, Mathematics::EPSILON)) return Vector2D();
 
     return Vector2D{
         X * scalar,
@@ -69,7 +67,7 @@ Vector2D Vector2D::Multiply(const float& scalar) const {
 
 Vector2D Vector2D::Divide(const float& scalar) const {
     if (Mathematics::IsClose(scalar, 1.0f, Mathematics::EPSILON)) return (*this);
-    if (Mathematics::IsClose(scalar, 0.0f, Mathematics::EPSILON)) return Vector3D();
+    if (Mathematics::IsClose(scalar, 0.0f, Mathematics::EPSILON)) return Vector2D();
     
     return Vector2D{
         X / scalar,
@@ -157,9 +155,9 @@ bool Vector2D::IsEqual(const Vector2D& vector) const {
     return (X == vector.X) && (Y == vector.Y);
 }
 
-String Vector2D::ToString() const {
-    String x = Mathematics::DoubleToCleanString(X);
-    String y = Mathematics::DoubleToCleanString(Y);
+string_t Vector2D::ToString() const {
+    string_t x = Mathematics::DoubleToCleanString(X);
+    string_t y = Mathematics::DoubleToCleanString(Y);
 
     return "[" + x + ", " + y + "]";
 }
@@ -275,13 +273,6 @@ bool Vector2D::operator !=(const Vector2D& vector) const {
 }
 
 Vector2D Vector2D::operator =(const Vector2D& vector) {
-    this->X = vector.X;
-    this->Y = vector.Y;
-
-    return *this;
-}
-
-Vector2D Vector2D::operator =(const Vector3D& vector) {
     this->X = vector.X;
     this->Y = vector.Y;
 

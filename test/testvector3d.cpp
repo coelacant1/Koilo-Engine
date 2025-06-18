@@ -1,4 +1,4 @@
-#include "TestVector3D.h"
+#include "testvector3d.hpp"
 
 void TestVector3D::TestConstructor() {
     Vector3D v1;
@@ -151,7 +151,7 @@ void TestVector3D::TestIsEqual() {
 
 void TestVector3D::TestToString() {
     Vector3D v(1.0, 2.0, 3.0);
-    String str = v.ToString();
+    string_t str = v.ToString();
     TEST_ASSERT_EQUAL_STRING("[1.000, 2.000, 3.000]", str.c_str());
 }
 

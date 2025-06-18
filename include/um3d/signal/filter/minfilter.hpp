@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include "../Math/Mathematics.h"
+#include "../../math/mathematics.hpp" // Includes mathematical utilities for constraints and operations.
 
 /**
  * @class MinFilter
@@ -58,4 +58,4 @@ public:
     float Filter(float value);
 };
 
-#include "MinFilter.tpp" // Includes the implementation of the template class.
+#include "minfilter.tpp" // Includes the implementation of the template class.

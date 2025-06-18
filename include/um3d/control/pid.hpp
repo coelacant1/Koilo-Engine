@@ -12,6 +12,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 /**
  * @class PID
  * @brief Implements a proportional-integral-derivative (PID) controller.
@@ -60,7 +62,7 @@ public:
      * @param currentMillis Current time in milliseconds.
      * @return Calculated control output.
      */
-    float Calculate(float setpoint, float processVariable, unsigned long currentMillis);
+    float Calculate(float setpoint, float processVariable, uint32_t currentMillis);
 
     /**
      * @brief Calculates the control output based on the setpoint and process variable.

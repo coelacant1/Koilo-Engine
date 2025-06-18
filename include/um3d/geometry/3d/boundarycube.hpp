@@ -12,10 +12,9 @@
 
 #pragma once
 
-#include "../../Utils/Math/Rotation.h"
-#include "../../Utils/Math/Vector3D.h"
-#include "../../Scene/Objects/Object3D.h"
-#include "BoundarySphere.h"
+#include "../../math/rotation.hpp"
+#include "../../math/vector3d.hpp"
+#include "boundarysphere.hpp"
 
 /**
  * @class BoundaryCube
@@ -31,12 +30,6 @@ private:
 public:
     Vector3D velocity = Vector3D(0, 0, 0); ///< Velocity of the cube.
     Vector3D position = Vector3D(0, 0, 0); ///< Current position of the cube.
-
-    /**
-     * @brief Constructs a BoundaryCube object based on the given 3D object.
-     * @param object Pointer to an Object3D instance to initialize the boundary cube.
-     */
-    BoundaryCube(Object3D* object);
 
     /**
      * @brief Constructs a BoundaryCube object with a specified center and size.
@@ -83,18 +76,4 @@ public:
      * @return The intersection vector if intersecting, otherwise zero vector.
      */
     Vector3D IsIntersecting(BoundaryCube* bO);
-
-    /**
-     * @brief Checks for intersection with a BoundarySphere.
-     * @param bO Pointer to the BoundarySphere.
-     * @return The intersection vector if intersecting, otherwise zero vector.
-     */
-    Vector3D IsIntersecting(BoundarySphere* bO);
-
-    /**
-     * @brief Handles collision with a BoundarySphere.
-     * @param elasticity Elasticity coefficient for the collision.
-     * @param bO Pointer to the BoundarySphere.
-     */
-    void CollideSphere(float elasticity, BoundarySphere* bO);
 };

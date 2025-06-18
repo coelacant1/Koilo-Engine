@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include "../Math/Mathematics.h"
+#include "../../math/mathematics.hpp" // Includes mathematical utilities for constraints and operations.
 
 /**
  * @class MaxFilter
@@ -55,4 +55,4 @@ public:
     float Filter(float value);
 };
 
-#include "MaxFilter.tpp" // Includes the implementation of the template class.
+#include "maxfilter.tpp" // Includes the implementation of the template class.

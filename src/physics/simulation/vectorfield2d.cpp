@@ -1,4 +1,4 @@
-#include "VectorField2D.h"
+#include "include/um3d/physics/simulation/vectorfield2d.hpp"
 
 VectorField2D::VectorField2D(uint16_t x, uint16_t y)
     : countX(x), countY(y) {
@@ -164,56 +164,6 @@ void VectorField2D::SpiralField(float ratio, float period, float amplitude){
     }
 }
 
-void VectorField2D::ObjectField(Object3D* object, float intensity) {
-    int numTriangles = object->GetTriangleGroup()->GetTriangleCount();
-    Triangle2D** triangles = new Triangle2D*[numTriangles];
-
-    //for each triangle in object, project onto 2d surface, but pass material
-    for (int i = 0; i < numTriangles; i++) {
-        triangles[i] = new Triangle2D(&object->GetTriangleGroup()->GetTriangles()[i]);
-    }
-
-    //create current and next vector fields for advection simulation
-    //do not use pixel groups, use vectors
-
-    for(int x = 0; x < countX; x++){
-        for(int y = 0; y < countY; y++){
-            float posX = (((float)x) / ((float)countX) - 0.5f) * 2.0f * size.X;
-            float posY = (((float)y) / ((float)countY) - 0.5f) * 2.0f * size.Y;
-
-            uint32_t index = x + countX * y;
-            
-            float u = 0.0f, v = 0.0f, w = 0.0f;
-            bool didIntersect = false;
-
-            for (int t = 0; t < numTriangles; t++) {
-                if (triangles[t]->DidIntersect(posX, posY, u, v, w)){
-                    didIntersect = true;
-
-                    break;
-                }
-            }
-
-            if (didIntersect){
-                vecX[index] = 127;
-                vecY[index] = 127;
-                vecD[index] = Mathematics::Constrain(int8_t(vecD[index] + intensity), int8_t(0), int8_t(127));
-            }
-            else{
-                vecX[index] = 0;
-                vecY[index] = 0;
-                vecD[index] = 0;
-            }
-        }
-    }
-
-    for (int i = 0; i < numTriangles; i++){
-        delete triangles[i];
-    }
-    
-    delete[] triangles;
-}
-
 uint16_t VectorField2D::GetCountX(){
     return countX;
 }
@@ -286,21 +236,4 @@ uint32_t VectorField2D::GetVectorAtPosition(float x, float y, bool &inBounds){
     }
 
     return 0;
-}
-
-RGBColor VectorField2D::GetRGB(const Vector3D& position, const Vector3D& normal, const Vector3D& uvw){
-    float x = uvw.X * size.X;
-    float y = uvw.Y * size.Y;
-    bool inBounds;
-    uint32_t densityValue = GetVectorAtPosition(x, y, inBounds);
-
-    if (inBounds){
-        float red = (float)densityValue / 127.0f;
-        float green = 0.0f;
-        float blue = 1.0f - (float)densityValue / 127.0f;
-
-        return RGBColor(red, green, blue);
-    }
-
-    return RGBColor(0.0f, 0.0f, 0.0f);
 }

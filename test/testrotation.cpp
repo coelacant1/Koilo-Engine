@@ -1,4 +1,4 @@
-#include "TestRotation.h"
+#include "testrotation.hpp"
 
 
 void TestRotation::TestEulerAngleConversionXYZ(Vector3D xyz, Quaternion q){

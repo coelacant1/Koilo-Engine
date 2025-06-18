@@ -1,4 +1,4 @@
-#include "FunctionGenerator.h"
+#include "include/um3d/signal/functiongenerator.hpp"
 
 FunctionGenerator::FunctionGenerator(Function function, float minimum, float maximum, float period) {
     this->function = function;

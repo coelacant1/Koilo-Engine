@@ -1,4 +1,4 @@
-#include "PID.h"
+#include "../../include/um3d/control/pid.hpp"
 
 PID::PID() :
     integral(0.0f),
@@ -22,7 +22,7 @@ PID::PID(float kp, float ki, float kd) :
 
 PID::~PID() {}
 
-float PID::Calculate(float setpoint, float processVariable, unsigned long currentMillis) {
+float PID::Calculate(float setpoint, float processVariable, uint32_t currentMillis) {
     float POut, IOut, DOut;
 
     float currentSeconds = currentMillis / 1000.0f;

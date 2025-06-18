@@ -1,8 +1,8 @@
-#include "Ellipse.h"
+#include "../../../include/um3d/geometry/2d/ellipse.hpp"
 
-Ellipse::Ellipse(Vector2D center, Vector2D size, float rotation) : Shape(center, size / 2.0f, rotation) {}
+Ellipse2D::Ellipse2D(Vector2D center, Vector2D size, float rotation) : Shape(center, size / 2.0f, rotation) {}
 
-bool Ellipse::IsInShape(Vector2D point) {
+bool Ellipse2D::IsInShape(Vector2D point) const {
     float x = (point.X - center.X);
     float y = (point.Y - center.Y);
 

@@ -1,4 +1,4 @@
-#include "DampedSpring.h"
+#include "include/um3d/physics/motion/dampedspring.hpp"
 
 DampedSpring::DampedSpring() :
     currentVelocity(0.001f),
@@ -31,7 +31,7 @@ void DampedSpring::SetConstants(float springConstant, float damping) {
     this->damping = -1.0f * damping;
 }
 
-float DampedSpring::Calculate(float target, unsigned long currentMillis) {
+float DampedSpring::Calculate(float target, uint32_t currentMillis) {
     float dT = ((float)(currentMillis - previousMillis)) / 1000.0f;
 
     if (dT > 0.01f && dT < 2.0f) {

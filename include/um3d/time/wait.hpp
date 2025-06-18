@@ -9,7 +9,8 @@
 
 #pragma once
 
-#include <Arduino.h>
+#include <cstdint>
+#include "../helpers/timehelper.h"
 
 /**
  * @class Wait
@@ -17,15 +18,15 @@
  */
 class Wait {
 private:
-    unsigned long previousMillis; ///< Stores the last recorded time in milliseconds.
-    unsigned long millisToWait;   ///< Duration to wait in milliseconds.
+    uint32_t previousMillis; ///< Stores the last recorded time in milliseconds.
+    uint32_t millisToWait;   ///< Duration to wait in milliseconds.
 
 public:
     /**
      * @brief Constructor to initialize Wait with a duration.
      * @param millisToWait The duration to wait in milliseconds.
      */
-    Wait(unsigned long millisToWait);
+    Wait(uint32_t millisToWait);
 
     /**
      * @brief Resets the wait timer to start counting again.

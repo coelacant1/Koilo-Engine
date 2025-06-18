@@ -1,4 +1,4 @@
-#include "Mathematics.h"
+#include "include/um3d/math/mathematics.hpp"
 
 const float Mathematics::EPSILON = 0.001f;
 const float Mathematics::MPI = 3.14159265358979323846f;
@@ -7,8 +7,8 @@ const float Mathematics::M180DPI = 57.29577951308232087684f;
 const float Mathematics::FLTMAX = __FLT_MAX__;
 const float Mathematics::FLTMIN = __FLT_MIN__;
 
-String Mathematics::DoubleToCleanString(float value) {
-    return String(value, 3);
+string_t Mathematics::DoubleToCleanString(float value) {
+    return string_t(value, 3);
 }
 
 bool Mathematics::IsNaN(float value) {

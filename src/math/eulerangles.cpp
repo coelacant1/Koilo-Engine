@@ -1,5 +1,4 @@
-#include "EulerAngles.h"
-#include "EulerConstants.h"
+#include "include/um3d/math/eulerangles.hpp"
 
 // Default constructor.
 EulerAngles::EulerAngles() 
@@ -10,9 +9,9 @@ EulerAngles::EulerAngles(Vector3D angles, EulerOrder order)
     : Angles(angles), Order(order) {}
 
 // Convert EulerAngles to a string representation.
-String EulerAngles::ToString() {
-    String angles = Angles.ToString();
-    String order = Order.ToString();
+string_t EulerAngles::ToString() {
+    string_t angles = Angles.ToString();
+    string_t order = Order.ToString();
 
     return "[ " + angles + ", " + order + " ]";
 }

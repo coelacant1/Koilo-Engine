@@ -1,4 +1,4 @@
-#include "BoundaryMotionSimulator.h"
+#include "BoundaryMotionSimulator.hpp"
 
 BoundaryMotionSimulator::BoundaryMotionSimulator(Object3D** objects, int objectCount, BoundaryCube* bC, float radius, float elasticity) {
     this->bC = bC;

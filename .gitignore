@@ -30,3 +30,15 @@
 *.exe
 *.out
 *.app
+
+# User Defined
+.vscode/c_cpp_properties.json
+.vscode/launch.json
+.vscode/ipch
+.pio/
+.pio/*
+.pio
+.pioenvs/
+.piolibdeps/
+.clang_complete
+.gcc-flags.json

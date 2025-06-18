@@ -13,9 +13,9 @@
 
 #pragma once
 
+#include "../helpers/stringhelper.h"
 #include <cmath>
 #include <math.h>
-#include <WString.h>
 
 /**
  * @class Mathematics
@@ -64,9 +64,9 @@ public:
     /**
      * @brief Converts a floating-point value to a String, removing trailing decimals if not needed.
      * @param value The float to convert.
-     * @return A \c String without unnecessary trailing zeros.
+     * @return A \c string_t without unnecessary trailing zeros.
      */
-    static String DoubleToCleanString(float value);
+    static string_t DoubleToCleanString(float value);
 
     /**
      * @brief Checks if a floating-point value is NaN (Not a Number).
@@ -355,4 +355,4 @@ public:
 };
 
 // Pull in template implementations.
-#include "Mathematics.tpp"
+#include "mathematics.tpp"

@@ -1,5 +1,4 @@
-#include "Plane.h"
-#include "Mathematics.h"
+#include "../../../include/um3d/geometry/3d/plane.hpp"
 
 // Default constructor.
 Plane::Plane() {}
@@ -9,9 +8,9 @@ Plane::Plane(Vector3D centroid, Vector3D normal)
     : Centroid(centroid), Normal(normal) {}
 
 // Convert Plane to a string representation.
-String Plane::ToString() {
-    String centroid = Centroid.ToString();
-    String normal = Normal.ToString();
+string_t Plane::ToString() {
+    string_t centroid = Centroid.ToString();
+    string_t normal = Normal.ToString();
 
     return "[ " + centroid + ", " + normal + " ]";
 }

@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "../../Utils/Math/Mathematics.h"
+#include "../../math/mathematics.hpp"
 
 /**
  * @class FFT
@@ -80,4 +80,4 @@ public:
     static void ComplexMagnitude(float* complexData, float* magnitude);
 };
 
-#include "FFT.tpp"
+#include "fft.tpp"

@@ -9,8 +9,8 @@
 
 #pragma once
 
-#include <Arduino.h>
-#include "../Math/Mathematics.h"
+#include "../math/mathematics.hpp"
+#include "../helpers/timehelper.h"
 
 /**
  * @class FunctionGenerator

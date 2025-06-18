@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include "Mathematics.h"
+#include "mathematics.hpp"
 
 /**
  * @class Vector3D
@@ -215,7 +215,7 @@ public:
      * @brief Converts the vector to a string representation.
      * @return A `String` in the format "(X, Y, Z)".
      */
-    String ToString() const;
+    string_t ToString() const;
 
 
     // --- Static function declarations ---

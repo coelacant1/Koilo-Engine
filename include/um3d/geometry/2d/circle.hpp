@@ -12,13 +12,13 @@
 
 #pragma once
 
-#include "Shape.h"
+#include "shape.hpp"
 
 /**
  * @class Circle
  * @brief Represents a circle in 2D space.
  */
-class Circle : public Shape {
+class Circle2D : public Shape {
 private:
     float radius; ///< Radius of the circle.
 
@@ -28,12 +28,12 @@ public:
      * @param center Center point of the circle.
      * @param radius Radius of the circle.
      */
-    Circle(Vector2D center, float radius);
+    Circle2D(Vector2D center, float radius);
 
     /**
      * @brief Checks if a given point lies within the circle's boundaries.
      * @param point The point to check.
      * @return True if the point is within the circle, otherwise false.
      */
-    bool IsInShape(Vector2D point) override;
+    bool IsInShape(Vector2D point) const override;
 };

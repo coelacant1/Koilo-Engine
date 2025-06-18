@@ -12,8 +12,8 @@
 
 #pragma once
 
-#include "../../Utils/Math/Mathematics.h"
-#include "../../Utils/Filter/RunningAverageFilter.h"
+#include "../../math/mathematics.hpp"
+#include "../../signal/filter/runningaveragefilter.hpp"
 
 /**
  * @class BouncePhysics
@@ -26,7 +26,7 @@ private:
     float currentPosition; ///< Current position of the object.
     float velocityRatio; ///< Ratio to control velocity damping.
     float gravity; ///< Gravity constant affecting the motion.
-    unsigned long previousMillis; ///< Stores the last timestamp for time-based calculations.
+    uint32_t previousMillis; ///< Stores the last timestamp for time-based calculations.
     float previousVelocity; ///< Tracks the velocity from the previous update.
 
 public:
@@ -43,7 +43,7 @@ public:
      * @param currentMillis Current time in milliseconds.
      * @return Updated position after applying physics.
      */
-    float Calculate(float velocity, unsigned long currentMillis);
+    float Calculate(float velocity, uint32_t currentMillis);
 
     /**
      * @brief Calculates the new position and velocity based on the current velocity and time delta.

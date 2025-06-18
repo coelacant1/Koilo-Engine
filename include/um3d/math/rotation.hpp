@@ -13,14 +13,15 @@
 
 #pragma once
 
-#include "AxisAngle.h"
-#include "DirectionAngle.h"
-#include "EulerAngles.h"
-#include "EulerConstants.h"
-#include "Quaternion.h"
-#include "RotationMatrix.h"
-#include "Vector3D.h"
-#include "YawPitchRoll.h"
+#include "mathematics.hpp"
+#include "axisangle.hpp"
+#include "directionangle.hpp"
+#include "eulerangles.hpp"
+#include "eulerconstants.hpp"
+#include "quaternion.hpp"
+#include "rotationmatrix.hpp"
+#include "vector3d.hpp"
+#include "yawpitchroll.hpp"
 
 /**
  * @class Rotation

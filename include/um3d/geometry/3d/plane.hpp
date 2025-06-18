@@ -11,7 +11,8 @@
 
 #pragma once
 
-#include "Vector3D.h"
+#include "../../math/mathematics.hpp"
+#include "../../math/vector3d.hpp"
 
 /**
  * @class Plane
@@ -47,5 +48,5 @@ public:
      *
      * @return A string describing the plane's centroid and normal vector.
      */
-    String ToString();
+    string_t ToString();
 };

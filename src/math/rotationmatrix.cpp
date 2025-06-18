@@ -1,4 +1,4 @@
-#include "RotationMatrix.h"
+#include "include/um3d/math/rotationmatrix.hpp"
 
 Vector3D RotationMatrix::ConvertCoordinateToVector() {
     if (didRotate) {
@@ -173,10 +173,10 @@ Vector3D RotationMatrix::RotateVector(Vector3D rotate, Vector3D coordinates) {
     }
 }
 
-String RotationMatrix::ToString() {
-    String x = XAxis.ToString();
-    String y = YAxis.ToString();
-    String z = ZAxis.ToString();
+string_t RotationMatrix::ToString() {
+    string_t x = XAxis.ToString();
+    string_t y = YAxis.ToString();
+    string_t z = ZAxis.ToString();
 
     return x + "\n" + y + "\n" + z + "\n";
 }

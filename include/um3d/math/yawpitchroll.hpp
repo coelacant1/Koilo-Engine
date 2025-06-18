@@ -9,7 +9,8 @@
 
 #pragma once
 
-#include "Vector3D.h"
+#include "vector3d.hpp"
+#include "mathematics.hpp"
 
 /**
  * @class YawPitchRoll
@@ -50,5 +51,5 @@ public:
      * @brief Converts the yaw, pitch, and roll angles to a string representation.
      * @return A string representation of the YawPitchRoll object.
      */
-    String ToString() const;
+    string_t ToString() const;
 };

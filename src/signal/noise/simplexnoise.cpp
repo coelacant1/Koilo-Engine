@@ -1,9 +1,6 @@
-#pragma once
+#include "include/um3d/signal/noise/simplexnoise.hpp"
 
-template<size_t colors>
-SimplexNoise<colors>::SimplexNoise(int seed, GradientMaterial<colors>* gradientMaterial) {
-    this->gradientMaterial = gradientMaterial;
-    
+SimplexNoise::SimplexNoise(int seed) {
     //the seed determines the swaps that occur between the default order and the order we're actually going to use
     for(int i = 0; i < 400; i++){
         uint8_t swapFrom = static_cast<uint8_t>(std::rand() % 256);
@@ -21,8 +18,7 @@ SimplexNoise<colors>::SimplexNoise(int seed, GradientMaterial<colors>* gradientM
 }
 
 // 2D simplex noise
-template<size_t colors>
-float SimplexNoise<colors>::Noise(float xin, float yin) {
+float SimplexNoise::Noise(float xin, float yin) {
     float n0, n1, n2; // Noise contributions from the three corners
     
     // Skew the input space to determine which simplex cell we're in
@@ -81,8 +77,7 @@ float SimplexNoise<colors>::Noise(float xin, float yin) {
 }
 
 // 3D simplex noise
-template<size_t colors>
-float SimplexNoise<colors>::Noise(float xin, float yin, float zin) {
+float SimplexNoise::Noise(float xin, float yin, float zin) {
     float n0, n1, n2, n3; // Noise contributions from the four corners
     
     // Skew the input space to determine which simplex cell we're in
@@ -171,23 +166,16 @@ float SimplexNoise<colors>::Noise(float xin, float yin, float zin) {
     return 32.0f * (n0 + n1 + n2 + n3);
 }
 
-template<size_t colors>
-void SimplexNoise<colors>::SetScale(Vector3D noiseScale){
+void SimplexNoise::SetScale(Vector3D noiseScale){
     this->noiseScale = noiseScale;
 }
 
-template<size_t colors>
-void SimplexNoise<colors>::SetZPosition(float zPosition){
+void SimplexNoise::SetZPosition(float zPosition){
     this->zPosition = zPosition;
 }
 
-template<size_t colors>
-RGBColor SimplexNoise<colors>::GetRGB(const Vector3D& position, const Vector3D& normal, const Vector3D& uvw) {
-    Vector3D positionL = position;
+float SimplexNoise::GetNoise(Vector3D position){
+    Vector3D positionL = positionL * noiseScale;
 
-    positionL = positionL * noiseScale;
-
-    float noise = Noise(positionL.X, positionL.Y, zPosition);
-    
-    return gradientMaterial->GetRGB(Vector3D(noise, 0, 0), Vector3D(), Vector3D());
+    return Noise(positionL.X, positionL.Y, zPosition);
 }

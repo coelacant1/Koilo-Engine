@@ -9,7 +9,8 @@
 
 #pragma once
 
-#include <Arduino.h>
+#include <cstdint>
+#include "../helpers/timehelper.h"
 
 /**
  * @class TimeStep
@@ -17,7 +18,7 @@
  */
 class TimeStep {
 private:
-    unsigned long previousMillis; ///< Stores the last recorded time in milliseconds.
+    uint32_t previousMillis; ///< Stores the last recorded time in milliseconds.
     uint16_t updateInterval;      ///< Interval in milliseconds between updates.
 
 public:

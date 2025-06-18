@@ -12,8 +12,8 @@
 
 #pragma once
 
-#include "KalmanFilter.h"
-#include "../Math/Vector3D.h"
+#include "kalmanfilter.hpp"
+#include "../../math/vector3d.hpp"
 
 /**
  * @class VectorKalmanFilter

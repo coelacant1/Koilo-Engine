@@ -13,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include "../lib/ProtoTracer/Utils/Math/Vector3D.h"
+#include "../include/um3d/math/vector3d.hpp"
 
 /**
  * @class TestVector3D

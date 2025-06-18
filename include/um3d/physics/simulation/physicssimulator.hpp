@@ -13,11 +13,12 @@
 
 #pragma once
 
-#include "../Renderer/Lights/Light.h"
-#include "Utils/BoundaryMotionSimulator.h"
-#include "../Scene/Objects/Object3D.h"
-#include "../Utils/Math/Quaternion.h"
-#include "../Scene/Scene.h"
+#include <cstdint>
+#include "../Renderer/Lights/Light.hpp"
+#include "Utils/BoundaryMotionSimulator.hpp"
+#include "../Scene/Objects/Object3D.hpp"
+#include "../Utils/Math/Quaternion.hpp"
+#include "../Scene/Scene.hpp"
 
 /**
  * @class PhysicsSimulator
@@ -31,7 +32,7 @@ private:
     Light lights[6]; ///< Array of lights illuminating the scene.
     Object3D* objects[12]; ///< Array of objects in the simulation.
     
-    long previousTime; ///< Time of the previous simulation update.
+    int32_t previousTime; ///< Time of the previous simulation update.
     bool startedSim; ///< Indicates if the simulation has started.
 
 public:

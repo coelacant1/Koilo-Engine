@@ -11,7 +11,8 @@
 
 #pragma once
 
-#include "Vector3D.h"
+#include "mathematics.hpp"
+#include "vector3d.hpp"
 
 /**
  * @class AxisAngle
@@ -50,5 +51,5 @@ public:
      *
      * @return A string representing the `AxisAngle` in the format "(rotation: X, axis: [X, Y, Z])".
      */
-    String ToString();
+    string_t ToString();
 };

@@ -1,9 +1,4 @@
-#include "BoundaryCube.h"
-
-BoundaryCube::BoundaryCube(Object3D* object) {
-    this->centerPosition = object->GetTransform()->GetPosition() + object->GetCenterOffset();
-    object->GetMinMaxDimensions(minimum, maximum);
-}
+#include "../../../include/um3d/geometry/3d/boundarycube.hpp"
 
 BoundaryCube::BoundaryCube(Vector3D centerPosition, Vector3D objectSize) {
     this->centerPosition = centerPosition;
@@ -46,42 +41,4 @@ Vector3D BoundaryCube::IsIntersecting(BoundaryCube* bO) {
     collision.Z = bO->GetMaximum().Z >= minimum.Z ? 0 : -1;
 
     return collision;
-}
-
-Vector3D BoundaryCube::IsIntersecting(BoundarySphere* bO) {
-    Vector3D collision;
-    Vector3D minimumExt, maximumExt;
-    Vector3D sphereSize = Vector3D(bO->GetRadius(), bO->GetRadius(), bO->GetRadius());
-
-    minimumExt = bO->position - sphereSize;
-    maximumExt = bO->position + sphereSize;
-
-    collision.X = minimum.X <= maximumExt.X && maximum.X >= minimumExt.X;
-    collision.Y = minimum.Y <= maximumExt.Y && maximum.Y >= minimumExt.Y;
-    collision.Z = minimum.Z <= maximumExt.Z && maximum.Z >= minimumExt.Z;
-
-    return collision;
-}
-
-void BoundaryCube::CollideSphere(float elasticity, BoundarySphere* bO) {
-    // if sphere is not within the bounds of the prism, collide
-    Vector3D collision = IsIntersecting(bO);
-    Vector3D shiftCorrection;
-
-    if (collision.X)
-        shiftCorrection.X = bO->velocity.X * -0.01f;
-    if (collision.Y)
-        shiftCorrection.Y = bO->velocity.Y * -0.01f;
-    if (collision.Z)
-        shiftCorrection.Z = bO->velocity.Z * -0.01f;
-
-    bO->velocity.X = collision.X == 1 ? bO->velocity.X : -bO->velocity.X * elasticity;
-    bO->velocity.Y = collision.Y == 1 ? bO->velocity.Y : -bO->velocity.Y * elasticity;
-    bO->velocity.Z = collision.Z == 1 ? bO->velocity.Z : -bO->velocity.Z * elasticity;
-
-    bO->position.X = Mathematics::Constrain(bO->position.X, minimum.X - bO->GetRadius(), maximum.X + bO->GetRadius());
-    bO->position.Y = Mathematics::Constrain(bO->position.Y, minimum.Y - bO->GetRadius(), maximum.Y + bO->GetRadius());
-    bO->position.Z = Mathematics::Constrain(bO->position.Z, minimum.Z - bO->GetRadius(), maximum.Z + bO->GetRadius());
-
-    bO->position = bO->position + shiftCorrection;
 }

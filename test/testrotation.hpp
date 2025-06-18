@@ -13,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include "../lib/ProtoTracer/Utils/Math/Rotation.h"
+#include "../include/um3d/math/rotation.hpp"
 
 /**
  * @class TestRotation

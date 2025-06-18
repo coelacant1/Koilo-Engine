@@ -13,19 +13,19 @@
 
 #pragma once
 
-#include "../../../Utils/Math/Vector2D.h"
+#include "../../math/vector2d.hpp"
 
 /**
  * @class Shape
  * @brief Abstract base class for 2D geometric shapes.
  */
 class Shape {
-protected:
-    Vector2D center; ///< The center point of the shape.
-    Vector2D size;   ///< The size of the shape, large enough to fit within a bounding rectangle.
-    float rotation;  ///< The rotation of the shape in degrees.
-
 public:
+    struct Bounds {
+        Vector2D minV;
+        Vector2D maxV;
+    };
+
     /**
      * @brief Constructs a Shape object with specified center, size, and rotation.
      * @param center Center point of the shape.
@@ -35,10 +35,24 @@ public:
     Shape(Vector2D center, Vector2D size, float rotation);
 
     /**
+     * @brief Constructs a Shape object with specified center, size, and rotation.
+     * @param bounds Bounds of the shape.
+     * @param rotation Rotation angle in degrees.
+     */
+    Shape(Bounds bounds, float rotation);
+
+    /**
      * @brief Sets the center of the shape.
      * @param center New center point.
      */
     void SetCenter(Vector2D center);
+
+
+    /**
+     * @brief Sets the bounds of the shape.
+     * @param center New bounds.
+     */
+    void SetBounds(Bounds bounds);
 
     /**
      * @brief Translates the shape by a given offset.
@@ -51,6 +65,12 @@ public:
      * @return The center point of the shape.
      */
     Vector2D GetCenter();
+
+    /**
+     * @brief Gets the minimum and maximum bounds
+     * @return Returns two Vector2D objects in a struct to represent bounds.
+     */
+    Bounds GetBounds();
 
     /**
      * @brief Sets the size of the shape.
@@ -93,5 +113,10 @@ public:
      * @param point The point to check.
      * @return True if the point is within the shape, otherwise false.
      */
-    virtual bool IsInShape(Vector2D point) = 0;
+    virtual bool IsInShape(Vector2D point) const = 0;
+
+protected:
+    Bounds bounds;   ///< The bounds of the shape.
+    float rotation;  ///< The rotation of the shape in degrees.
+    
 };

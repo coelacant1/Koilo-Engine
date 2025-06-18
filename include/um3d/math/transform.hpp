@@ -12,8 +12,9 @@
 
 #pragma once
 
-#include "Rotation.h"
-#include "Vector3D.h"
+#include "rotation.hpp"
+#include "vector3d.hpp"
+#include "mathematics.hpp"
 
 /**
  * @class Transform
@@ -196,5 +197,5 @@ public:
      * @brief Converts the transform to a string representation.
      * @return A string representing the transform.
      */
-    String ToString();
+    string_t ToString();
 };

@@ -1,4 +1,4 @@
-#include "BouncePhysics.h"
+#include "include/um3d/physics/motion/bouncephysics.hpp"
 
 BouncePhysics::BouncePhysics(float gravity, float velocityRatio) :
     velocityFilter(0.4f),
@@ -10,7 +10,7 @@ BouncePhysics::BouncePhysics(float gravity, float velocityRatio) :
     previousVelocity(0.0f) {
 }
 
-float BouncePhysics::Calculate(float velocity, unsigned long currentMillis) {
+float BouncePhysics::Calculate(float velocity, uint32_t currentMillis) {
     float dT = ((float)(currentMillis - previousMillis)) / 1000.0f;
 
     if (dT > 0.1f && dT < 2.0f) {

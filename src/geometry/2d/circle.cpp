@@ -1,8 +1,8 @@
-#include "Circle.h"
+#include "../../../include/um3d/geometry/2d/circle.hpp"
 
-Circle::Circle(Vector2D center, float radius) : Shape(center, Vector2D(radius, radius), 0.0f), radius(radius) {}
+Circle2D::Circle2D(Vector2D center, float radius) : Shape(center, Vector2D(radius * 2.0f, radius * 2.0f), 0.0f), radius(radius) {}
 
-bool Circle::IsInShape(Vector2D point) {
+bool Circle2D::IsInShape(Vector2D point) const {
     float x = (point.X - center.X);
     float y = (point.Y - center.Y);
     float powRad = radius * radius;

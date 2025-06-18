@@ -1,4 +1,4 @@
-#include "Quaternion.h"
+#include "include/um3d/math/quaternion.hpp"
 
 // Default constructor
 Quaternion::Quaternion() : W(1.0f), X(0.0f), Y(0.0f), Z(0.0f) {}
@@ -393,11 +393,11 @@ bool Quaternion::IsClose(const Quaternion& quaternion, const float& epsilon) con
 }
 
 // Convert quaternion to string
-String Quaternion::ToString() const {
-    String w = Mathematics::DoubleToCleanString(this->W);
-    String x = Mathematics::DoubleToCleanString(this->X);
-    String y = Mathematics::DoubleToCleanString(this->Y);
-    String z = Mathematics::DoubleToCleanString(this->Z);
+string_t Quaternion::ToString() const {
+    string_t w = Mathematics::DoubleToCleanString(this->W);
+    string_t x = Mathematics::DoubleToCleanString(this->X);
+    string_t y = Mathematics::DoubleToCleanString(this->Y);
+    string_t z = Mathematics::DoubleToCleanString(this->Z);
     
     return "[" + w + ", " + x + ", " + y + ", " + z + "]";
 }

@@ -1,4 +1,4 @@
-#include "TestQuaternion.h"
+#include "testquaternion.hpp"
 
 void TestQuaternion::TestRotateVector(Quaternion q, Vector3D v, Vector3D e){
     Vector3D result = q.RotateVector(v);

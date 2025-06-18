@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include "../Math/Mathematics.h"
+#include "../../math/mathematics.hpp" // Includes mathematical utilities for constraints and operations.
 
 /**
  * @class PeakDetection
@@ -63,4 +63,4 @@ public:
     void Calculate(float* data, bool* peaks);
 };
 
-#include "PeakDetection.tpp" // Includes the implementation of the template class.
+#include "peakdetection.tpp" // Includes the implementation of the template class.

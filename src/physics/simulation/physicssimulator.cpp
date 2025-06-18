@@ -1,4 +1,4 @@
-#include "PhysicsSimulator.h"
+#include "PhysicsSimulator.hpp"
 
 PhysicsSimulator::PhysicsSimulator()
     : bC(Vector3D(0, 0, 0), Vector3D(300, 200, 100)), previousTime(0), startedSim(false) {
@@ -54,7 +54,7 @@ void PhysicsSimulator::Update(Vector3D acceleration, Quaternion rotation) {
         startedSim = true;
     }
 
-    long currentTime = micros();
+    int32_t currentTime = micros();
     float dT = (float)(currentTime - previousTime) / 1000000.0f;
 
     Vector3D accelNormalized = Vector3D(acceleration.X, acceleration.Z, acceleration.Y);

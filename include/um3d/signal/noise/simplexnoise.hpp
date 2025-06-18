@@ -12,25 +12,17 @@
 #pragma once
 
 #include <cstdlib>
-#include "../Material.h"
-#include "../../../Utils/Math/Mathematics.h"
-#include "../../../Utils/Math/Vector3D.h"
-#include "../Static/GradientMaterial.h"
+#include "../../math/mathematics.hpp"
+#include "../../math/vector3d.hpp"
 
 /**
  * @class SimplexNoise
  * @brief A material class for rendering Simplex Noise.
  *
- * This template-based class generates noise values using the Simplex Noise algorithm
- * and maps the values to colors using a `GradientMaterial`.
- *
- * @tparam colors The number of colors in the gradient material.
+ * This template-based class generates noise values using the Simplex Noise algorithm.
  */
-template<size_t colors>
-class SimplexNoise : public Material {
+class SimplexNoise {
 private:
-    GradientMaterial<colors>* gradientMaterial; ///< GradientMaterial used to map noise values to colors.
-
     Vector3D noiseScale = Vector3D(1, 1, 1); ///< Scaling factor for the noise generation.
     const float F2 = 0.5f * (sqrtf(3.0f) - 1.0f); ///< Simplex Noise constants for 2D.
     const float G2 = (3.0f - sqrtf(3.0f)) / 6.0f; ///< Simplex Noise constants for 2D.
@@ -88,9 +80,8 @@ public:
      * @brief Constructs a SimplexNoise instance.
      *
      * @param seed The seed for noise generation.
-     * @param gradientMaterial Pointer to a `GradientMaterial` for mapping noise to colors.
      */
-    SimplexNoise(int seed, GradientMaterial<colors>* gradientMaterial);
+    SimplexNoise(int seed);
 
     /**
      * @brief Generates 2D Simplex Noise.
@@ -129,11 +120,7 @@ public:
      * @brief Retrieves the color for a given position based on the noise value.
      *
      * @param position 3D position in the scene.
-     * @param normal Normal vector at the position (not used for this material).
-     * @param uvw Texture coordinates at the position (not used for this material).
-     * @return The RGB color corresponding to the noise value at the position.
+     * @return Returns the noise value at the position.
      */
-    RGBColor GetRGB(const Vector3D& position, const Vector3D& normal, const Vector3D& uvw) override;
+    float GetNoise(Vector3D position);
 };
-
-#include "SimplexNoise.tpp"

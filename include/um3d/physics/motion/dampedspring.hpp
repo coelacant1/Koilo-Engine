@@ -13,7 +13,7 @@
 
 #pragma once
 
-#include "../../Utils/Math/Mathematics.h"
+#include "../../math/mathematics.hpp"
 
 /**
  * @class DampedSpring
@@ -28,7 +28,7 @@ private:
     float dampingForce; ///< Damping force resisting motion.
     float force; ///< Combined force acting on the spring.
     float damping; ///< Damping coefficient.
-    unsigned long previousMillis; ///< Previous timestamp for time calculations.
+    uint32_t previousMillis; ///< Previous timestamp for time calculations.
 
 public:
     /**
@@ -62,7 +62,7 @@ public:
      * @param currentMillis Current time in milliseconds.
      * @return Updated position as a float.
      */
-    float Calculate(float target, unsigned long currentMillis);
+    float Calculate(float target, uint32_t currentMillis);
 
     /**
      * @brief Calculates the spring's position and velocity using a target position and delta time.

@@ -1,23 +1,12 @@
-#include "BoundarySphere.h"
+#include "../../../include/um3d/geometry/3d/boundarysphere.hpp"
 
-BoundarySphere::BoundarySphere(Object3D* object, float radius) {
-    this->object = object;
-    this->position = object->GetTransform()->GetPosition();
-    this->radius = radius;
-}
-
-BoundarySphere::BoundarySphere(Object3D* object, Vector3D position, float radius) {
-    this->object = object;
+BoundarySphere::BoundarySphere(Vector3D position, float radius) {
     this->position = position;
     this->radius = radius;
 }
 
 float BoundarySphere::GetRadius() {
     return radius;
-}
-
-Object3D* BoundarySphere::GetObject3D() {
-    return object;
 }
 
 void BoundarySphere::Update(float dT, Vector3D acceleration, Quaternion rotation) {

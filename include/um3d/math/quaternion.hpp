@@ -15,9 +15,9 @@
 
 #pragma once
 
-#include "Mathematics.h"
-#include "Vector2D.h"
-#include "Vector3D.h"
+#include "mathematics.hpp"
+#include "vector2d.hpp"
+#include "vector3d.hpp"
 
 /**
  * @class Quaternion
@@ -316,9 +316,9 @@ public:
 
     /**
      * @brief Converts this quaternion to a string representation (e.g. "(W, X, Y, Z)").
-     * @return A \c String displaying the quaternion's components.
+     * @return A \c string_t displaying the quaternion's components.
      */
-    String ToString() const;
+    string_t ToString() const;
 
     // --- Operator Overloads ---
 

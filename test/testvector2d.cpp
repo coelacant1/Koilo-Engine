@@ -1,4 +1,4 @@
-#include "TestVector2D.h"
+#include "testvector2d.hpp"
 
 void TestVector2D::TestConstructor() {
     Vector2D v1;
@@ -12,11 +12,6 @@ void TestVector2D::TestConstructor() {
     Vector2D v3(v2);
     TEST_ASSERT_FLOAT_WITHIN(0.01, 3.0, v3.X);
     TEST_ASSERT_FLOAT_WITHIN(0.01, 4.0, v3.Y);
-
-    Vector3D v3d(3.0, 4.0, 5.0);
-    Vector2D v4(v3d);
-    TEST_ASSERT_FLOAT_WITHIN(0.01, 3.0, v4.X);
-    TEST_ASSERT_FLOAT_WITHIN(0.01, 4.0, v4.Y);
 }
 
 void TestVector2D::TestAbsolute() {
@@ -169,7 +164,7 @@ void TestVector2D::TestIsEqual() {
 
 void TestVector2D::TestToString() {
     Vector2D v(1.0, 2.0);
-    String str = v.ToString();
+    string_t str = v.ToString();
     TEST_ASSERT_EQUAL_STRING("[1.000, 2.000]", str.c_str());
 }
 

@@ -11,17 +11,14 @@
 
 #pragma once
 
-#include "../Material.h"
-#include "../../../Utils/Math/Mathematics.h"
-#include "../../../Utils/Math/Vector2D.h"
-#include "../../../Renderer/Utils/Triangle2D.h"
-#include "../../Objects/Object3D.h"
+#include "../../math/mathematics.hpp"
+#include "../../math/vector2d.hpp"
 
 /**
  * @class VectorField2D
  * @brief A class for managing and rendering 2D vector fields.
  */
-class VectorField2D : public Material {
+class VectorField2D {
 private:
     int8_t* vecXP; ///< X-component of previous vectors.
     int8_t* vecYP; ///< Y-component of previous vectors.
@@ -108,14 +105,6 @@ public:
     void SpiralField(float ratio, float period, float amplitude);
 
     /**
-     * @brief Generates a field effect based on a 3D object's position and shape.
-     * 
-     * @param object Pointer to the 3D object.
-     * @param intensity The intensity of the effect.
-     */
-    void ObjectField(Object3D* object, float intensity);
-
-    /**
      * @brief Retrieves the number of vectors along the X-axis.
      * 
      * @return The count of vectors along the X-axis.
@@ -171,14 +160,4 @@ public:
      * @return A packed integer representing the vector components and density.
      */
     uint32_t GetVectorAtPosition(float x, float y, bool& inBounds);
-
-    /**
-     * @brief Retrieves the RGB color corresponding to a position in the field.
-     * 
-     * @param position The 3D position in the field.
-     * @param normal The normal vector at the position.
-     * @param uvw UVW coordinates at the position.
-     * @return The RGB color at the specified position.
-     */
-    RGBColor GetRGB(const Vector3D& position, const Vector3D& normal, const Vector3D& uvw) override;
 };

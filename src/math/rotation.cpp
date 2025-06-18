@@ -1,5 +1,4 @@
-#include "Rotation.h"
-#include "Mathematics.h"
+#include "include/um3d/math/rotation.hpp"
 
 // Define the private member functions
 Quaternion Rotation::AxisAngleToQuaternion(const AxisAngle& axisAngle) {

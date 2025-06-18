@@ -1,4 +1,4 @@
-#include "VectorRunningAverageFilter.h"
+#include "include/um3d/signal/filter/vectorrunningaveragefilter.hpp"
 
 template<size_t memory>
 VectorRunningAverageFilter<memory>::VectorRunningAverageFilter() {

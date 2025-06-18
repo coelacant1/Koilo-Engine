@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include "Vector3D.h"
+#include "vector3d.hpp"
 
 /**
  * @class EulerOrder
@@ -83,5 +83,5 @@ public:
      *
      * @return A string describing the axis order, frame, and permutation.
      */
-    String ToString();
+    string_t ToString();
 };

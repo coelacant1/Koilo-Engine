@@ -12,8 +12,8 @@
 
 #pragma once
 
-#include "RunningAverageFilter.h"
-#include "../Math/Vector3D.h"
+#include "runningaveragefilter.hpp"
+#include "../../math/vector3d.hpp" // Includes mathematical utilities for constraints and operations.
 
 /**
  * @class VectorRunningAverageFilter

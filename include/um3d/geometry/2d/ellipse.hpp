@@ -12,13 +12,13 @@
 
 #pragma once
 
-#include "Shape.h"
+#include "shape.hpp"
 
 /**
  * @class Ellipse
  * @brief Represents an ellipse in 2D space.
  */
-class Ellipse : public Shape {
+class Ellipse2D : public Shape {
 public:
     /**
      * @brief Constructs an Ellipse object with specified center, size, and rotation.
@@ -26,12 +26,12 @@ public:
      * @param size Dimensions of the ellipse (width and height).
      * @param rotation Rotation angle of the ellipse in degrees.
      */
-    Ellipse(Vector2D center, Vector2D size, float rotation);
+    Ellipse2D(Vector2D center, Vector2D size, float rotation);
 
     /**
      * @brief Checks if a given point lies within the ellipse's boundaries.
      * @param point The point to check.
      * @return True if the point is within the ellipse, otherwise false.
      */
-    bool IsInShape(Vector2D point) override;
+    bool IsInShape(Vector2D point) const override;
 };

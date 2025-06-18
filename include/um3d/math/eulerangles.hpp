@@ -12,8 +12,9 @@
 
 #pragma once
 
-#include "EulerOrder.h"
-#include "Vector3D.h"
+#include "eulerconstants.hpp"
+#include "eulerorder.hpp"
+#include "vector3d.hpp"
 
 /**
  * @class EulerAngles
@@ -47,5 +48,5 @@ public:
      *
      * @return A string representing the `EulerAngles` in the format "(angles: [X, Y, Z], order: XYZ)".
      */
-    String ToString();
+    string_t ToString();
 };

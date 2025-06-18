@@ -12,11 +12,12 @@
 
 #pragma once
 
-#include "../../Utils/Math/Rotation.h"
-#include "../../Utils/Math/Vector3D.h"
-#include "../../Scene/Objects/Object3D.h"
-#include "BoundaryCube.h"
-#include "BoundarySphere.h"
+#include "../../math/rotation.hpp"
+#include "../../math/vector3d.hpp"
+
+#include "../../math/rotation.hpp"
+#include "../../geometry/3d/boundarycube.hpp"
+#include "../../geometry/3d/boundarysphere.hpp"
 
 /**
  * @class BoundaryMotionSimulator

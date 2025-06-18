@@ -13,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include "../lib/ProtoTracer/Utils/Math/RotationMatrix.h"
+#include "../include/um3d/math/rotationmatrix.hpp"
 
 /**
  * @class TestRotationMatrix

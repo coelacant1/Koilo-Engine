@@ -1,4 +1,4 @@
-#include "TestMathematics.h"
+#include "testmathematics.hpp"
 
 void TestMathematics::TestDoubleToCleanString() {
     TEST_ASSERT_EQUAL_STRING("1.234", Mathematics::DoubleToCleanString(1.234).c_str());

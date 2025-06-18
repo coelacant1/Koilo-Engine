@@ -12,8 +12,7 @@
 
 #pragma once
 
-#include "Mathematics.h"
-#include "Vector3D.h"
+#include "mathematics.hpp"
 
 /**
  * @class Vector2D
@@ -46,12 +45,6 @@ public:
      * @param Y The Y-component of the vector.
      */
     Vector2D(const float& X, const float& Y);
-
-    /**
-     * @brief Constructs a `Vector2D` from a `Vector3D`, discarding the Z-component.
-     * @param vector The `Vector3D` to convert (Z is ignored).
-     */
-    Vector2D(const Vector3D& vector);
 
     /**
      * @brief Returns a vector with the absolute value of each component.
@@ -202,7 +195,7 @@ public:
      * @brief Converts the vector to a string representation.
      * @return A `String` in the format "(X, Y)".
      */
-    String ToString() const;
+    string_t ToString() const;
 
 
     // --- Static function declarations ---
@@ -379,13 +372,6 @@ public:
      * @return A reference to this `Vector2D`.
      */
     Vector2D operator =(const Vector2D& vector);
-
-    /**
-     * @brief Assignment operator. Copies a `Vector3D` into this `Vector2D`, discarding Z.
-     * @param vector The `Vector3D` to copy from.
-     * @return A reference to this `Vector2D`.
-     */
-    Vector2D operator =(const Vector3D& vector);
 
     /**
      * @brief Addition operator. Adds two vectors component-wise.

@@ -1,4 +1,4 @@
-#include "TestRotationMatrix.h"
+#include "testrotationmatrix.hpp"
 
 void TestRotationMatrix::TestIdentityMatrix() {
     Vector3D v(1, 2, 3);

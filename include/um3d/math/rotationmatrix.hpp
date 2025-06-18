@@ -13,8 +13,8 @@
 
 #pragma once
 
-#include "Mathematics.h"
-#include "Vector3D.h"
+#include "mathematics.hpp"
+#include "vector3d.hpp"
 
 /**
  * @class RotationMatrix
@@ -152,7 +152,7 @@ public:
      * @brief Converts the rotation matrix to a string representation.
      * @return A string representing the matrix.
      */
-    String ToString();
+    string_t ToString();
 
     /**
      * @brief Assignment operator for rotation matrices.

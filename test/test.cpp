@@ -1,10 +1,10 @@
 #include <unity.h>
-#include "TestMathematics.h"
-#include "TestQuaternion.h"
-#include "TestRotation.h"
-#include "TestRotationMatrix.h"
-#include "TestVector2D.h"
-#include "TestVector3D.h"
+#include "testmathematics.hpp"
+#include "testquaternion.hpp"
+#include "testrotation.hpp"
+#include "testrotationmatrix.hpp"
+#include "testvector2d.hpp"
+#include "testvector3d.hpp"
 
 void setUp() {}
 

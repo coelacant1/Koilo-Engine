@@ -1,5 +1,4 @@
-#include "Transform.h"
-#include "Mathematics.h" // Assuming this header contains necessary utility functions like DegreesToRadians
+#include "include/um3d/math/transform.hpp"
 
 Transform::Transform() 
     : baseRotation(1, 0, 0, 0), rotation(1, 0, 0, 0), position(0, 0, 0), scale(1, 1, 1), scaleRotationOffset(1, 0, 0, 0) {}
@@ -118,6 +117,6 @@ void Transform::Scale(const Vector3D& scale) {
     this->scale = this->scale * scale;
 }
 
-String Transform::ToString(){
+string_t Transform::ToString(){
     return "[" + Rotation(this->rotation).GetEulerAngles(EulerConstants::EulerOrderXYZS).Angles.ToString() + " " + this->position.ToString() + " " + this->scale.ToString() + "]";
 }

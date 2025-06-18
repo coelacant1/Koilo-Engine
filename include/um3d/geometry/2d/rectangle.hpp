@@ -12,26 +12,43 @@
 
 #pragma once
 
-#include "Shape.h"
+#include "shape.hpp"
+#include "../../math/vector2d.hpp"
+#include "../../math/mathematics.hpp"
 
 /**
  * @class Rectangle
  * @brief Represents a rectangle in 2D space.
  */
-class Rectangle : public Shape {
+class Rectangle2D : public Shape {
+private:
+    Vector2D minV; ///< Minimum corner of the bounding box.
+    Vector2D maxV; ///< Maximum corner of the bounding box.
+    Vector2D midV; ///< Center point of the bounding box.
+
 public:
     /**
      * @brief Constructs a Rectangle object with specified center, size, and rotation.
      * @param center Center point of the rectangle.
      * @param size Dimensions of the rectangle (width and height).
-     * @param rotation Rotation angle of the rectangle in degrees.
+     * @param rotationDeg Rotation angle of the rectangle in degrees.
      */
-    Rectangle(Vector2D center, Vector2D size, float rotation);
+    Rectangle2D(Vector2D center, Vector2D size, float rotationDeg = 0.0f);
 
     /**
      * @brief Checks if a given point lies within the rectangle's boundaries.
      * @param point The point to check.
      * @return True if the point is within the rectangle, otherwise false.
      */
-    bool IsInShape(Vector2D point) override;
+    bool IsInShape(Vector2D point) const override;
+
+    void UpdateBounds(const Vector2D& v);
+
+    Vector2D GetMinimum() const;
+    Vector2D GetMaximum() const;
+    Vector2D GetCenter() const;
+
+    bool Overlaps(const Rectangle2D& other) const;
+    bool Overlaps(const Vector2D& minI, const Vector2D& maxI) const;
+    bool Contains(const Vector2D& v) const;
 };

@@ -1,7 +1,7 @@
-#include "Wait.h"
+#include "include/um3d/time/wait.hpp"
 
 
-Wait::Wait(unsigned long millisToWait) {
+Wait::Wait(uint32_t millisToWait) {
     this->millisToWait = millisToWait;
 }
 

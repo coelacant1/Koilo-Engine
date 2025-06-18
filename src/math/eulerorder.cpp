@@ -1,4 +1,4 @@
-#include "EulerOrder.h"
+#include "include/um3d/math/eulerorder.hpp"
 
 // Default constructor.
 EulerOrder::EulerOrder()
@@ -13,6 +13,6 @@ EulerOrder::EulerOrder(Axis axisOrder, AxisFrame axisFrame, Vector3D permutation
       Permutation(permutation) {}
 
 // Convert EulerOrder to a string representation.
-String EulerOrder::ToString() {
+string_t EulerOrder::ToString() {
     return Permutation.ToString();
 }

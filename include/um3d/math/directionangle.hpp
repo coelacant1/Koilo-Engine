@@ -12,7 +12,8 @@
 
 #pragma once
 
-#include "Vector3D.h"
+#include "mathematics.hpp"
+#include "vector3d.hpp"
 
 /**
  * @class DirectionAngle
@@ -52,5 +53,5 @@ public:
      *
      * @return A string representing the `DirectionAngle` in the format "(rotation: X, direction: [X, Y, Z])".
      */
-    String ToString();
+    string_t ToString();
 };

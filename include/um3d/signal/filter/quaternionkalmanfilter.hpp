@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include "../Math/Quaternion.h"
+#include "../../math/quaternion.hpp"
 
 /**
  * @class QuaternionKalmanFilter

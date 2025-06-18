@@ -1,4 +1,4 @@
-#include "QuaternionKalmanFilter.h"
+#include "include/um3d/signal/filter/quaternionkalmanfilter.hpp"
 
 QuaternionKalmanFilter::QuaternionKalmanFilter() {
     gain = 0.25f;

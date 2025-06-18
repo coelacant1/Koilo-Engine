@@ -1,4 +1,4 @@
-#include "VectorKalmanFilter.h"
+#include "include/um3d/signal/filter/vectorkalmanfilter.hpp"
 
 template<typename T>
 VectorKalmanFilter<T>::VectorKalmanFilter(T processNoise, T sensorNoise, T errorCovariance) {

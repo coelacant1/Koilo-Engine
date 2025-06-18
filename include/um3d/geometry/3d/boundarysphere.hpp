@@ -12,9 +12,8 @@
 
 #pragma once
 
-#include "../../Utils/Math/Rotation.h"
-#include "../../Utils/Math/Vector3D.h"
-#include "../../Scene/Objects/Object3D.h"
+#include "../../math/rotation.hpp"
+#include "../../math/vector3d.hpp"
 
 /**
  * @class BoundarySphere
@@ -22,7 +21,6 @@
  */
 class BoundarySphere {
 private:
-    Object3D* object; ///< Pointer to the 3D object associated with the sphere.
     Vector3D centerPosition; ///< Center position of the sphere.
     Quaternion previousRotation; ///< Previous rotation of the sphere.
     float radius = 1.0f; ///< Radius of the sphere.
@@ -32,31 +30,17 @@ public:
     Vector3D position = Vector3D(0, 0, 0); ///< Current position of the sphere.
 
     /**
-     * @brief Constructs a BoundarySphere with a given object and radius.
-     * @param object Pointer to the Object3D associated with the sphere.
-     * @param radius Radius of the sphere.
-     */
-    BoundarySphere(Object3D* object, float radius);
-
-    /**
      * @brief Constructs a BoundarySphere with a given object, position, and radius.
-     * @param object Pointer to the Object3D associated with the sphere.
      * @param position Initial position of the sphere.
      * @param radius Radius of the sphere.
      */
-    BoundarySphere(Object3D* object, Vector3D position, float radius);
+    BoundarySphere(Vector3D position, float radius);
 
     /**
      * @brief Gets the radius of the sphere.
      * @return Radius of the sphere.
      */
     float GetRadius();
-
-    /**
-     * @brief Gets the associated Object3D of the sphere.
-     * @return Pointer to the Object3D.
-     */
-    Object3D* GetObject3D();
 
     /**
      * @brief Updates the sphere's position and velocity based on acceleration and rotation.

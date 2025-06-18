@@ -12,8 +12,8 @@
 
 #pragma once
 
-#include "EulerOrder.h"
-#include "Vector3D.h"
+#include "eulerorder.hpp"
+#include "vector3d.hpp"
 
 /**
  * @namespace EulerConstants

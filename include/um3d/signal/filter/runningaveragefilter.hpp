@@ -12,7 +12,7 @@
 
 #pragma once
 
-#include "../Math/Mathematics.h"
+#include "../../math/mathematics.hpp" // Includes mathematical utilities for constraints and operations.
 
 /**
  * @class RunningAverageFilter
@@ -63,4 +63,4 @@ public:
     float Filter(float value);
 };
 
-#include "RunningAverageFilter.tpp"
+#include "runningaveragefilter.tpp"
