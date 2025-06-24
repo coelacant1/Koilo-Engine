@@ -40,7 +40,7 @@ public:
      * @param point The point to check.
      * @return True if the point is within the rectangle, otherwise false.
      */
-    bool IsInShape(Vector2D point) const override;
+    bool IsInShape(Vector2D point) override;
 
     void UpdateBounds(const Vector2D& v);
 

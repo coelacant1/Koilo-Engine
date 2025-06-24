@@ -5,9 +5,9 @@ RasterTriangle3D::RasterTriangle3D(const Triangle3D& g,
                                    Material* m)
     : geo(g), oneOverZ1(z1), oneOverZ2(z2), oneOverZ3(z3), mat(m) {
     /* plane equation a·x + b·y + c = 1/z */
-    float x1 = g.p1.x, y1 = g.p1.y;
-    float x2 = g.p2.x, y2 = g.p2.y;
-    float x3 = g.p3.x, y3 = g.p3.y;
+    float x1 = g.p1.X, y1 = g.p1.Y;
+    float x2 = g.p2.X, y2 = g.p2.Y;
+    float x3 = g.p3.X, y3 = g.p3.Y;
 
     float det = (x2 - x1) * (y3 - y1) - (x3 - x1) * (y2 - y1);
     float invDet = (det == 0.0f) ? 0.0f : 1.0f / det;

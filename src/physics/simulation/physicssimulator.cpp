@@ -1,4 +1,4 @@
-#include "PhysicsSimulator.hpp"
+#include "../../../include/um3d/physics/simulation/physicssimulator.hpp"
 
 PhysicsSimulator::PhysicsSimulator()
     : bC(Vector3D(0, 0, 0), Vector3D(300, 200, 100)), previousTime(0), startedSim(false) {

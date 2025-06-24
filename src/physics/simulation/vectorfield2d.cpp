@@ -1,4 +1,4 @@
-#include "include/um3d/physics/simulation/vectorfield2d.hpp"
+#include "../../../include/um3d/physics/simulation/vectorfield2d.hpp"
 
 VectorField2D::VectorField2D(uint16_t x, uint16_t y)
     : countX(x), countY(y) {

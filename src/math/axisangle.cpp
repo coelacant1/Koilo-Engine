@@ -1,4 +1,4 @@
-#include "include/um3d/math/axisangle.hpp"
+#include "../../include/um3d/math/axisangle.hpp"
 
 // Constructor with individual components.
 AxisAngle::AxisAngle(float rotation, float x, float y, float z) : Rotation(rotation), Axis(x, y, z) {}

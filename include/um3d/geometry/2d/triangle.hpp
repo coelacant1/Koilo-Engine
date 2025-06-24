@@ -19,7 +19,7 @@ public:
     Vector2D p2;  ///< second vertex
     Vector2D p3;  ///< third vertex
 
-    /** @brief Default ctor (degenerate triangle at origin). */
+    /** @brief Default triangle at origin. */
     Triangle2D();
 
     /** @brief Construct from explicit vertices. */
@@ -33,9 +33,8 @@ public:
 
     /**
      * @brief Point-inside test via barycentric coordinates.
-     * @param x input x
-     * @param y input y
+     * @param Vector2D point for X/Y input
      * @return true if (x,y) lies in or on the triangle
      */
-    bool Contains(float x, float y) const;
+    bool IsInShape(Vector2D point) override;
 };

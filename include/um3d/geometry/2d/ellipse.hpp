@@ -33,5 +33,5 @@ public:
      * @param point The point to check.
      * @return True if the point is within the ellipse, otherwise false.
      */
-    bool IsInShape(Vector2D point) const override;
+    bool IsInShape(Vector2D point) override;
 };

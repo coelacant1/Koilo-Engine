@@ -1,4 +1,4 @@
-#include "include/um3d/math/quaternion.hpp"
+#include "../../include/um3d/math/quaternion.hpp"
 
 // Default constructor
 Quaternion::Quaternion() : W(1.0f), X(0.0f), Y(0.0f), Z(0.0f) {}

@@ -2,7 +2,10 @@
 
 Rectangle2D::Rectangle2D(Vector2D center, Vector2D size, float rotation) : Shape(center, size, rotation) {}
 
-bool Rectangle2D::IsInShape(Vector2D p) const{
+bool Rectangle2D::IsInShape(Vector2D p) {
+    Vector2D center = GetCenter();
+    Vector2D size = GetSize();
+
     const float dx = p.X - center.X;
     const float dy = p.Y - center.Y;
 

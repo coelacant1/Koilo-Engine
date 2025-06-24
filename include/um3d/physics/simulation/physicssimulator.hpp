@@ -14,11 +14,11 @@
 #pragma once
 
 #include <cstdint>
-#include "../Renderer/Lights/Light.hpp"
-#include "Utils/BoundaryMotionSimulator.hpp"
-#include "../Scene/Objects/Object3D.hpp"
-#include "../Utils/Math/Quaternion.hpp"
-#include "../Scene/Scene.hpp"
+#include "../../scene/lighting/light.hpp"
+#include "boundarymotionsimulator.hpp"
+#include "../../scene/mesh.hpp"
+#include "../../math/quaternion.hpp"
+#include "../../scene/scene.hpp"
 
 /**
  * @class PhysicsSimulator

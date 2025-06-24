@@ -1,4 +1,4 @@
-#include "include/um3d/math/mathematics.hpp"
+#include "../../include/um3d/math/mathematics.hpp"
 
 const float Mathematics::EPSILON = 0.001f;
 const float Mathematics::MPI = 3.14159265358979323846f;

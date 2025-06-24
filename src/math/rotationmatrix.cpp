@@ -1,4 +1,4 @@
-#include "include/um3d/math/rotationmatrix.hpp"
+#include "../../include/um3d/math/rotationmatrix.hpp"
 
 Vector3D RotationMatrix::ConvertCoordinateToVector() {
     if (didRotate) {

@@ -1,4 +1,4 @@
-#include "include/um3d/math/vector3d.hpp"
+#include "../../include/um3d/math/vector3d.hpp"
 
 Vector3D::Vector3D() : X(0.0f), Y(0.0f), Z(0.0f) {}
 

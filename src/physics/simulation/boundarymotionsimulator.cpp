@@ -1,13 +1,13 @@
-#include "BoundaryMotionSimulator.hpp"
+#include "../../../include/um3d/physics/simulation/boundarymotionsimulator.hpp"
 
-BoundaryMotionSimulator::BoundaryMotionSimulator(Object3D** objects, int objectCount, BoundaryCube* bC, float radius, float elasticity) {
+BoundaryMotionSimulator::BoundaryMotionSimulator(Mesh** objects, int objectCount, Cube* bC, float radius, float elasticity) {
     this->bC = bC;
     this->sphereCount = objectCount;
     this->elasticity = elasticity;
 
-    bS = new BoundarySphere*[objectCount];
+    bS = new Sphere*[objectCount];
     for (int i = 0; i < objectCount; i++) {
-        bS[i] = new BoundarySphere(objects[i], radius);
+        //bS[i] = new Sphere(objects[i], radius);
     }
 }
 
@@ -35,9 +35,9 @@ void BoundaryMotionSimulator::Update(float dT, Vector3D acceleration, Quaternion
             bS[i]->Collide(elasticity, bS[j]);
         }
 
-        bC->CollideSphere(elasticity, bS[i]);
-        bS[i]->velocity = bS[i]->velocity * RandomRatio(0.0005f);
-        bS[i]->GetObject3D()->ResetVertices();
-        bS[i]->GetObject3D()->GetTransform()->SetPosition(bS[i]->position);
+        //bC->CollideSphere(elasticity, bS[i]);
+        //bS[i]->velocity = bS[i]->velocity * RandomRatio(0.0005f);
+        //bS[i]->GetObject3D()->ResetVertices();
+        //bS[i]->GetObject3D()->GetTransform()->SetPosition(bS[i]->position);
     }
 }

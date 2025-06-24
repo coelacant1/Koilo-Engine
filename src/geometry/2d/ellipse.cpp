@@ -2,7 +2,10 @@
 
 Ellipse2D::Ellipse2D(Vector2D center, Vector2D size, float rotation) : Shape(center, size / 2.0f, rotation) {}
 
-bool Ellipse2D::IsInShape(Vector2D point) const {
+bool Ellipse2D::IsInShape(Vector2D point) {
+    Vector2D center = GetCenter();
+    Vector2D size = GetSize();
+
     float x = (point.X - center.X);
     float y = (point.Y - center.Y);
 

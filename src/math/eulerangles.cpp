@@ -1,4 +1,4 @@
-#include "include/um3d/math/eulerangles.hpp"
+#include "../../include/um3d/math/eulerangles.hpp"
 
 // Default constructor.
 EulerAngles::EulerAngles() 

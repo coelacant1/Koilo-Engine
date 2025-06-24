@@ -1,4 +1,4 @@
-#include "include/um3d/math/eulerorder.hpp"
+#include "../../include/um3d/math/eulerorder.hpp"
 
 // Default constructor.
 EulerOrder::EulerOrder()

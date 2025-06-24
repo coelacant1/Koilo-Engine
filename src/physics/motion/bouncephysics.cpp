@@ -1,4 +1,4 @@
-#include "include/um3d/physics/motion/bouncephysics.hpp"
+#include "../../../include/um3d/physics/motion/bouncephysics.hpp"
 
 BouncePhysics::BouncePhysics(float gravity, float velocityRatio) :
     velocityFilter(0.4f),

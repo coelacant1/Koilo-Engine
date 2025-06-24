@@ -4,16 +4,16 @@ static inline float Edge(const Vector2D& a,
                          const Vector2D& b,
                          float           px,
                          float           py) {
-    return (px - a.x) * (b.y - a.y) - (py - a.y) * (b.x - a.x);
+    return (px - a.X) * (b.Y - a.Y) - (py - a.Y) * (b.X - a.X);
 }
 
 RasterTriangle2D::RasterTriangle2D(const Triangle2D& t)
     : tri(t), uv1(nullptr), uv2(nullptr), uv3(nullptr),
       nrm(nullptr), mat(nullptr), avgDepth(0.0f), hasUV(false) {
-    v0x = tri.p2.x - tri.p1.x;
-    v0y = tri.p2.y - tri.p1.y;
-    v1x = tri.p3.x - tri.p1.x;
-    v1y = tri.p3.y - tri.p1.y;
+    v0x = tri.p2.X - tri.p1.X;
+    v0y = tri.p2.Y - tri.p1.Y;
+    v1x = tri.p3.X - tri.p1.X;
+    v1y = tri.p3.Y - tri.p1.Y;
     denom = v0x * v1y - v1x * v0y;
 }
 
@@ -25,10 +25,10 @@ RasterTriangle2D::RasterTriangle2D(const Triangle2D& t,
                                    Material*       matIn,
                                    float           depthIn): tri(t), uv1(uv1In), uv2(uv2In), uv3(uv3In),
       nrm(nrmIn), mat(matIn), avgDepth(depthIn), hasUV(true) {
-    v0x = tri.p2.x - tri.p1.x;
-    v0y = tri.p2.y - tri.p1.y;
-    v1x = tri.p3.x - tri.p1.x;
-    v1y = tri.p3.y - tri.p1.y;
+    v0x = tri.p2.X - tri.p1.X;
+    v0y = tri.p2.Y - tri.p1.Y;
+    v1x = tri.p3.X - tri.p1.X;
+    v1y = tri.p3.Y - tri.p1.Y;
     denom = v0x * v1y - v1x * v0y;
 }
 

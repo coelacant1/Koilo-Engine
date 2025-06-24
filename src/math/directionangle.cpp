@@ -1,4 +1,4 @@
-#include "include/um3d/math/directionangle.hpp"
+#include "../../include/um3d/math/directionangle.hpp"
 
 // Constructor with individual components.
 DirectionAngle::DirectionAngle(float rotation, float x, float y, float z) 

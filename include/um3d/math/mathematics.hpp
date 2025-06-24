@@ -13,7 +13,7 @@
 
 #pragma once
 
-#include "../helpers/stringhelper.h"
+#include "../helpers/stringhelper.hpp"
 #include <cmath>
 #include <math.h>
 

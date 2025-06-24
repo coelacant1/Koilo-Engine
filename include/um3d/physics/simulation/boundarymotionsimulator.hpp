@@ -14,10 +14,10 @@
 
 #include "../../math/rotation.hpp"
 #include "../../math/vector3d.hpp"
-
 #include "../../math/rotation.hpp"
-#include "../../geometry/3d/boundarycube.hpp"
-#include "../../geometry/3d/boundarysphere.hpp"
+#include "../../scene/mesh.hpp"
+#include "../../geometry/3d/cube.hpp"
+#include "../../geometry/3d/sphere.hpp"
 
 /**
  * @class BoundaryMotionSimulator
@@ -25,8 +25,8 @@
  */
 class BoundaryMotionSimulator {
 private:
-    BoundaryCube* bC; ///< Pointer to the boundary cube.
-    BoundarySphere** bS; ///< Array of pointers to the boundary spheres.
+    Cube* bC; ///< Pointer to the boundary cube.
+    Sphere** bS; ///< Array of pointers to the boundary spheres.
     int sphereCount; ///< Number of boundary spheres.
     float elasticity = 0.8f; ///< Elasticity coefficient for collisions.
 
@@ -39,7 +39,7 @@ public:
      * @param radius Radius of the boundary spheres.
      * @param elasticity Elasticity coefficient for collisions.
      */
-    BoundaryMotionSimulator(Object3D** objects, int objectCount, BoundaryCube* bC, float radius, float elasticity);
+    BoundaryMotionSimulator(Mesh** objects, int objectCount, Cube* bC, float radius, float elasticity);
 
     /**
      * @brief Randomizes the velocities of all boundary spheres within a specified range.

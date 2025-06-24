@@ -1,4 +1,4 @@
-#include "include/um3d/physics/motion/dampedspring.hpp"
+#include "../../../include/um3d/physics/motion/dampedspring.hpp"
 
 DampedSpring::DampedSpring() :
     currentVelocity(0.001f),

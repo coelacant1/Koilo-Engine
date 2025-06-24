@@ -32,14 +32,14 @@ public:
      * @param size Dimensions of the shape.
      * @param rotation Rotation angle in degrees.
      */
-    Shape(Vector2D center, Vector2D size, float rotation);
+    Shape(Vector2D center, Vector2D size, float rotation = 0.0f);
 
     /**
      * @brief Constructs a Shape object with specified center, size, and rotation.
      * @param bounds Bounds of the shape.
      * @param rotation Rotation angle in degrees.
      */
-    Shape(Bounds bounds, float rotation);
+    Shape(Bounds bounds, float rotation = 0.0f);
 
     /**
      * @brief Sets the center of the shape.
@@ -113,7 +113,7 @@ public:
      * @param point The point to check.
      * @return True if the point is within the shape, otherwise false.
      */
-    virtual bool IsInShape(Vector2D point) const = 0;
+    virtual bool IsInShape(Vector2D point) = 0;
 
 protected:
     Bounds bounds;   ///< The bounds of the shape.

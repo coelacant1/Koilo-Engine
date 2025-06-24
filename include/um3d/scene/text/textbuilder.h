@@ -1,16 +1,17 @@
 #pragma once
 
-#include <Arduino.h>
-#include "Characters.h"
-#include "../../../Material.h"
-#include "../../../Static/SimpleMaterial.h"
-#include "../../../../../Utils/Math/Mathematics.h"
-#include "../../../../../Utils/Math/Rotation.h"
-#include "../../../../../Utils/Math/Vector2D.h"
-#include "../../../../../Utils/Math/Vector3D.h"
+#include <cstdint>
+
+#include "../../assets/font/characters.h"
+#include "../../render/material/material.h"
+#include "../../render/shader/simple.h"
+#include "../../math/mathematics.hpp"
+#include "../../math/rotation.hpp"
+#include "../../math/vector2d.hpp"
+#include "../../math/vector3d.hpp"
 
 template<uint8_t lineCount, uint8_t characterWidth>
-class TextEngine : public Material {
+class TextBuilder : public Material {
 private:
     SimpleMaterial baseMaterial = SimpleMaterial(RGBColor(255, 255, 255));
     Material* material = &baseMaterial;
@@ -25,9 +26,9 @@ private:
     bool isEfficient = false;
 
 public:
-    TextEngine(bool isEfficient = false);
+    TextBuilder(bool isEfficient = false);
 
-    TextEngine(Vector2D size, Vector2D position, uint16_t blinkTime, bool isEfficient = false);
+    TextBuilder(Vector2D size, Vector2D position, uint16_t blinkTime, bool isEfficient = false);
 
     void SetMaterial(Material* material);
 
@@ -41,11 +42,11 @@ public:
 
     void SetBlinkTime(uint16_t blinkTime);
 
-    void SetText(uint8_t line, String value, bool centerText = false);
+    void SetText(uint8_t line, string_t value, bool centerText = false);
 
     void ClearText();
 
     RGBColor GetRGB(const Vector3D& position, const Vector3D& normal, const Vector3D& uvw) override;
 };
 
-#include "TextEngine.tpp"
+#include "textbuilder.tpp"
