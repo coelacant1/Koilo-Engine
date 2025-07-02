@@ -151,7 +151,7 @@ void TestVector3D::TestIsEqual() {
 
 void TestVector3D::TestToString() {
     Vector3D v(1.0, 2.0, 3.0);
-    string_t str = v.ToString();
+    um3d::UString str = v.ToString();
     TEST_ASSERT_EQUAL_STRING("[1.000, 2.000, 3.000]", str.c_str());
 }
 
