@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.0.5] - 2025-07-09
+ 
+Building out and decoupling functionality
+ 
+### Added
+- Added interface layer for images/image sequences -> materials
+- Script for building header containing all headers for test builds
+- Script to compile each header individually as a an individual translation unit
+- Added CorrectPaths.py to validate include paths in header files
+- Added CI for running a smoke test on header compilation for all header files
+- Added inclomplete shader implementations
+ 
+### Changed
+- Renamed from um3d to uc3d for more generic end functionality
+
+### Next Tasks
+- Implement post effects/compositors
+- Implement rest of shaders/materials
+- Implement hasUV under rasterizer
+- Render core colorspace
+- Assets density field?
+- Write ray trace function
 
 ## [0.0.4] - 2025-07-02
  
@@ -13,26 +35,18 @@ Building out and decoupling functionality
 - Added interface layer for images/image sequences -> materials
  
 ### Changed
-- Migrated .h -> .hpp
-- Finalized shapes
-- Updated paths
-- Changed pipeline for rendering -> engine to renderer -> ray/rasterize
-- Removed virtual function from animated material to extend material more generically
-- Object3D -> Mesh (mesh deformers, etc)
-- Morph -> blendshape
-- MorphTransform -> blendshape controller
-- 
+- Implemented interface for materials + shaders (needs tweaked)
+- Restructed to App/Assets/Core/Systems
+- Added raster triangle for optimized layer ontop of the geometric triangle
+- Split effect from scene
 
 ### Next Tasks
-- Verify if GetMaterial under animated material needs to exist
-- Assets density field?
+- Implement post effects/compositors
+- Implement rest of shaders/materials
+- Implement hasUV under rasterizer
 - render core colorspace
-- render material shadermaterial
-- mesh align -> use triangle 3d for rasterizing?
-- material shaders
-- make ray trace function to replace rasterize
-- split effect from scene and add to compositor
-  - render post
+- Assets density field?
+- make ray trace function
 
 ## [0.0.3] - 2025-06-25
  

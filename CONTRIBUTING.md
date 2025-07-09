@@ -1,13 +1,13 @@
 # Contributing Guide
 
-Thank you for considering a contribution to **uMath3D**.
+Thank you for considering a contribution to **uCore3D**.
 This document explains the rules every pull-request must follow.
 
 ---
 
 ## 1. Project Scope
 
-uMath3D is a **header / source** c++17 library that targets
+uCore3D is a **header / source** c++17 library that targets
 
 * Arduino-class mcus (avr, cortex-m, esp32)
 * Bare-metal embedded c++
@@ -16,7 +16,7 @@ uMath3D is a **header / source** c++17 library that targets
 The codebase is split into clear layers:
 
 ```
-include/um3d/
+include/uc3d/
   assets/       immutable asset data
   geometry/     analytic shapes 2d / 3d
   ...

@@ -2,7 +2,7 @@
 
 ## Reporting a Vulnerability
 
-If you believe you’ve found a security issue in **uMath3D** that can affect any project using this library:
+If you believe you’ve found a security issue in **uCore3D** that can affect any project using this library:
 
 1. **Do not open a public issue or pull request.**
 2. Email the maintainers at **coelacannot@gmail.com** (or use GitHub’s *“Report a vulnerability”* button).

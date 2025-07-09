@@ -1,64 +1,47 @@
-# uMath3D - Mathematics Library for Embedded and Non-Embedded Devices
+# uCore3D - C++17 Math & Render Core for Microcontrollers **and** Desktops
 
-> **Work in progress** -- the structure may change without notice while working on the first major release.
+[![compilecheck](https://github.com/coelacant1/uCore3D/actions/workflows/ci.yml/badge.svg)](https://github.com/coelacant1/uCore3D/actions/workflows/ci.yml)
 
-This code is currently being migrated from ProtoTracer to act as a submodule and generalize the functionality for more use cases.
-- Project Goals:
-    - Have a generic C++ library that can be used as a backbone to speed up development on microcontrollers as well as desktop computers
-    - Re-integrate this functionality as a sub-module into ProtoTracer
-    - Create a desktop GUI application that can utilize and simulate the same functionality as the embedded pipeline. 
+`uCore3D` started as the math backbone of **ProtoTracer** - an embedded 3D rendering engine. It is now a stand-alone **header-first** library that runs on:
+* 32-bit Cortex-M / ESP32 boards (STM32, Teensy, ESP32-S3)
+* Linux / Windows / macOS desktops
+* 8-bit AVR boards (Arduino UNO, Nano)
 
----
+The same codebase powers hardware **and** a full-speed desktop simulator, so you prototype algorithms on the workstation and drop them onto a board unchanged.
 
-**uMath3D** is a C++17 library targeted for embedded microcontrollers that bundles mathematics, control, signals, and physics features:
-
-* vector, quaternion, matrix math, and rotation conversion
-* 2D / 3D / spatial geometry primitives
-* signal-processing helpers (FFT, Kalman, filters, noise)
-* lightweight physics utilities (springs, bounce, fluid-style vector fields)
-* time-step & PID control helpers
-* rendering with raytracing/rasterizing + post effects + shaders
-* scene creation with animations, mesh deformations, volumetric lighting
-* asset tools for custom fonts, images, meshes, and volumes
+> **Work in progress** -- the APIs and structure may change without notice while working on the first major release.
+>
+> This code is currently being migrated from ProtoTracer to act as a submodule and generalize the functionality for more use cases.
+> - **Project Goals**:
+>     - Have a generic C++ library that can be used as a backbone to speed up development on microcontrollers as well as desktop computers
+>     - Re-integrate this functionality as a sub-module into ProtoTracer
+>     - Create a desktop GUI application that can utilize and simulate the same functionality as the embedded pipeline. 
 
 ---
 
-## Directory layout
-
-```
-include/um3d/   <- public headers (header-only where possible)
-src/            <- .cpp for heavy implementations
-examples/       <- minimal buildable snippets
-test/           <- Unity unit tests
-docs/           <- auto-generated API docs with Doxygen (WIP)
-```
-
----
-
-## Quick start
-
-```bash
-# Fetch
-git clone https://github.com/coelacant1/uMath3D.git
-```
+## Features (2025-07 snapshot)
 
 > WIP
 
----
+| Domain                  | Capabilities (all header-first unless noted)                                                                                              |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| **Math (core)**         | Vec2/3, Mat3/4, quaternions, axis<->angle, Euler orders, transforms, projection helpers, interpolation                                      |
+| **Geometry (analytic)** | Circle, ellipse, rectangle, oriented triangle, sphere, cube, plane + SAT/AABB overlap tests                                               |
+| **Spatial**             | Fixed-capacity quadtree (header-only), easy swap-in for legacy API                                                                        |
+| **Signal / DSP**        | Radix-2 FFT, Kalman / running / peak / derivative filters, voice FFT detector, Simplex noise, function generator                          |
+| **Control & Timing**    | PID controller, damped spring, bounce physics, timestep helper, non-blocking Wait, easy-ease animator                                     |
+| **Physics systems**     | Boundary motion simulator, 2-D vector-field, generic physics simulator                                                                    |
+| **Rendering (core)**    | Camera hierarchy, pixel buffer, tile CPU rasteriser, WIP path/ray tracer                                                                  |
+| **Materials & Shaders** | Image / image-sequence, Phong, procedural-noise, combine masks, animated material graph; shader interface                                 |
+| **Post-processing**     | Fixed-array compositor + built-in effects (fisheye, radial/gaussian blur, glitch, phase offset, etc.)                                     |
+| **Scene graph**         | Entities, meshes, text builder, lights, animation tracks, timeline, volumetric light support                                              |
+| **Mesh deform**         | Blend-shape controller, mesh aligner, triangle-group deformers                                                                            |
+| **Assets / IO**         | Static & dynamic triangle groups, STL-style index groups, fonts, images, image sequences, voxel density fields                            |
+| **Platform utils**      | Cross-platform Console helper (Serial / std::cout), Random helper (Arduino `random()` <-> `rand()`), Cast helper, µString, time abstraction |
+| **Apps**                | Project wrapper + stub desktop GUI (simulation pipeline in progress)                                                                      |
+| **Portability focus**   | No STL in hot loops, raw arrays, compile-time capacities; builds on AVR, ESP32, RP2040, STM32, Linux/Win/macOS                            |
 
-## Current modules
-
-| Module                  | Highlights                                                                                 |
-| ----------------------- | ------------------------------------------------------------------------------------------ |
-| **math**                | vectors, quaternions, rotations, transforms                                                |
-| **geometry**            | circles, rectangles, planes, bounding volumes                                              |
-| **signal**              | FFT, Kalman / average / peak filters, function generator, Simplex noise                    |
-| **physics::motion**     | damped spring, bounce dynamics                                                             |
-| **physics::simulation** | vector‐field, boundary motion sim                                                          |
-| **control**             | classic PID controller                                                                     |
-| **time**                | fixed/variable timestep helper, micro-wait                                                 |
-
-> WIP
+*Everything above compiles with **-std=c++17** on MCU tool-chains and desktop GCC.*
 
 ---
 
@@ -67,19 +50,93 @@ git clone https://github.com/coelacant1/uMath3D.git
 * 4×4 matrix + projection utilities for graphics pipelines
 * Additional procedural noise
 * Doxygen-based website hosted on GitHub Pages
+* BVH builder + on-device path tracer (`ray/`)
+* More procedural noise
+* Binary asset packer + CLI viewer
 
 ---
 
-## Contributing
+## Directory layout
 
-Contributions are welcome! To contribute:
-1. Fork the repository on GitHub.
-2. Commit your changes with a descriptive message (git commit -m 'Add YourFeature').
-3. Push the branch (git push origin main).
-4. Submit a pull request on GitHub.
+```
+lib/uc3d/
+|-- app/                     top-level runtime & project wrapper
+|   |-- app.hpp
+|   |-- project/             project-file I/O
+|       |-- project.hpp
+|       |-- project.cpp
+|
+|-- assets/                  load-once, immutable data
+|   |-- font/                bitmap / vector font tables
+|   |-- image/               stills & sequences
+|   |-- model/               mesh + triangle-group containers
+|   |-- volume/              density / voxel fields
+|
+|-- core/                    reusable engine subsystems
+|   |-- color/               RGB565, gradients, color-space helpers
+|   |-- control/             PID, springs, bounce
+|   |-- geometry/            analytic shapes + spatial structures
+|   |   |-- 2d/              circle, ellipse, rectangle, triangle, overlap
+|   |   |-- 3d/              cube, sphere, plane, triangle
+|   |   |-- spatial/         quadtree, KD-tree (WIP)
+|   |-- math/                vectors, matrices, quaternions, transforms
+|   |-- platform/            cross-platform console, random, ustring, time
+|   |-- signal/              FFT & filter toolbox
+|   |-- time/                timestep + non-blocking wait
+|   |-- utils/               casthelper and misc header-only helpers
+|
+|-- systems/                 high-level engine systems
+|   |-- physics/             boundary / vector-field simulators
+|   |-- render/              full render stack
+|       |-- core/            camera, pixel buffer
+|       |-- engine/          renderer facade
+|       |-- material/        material graph + PBR, image, noise
+|       |-- post/            screen-space compositor & effects
+|       |-- raster/          CPU rasteriser helpers
+|       |-- ray/             path / ray tracer (WIP)
+|       |-- shader/          shader interfaces & prototypes
+|
+|-- scene/                   run-time scene
+    |-- entity.hpp
+    |-- mesh / text / lighting sub-modules
+    |-- animation/           keyframes, tracks, easy-ease animators
+    |-- deform/              blend-shapes, mesh alignment & deformation
+
+```
+
+---
+
+## Quick-start (desktop)
+
+```bash
+git clone https://github.com/CoelaCant/uCore3D.git
+cd uCore3D
+# compile
+# run test program for native
+````
+
+>WIP - no test programs yet
+
+---
+
+## Quick-start (embedded | PlatformIO)
+
+```bash
+# build and run unit tests for native
+pio test -e native
+
+# compile example for native
+pio run -e native
+```
+
+---
+
+## Contributing & security
+
+Please read **[CONTRIBUTING.md](CONTRIBUTING.md)** for style rules (lower-case file names, Upper CamelCase funcs, no STL on hot paths, etc).
 
 ---
 
 ## License
 
-uMath3D is licensed under the [AGPL-3.0](https://choosealicense.com/licenses/agpl-3.0/). This ensures modifications and contributions benefit the community. If you use or modify this software for a product, you must make the modified code publicly available as per the license.
+`uCore3D` is released under the [AGPL-3.0](https://choosealicense.com/licenses/agpl-3.0/). If you ship modified versions (embedded or desktop) you must publish the modified source, ensuring improvements stay in the commons.
