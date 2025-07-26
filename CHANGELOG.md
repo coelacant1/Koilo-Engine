@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.0.6] - 2025-07-26
+ 
+Building out and decoupling functionality
+ 
+### Added
+- Extended RGBColor functionality
+- Added Reflect function to Vector3D
+- Added Phong, ProceduralNoise, Gradient, Normal Materials/Shaders
+ 
+### Changed
+- Removed hardcoded prints and replaced with helper class calls
+- Fixed AnimationTrack/KeyFrameTrack
+- Fixed MaterialT errors
+- All headers compile except for final materials/shaders
+
+### Next Tasks
+- Implement post effects/compositors
+- Implement rest of shaders/materials
+- Import Phong information from Scene
+- Implement hasUV under rasterizer
+- Render core colorspace
+- Assets density field?
+- Write ray trace function
+- Finish FFT implementation
+
 ## [0.0.5] - 2025-07-09
  
 Building out and decoupling functionality

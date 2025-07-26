@@ -16,9 +16,9 @@ void Compositor<MaxEffects>::Clear(){
 }
 
 template <size_t MaxEffects>
-    void Process(IPixelGroup* pixelGroup)
-{
+void Compositor<MaxEffects>::Process(IPixelGroup* pixelGroup){
     for (size_t i = 0; i < count; ++i) {
-        list[i]->Apply(fb);
+        list[i]->Apply(pixelGroup);
     }
 }
+

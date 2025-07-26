@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../material/imaterial.hpp"
 #include "../shader/ishader.hpp"
 
 template<typename ParamBlock, typename ShaderT>

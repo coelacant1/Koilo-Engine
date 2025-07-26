@@ -14,6 +14,7 @@
 #include "filter/runningaveragefilter.hpp" // Include for smoothing peaks.
 #include "filter/peakdetection.hpp" // Include for peak detection in FFT data.
 #include "../math/vector2d.hpp" // Include for 2D vector utilities.
+#include "../platform/ustring.hpp"
 
 /**
  * @class Viseme
@@ -122,7 +123,7 @@ public:
     /**
      * @brief Prints the probabilities of all visemes to the serial console.
      */
-    void PrintVisemes();
+    uc3d::UString ToString();
 
     /**
      * @brief Resets all viseme probabilities to zero.

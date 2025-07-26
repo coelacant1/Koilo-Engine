@@ -7,6 +7,7 @@
  */
 #pragma once
 
+#include <cstddef>
 #include "effect.hpp"
 
 /**
@@ -33,7 +34,7 @@ public:
 
     /**
      * @brief Apply every effect to framebuffer in insertion order.
-     * @param fb target framebuffer
+     * @param pixelGroup target framebuffer
      */
     void Process(IPixelGroup* pixelGroup);
 

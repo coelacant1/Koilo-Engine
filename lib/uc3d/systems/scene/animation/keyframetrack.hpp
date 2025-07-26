@@ -11,8 +11,10 @@
 
 #pragma once
 
+#include <cstdint>
 #include "keyframe.hpp" // Include for keyframe data structure.
 #include "../../../core/math/mathematics.hpp" // Include for mathematical utilities.
+#include "../../../core/platform/time.hpp"
 
 /**
  * @class KeyFrameInterpolation

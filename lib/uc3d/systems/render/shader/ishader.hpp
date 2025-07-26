@@ -26,5 +26,5 @@ public:
      * @return      Linear‑space RGB colour.
      */
     virtual RGBColor Shade(const SurfaceProperties& surf,
-                           const IMaterial&         mat) const = 0;
+                           const IMaterial&         mat) = 0;
 };

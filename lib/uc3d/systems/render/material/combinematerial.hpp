@@ -11,7 +11,7 @@
 
 #pragma once
 
-#include "material.hpp"
+#include "imaterial.hpp"
 #include "../../../core/math/vector2d.hpp"
 #include "../../../core/math/vector3d.hpp"
 

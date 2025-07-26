@@ -97,4 +97,90 @@ public:
      * @return A string in the format "(R, G, B)".
      */
     uc3d::UString ToString();
+
+    /**
+     * @brief Adds another color to this one component-wise.
+     * @param other The RGBColor to add.
+     * @return A new RGBColor representing the sum, clamped to 255.
+     */
+    RGBColor operator+(const RGBColor& other) const;
+
+    /**
+     * @brief In-place addition of another color.
+     * @param other The RGBColor to add.
+     * @return A reference to this modified RGBColor.
+     */
+    RGBColor& operator+=(const RGBColor& other);
+
+    /**
+     * @brief Subtracts another color from this one component-wise.
+     * @param other The RGBColor to subtract.
+     * @return A new RGBColor representing the difference, clamped to 0.
+     */
+    RGBColor operator-(const RGBColor& other) const;
+
+    /**
+     * @brief In-place subtraction of another color.
+     * @param other The RGBColor to subtract.
+     * @return A reference to this modified RGBColor.
+     */
+    RGBColor& operator-=(const RGBColor& other);
+
+
+    /**
+     * @brief Scales the color by a float value (component-wise).
+     * @param scalar The scaling factor.
+     * @return A new, scaled RGBColor.
+     */
+    RGBColor operator*(const float& scalar) const;
+
+    /**
+     * @brief Modulates this color with another (component-wise multiplication).
+     * @param other The color to multiply with.
+     * @return A new, modulated RGBColor.
+     */
+    RGBColor operator*(const RGBColor& other) const;
+
+    /**
+     * @brief In-place scaling of the color by a float value.
+     * @param scalar The scaling factor.
+     * @return A reference to this modified RGBColor.
+     */
+    RGBColor& operator*=(const float& scalar);
+
+    /**
+     * @brief In-place modulation of this color with another.
+     * @param other The color to multiply with.
+     * @return A reference to this modified RGBColor.
+     */
+    RGBColor& operator*=(const RGBColor& other);
+
+    /**
+     * @brief Divides the color by a float value (component-wise).
+     * @param scalar The divisor.
+     * @return A new, scaled RGBColor.
+     */
+    RGBColor operator/(const float& scalar) const;
+
+    /**
+     * @brief Divides this color by another (un-modulates).
+     * @param other The RGBColor to divide by.
+     * @return A new RGBColor representing the result.
+     */
+    RGBColor operator/(const RGBColor& other) const;
+
+    /**
+     * @brief In-place division by a float value.
+     * @param scalar The divisor.
+     * @return A reference to this modified RGBColor.
+     */
+    RGBColor& operator/=(const float& scalar);
+
+    /**
+     * @brief In-place division by another color.
+     * @param other The RGBColor to divide by.
+     * @return A reference to this modified RGBColor.
+     */
+    RGBColor& operator/=(const RGBColor& other);
+
 };

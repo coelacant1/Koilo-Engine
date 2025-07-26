@@ -13,6 +13,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include "keyframetrack.hpp" // Include for KeyFrameTrack dependency.
 
 /**
@@ -84,7 +85,7 @@ public:
      *
      * This function outputs the current time of the track for debugging purposes.
      */
-    void PrintTime();
+    float GetTime();
 
     /**
      * @brief Resets the animation track to its initial state.

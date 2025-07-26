@@ -11,9 +11,10 @@ float FFTVoiceDetection<peakCount>::GetViseme(MouthShape viseme) {
 }
 
 template <size_t peakCount>
-void FFTVoiceDetection<peakCount>::PrintVisemes() {
+uc3d::UString FFTVoiceDetection<peakCount>::ToString() {
     float max = 0.0f;
     uint8_t ind = 10;
+    uc3d::UString str;
 
     for (uint8_t i = 0; i < visemeCount; i++) {
         if (max < *visRatios[i]) {
@@ -23,33 +24,33 @@ void FFTVoiceDetection<peakCount>::PrintVisemes() {
     }
 
     if (ind < 7) {
-        Serial.print(f1);
-        Serial.print(',');
-        Serial.print(f2);
-        Serial.print(',');
+        str += uc3d::UString(f1);
+        str += uc3d::UString(',');
+        str += uc3d::UString(f2);
+        str += uc3d::UString(',');
     }
 
     switch (ind) {
         case EE:
-            Serial.println("EE");
+            str += "EE";
             break;
         case AE:
-            Serial.println("AE");
+            str += "AE";
             break;
         case UH:
-            Serial.println("UH");
+            str += "UH";
             break;
         case AR:
-            Serial.println("AR");
+            str += "AR";
             break;
         case ER:
-            Serial.println("ER");
+            str += "ER";
             break;
         case AH:
-            Serial.println("AH");
+            str += "AH";
             break;
         case OO:
-            Serial.println("OO");
+            str += "OO";
             break;
         default:
             // Serial.println("?");

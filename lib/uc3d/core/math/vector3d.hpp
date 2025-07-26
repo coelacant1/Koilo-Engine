@@ -347,6 +347,14 @@ public:
     static float CalculateEuclideanDistance(const Vector3D& v1, const Vector3D& v2);
 
     /**
+     * @brief Calculates the ray bounce off surface.
+     * @param incident The first `Vector3D`.
+     * @param normal The second `Vector3D`.
+     * @return The reflection vector.
+     */
+    static Vector3D Reflect(const Vector3D& incident, const Vector3D& normal);
+
+    /**
      * @brief Checks if two `Vector3D`s are equal component-wise.
      * @param v1 The first `Vector3D`.
      * @param v2 The second `Vector3D`.

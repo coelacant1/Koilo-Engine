@@ -22,8 +22,8 @@ void AnimationTrack<maxParameters, maxKeyFrames>::RestartTime(){
 }
 
 template<size_t maxParameters, size_t maxKeyFrames>
-void AnimationTrack<maxParameters, maxKeyFrames>::PrintTime(){
-    Serial.println(track.GetCurrentTime());
+float AnimationTrack<maxParameters, maxKeyFrames>::GetTime(){
+    return track.GetCurrentTime();
 }
 
 template<size_t maxParameters, size_t maxKeyFrames>

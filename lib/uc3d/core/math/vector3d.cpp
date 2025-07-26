@@ -273,6 +273,12 @@ float Vector3D::CalculateEuclideanDistance(const Vector3D& v1, const Vector3D& v
     return offset.Magnitude();
 }
 
+Vector3D Vector3D::Reflect(const Vector3D& incident, const Vector3D& normal) {
+    float dot_product = Vector3D::DotProduct(incident, normal);
+    
+    return incident - (normal * (2.0f * dot_product));
+}
+
 bool Vector3D::IsEqual(const Vector3D& v1, const Vector3D& v2) {
     return (v1.X == v2.X) && (v1.Y == v2.Y) && (v1.Z == v2.Z);
 }

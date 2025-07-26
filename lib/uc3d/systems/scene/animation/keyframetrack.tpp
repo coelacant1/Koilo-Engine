@@ -17,14 +17,14 @@ KeyFrameTrack<maxParameters, maxKeyFrames>::KeyFrameTrack(float min, float max, 
 
 template<size_t maxParameters, size_t maxKeyFrames>
 float KeyFrameTrack<maxParameters, maxKeyFrames>::GetCurrentTime(){
-    currentTime = fmod(millis() / 1000.0f + timeOffset, stopFrameTime - startFrameTime) + startFrameTime;//normalize time and add offset
+    currentTime = fmod(uc3d::Time::Millis() / 1000.0f + timeOffset, stopFrameTime - startFrameTime) + startFrameTime;//normalize time and add offset
 
     return currentTime;
 }
 
 template<size_t maxParameters, size_t maxKeyFrames>
 void KeyFrameTrack<maxParameters, maxKeyFrames>::SetCurrentTime(float setTime){
-    float currentSecs = millis() / 1000.0f;
+    float currentSecs = uc3d::Time::Millis() / 1000.0f;
 
     //Test case: current time = 1.32s, set time = 1.09s, 1.59s
     timeOffset = setTime - currentSecs;//1.59 - 1.32 = 0.27, 1.09 - 1.32 = -0.23
@@ -94,7 +94,7 @@ float KeyFrameTrack<maxParameters, maxKeyFrames>::Update(){
 
     GetCurrentTime();
 
-    byte previousFrame = 0, nextFrame = 0;
+    uint8_t previousFrame = 0, nextFrame = 0;
 
     //find current time, find keyframe before and after
     if(currentFrames > 0 && isActive){

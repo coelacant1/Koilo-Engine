@@ -1,22 +1,17 @@
 #pragma once
 
+#include "normalparams.hpp"
 #include "../../material/imaterial.hpp"
 #include "../../material/materialt.hpp"
 #include "../../../../core/math/vector3d.hpp"
 #include "../../../../core/color/rgbcolor.hpp"
 
-// Parameter block  ------------------------------------------------------------
-struct NormalShaderParams {
-    // Empty struct
-};
-
-// Shader  ---------------------------------------------------------------------
 class NormalShader final : public IShader {
 public:
     RGBColor Shade(const SurfaceProperties& sp,
-                   const IMaterial&         m) const override {
+                   const IMaterial&         m) override {
         // Compile-time-safe down-cast
-        using NoiseMat = MaterialT<NormalShaderParams, 
+        using NoiseMat = MaterialT<NormalParams, 
                                    NormalShader>;
 
         const auto& mat = m.As<NoiseMat>();
