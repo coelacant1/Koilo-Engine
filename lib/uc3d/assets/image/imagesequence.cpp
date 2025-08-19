@@ -1,4 +1,12 @@
+// imagesequence.cpp
 #include "imagesequence.hpp"
+
+/**
+ * @file imagesequence.cpp
+ * @brief Implementation of ImageSequence playback and sampling.
+ * @date 8/18/2025
+ * @author Coela Can't
+ */
 
 ImageSequence::ImageSequence(Image* image, const uint8_t** data, unsigned int imageCount, float fps) {
     this->startTime = uc3d::Time::Millis();
@@ -26,14 +34,14 @@ void ImageSequence::SetRotation(float angle) {
 }
 
 void ImageSequence::Reset() {
+    currentFrame = 0;
     startTime = uc3d::Time::Millis();
 }
 
 void ImageSequence::Update() {
-    float currentTime = fmod((uc3d::Time::Millis() - startTime) / 1000.0f, frameTime) / frameTime; // Normalize time to ratio
-
+    // Normalize time [0,1) over full sequence duration, then map to [0, imageCount-1]
+    float currentTime = fmod((uc3d::Time::Millis() - startTime) / 1000.0f, frameTime) / frameTime;
     currentFrame = (unsigned int)Mathematics::Map(currentTime, 0.0f, 1.0f, 0.0f, float(imageCount - 1));
-
     image->SetData(data[currentFrame]);
 }
 

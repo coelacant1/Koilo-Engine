@@ -1,14 +1,19 @@
+// ustring.cpp
 #include "ustring.hpp"
 
 #if defined(ARDUINO)
-#include <Arduino.h>
+  #include <Arduino.h>
 #else
-#include <string>
-#include <utility> // For std::move
+  #include <string>
+  #include <utility>   // std::move
+  #include <sstream>   // std::ostringstream
+  #include <iomanip>   // std::fixed, std::setprecision
 #endif
 
-// Define the actual implementation structure inside the .cpp file.
-struct uc3d::UString::PImpl {
+namespace uc3d {
+
+// Implementation container (Arduino String or std::string).
+struct UString::PImpl {
 #if defined(ARDUINO)
     String internal_string;
 #else
@@ -16,20 +21,14 @@ struct uc3d::UString::PImpl {
 #endif
 };
 
-namespace uc3d {
-
 UString::UString() : pimpl(new PImpl()) {}
 
 UString::UString(const char* c_str) : pimpl(new PImpl()) {
-    if (c_str) {
-        pimpl->internal_string = c_str;
-    }
+    if (c_str) pimpl->internal_string = c_str;
 }
 
 UString::UString(const UString& other) : pimpl(new PImpl()) {
-    if (other.pimpl) { // Guard against copying from a moved-from object
-        pimpl->internal_string = other.pimpl->internal_string;
-    }
+    if (other.pimpl) pimpl->internal_string = other.pimpl->internal_string;
 }
 
 UString::UString(UString&& other) noexcept : pimpl(other.pimpl) {
@@ -41,12 +40,10 @@ UString::~UString() {
 }
 
 UString UString::FromFloat(float value, int precision) {
-    UString result; // Create a new UString
+    UString result;
 #if defined(ARDUINO)
-    // Arduino's String class has a convenient constructor for this
     result.pimpl->internal_string = String(value, precision);
 #else
-    // Native C++ uses a string stream for formatted output
     std::ostringstream ss;
     ss << std::fixed << std::setprecision(precision) << value;
     result.pimpl->internal_string = ss.str();
@@ -56,11 +53,8 @@ UString UString::FromFloat(float value, int precision) {
 
 UString& UString::operator=(const UString& other) {
     if (this != &other) {
-        if (other.pimpl) {
-            pimpl->internal_string = other.pimpl->internal_string;
-        } else {
-            pimpl->internal_string = "";
-        }
+        if (other.pimpl) pimpl->internal_string = other.pimpl->internal_string;
+        else pimpl->internal_string = "";
     }
     return *this;
 }
@@ -75,11 +69,7 @@ UString& UString::operator=(UString&& other) noexcept {
 }
 
 UString& UString::operator=(const char* c_str) {
-    if (c_str) {
-        pimpl->internal_string = c_str;
-    } else {
-        pimpl->internal_string = "";
-    }
+    pimpl->internal_string = c_str ? c_str : "";
     return *this;
 }
 
@@ -111,7 +101,7 @@ void UString::Append(const UString& other) {
 #endif
 }
 
-size_t UString::Length() const {
+uint8_t UString::Length() const {
     return pimpl ? pimpl->internal_string.length() : 0;
 }
 
@@ -130,16 +120,14 @@ void UString::Clear() {
 
 const char* UString::CStr() const {
     if (!pimpl) return "";
-#if defined(ARDUINO)
     return pimpl->internal_string.c_str();
-#else
-    return pimpl->internal_string.c_str();
-#endif
 }
 
+// --- Non-member operators ---
+
 UString operator+(const UString& lhs, const UString& rhs) {
-    UString result(lhs); // Start with the left-hand side
-    result.Append(rhs);  // Append the right-hand side
+    UString result(lhs);
+    result.Append(rhs);
     return result;
 }
 
@@ -149,10 +137,9 @@ UString operator+(const UString& lhs, const char* rhs) {
     return result;
 }
 
-// This is the specific overload that fixes your problem.
 UString operator+(const char* lhs, const UString& rhs) {
-    UString result(lhs); // Create a new UString from the C-style string
-    result.Append(rhs);  // Append the UString to it
+    UString result(lhs);
+    result.Append(rhs);
     return result;
 }
 

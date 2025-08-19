@@ -1,51 +1,45 @@
-/**
- * @file Effect.h
- * @brief Defines the base `Effect` class for applying transformations or effects to pixel groups.
- *
- * The `Effect` class serves as an abstract base for implementing various visual effects
- * on pixel groups, leveraging mathematical transformations and ratios for dynamic adjustments.
- *
- * @date 22/12/2024
- * @version 1.0
- * @author Coela Can't
- */
-
 #pragma once
 
 #include "../core/ipixelgroup.hpp"
 #include "../../../core/math/mathematics.hpp"
 
 /**
- * @class Effect
- * @brief Abstract base class for applying visual effects to pixel groups.
+ * @file effect.hpp
+ * @brief Base post-process effect that operates on a camera's IPixelGroup.
  *
- * The `Effect` class provides a framework for applying transformations or effects
- * to `IPixelGroup` objects. Subclasses should implement the `ApplyEffect` method
- * to define specific effect behavior.
+ * Typical call order per frame: @ref SetRatio -> @ref Apply.
+ * The ratio is a normalized control value in [0,1] that implementations may
+ * interpret as time, intensity, or blend factor.
+ */
+
+/**
+ * @class Effect
+ * @brief Abstract base class for post-processing effects on an IPixelGroup.
+ *
+ * Derived effects modify the pixel group's current color buffer in place.
+ * Implementations should read from @c IPixelGroup::GetColors() and can use
+ * @c IPixelGroup::GetColorBuffer() as temporary scratch storage.
  */
 class Effect {
 protected:
-    float ratio = 0.0f; ///< A scaling ratio used for dynamic effect adjustments.
+    float ratio = 0.0f;   ///< Normalized control value in [0,1].
 
 public:
-    /**
-     * @brief Sets the scaling ratio for the effect.
-     *
-     * The ratio is typically used for time-based or intensity-based transformations.
-     *
-     * @param ratio The scaling ratio to be applied.
-     */
-    void SetRatio(float ratio){
-        this->ratio = ratio;
-    }
+    /** @brief Virtual destructor. */
+    virtual ~Effect() = default;
 
     /**
-     * @brief Pure virtual method for applying the effect to a pixel group.
-     *
-     * Subclasses must override this method to implement the effect's behavior.
-     *
-     * @param pixelGroup Pointer to the `IPixelGroup` to which the effect will be applied.
+     * @brief Set the effect's normalized control ratio.
+     * @param r Value in [0,1] (interpretation is effect-specific).
      */
-    virtual void ApplyEffect(IPixelGroup* pixelGroup) = 0;
+    void SetRatio(float r);
+
+    /**
+     * @brief Apply the effect in-place to the pixel group's current color buffer.
+     * @param pixelGroup Target pixel group; must remain valid for the duration of the call.
+     *
+     * Implementations should treat @c GetColors() as the source buffer and may use
+     * @c GetColorBuffer() as a temporary scratch buffer when needed.
+     */
+    virtual void Apply(IPixelGroup* pixelGroup) = 0;
 };
-

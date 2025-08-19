@@ -18,7 +18,7 @@ SimplexNoise::SimplexNoise(int seed) {
 }
 
 // 2D simplex noise
-float SimplexNoise::Noise(float xin, float yin) {
+float SimplexNoise::Noise(float xin, float yin) const {
     float n0, n1, n2; // Noise contributions from the three corners
     
     // Skew the input space to determine which simplex cell we're in
@@ -77,7 +77,7 @@ float SimplexNoise::Noise(float xin, float yin) {
 }
 
 // 3D simplex noise
-float SimplexNoise::Noise(float xin, float yin, float zin) {
+float SimplexNoise::Noise(float xin, float yin, float zin) const {
     float n0, n1, n2, n3; // Noise contributions from the four corners
     
     // Skew the input space to determine which simplex cell we're in
@@ -174,8 +174,8 @@ void SimplexNoise::SetZPosition(float zPosition){
     this->zPosition = zPosition;
 }
 
-float SimplexNoise::GetNoise(Vector3D position){
-    Vector3D positionL = positionL * noiseScale;
+float SimplexNoise::GetNoise(Vector3D position) const {
+    Vector3D positionL = position * noiseScale;
 
     return Noise(positionL.X, positionL.Y, zPosition);
 }

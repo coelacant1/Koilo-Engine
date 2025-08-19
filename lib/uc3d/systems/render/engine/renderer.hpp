@@ -1,5 +1,5 @@
 /**
- * @file Engine.h
+ * @file renderer.hpp
  * @brief Declares the RenderingEngine class for rendering and display operations.
  *
  * This file defines the RenderingEngine class, which provides static methods

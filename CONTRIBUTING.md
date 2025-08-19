@@ -36,7 +36,7 @@ Patches should fit that layering; avoid creating cross-dependencies.
 1. **Fork & Clone**
 
 ```bash
-git clone https://github.com/<your-account>/umath3d.git
+git clone https://github.com/<your-account>/ucore3d.git
 ```
 
 2. **Create a Branch**

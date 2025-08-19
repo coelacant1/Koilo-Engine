@@ -1,83 +1,84 @@
+// indexgroup.hpp
 /**
  * @file IndexGroup.h
- * @brief Defines the IndexGroup class for handling a group of three unsigned integer indices.
+ * @brief Compact triple of indices (A,B,C) representing a triangle (e.g., OBJ/STL face).
  *
- * The IndexGroup class provides functionality to manage and perform arithmetic operations
- * on groups of three indices, such as addition, subtraction, multiplication, and division.
- * It is useful for managing vertex or element indices in various computational contexts.
+ * Provides small, component-wise arithmetic helpers for index math (add/sub/mul/div) and a
+ * string formatter. Designed to be a minimal container for triangle index triplets pointing
+ * into an external vertex buffer.
  *
  * @date 22/12/2024
  * @version 1.0
  * @author Coela Can't
  */
-
 #pragma once
 
 #include <stdint.h>
-#include "../../core/platform/ustring.hpp"
-#include "../../core/utils/casthelper.hpp"
-#include "../../core/math/mathematics.hpp"
+#include "../../core/utils/casthelper.hpp"   // CastHelper::ToU16
+#include "../../core/math/mathematics.hpp"  // Mathematics::DoubleToCleanString
+#include "../../core/platform/ustring.hpp"  // uc3d::UString
 
 /**
  * @class IndexGroup
- * @brief Represents a group of three unsigned integer indices.
+ * @brief Holds three unsigned 16-bit indices for a triangle (A,B,C).
+ *
+ * This is intentionally lightweight and POD-like. Arithmetic methods operate component-wise
+ * and return a newly constructed IndexGroup. No bounds checking or overflow protection is
+ * performed beyond narrowing via CastHelper::ToU16.
  */
 class IndexGroup {
 public:
-    uint16_t A; ///< First index in the group.
-    uint16_t B; ///< Second index in the group.
-    uint16_t C; ///< Third index in the group.
+    uint16_t A; ///< First index of the triangle.
+    uint16_t B; ///< Second index of the triangle.
+    uint16_t C; ///< Third index of the triangle.
 
-    /**
-     * @brief Default constructor.
-     */
+    /** @brief Default-constructs (0,0,0). */
     IndexGroup();
 
-    /**
-     * @brief Copy constructor.
-     * @param indexGroup The IndexGroup to copy from.
-     */
+    /** @brief Copy-constructs from another IndexGroup. */
     IndexGroup(const IndexGroup& indexGroup);
 
     /**
-     * @brief Parameterized constructor.
-     * @param X Value for the first index.
-     * @param Y Value for the second index.
-     * @param Z Value for the third index.
+     * @brief Construct from three indices.
+     * @param A First index (A).
+     * @param B Second index (B).
+     * @param C Third index (C).
      */
-    IndexGroup(uint16_t X, uint16_t Y, uint16_t Z);
+    IndexGroup(uint16_t A, uint16_t B, uint16_t C);
 
     /**
-     * @brief Adds two IndexGroup objects component-wise.
-     * @param indexGroup The IndexGroup to add.
-     * @return A new IndexGroup with the result of the addition.
+     * @brief Adds two IndexGroups component-wise.
+     * @param indexGroup Right-hand operand.
+     * @return New IndexGroup {A+rhs.A, B+rhs.B, C+rhs.C} narrowed via ToU16.
      */
     IndexGroup Add(IndexGroup indexGroup);
 
     /**
-     * @brief Subtracts two IndexGroup objects component-wise.
-     * @param indexGroup The IndexGroup to subtract.
-     * @return A new IndexGroup with the result of the subtraction.
+     * @brief Subtracts two IndexGroups component-wise.
+     * @param indexGroup Right-hand operand.
+     * @return New IndexGroup {A-rhs.A, B-rhs.B, C-rhs.C} narrowed via ToU16.
+     * @note No underflow checks; integer wrap may occur.
      */
     IndexGroup Subtract(IndexGroup indexGroup);
 
     /**
-     * @brief Multiplies two IndexGroup objects component-wise.
-     * @param indexGroup The IndexGroup to multiply.
-     * @return A new IndexGroup with the result of the multiplication.
+     * @brief Multiplies two IndexGroups component-wise.
+     * @param indexGroup Right-hand operand.
+     * @return New IndexGroup {A*rhs.A, B*rhs.B, C*rhs.C} narrowed via ToU16.
      */
     IndexGroup Multiply(IndexGroup indexGroup);
 
     /**
-     * @brief Divides two IndexGroup objects component-wise.
-     * @param indexGroup The IndexGroup to divide.
-     * @return A new IndexGroup with the result of the division.
+     * @brief Divides two IndexGroups component-wise.
+     * @param indexGroup Right-hand operand.
+     * @return New IndexGroup {A/rhs.A, B/rhs.B, C/rhs.C} narrowed via ToU16.
+     * @warning No divide-by-zero checks; caller must ensure rhs components are non-zero.
      */
     IndexGroup Divide(IndexGroup indexGroup);
 
     /**
-     * @brief Converts the IndexGroup to a string representation.
-     * @return A string representation of the IndexGroup in the format "[A, B, C]".
+     * @brief Convert to a human-readable string.
+     * @return UString formatted as "[A, B, C]".
      */
     uc3d::UString ToString();
 };

@@ -91,7 +91,7 @@ public:
      * @param yin Y-coordinate.
      * @return The noise value at the given coordinates.
      */
-    float Noise(float xin, float yin);
+    float Noise(float xin, float yin) const;
 
     /**
      * @brief Generates 3D Simplex Noise.
@@ -101,7 +101,7 @@ public:
      * @param zin Z-coordinate.
      * @return The noise value at the given coordinates.
      */
-    float Noise(float xin, float yin, float zin);
+    float Noise(float xin, float yin, float zin) const;
 
     /**
      * @brief Sets the scale for noise generation.
@@ -123,5 +123,5 @@ public:
      * @param position 3D position in the scene.
      * @return Returns the noise value at the position.
      */
-    float GetNoise(Vector3D position);
+    float GetNoise(Vector3D position) const;
 };

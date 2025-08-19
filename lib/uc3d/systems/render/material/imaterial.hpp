@@ -1,32 +1,44 @@
-/**
- * @file Material.h
- * @brief Base class for materials defining shading and rendering behavior.
- *
- * The `Material` class serves as an interface for materials that calculate
- * color based on various blending methods and surface parameters.
- *
- * @date 22/12/2024
- * @version 1.1
- * @author Coela Can't
- */
-
 #pragma once
 
+#include <type_traits>
 #include "../shader/ishader.hpp"
 
+/**
+ * @file imaterial.hpp
+ * @brief Base interface for materials bound to a shader.
+ *
+ * IMaterial represents a render material that references an associated @ref IShader.
+ * It provides an optional per-frame update hook and a typed-cast helper for concrete materials.
+ */
 class IMaterial {
 public:
+    /**
+     * @brief Construct with an associated shader (non-owning).
+     * @param ShaderPtr Pointer to the shader used by this material; must outlive the material.
+     */
     explicit IMaterial(const IShader* ShaderPtr) : ShaderPtr_(ShaderPtr) {}
+
+    /** @brief Virtual destructor. */
     virtual ~IMaterial() = default;
 
-    /** Return associated shader */
+    /**
+     * @brief Get the associated shader.
+     * @return Non-owning pointer to the shader.
+     */
     const IShader* GetShader() const { return ShaderPtr_; }
 
-    /** Per‑frame update hook (override if animated) */
+    /**
+     * @brief Per-frame update hook (override in animated/time-varying materials).
+     * @param DeltaTime Time step in seconds since last update.
+     */
     virtual void Update(float /*DeltaTime*/) {}
 
     /**
-     * @brief Typed access helper with UpperCamelCase name.
+     * @brief Typed access helper using an UpperCamelCase name.
+     * @tparam T Concrete material type deriving from IMaterial.
+     * @return Reference to *this* as T.
+     * @note Uses `static_assert` to enforce `T` derives from `IMaterial`.
+     *       Behavior is `static_cast` (no RTTI); ensure the dynamic type matches `T`.
      */
     template<typename T>
     const T& As() const noexcept {
@@ -35,5 +47,5 @@ public:
     }
 
 private:
-    const IShader* ShaderPtr_;  ///< non‑owning
+    const IShader* ShaderPtr_;  ///< Non-owning shader pointer; lifetime managed externally.
 };

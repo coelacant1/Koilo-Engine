@@ -56,6 +56,8 @@ uc3d::UString FFTVoiceDetection<peakCount>::ToString() {
             // Serial.println("?");
             break;
     }
+
+    return str;
 }
 
 template <size_t peakCount>

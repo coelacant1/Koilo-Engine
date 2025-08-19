@@ -4,6 +4,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.0.7] - 2025-08-18
+ 
+Implementing frontend shared memory and virtual controller
+ 
+### Added
+- Added numerous shaders and materials
+- Added virtual controller
+- Added shm ipc for frontend
+- Added basic project for testing shm virtual controller
+- Began converting post effects/compositor
+ 
+### Changed
+- Fixed ishader/imaterial implementation
+- Fixed post processor/effect
+- Fixed commenting
+- Removed unnecessary files
+
+### Next Tasks
+- Import Phong information from Scene
+- Implement hasUV under rasterizer
+- Render core colorspace
+- Assets density field?
+- Write ray trace function
+- Finish FFT implementation
+- Extend print options in console
+- Implement timeline
+- Implement animator
+- Implement entity
+
 ## [0.0.6] - 2025-07-26
  
 Building out and decoupling functionality

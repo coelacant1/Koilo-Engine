@@ -1,5 +1,3 @@
-//#include <Arduino.h>
-
 #include "../lib/uc3d/core/math/vector3d.hpp" 
 
 void setup() {

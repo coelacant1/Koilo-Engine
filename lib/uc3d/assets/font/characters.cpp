@@ -1,5 +1,18 @@
+// characters.cpp
 #include "characters.hpp"
 
+/** 
+ * @file characters.cpp
+ * @brief Bitmap data and lookup implementation for 8x8 character glyphs.
+ * @date 8/18/2025
+ * @author Coela Can't
+ *
+ * Each glyph is an array of 8 bytes. Bit 7 (MSB) is the left-most pixel. Rows are ordered
+ * top-to-bottom. These tables are intended for low-level raster displays (LED matrices, etc.).
+ */
+/**
+ * @copydoc Characters::GetCharacter(char)
+ */
 const uint8_t* Characters::GetCharacter(char character){
     switch (character){
         case ':': return COLON; break;

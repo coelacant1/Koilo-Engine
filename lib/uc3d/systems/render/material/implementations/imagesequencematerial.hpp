@@ -1,0 +1,56 @@
+#pragma once
+
+// Base interfaces
+#include "../imaterial.hpp"
+#include "../materialt.hpp"
+#include "../../shader/ishader.hpp"
+
+// Sequence-specific params & shader
+#include "../../shader/implementations/imagesequenceparams.hpp"
+#include "../../shader/implementations/imagesequenceshader.hpp"
+
+// Concrete base (template pairing)
+using ImageSequenceMaterialBase = MaterialT<ImageSequenceParams, ImageSequenceShader>;
+
+/**
+ * @file imagesequencematerial.hpp
+ * @brief Material wrapper over ImageSequenceParams/ImageSequenceShader with sequence, hue, and UV controls.
+ */
+
+/**
+ * @class ImageSequenceMaterial
+ * @brief Wrapper material that binds an ImageSequence and provides simple update and configuration hooks.
+ */
+class ImageSequenceMaterial : public ImageSequenceMaterialBase {
+public:
+    using ImageSequenceMaterialBase::ImageSequenceMaterialBase;
+
+    /**
+     * @brief Construct and bind an image sequence.
+     * @param seq Pointer to ImageSequence (non-owning).
+     */
+    explicit ImageSequenceMaterial(ImageSequence* seq) {
+        this->sequence = seq;   // from ImageSequenceParams (inherited)
+        this->hueAngle = 0.0f;
+        this->useUV    = true;
+    }
+
+    /** @brief Set hue rotation in degrees. */
+    void SetHueAngle(float degrees) { this->hueAngle = degrees; }
+
+    /** @brief Enable or disable UV sampling. */
+    void UseUV(bool enabled)        { this->useUV = enabled;    }
+
+    /** @brief Replace the bound sequence pointer (non-owning). */
+    void SetSequence(ImageSequence* seq) { this->sequence = seq; }
+
+    /**
+     * @brief Per-frame update hook.
+     * @param dt Time delta in seconds (unused here).
+     *
+     * Calls the bound sequence’s Update() to advance frames.
+     */
+    void Update(float /*dt*/) override {
+        if (this->sequence) this->sequence->Update();
+    }
+};

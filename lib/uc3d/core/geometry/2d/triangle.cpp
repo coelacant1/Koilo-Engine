@@ -1,16 +1,15 @@
 #include "triangle.hpp"
 
-Triangle2D::Triangle2D() : p1(), p2(), p3(), Shape(Vector2D(), Vector2D()) {}
+Triangle2D::Triangle2D() : Shape(Vector2D(), Vector2D()), p1(), p2(), p3() {}
 
 Triangle2D::Triangle2D(const Vector2D& p1In,
                        const Vector2D& p2In,
                        const Vector2D& p3In)
-    : p1(p1In), p2(p2In), p3(p3In), 
-    Shape(
-        Vector2D((p1.X + p2.X + p3.X) / 3.0f, (p1.Y + p2.Y + p3.Y) / 3.0f), 
-        Vector2D(Mathematics::Max(p1.X, p2.X, p3.X) - Mathematics::Min(p1.X, p2.X, p3.X), 
-                 Mathematics::Max(p1.Y, p2.Y, p3.Y) - Mathematics::Min(p1.Y, p2.Y, p3.Y) )
-    ) {}
+    : Shape(
+        Vector2D(Mathematics::Max(p1In.X, p2In.X, p3In.X) - Mathematics::Min(p1In.X, p2In.X, p3In.X), 
+                 Mathematics::Max(p1In.Y, p2In.Y, p3In.Y) - Mathematics::Min(p1In.Y, p2In.Y, p3In.Y) ),
+        Vector2D((p1In.X + p2In.X + p3In.X) / 3.0f, (p1In.Y + p2In.Y + p3In.Y) / 3.0f)
+    ), p1(p1In), p2(p2In), p3(p3In) {}
 
 float Triangle2D::GetArea() const {
     return 0.5f * ((p2.X - p1.X) * (p3.Y - p1.Y) -

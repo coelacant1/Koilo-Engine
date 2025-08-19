@@ -1,46 +1,67 @@
-/**
- * @file compositor.hpp
- * @brief Fixed-capacity screen-space effect chain.
- *
- * @date  18/06/2025
- * @author Coela Can't
- */
 #pragma once
 
-#include <cstddef>
+#include <cstdint>          // uint8_t
 #include "effect.hpp"
+#include "../core/ipixelgroup.hpp"
+
+/**
+ * @file compositor.hpp
+ * @brief Fixed-capacity post-processing chain with enable toggles (no dynamic allocation).
+ *
+ * Holds up to @p MaxEffects effect pointers and applies them in insertion order to an
+ * @ref IPixelGroup target. Storage is a static array; no std::vector or heap growth.
+ *
+ * @tparam MaxEffects Compile-time maximum number of effects (e.g., 8, 16).
+ */
 
 /**
  * @class Compositor
- * @brief Holds up to `MaxEffects` post-effects and runs them in order each frame.
- * @tparam Max maximum number of effects accepted at run-time.
+ * @brief Fixed-capacity effect chain for IPixelGroup processing.
  *
+ * The chain stores non-owning pointers to @ref Effect instances. Each effect can be
+ * individually enabled/disabled. Effects are applied in the order they were added.
  */
-template <size_t MaxEffects>
+template <uint8_t MaxEffects>
 class Compositor {
+private:
+    Effect* effects[MaxEffects];  ///< Non-owning effect pointers in insertion order
+    bool    enabled[MaxEffects];  ///< Per-effect enable flags
+    uint8_t count = 0;            ///< Number of effects currently in the chain
+
 public:
-    /** @brief Default constructor (empty stack). */
+    /** @brief Construct an empty chain (all slots unset/disabled). */
     Compositor();
 
     /**
-     * @brief Add effect pointer to stack.
-     * @param fx pointer to Effect (must stay valid for lifetime of compositor)
-     * @return true if added, false if stack already full
+     * @brief Append an effect to the chain.
+     * @param fx     Effect pointer (non-owning).
+     * @param enable Initial enabled state (default true).
+     * @return true if appended; false if capacity is full or @p fx is null.
      */
-    bool Add(Effect* fx);
+    bool AddEffect(Effect* fx, bool enable = true);
 
-    /** @brief Remove all effects from stack. */
+    /**
+     * @brief Enable or disable an effect by index.
+     * @param index Chain index in [0, GetCount()).
+     * @param state New enabled state.
+     */
+    void SetEnabled(uint8_t index, bool state);
+
+    /**
+     * @brief Remove all effects from the chain.
+     * @note Pointers are not deleted; this class does not take ownership.
+     */
     void Clear();
 
     /**
-     * @brief Apply every effect to framebuffer in insertion order.
-     * @param pixelGroup target framebuffer
+     * @brief Apply all enabled effects in order to the target pixel group.
+     * @param pixelGroup Target to process (must be valid for all effects used).
      */
-    void Process(IPixelGroup* pixelGroup);
+    void Apply(IPixelGroup* pixelGroup);
 
-private:
-    Effect* list[MaxEffects];   ///< static pointer array
-    unsigned char  count;       ///< current number of effects
+    /** @brief Current number of effects in the chain. */
+    uint8_t GetCount() const { return count; }
 };
 
+// Template implementation
 #include "compositor.tpp"

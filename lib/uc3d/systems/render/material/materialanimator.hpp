@@ -1,94 +1,131 @@
-/**
- * @file MaterialAnimator.h
- * @brief Provides functionality for animating transitions and blends between materials.
- *
- * This file defines the `MaterialAnimator` class, which enables dynamic material animations
- * by combining multiple materials and blending them with animated opacities.
- *
- * @date 22/12/2024
- * @author Coela Can't
- */
-
+// materialanimator.hpp
 #pragma once
 
-#include "../../scene/animation/easyeaseanimator.h"
-#include "combinematerial.hpp"
-#include "material.hpp"
+#include <cstdint>
+#include "../material/imaterial.hpp"
+#include "../material/materialt.hpp"
+#include "../material/implementations/combinematerial.hpp"
+#include "../../scene/animation/easyeaseanimator.hpp"
+#include "../../../core/math/vector3d.hpp"
+#include "../../../core/color/rgbcolor.hpp"
 
 /**
- * @class MaterialAnimator
- * @brief Animates transitions and blends between multiple materials.
+ * @file materialanimator.hpp
+ * @brief Animated opacity blender: drives a CombineMaterial via per-layer curves.
  *
- * The `MaterialAnimator` class uses an `EasyEaseAnimator` for smooth transitions
- * between materials, allowing dynamic blending and effects in rendering systems.
- *
- * @tparam materialCount The maximum number of materials to animate.
+ * The @c MaterialAnimator holds up to @p materialCount layers and animates each layer’s opacity
+ * with an @c EasyEaseAnimator track. Shading is delegated to an internal
+ * @c CombineMaterial<materialCount>, and the shader wrapper @c MaterialAnimatorShader forwards
+ * to the combiner’s shader.
  */
-template<size_t materialCount>
-class MaterialAnimator : public Material {
-private:
-    EasyEaseAnimator<materialCount> eEA = EasyEaseAnimator<materialCount>(IEasyEaseAnimator::Cosine); ///< Animator for easing transitions.
-    CombineMaterial<materialCount> combineMaterial; ///< Combines multiple materials for rendering.
-    float materialRatios[materialCount]; ///< Stores the opacity ratios for each material.
-    Material* dictionary[materialCount]; ///< Holds the materials in the animator.
-    uint8_t currentMaterials = 0; ///< Tracks the number of materials added.
-    bool baseMaterialSet = false; ///< Indicates if the base material is set.
 
+/**
+ * @tparam N Layer count (must match owning MaterialAnimator’s materialCount).
+ * @brief Shader that forwards to the internal CombineMaterial of a MaterialAnimator.
+ */
+template<std::size_t N>
+class MaterialAnimatorShader final : public IShader {
 public:
     /**
-     * @brief Default constructor for `MaterialAnimator`.
+     * @brief Shade by deferring to the MaterialAnimator’s internal CombineMaterial.
+     * @param sp Surface properties from the renderer.
+     * @param m  Material bound at the call site (expected to be MaterialAnimator<N>).
+     * @return Result of the combiner’s shader @c Shade().
+     * @warning Uses @c static_cast to @c MaterialAnimator<N>; ensure the bound material matches N.
      */
+    RGBColor Shade(const SurfaceProperties& sp, const IMaterial& m) override;
+};
+
+/**
+ * @brief Empty parameter block placeholder for MaterialAnimator.
+ *
+ * Kept to mirror the @c MaterialT pattern, even though state is owned by @c MaterialAnimator.
+ */
+struct MaterialAnimatorParams { };
+
+/**
+ * @tparam materialCount Maximum number of material layers.
+ * @brief Stateful material that animates layer opacities and blends via CombineMaterial.
+ *
+ * Layer 0 is considered the base layer and is clamped to opacity 1.0. Additional layers
+ * (1..materialCount-1) can be added with animated opacity tracks. Per-frame, call @ref Update()
+ * to advance curves and push opacities into the internal @c CombineMaterial.
+ */
+template<std::size_t materialCount>
+class MaterialAnimator : public IMaterial {
+public:
+    using ShaderT  = MaterialAnimatorShader<materialCount>;   ///< Forwarding shader type
+    using ThisT    = MaterialAnimator<materialCount>;         ///< Self alias
+    using Combiner = CombineMaterial<materialCount>;          ///< Underlying combiner
+    using Method   = typename Combiner::Method;               ///< Blend method enum
+
+    /** @brief Construct with this animator’s shader bound to IMaterial. */
     MaterialAnimator();
 
     /**
-     * @brief Sets the base material for the animation.
-     *
-     * @param method The method of blending for the base material.
-     * @param material Pointer to the base material.
+     * @brief Ensure layer 0 exists and is fully opaque; set its method/material.
+     * @param method   Blend method for base layer (index 0).
+     * @param material Material pointer for base layer (non-owning).
+     * @note On subsequent calls, updates layer 0 in place.
      */
-    void SetBaseMaterial(Material::Method method, Material* material);
+    void SetBaseMaterial(Method method, IMaterial* material);
 
     /**
-     * @brief Adds a material to the animation with specified properties.
-     *
-     * @param method The blending method for this material.
-     * @param material Pointer to the material to be added.
-     * @param frames The number of frames for the transition.
-     * @param minOpacity The minimum opacity of the material during the animation.
-     * @param maxOpacity The maximum opacity of the material during the animation.
+     * @brief Add a new animated layer (indices 1..materialCount-1).
+     * @param method     Blend method.
+     * @param material   Material pointer (non-owning). Ignored if already present.
+     * @param frames     Keyframe capacity or duration parameter for the animator.
+     * @param minOpacity Initial opacity and lower bound for the animated track [0..1].
+     * @param maxOpacity Upper bound for the animated track [0..1].
      */
-    void AddMaterial(Material::Method method, Material* material, uint16_t frames, float minOpacity, float maxOpacity);
+    void AddMaterial(Method method,
+                     IMaterial* material,
+                     uint16_t   frames,
+                     float      minOpacity,
+                     float      maxOpacity);
 
     /**
-     * @brief Adds a specific frame for a material in the animation.
-     *
-     * @param material Reference to the material.
-     * @param opacity The opacity value for the frame.
+     * @brief Append a keyframe to a layer’s opacity curve (by material identity).
+     * @param material Target material previously added.
+     * @param opacity  Opacity value [0..1] for the new keyframe.
      */
-    void AddMaterialFrame(Material& material, float opacity);
+    void AddMaterialFrame(IMaterial& material, float opacity);
 
     /**
-     * @brief Retrieves the current opacity of a material.
-     *
-     * @param material Reference to the material.
-     * @return The current opacity of the material.
+     * @brief Query the current animated opacity for a given material.
+     * @param material Target material.
+     * @return Current value if found, otherwise 0.0f.
      */
-    float GetMaterialOpacity(Material& material);
+    float GetMaterialOpacity(IMaterial& material) const;
 
-    /**
-     * @brief Updates the animator, advancing the transitions.
-     */
+    /** @brief Advance animation curves and push opacities into the combiner. */
     void Update();
 
+    /** @brief Access the underlying combiner (mutable). */
+    Combiner&       GetCombiner()       { return combine_; }
+    /** @brief Access the underlying combiner (const). */
+    const Combiner& GetCombiner() const { return combine_; }
+
+private:
+    /** @brief Singleton shader used to construct the IMaterial base. */
+    static const IShader* ShaderPtr();
+
+public:
     /**
-     * @brief Retrieves the color at a specific position, considering the blended materials.
-     *
-     * @param position The 3D position to sample the color.
-     * @param normal The normal vector at the position.
-     * @param uvw UVW coordinates at the position.
-     * @return The blended RGB color at the specified position.
+     * @brief Convenience ctor to satisfy factories that pass nullptr; binds our shader.
+     * @note Leaves internal state default-constructed; call SetBaseMaterial/AddMaterial as needed.
      */
-    RGBColor GetRGB(const Vector3D& position, const Vector3D& normal, const Vector3D& uvw) override;
+    MaterialAnimator(std::nullptr_t) : IMaterial(ShaderPtr()) {}
+
+private:
+    // Animation + blending state
+    EasyEaseAnimator<materialCount> eEA_{ IEasyEaseAnimator::Cosine }; ///< Opacity animators
+
+    Combiner   combine_;                                   ///< Underlying blender
+    float      materialRatios_[materialCount] = {};        ///< Animated opacity values per layer
+    IMaterial* dictionary_[materialCount]     = { nullptr };///< Layer->material identity map
+    uint8_t    currentMaterials_              = 0;         ///< Number of active layers
+    bool       baseMaterialSet_               = false;     ///< Whether layer 0 is initialized
 };
 
-#include "materialanimator.tpp" // Includes the template implementation.
+#include "materialanimator.tpp"

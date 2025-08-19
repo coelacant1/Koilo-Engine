@@ -1,37 +1,60 @@
+// proceduralnoiseshader.hpp
 #pragma once
 
-#include "proceduralnoiseparams.hpp"
-#include "../../material/imaterial.hpp"
+#include <cstddef>
+#include <cmath>
+
+#include "../ishader.hpp"
 #include "../../material/materialt.hpp"
+#include "proceduralnoiseparams.hpp"
+
 #include "../../../../core/math/mathematics.hpp"
 #include "../../../../core/math/vector3d.hpp"
 #include "../../../../core/color/rgbcolor.hpp"
-#include "../../../../core/signal/noise/simplexnoise.hpp"
 #include "../../../../core/color/gradientcolor.hpp"
+#include "../../../../core/signal/noise/simplexnoise.hpp"
 
-class ProceduralNoiseShader final : public IShader{
-private:
-    SimplexNoise noise{0};
-
+/**
+ * @file proceduralnoiseshader.hpp
+ * @brief Simplex noise -> [0,1] -> periodic mapping -> gradient sampling with optional hue shift.
+ *
+ * @tparam N Number of colors in the gradient spectrum.
+ */
+template <size_t N>
+class ProceduralNoiseShaderT final : public IShader {
 public:
-    RGBColor Shade(const SurfaceProperties& sp,
-                   const IMaterial&         m) override {
+    /**
+     * @brief Shade a surface point using periodic simplex noise and a gradient spectrum.
+     * @param sp Surface properties (uses @c sp.position).
+     * @param m  Bound material expected to be @c MaterialT<ProceduralNoiseParamsT<N>, ProceduralNoiseShaderT<N>>.
+     * @return RGB color sampled from the hue-shifted gradient at the periodic noise coordinate.
+     */
+    RGBColor Shade(const SurfaceProperties& sp, const IMaterial& m) const override {
+        using NoiseMat = MaterialT<ProceduralNoiseParamsT<N>, ProceduralNoiseShaderT<N>>;
+        const auto& P = m.As<NoiseMat>();
 
-        using NoiseMat = MaterialT<ProceduralNoiseParams, 
-                                   ProceduralNoiseShader>;
-
-        const auto& mat = m.As<NoiseMat>();
-
-        RGBColor shifted[ProceduralNoiseParams::kColors];
-        for (std::size_t i = 0; i < ProceduralNoiseParams::kColors; ++i) {
-            shifted[i] = RGBColor(mat.spectrum[i]).HueShift(mat.hueShiftAngleDeg);
+        // Build a hue-shifted spectrum for this shade call
+        RGBColor shifted[N];
+        for (std::size_t i = 0; i < N; ++i) {
+            shifted[i] = RGBColor(P.spectrum[i]).HueShift(P.hueShiftAngleDeg);
         }
+        // false => linear (non-stepped) gradient
+        GradientColor<N> gradient(shifted, false);
 
-        GradientColor<ProceduralNoiseParams::kColors> gradient(shifted, false);
+        // Scale input position and add slice depth on Z
+        Vector3D p = sp.position;
+        p.X *= P.noiseScale.X;
+        p.Y *= P.noiseScale.Y;
+        p.Z  = p.Z * P.noiseScale.Z + P.simplexDepth;
 
-        float n = noise.GetNoise(sp.position);
-        float scaled_n = n / mat.gradientPeriod;
-        float t = scaled_n - Mathematics::FFloor(scaled_n);
+        // Simplex noise in [-1,1] -> remap to [0,1]
+        static SimplexNoise noise(/*seed*/0);
+        const float n01 = 0.5f * (noise.GetNoise(p) + 1.0f);
+
+        // Repeat by gradientPeriod (guard against zero/neg)
+        const float period = (P.gradientPeriod > 0.00001f) ? P.gradientPeriod : 1.0f;
+        const float cycles = n01 / period;
+        const float t = cycles - Mathematics::FFloor(cycles);  // fract
 
         return gradient.GetColorAt(t);
     }

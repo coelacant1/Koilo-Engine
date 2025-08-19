@@ -1,7 +1,7 @@
 #pragma once
 
 template<size_t pixelCount>
-PixelGroup<pixelCount>::PixelGroup(Vector2D size, Vector2D position, uint16_t rowCount){
+PixelGroup<pixelCount>::PixelGroup(Vector2D size, Vector2D position, uint16_t rowCount) : bounds(position, size, 0.0f){
     this->size = size;
     this->position = position;
     this->rowCount = rowCount;
@@ -26,7 +26,7 @@ PixelGroup<pixelCount>::PixelGroup(Vector2D size, Vector2D position, uint16_t ro
 }
 
 template<size_t pixelCount>
-PixelGroup<pixelCount>::PixelGroup(const Vector2D* pixelLocations, Direction direction){
+PixelGroup<pixelCount>::PixelGroup(const Vector2D* pixelLocations, Direction direction) : bounds(position, size, 0.0f){
     this->direction = direction;
     pixelPositions = pixelLocations;
 

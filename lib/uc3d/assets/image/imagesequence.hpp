@@ -1,95 +1,78 @@
+// imagesequence.hpp
 /**
  * @file ImageSequence.h
- * @brief Declares the ImageSequence class for managing and rendering image sequences.
+ * @brief Frame-sequenced animation driven by a palette-indexed Image.
  *
- * This file defines the ImageSequence class, which extends the Material class to
- * support animations by cycling through a sequence of images at a specified frame rate.
+ * ImageSequence advances through an array of equally sized frames (pixel-index buffers)
+ * at a target FPS. Each frame is assigned to a shared @ref Image, which owns the palette
+ * and transform; the sequence only swaps the @ref Image::data pointer for the current frame.
  *
  * @author Coela Can't
  * @date 22/12/2024
  */
-
 #pragma once
 
 #include <stdint.h>
-#include "../../core/math/mathematics.hpp" // Include for math operations.
-#include "image.hpp" // Include for handling individual images.
-#include "../../core/platform/time.hpp"
+#include "../../core/math/vector2d.hpp"     // Vector2D
+#include "../../core/math/mathematics.hpp"  // Mathematics::Map
+#include "../../core/platform/time.hpp"     // uc3d::Time::Millis
+#include "../../core/color/rgbcolor.hpp"    // RGBColor
+#include "image.hpp"
 
 /**
  * @class ImageSequence
- * @brief Manages and renders a sequence of images as an animation.
+ * @brief Cycles through multiple palette-indexed frames on a shared Image.
  *
- * The ImageSequence class allows rendering animations by cycling through a series of
- * images at a specified frame rate. It provides controls for position, size, rotation,
- * and color manipulation of the animation.
+ * Lifetime/ownership:
+ * - Does not own @ref image or @ref data; caller manages memory.
+ * - All frames must be width*height in size and compatible with @ref image’s palette.
  */
 class ImageSequence {
-private:
-    Image* image; ///< Pointer to the Image object used for rendering.
-    const uint8_t** data; ///< Pointer to an array of image data.
-    unsigned long startTime = 0; ///< Timestamp of when the sequence started.
-    unsigned int imageCount = 0; ///< Total number of images in the sequence.
-    float fps = 24.0f; ///< Frames per second for the animation.
-    float frameTime = 0.0f; ///< Time interval between frames.
-    unsigned int currentFrame = 0; ///< Current frame index in the sequence.
-
-protected:
+public:
     /**
-     * @brief Constructs an ImageSequence object.
-     *
-     * @param image Pointer to the base Image object.
-     * @param data Pointer to the image data array.
-     * @param imageCount Total number of images in the sequence.
-     * @param fps Frame rate of the animation.
+     * @brief Construct a sequence bound to an Image.
+     * @param image Target image whose pixel data pointer will be swapped per frame.
+     * @param data Array of frame pointers; each points to width*height bytes of indices.
+     * @param imageCount Number of frames in @p data.
+     * @param fps Frames per second for playback (can be changed at runtime).
      */
     ImageSequence(Image* image, const uint8_t** data, unsigned int imageCount, float fps);
 
-public:
-    Image* GetImage();
-
-    /**
-     * @brief Sets the frames per second (FPS) for the animation.
-     *
-     * @param fps The desired frame rate.
-     */
+    /** @brief Set target frames per second. */
     void SetFPS(float fps);
 
-    /**
-     * @brief Sets the size of the image sequence.
-     *
-     * @param size A Vector2D object specifying the width and height.
-     */
+    /** @brief Pass-through to underlying Image size in world units. */
     void SetSize(Vector2D size);
 
-    /**
-     * @brief Sets the position offset of the image sequence.
-     *
-     * @param offset A Vector2D object specifying the position offset.
-     */
+    /** @brief Pass-through to underlying Image offset (rotation origin). */
     void SetPosition(Vector2D offset);
 
-    /**
-     * @brief Sets the rotation angle of the image sequence.
-     *
-     * @param angle The rotation angle in degrees.
-     */
+    /** @brief Pass-through to underlying Image rotation about its offset. */
     void SetRotation(float angle);
 
     /**
-     * @brief Resets the image sequence to its initial state.
+     * @brief Restart playback from the first frame and reset the internal clock.
      */
     void Reset();
 
     /**
-     * @brief Updates the current frame based on elapsed time.
+     * @brief Advance frame based on elapsed time; updates the Image’s data pointer.
+     * @note Call once per tick; uses uc3d::Time::Millis() for scheduling.
      */
     void Update();
 
     /**
-     * @brief Gets the color at an xy coordinate
-     *
-     * @param point the point in space to retrieve the color
+     * @brief Sample the current frame’s color at a coordinate (delegates to Image).
      */
     RGBColor GetColorAtCoordinate(Vector2D point);
+
+private:
+    Image* image = nullptr;             ///< Target image (not owned)
+    const uint8_t** data = nullptr;     ///< Frame array (not owned)
+    unsigned int imageCount = 0;        ///< Number of frames
+    float fps = 0.0f;                   ///< Target frames per second
+    float frameTime = 0.0f;             ///< Duration of one full loop in seconds
+
+    unsigned int currentFrame = 0;      ///< Current frame index
+    uint64_t startTime = 0;             ///< Start timestamp (ms)
 };

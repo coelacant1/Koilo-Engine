@@ -1,91 +1,90 @@
+// image.hpp
 /**
  * @file Image.h
- * @brief Defines an `Image` material for rendering images as textures in 3D rendering.
+ * @brief Palette-indexed 2D image with transform and color sampling helpers.
  *
- * The `Image` class is used to represent and manipulate image-based materials,
- * allowing for dynamic transformations such as resizing, positioning, and rotating
- * an image, as well as applying hue shifts.
+ * The Image class represents a static bitmap whose pixels are indices into an RGB palette.
+ * It supports a local 2D transform (size, offset, rotation) and can sample an RGBColor
+ * at an XY coordinate in the same space. Rotation is around @ref offset.
  *
  * @date 22/12/2024
  * @author Coela Can't
  */
-
 #pragma once
 
-#include "../../core/math/vector2d.hpp" // 2D vector operations.
-#include "../../core/math/mathematics.hpp" // Mathematical utilities.
-#include "../../core/color/rgbcolor.hpp"
+#include <stdint.h>
+#include "../../core/math/vector2d.hpp"      // Vector2D
+#include "../../core/math/mathematics.hpp"   // Mathematics::Map
+#include "../../core/color/rgbcolor.hpp"     // RGBColor
 
 /**
  * @class Image
- * @brief Represents an image-based material with support for transformations and palette adjustments.
+ * @brief Palette-indexed bitmap with transform-aware sampling.
+ *
+ * Storage layout:
+ * - @ref data : width*height bytes; each byte is an index into @ref rgbColors
+ * - @ref rgbColors : a packed palette of size (@ref colors * 3) bytes (R,G,B triplets)
+ *
+ * Transform:
+ * - @ref size   : logical width/height in world units (used by sampling)
+ * - @ref offset : center of the image (rotation origin)
+ * - @ref angle  : rotation in degrees (positive = CCW), applied around @ref offset
  */
 class Image {
 public:
-    Vector2D size; ///< The size of the image.
-    Vector2D offset; ///< The offset position of the image.
-    float angle = 0.0f; ///< The rotation angle of the image in degrees.
-    unsigned int xPixels = 0; ///< The width of the image in pixels.
-    unsigned int yPixels = 0; ///< The height of the image in pixels.
-    const uint8_t* data; ///< Pointer to the image data.
-    const uint8_t* rgbColors; ///< Pointer to the color palette.
-    uint8_t colors; ///< The number of colors in the palette.
-
     /**
-     * @brief Constructs an `Image` material.
-     *
-     * @param data Pointer to the image data.
-     * @param rgbColors Pointer to the color palette.
-     * @param xPixels Width of the image in pixels.
-     * @param yPixels Height of the image in pixels.
-     * @param colors Number of colors in the palette.
+     * @brief Construct an Image backed by external memory.
+     * @param data Pointer to width*height bytes of palette indices.
+     * @param rgbColors Pointer to palette data (R,G,B triplets), length = colors*3.
+     * @param xPixels Image width in pixels.
+     * @param yPixels Image height in pixels.
+     * @param colors Number of palette entries (triplets) available.
+     * @note Pointers are *not* owned; caller retains lifetime management.
      */
-    Image(const uint8_t* data, const uint8_t* rgbColors, unsigned int xPixels, unsigned int yPixels, uint8_t colors);
+    Image(const uint8_t* data,
+          const uint8_t* rgbColors,
+          unsigned int xPixels,
+          unsigned int yPixels,
+          uint8_t colors);
 
-    /**
-     * @brief Destructor for `Image`.
-     */
-    ~Image() {}
-
-    /**
-     * @brief Sets the image data.
-     *
-     * @param data Pointer to the new image data.
-     */
+    /** @brief Replace the pixel-index buffer (width/height unchanged). */
     void SetData(const uint8_t* data);
 
-    /**
-     * @brief Sets the color palette.
-     *
-     * @param rgbColors Pointer to the new color palette.
-     */
+    /** @brief Replace the RGB palette pointer (triplet-packed). */
     void SetColorPalette(const uint8_t* rgbColors);
 
-    /**
-     * @brief Sets the size of the image.
-     *
-     * @param size The new size as a `Vector2D`.
-     */
-    void SetSize(Vector2D size);
+    /** @brief Set logical display size (world units used during sampling). */
+    void SetSize(Vector2D size) { this->size = size; }
+
+    /** @brief Set the image center (also used as rotation origin). */
+    void SetPosition(Vector2D offset) { this->offset = offset; }
 
     /**
-     * @brief Sets the position offset of the image.
-     *
-     * @param offset The new offset as a `Vector2D`.
+     * @brief Set rotation angle about @ref offset.
+     * @param angle Degrees (CCW positive).
      */
-    void SetPosition(Vector2D offset);
+    void SetRotation(float angle) { this->angle = angle; }
 
     /**
-     * @brief Sets the rotation angle of the image.
-     *
-     * @param angle The new rotation angle in degrees.
-     */
-    void SetRotation(float angle);
-
-    /**
-     * @brief Gets the color at an xy coordinate
-     *
-     * @param point the point in space to retrieve the color
+     * @brief Sample color at a world-space coordinate considering size/offset/rotation.
+     * @param point XY coordinate in the same space as @ref size and @ref offset.
+     * @return RGBColor at that coordinate; returns default-constructed RGBColor() if
+     *         out-of-bounds or palette index is invalid.
      */
     RGBColor GetColorAtCoordinate(Vector2D point);
+
+private:
+    // Backing data (not owned)
+    const uint8_t* data = nullptr;       ///< width*height indices into @ref rgbColors
+    const uint8_t* rgbColors = nullptr;  ///< palette as [R,G,B, R,G,B, ...], length = colors*3
+
+    // Dimensions / palette
+    unsigned int xPixels = 0;
+    unsigned int yPixels = 0;
+    uint8_t colors = 0;                  ///< number of palette entries
+
+    // Local transform
+    Vector2D size{1.0f, 1.0f};           ///< logical width/height in world units
+    Vector2D offset{0.0f, 0.0f};         ///< center/rotation origin
+    float angle = 0.0f;                  ///< degrees CCW
 };

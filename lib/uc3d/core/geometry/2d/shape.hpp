@@ -1,5 +1,5 @@
 /**
- * @file Shape.h
+ * @file shape.hpp
  * @brief Defines the Shape base class for representing geometric shapes in 2D space.
  *
  * The Shape class provides a common interface for 2D shapes with properties such as center,

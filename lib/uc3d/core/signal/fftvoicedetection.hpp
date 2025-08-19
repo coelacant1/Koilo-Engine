@@ -11,6 +11,7 @@
 
 #pragma once
 
+#include <cstddef>
 #include "filter/runningaveragefilter.hpp" // Include for smoothing peaks.
 #include "filter/peakdetection.hpp" // Include for peak detection in FFT data.
 #include "../math/vector2d.hpp" // Include for 2D vector utilities.
