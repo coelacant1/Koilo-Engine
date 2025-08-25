@@ -48,11 +48,11 @@ void MinimalShmProject::Update(float ratio) {
         cols2[i] = rgb;
     }
 
-    //uc3d::Console::Print(GetAnimationTime() / 1000.0f, 5);
-    //uc3d::Console::Print("\t");
-    //uc3d::Console::Print(GetDisplayTime() / 1000.0f, 5);
-    //uc3d::Console::Print("\t");
-    //uc3d::Console::Print(GetRenderTime() / 1000.0f, 5);
-    //uc3d::Console::Print("\t");
-    uc3d::Console::Println(GetFrameRate(), 2);
+    //ptx::Console::Print(GetAnimationTime() / 1000.0f, 5);
+    //ptx::Console::Print("\t");
+    //ptx::Console::Print(GetDisplayTime() / 1000.0f, 5);
+    //ptx::Console::Print("\t");
+    //ptx::Console::Print(GetRenderTime() / 1000.0f, 5);
+    //ptx::Console::Print("\t");
+    ptx::Console::Println(GetFrameRate(), 2);
 }

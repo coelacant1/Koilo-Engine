@@ -1,16 +1,16 @@
 #pragma once
 
-#include "../../lib/uc3d/project/project.hpp"
-#include "../../lib/uc3d/core/math/vector2d.hpp"
-#include "../../lib/uc3d/core/math/vector3d.hpp"
-#include "../../lib/uc3d/systems/render/core/cameralayout.hpp"
-#include "../../lib/uc3d/core/math/transform.hpp"
-#include "../../lib/uc3d/systems/render/core/pixelgroup.hpp"
-#include "../../lib/uc3d/systems/render/core/camera.hpp"
-#include "../../lib/uc3d/systems/render/core/cameramanager.hpp"
-#include "../../lib/uc3d/systems/hardware/virtualcontroller.hpp"
-#include "../../lib/uc3d/core/platform/console.hpp"
-#include "../../lib/uc3d/systems/render/material/implementations/spiralmaterial.hpp"
+#include "../../lib/ptx/project/project.hpp"
+#include "../../lib/ptx/core/math/vector2d.hpp"
+#include "../../lib/ptx/core/math/vector3d.hpp"
+#include "../../lib/ptx/systems/render/core/cameralayout.hpp"
+#include "../../lib/ptx/core/math/transform.hpp"
+#include "../../lib/ptx/systems/render/core/pixelgroup.hpp"
+#include "../../lib/ptx/systems/render/core/camera.hpp"
+#include "../../lib/ptx/systems/render/core/cameramanager.hpp"
+#include "../../lib/ptx/systems/hardware/virtualcontroller.hpp"
+#include "../../lib/ptx/core/platform/console.hpp"
+#include "../../lib/ptx/systems/render/material/implementations/spiralmaterial.hpp"
 
 #include "ws35pixels.hpp"
 
@@ -39,5 +39,5 @@ private:
     Camera<571> ks35           { &cam2Xform_, &layout2_, &ws35pg };
     CameraManager      cams_   { new CameraBase*[2]{ &camera_, &ks35 }, 2 };
 
-    VirtualController  vctrl_  { &cams_, "/uc3d_ctrl", "/uc3d_reg" };
+    VirtualController  vctrl_  { &cams_, "/ptx_ctrl", "/ptx_reg" };
 };

@@ -1,3 +1,3 @@
-#include <ucore3dall.hpp>
+#include <ptxall.hpp>
 
 int main () { return 0; }

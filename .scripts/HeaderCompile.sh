@@ -12,7 +12,7 @@ else
     RED=''; GREEN=''; BLUE=''; BOLD=''; RESET=''
 fi
 
-echo -e "${BOLD}${BLUE}Header check: compiling every .hpp under uc3d/${RESET}"
+echo -e "${BOLD}${BLUE}Header check: compiling every .hpp under ptx/${RESET}"
 
 fail=0
 while IFS= read -r hdr; do
@@ -25,7 +25,7 @@ while IFS= read -r hdr; do
         sed 's/^/   /' /tmp/err.log
         fail=1
     fi
-done < <(cd "$INC" && find uc3d -name '*.hpp' | sort)
+done < <(cd "$INC" && find ptx -name '*.hpp' | sort)
 
 [[ $fail -eq 0 ]] && echo -e "${GREEN}${BOLD}All headers compile clean${RESET}" \
                   || echo -e "${RED}${BOLD}Header check failed${RESET}"

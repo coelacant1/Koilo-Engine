@@ -13,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include "../lib/uc3d/core/math/mathematics.hpp"
+#include "../lib/ptx/core/math/mathematics.hpp"
 
 /**
  * @class TestMathematics

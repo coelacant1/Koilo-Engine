@@ -15,9 +15,9 @@ jobs:
       - name: Install g++
         run: sudo apt-get update && sudo apt-get install -y g++
 
-      - name: Generate ucore3dall.hpp
+      - name: Generate all.hpp
         run: |
-          python3 .scripts/GenerateuCore3DAll.py
+          python3 .scripts/GeneratePTXAll.py
 
       - name: Compile umbrella header with C++17
         run: |

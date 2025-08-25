@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+
+## [0.1.0] - 2025-08-18
+
+### Changed
+- Renamed to PTX (ProtoTracer eXtended)
+
+
 ## [0.0.7] - 2025-08-18
  
 Implementing frontend shared memory and virtual controller
@@ -71,7 +78,7 @@ Building out and decoupling functionality
 - Added inclomplete shader implementations
  
 ### Changed
-- Renamed from um3d to uc3d for more generic end functionality
+- Renamed from um3d to ptx for more generic end functionality
 
 ### Next Tasks
 - Implement post effects/compositors

@@ -4,7 +4,7 @@
 #include <cmath>
 #include <cstdio>
 
-#include "../lib/uc3d/core/platform/time.hpp"
+#include "../lib/ptx/core/platform/time.hpp"
 #include "minimal_shm/minimalshmproject.hpp"
 
 static MinimalShmProject project;
@@ -21,12 +21,12 @@ int main(int argc, char** argv) {
     const double target_hz = 60.0;
     const double target_dt_s = 1.0 / target_hz;
 
-    uint32_t t0_ms = uc3d::Time::Millis();
+    uint32_t t0_ms = ptx::Time::Millis();
     double time_accum = 0.0;
     const double ratio_period_s = 5.0;
 
     while (g_running.load(std::memory_order_relaxed)) {
-        uint32_t t1_ms = uc3d::Time::Millis();
+        uint32_t t1_ms = ptx::Time::Millis();
         float dt_s = float(int32_t(t1_ms - t0_ms)) / 1000.0f;
         t0_ms = t1_ms;
 
@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
         project.Render();
         project.Display();
 
-        uint32_t t2_ms = uc3d::Time::Millis();
+        uint32_t t2_ms = ptx::Time::Millis();
         float frame_time_s = float(int32_t(t2_ms - t1_ms)) / 1000.0f;
 
         if (frame_time_s < target_dt_s) {

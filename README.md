@@ -1,8 +1,8 @@
-# uCore3D - C++17 Math & Render Core for Microcontrollers **and** Desktops
+# PTX Engine - C++17 Math & Render Core for Microcontrollers **and** Desktops
 
-[![compilecheck](https://github.com/coelacant1/uCore3D/actions/workflows/ci.yml/badge.svg)](https://github.com/coelacant1/uCore3D/actions/workflows/ci.yml)
+[![compilecheck](https://github.com/coelacant1/PTXEngine/actions/workflows/ci.yml/badge.svg)](https://github.com/coelacant1/PTXEngine/actions/workflows/ci.yml)
 
-`uCore3D` started as the math backbone of **ProtoTracer** - an embedded 3D rendering engine. It is now a stand-alone **header-first** library that runs on:
+`PTX Engine` started as the math backbone of **ProtoTracer** - an embedded 3D rendering engine. It is now a stand-alone **header-first** library that runs on:
 * 32-bit Cortex-M / ESP32 boards (STM32, Teensy, ESP32-S3)
 * Linux / Windows / macOS desktops
 * 8-bit AVR boards (Arduino UNO, Nano)
@@ -59,7 +59,7 @@ The same codebase powers hardware **and** a full-speed desktop simulator, so you
 ## Directory layout
 
 ```
-lib/uc3d/
+lib/ptx/
 |-- app/                     top-level runtime & project wrapper
 |   |-- app.hpp
 |   |-- project/             project-file I/O
@@ -109,8 +109,8 @@ lib/uc3d/
 ## Quick-start (desktop)
 
 ```bash
-git clone https://github.com/CoelaCant/uCore3D.git
-cd uCore3D
+git clone https://github.com/CoelaCant/PTXEngine.git
+cd PTXEngine
 # compile
 # run test program for native
 ````
@@ -139,4 +139,4 @@ Please read **[CONTRIBUTING.md](CONTRIBUTING.md)** for style rules (lower-case f
 
 ## License
 
-`uCore3D` is released under the [AGPL-3.0](https://choosealicense.com/licenses/agpl-3.0/). If you ship modified versions (embedded or desktop) you must publish the modified source, ensuring improvements stay in the commons.
+`PTXEngine` is released under the [AGPL-3.0](https://choosealicense.com/licenses/agpl-3.0/). If you ship modified versions (embedded or desktop) you must publish the modified source, ensuring improvements stay in the commons.

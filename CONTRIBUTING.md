@@ -1,13 +1,13 @@
 # Contributing Guide
 
-Thank you for considering a contribution to **uCore3D**.
+Thank you for considering a contribution to **PTX Engine**.
 This document explains the rules every pull-request must follow.
 
 ---
 
 ## 1. Project Scope
 
-uCore3D is a **header / source** c++17 library that targets
+PTX Engine is a **header / source** c++17 library that targets
 
 * Arduino-class mcus (avr, cortex-m, esp32)
 * Bare-metal embedded c++
@@ -16,7 +16,7 @@ uCore3D is a **header / source** c++17 library that targets
 The codebase is split into clear layers:
 
 ```
-include/uc3d/
+include/ptx/
   assets/       immutable asset data
   geometry/     analytic shapes 2d / 3d
   ...
@@ -36,7 +36,7 @@ Patches should fit that layering; avoid creating cross-dependencies.
 1. **Fork & Clone**
 
 ```bash
-git clone https://github.com/<your-account>/ucore3d.git
+git clone https://github.com/<your-account>/ptxengine.git
 ```
 
 2. **Create a Branch**

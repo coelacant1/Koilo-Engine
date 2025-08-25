@@ -164,7 +164,7 @@ void TestVector2D::TestIsEqual() {
 
 void TestVector2D::TestToString() {
     Vector2D v(1.0, 2.0);
-    uc3d::UString str = v.ToString();
+    ptx::UString str = v.ToString();
     TEST_ASSERT_EQUAL_STRING("[1.000, 2.000]", str.c_str());
 }
 
