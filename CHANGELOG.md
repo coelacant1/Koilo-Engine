@@ -5,6 +5,37 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 
+
+## [0.1.1] - 2025-09-08
+First working end-to-end reflection pipeline: discover -> access -> invoke.
+
+### Added
+- registry.hpp
+  - Define FieldDecl, MethodDesc, FieldList, MethodList
+  - Add FieldAccess helpers for safe get/set
+  - Provide simple demangle wrapper for type names
+- reflectable.hpp
+  - Base CRTP template Reflectable<T> with static Fields() and Methods() hooks
+- reflect_make.hpp
+  - Generic helpers (make_field, make_method, make_smethod)
+  - Type-safe argument unpacking & return boxing (works for void + value returns)
+  - Removes need for N-arg boilerplate macros
+- reflect_macros.hpp
+  - Macros PTX_FIELD, PTX_METHOD, PTX_SMETHOD as thin sugar over make_*
+  - PTX_BEGIN_FIELDS/METHODS & PTX_END_FIELDS/METHODS for static arrays
+  - Simplified and future-proof (handles const/non-const, static, multiple args)
+
+### Changed
+- Updated RGBColor to declare reflected fields (R, G, B) and methods (Scale, Add, HueShift, ToString, InterpolateColors)
+- Runtime registry now enumerates properties & methods dynamically
+
+### Testing
+- registry_test.cpp:
+  - Enumerates fields with demangled type names
+  - Dynamically reads/writes fields (R, G, B)
+  - Dynamically invokes methods (Add, Scale, HueShift, ToString, InterpolateColors)
+  - Prints expected round-trip values
+
 ## [0.1.0] - 2025-08-18
 
 ### Changed
@@ -176,3 +207,5 @@ This is a template
 ### Fixed
 
 ### Removed
+
+### Testing

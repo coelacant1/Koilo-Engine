@@ -2,6 +2,7 @@
 
 #include <type_traits>
 #include "../../../core/color/rgbcolor.hpp"
+#include "../../../core/math/vector2d.hpp"
 #include "../../../core/math/vector3d.hpp"
 
 /**

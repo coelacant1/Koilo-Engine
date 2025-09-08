@@ -19,11 +19,13 @@
 #include "../math/vector3d.hpp"
 #include "../platform/ustring.hpp"
 
+#include "../../registry/reflect_macros.hpp"
+
 /**
  * @class RGBColor
  * @brief Represents an RGB color and provides methods for manipulation.
  */
-class RGBColor {
+class RGBColor : public ptx::Reflectable<RGBColor>{
 public:
     uint8_t R = 0; ///< Red component of the color (0-255).
     uint8_t G = 0; ///< Green component of the color (0-255).
@@ -183,4 +185,19 @@ public:
      */
     RGBColor& operator/=(const RGBColor& other);
 
+    // -------- Reflection: Fields --------
+    PTX_BEGIN_FIELDS(RGBColor)
+        PTX_FIELD(RGBColor, R, "Red channel",   0, 255),
+        PTX_FIELD(RGBColor, G, "Green channel", 0, 255),
+        PTX_FIELD(RGBColor, B, "Blue channel",  0, 255)
+    PTX_END_FIELDS
+
+    // -------- Reflection: Methods --------
+    PTX_BEGIN_METHODS(RGBColor)
+        PTX_METHOD (RGBColor, Scale,              "Scale brightness to max value [0..255]"),
+        PTX_METHOD (RGBColor, Add,                "Add value to each channel [0..255]"),
+        PTX_METHOD (RGBColor, HueShift,           "Hue shift by degrees"),
+        PTX_METHOD (RGBColor, ToString,           "Convert to string"),
+        PTX_SMETHOD(RGBColor, InterpolateColors,  "Lerp between colors by ratio [0..1]")
+    PTX_END_METHODS
 };
