@@ -5,6 +5,40 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 
+## [0.1.2] - 2025-09-13
+Updated reflection for C++
+
+### Added 
+- global_registry.hpp
+  - list of class description objects
+
+### Changed
+- demangle.hpp
+  - Simplified
+- reflect_helpers.hpp
+  - Improved invokers
+  - Streamlined field and method searching
+  - Added Pretty printing for demangled strings for types/signatures/constructors
+- reflect_macros.hpp
+  - Streamlined
+  - Implemented via global registry
+  - Implemented constructor creation
+- reflect_make.hpp
+  - Major restructure
+  - Implemented custom type span creation
+  - Changed invokers to use box return and new apply tuple functions
+  - Simplfied method/static methods/const methods
+
+### Removed
+- reflectable.hpp
+  - No longer necessary with new implementation
+
+### Next Tasks
+- Implement UpdatePTXRegistry.py to automatically configure C++ headers for new registry macros 
+  - Pay attention to ignoring operators/etc
+- Implmement ptx_lua
+- Implement ptx_capi/reflect_capi (cpp mapping side)
+- Implement ptx_platform for library static/library linking for runtime initialization via capi on mcus and posix
 
 ## [0.1.1] - 2025-09-08
 First working end-to-end reflection pipeline: discover -> access -> invoke.

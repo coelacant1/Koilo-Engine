@@ -1,129 +1,205 @@
 #pragma once
+
 #include <tuple>
 #include <type_traits>
 #include <utility>
+#include <functional>
 #include "registry.hpp"
 
-// Helpers to deref argv[] into typed values
 namespace ptx::detail {
 
-template <class T>
-using arg_decay_t = std::remove_reference_t<T>;
+template<class F, class Tuple, std::size_t... I>
+decltype(auto) ApplyTuple(F&& f, Tuple&& t, std::index_sequence<I...>) {
+    return std::invoke(std::forward<F>(f),
+                       std::get<I>(std::forward<Tuple>(t))...);
+}
 
-template <class... Args, std::size_t... I>
+template<class Tuple, std::size_t... I>
 auto ArgvAsTuple(void** argv, std::index_sequence<I...>) {
-    return std::tuple< arg_decay_t<Args>&... >(
-        *static_cast<arg_decay_t<Args>*>(argv[I])...
+    using Tup = std::tuple<
+        std::add_lvalue_reference_t<std::tuple_element_t<I, Tuple>>...
+    >;
+    return Tup(
+        *static_cast<std::remove_reference_t<std::tuple_element_t<I, Tuple>>*>(argv[I])...
     );
 }
 
-template <class F, class Tuple, std::size_t... I>
-auto ApplyTuple(F&& f, Tuple&& t, std::index_sequence<I...>) {
-    return std::forward<F>(f)(std::get<I>(std::forward<Tuple>(t))...);
-}
+template<class T>
+void* BoxReturn(T&& v) {
+    using U = std::remove_reference_t<T>;
 
-// Allocate return or swallow void
-template <class Ret>
-void* BoxReturn(Ret&& r) {
-    if constexpr (std::is_void_v<std::remove_reference_t<Ret>>) {
-        return nullptr;
-    } else {
-        using R = std::remove_cv_t<std::remove_reference_t<Ret>>;
-        return new R(std::forward<Ret>(r));
-    }
+    return new U(std::forward<T>(v));
 }
 
 } // namespace ptx::detail
 
-// Field maker (member pointer)
-namespace ptx {
+namespace ptx::make {
 
-template <class C, class T>
-inline FieldDecl MakeField(const char* name, T C::* member, const char* desc, float minV, float maxV) {
-    return FieldDecl{
-        name,
-        &typeid(T),
-        sizeof(T),
-        FieldAccess{
-            [member](void* obj) -> void* {
-                return &(static_cast<C*>(obj)->*member);
-            },
-            [member](const void* obj) -> const void* {
-                return &(static_cast<const C*>(obj)->*member);
-            }
-        },
-        desc, minV, maxV
+template<class> struct FnSig;
+
+template<class C, class R, class... A>
+struct FnSig<R (C::*)(A...)> { // member
+    using RetT = R;
+    using ArgsTuple = std::tuple<A...>;
+
+    static constexpr size_t Arity = sizeof...(A);
+};
+
+template<class C, class R, class... A>
+struct FnSig<R (C::*)(A...) const> { // const member
+    using RetT = R;
+    using ArgsTuple = std::tuple<A...>;
+
+    static constexpr size_t Arity = sizeof...(A);
+};
+
+template<class R, class... A>
+struct FnSig<R (*)(A...)> { // free/static function pointer
+    using RetT = R;
+    using ArgsTuple = std::tuple<A...>;
+
+    static constexpr size_t Arity = sizeof...(A);
+};
+
+
+template<class Tuple, std::size_t... I>
+inline ptx::TypeSpan MakeTypeSpanFromTuple(std::index_sequence<I...>) {
+    static const std::type_info* arr[] = { &typeid(std::tuple_element_t<I, Tuple>)... };
+
+    return { arr, sizeof...(I) };
+}
+
+template<class Tuple, std::size_t... I>
+inline ptx::TypeSpan MakeTypeSpan_Tuple(std::index_sequence<I...>) {
+    static const std::type_info* arr[] = { &typeid(std::tuple_element_t<I, Tuple>)... };
+
+    return { arr, sizeof...(I) };
+}
+
+template<class Tuple>
+inline ptx::TypeSpan MakeTypeSpan_Tuple() {
+    return MakeTypeSpan_Tuple<Tuple>(std::make_index_sequence<std::tuple_size_v<Tuple>>{});
+}
+
+template<class... Ts>
+inline ptx::TypeSpan MakeTypeSpan_Pack() {
+    static const std::type_info* arr[] = { &typeid(Ts)... };
+
+    return { arr, sizeof...(Ts) };
+}
+
+template<class C, auto PMF>
+void* InstInvoke(void* self, void** argv) { // Member function thunk
+    using S   = ptx::make::FnSig<decltype(PMF)>;
+    using Ret = typename S::RetT;
+    using AT  = typename S::ArgsTuple;
+
+    constexpr auto N = S::Arity;
+
+    auto obj = static_cast<C*>(self);
+    auto tup = ptx::detail::ArgvAsTuple<AT>(argv, std::make_index_sequence<N>{});
+    auto call = [obj](auto&... a) -> Ret { return (obj->*PMF)(a...); };
+
+    if constexpr (std::is_void_v<Ret>) {
+        ptx::detail::ApplyTuple(call, tup, std::make_index_sequence<N>{});
+
+        return nullptr;
+    } else {
+        Ret r = ptx::detail::ApplyTuple(call, tup, std::make_index_sequence<N>{});
+
+        return ptx::detail::BoxReturn(std::move(r));
+    }
+}
+
+
+template<auto PF>
+void* StaticInvoke(void*, void** argv) { // Static / free function thunk
+    using S   = ptx::make::FnSig<decltype(PF)>;
+    using Ret = typename S::RetT;
+    using AT  = typename S::ArgsTuple;
+
+    constexpr auto N = S::Arity;
+
+    auto tup = ptx::detail::ArgvAsTuple<AT>(argv, std::make_index_sequence<N>{});
+    auto call = [](auto&... a) -> Ret { return PF(a...); };
+
+    if constexpr (std::is_void_v<Ret>) {
+        ptx::detail::ApplyTuple(call, tup, std::make_index_sequence<N>{});
+
+        return nullptr;
+    } else {
+        Ret r = ptx::detail::ApplyTuple(call, tup, std::make_index_sequence<N>{});
+
+        return ptx::detail::BoxReturn(std::move(r));
+    }
+}
+
+template<class C, auto PMF>
+ptx::MethodDesc MakeMethod(const char* name, const char* doc) { // Member function
+    using S   = FnSig<decltype(PMF)>;
+    using Ret = typename S::RetT;
+    using AT  = typename S::ArgsTuple;
+
+    return ptx::MethodDesc{
+        /* name       */ name,
+        /* doc        */ doc,
+        /* ret_type   */ &typeid(Ret),
+        /* arg_types  */ MakeTypeSpan_Tuple<AT>(),
+        /* argc       */ std::tuple_size_v<AT>,
+        /* is_static  */ false,
+        /* invoker    */ &ptx::make::InstInvoke<C, PMF>,
+        /* signature  */ nullptr,
+        /*ret_size     */ std::is_void_v<Ret> ? size_t(0) : sizeof(Ret),
+        /*destroy_ret  */ std::is_void_v<Ret>
+                           ? nullptr
+                           : +[](void* p){ delete static_cast<Ret*>(p); }
     };
 }
 
-// -------- Method makers (non-const member) --------
-// non-const member
-template <class C, class Ret, class... Args>
-inline MethodDesc MakeMethod(const char* name, const char* desc, Ret (C::*pmf)(Args...)) {
-    static const std::type_info* kParamTypes[] = { &typeid(Args)... };
-    return MethodDesc{
-        name, desc,
-        std::is_void_v<Ret> ? nullptr : &typeid(Ret),
-        kParamTypes, sizeof...(Args),
-        [pmf](void* obj, void** argv) -> void* {
-            auto* self = static_cast<C*>(obj);
-            auto tup = ptx::detail::ArgvAsTuple<Args...>(argv, std::index_sequence_for<Args...>{});
-            auto call = [self, pmf](auto&... a) -> Ret { return (self->*pmf)(a...); };
-            if constexpr (std::is_void_v<Ret>) {
-                ptx::detail::ApplyTuple(call, tup, std::index_sequence_for<Args...>{});
-                return nullptr;
-            } else {
-                Ret r = ptx::detail::ApplyTuple(call, tup, std::index_sequence_for<Args...>{});
-                return ptx::detail::BoxReturn(std::move(r));
-            }
+template<auto PF>
+ptx::MethodDesc MakeSmethod(const char* name, const char* doc) { // Static / free function
+    using S   = FnSig<decltype(PF)>;
+    using Ret = typename S::RetT;
+    using AT  = typename S::ArgsTuple;
+
+    return ptx::MethodDesc{
+        /* name       */ name,
+        /* doc        */ doc,
+        /* ret_type   */ &typeid(Ret),
+        /* arg_types  */ MakeTypeSpan_Tuple<AT>(),
+        /* argc       */ std::tuple_size_v<AT>,
+        /* is_static  */ true,
+        /* invoker    */ &ptx::make::StaticInvoke<PF>,
+        /* signature  */ nullptr,
+        /*ret_size     */ std::is_void_v<Ret> ? size_t(0) : sizeof(Ret),
+        /*destroy_ret  */ std::is_void_v<Ret>
+                           ? nullptr
+                           : +[](void* p){ delete static_cast<Ret*>(p); }
+    };
+}
+
+template<class T, class... A>
+struct CtorThunk {
+    static void* Create(void** argv) { // Constructor thunk
+        auto tup = ptx::detail::ArgvAsTuple<A...>(argv, std::index_sequence_for<A...>{});
+        auto call = [](auto&... a) { return new T(a...); };
+
+        return ptx::detail::ApplyTuple(call, tup, std::index_sequence_for<A...>{});
+    }
+};
+
+template<class C, class... A>
+ptx::ConstructorDesc MakeCtor(const char* pretty = nullptr) {
+    struct Thunk {
+        static void* Create(void** argv) {
+            auto tup  = ptx::detail::ArgvAsTuple<std::tuple<A...>>(argv, std::index_sequence_for<A...>{});
+            auto call = [](auto&... a) { return new C(a...); };
+
+            return ptx::detail::ApplyTuple(call, tup, std::index_sequence_for<A...>{});
         }
     };
+    static const ptx::TypeSpan ts = ptx::MakeTypeSpan<A...>();
+    return ptx::ConstructorDesc{ ts, pretty, &Thunk::Create };
 }
 
-// const member
-template <class C, class Ret, class... Args>
-inline MethodDesc MakeMethod(const char* name, const char* desc, Ret (C::*pmf)(Args...) const) {
-    static const std::type_info* kParamTypes[] = { &typeid(Args)... };
-    return MethodDesc{
-        name, desc,
-        std::is_void_v<Ret> ? nullptr : &typeid(Ret),
-        kParamTypes, sizeof...(Args),
-        [pmf](void* obj, void** argv) -> void* {
-            auto* self = static_cast<const C*>(obj);
-            auto tup = ptx::detail::ArgvAsTuple<Args...>(argv, std::index_sequence_for<Args...>{});
-            auto call = [self, pmf](auto&... a) -> Ret { return (self->*pmf)(a...); };
-            if constexpr (std::is_void_v<Ret>) {
-                ptx::detail::ApplyTuple(call, tup, std::index_sequence_for<Args...>{});
-                return nullptr;
-            } else {
-                Ret r = ptx::detail::ApplyTuple(call, tup, std::index_sequence_for<Args...>{});
-                return ptx::detail::BoxReturn(std::move(r));
-            }
-        }
-    };
-}
-
-// static
-template <class Ret, class... Args>
-inline MethodDesc MakeSmethod(const char* name, const char* desc, Ret (*pf)(Args...)) {
-    static const std::type_info* kParamTypes[] = { &typeid(Args)... };
-    return MethodDesc{
-        name, desc,
-        std::is_void_v<Ret> ? nullptr : &typeid(Ret),
-        kParamTypes, sizeof...(Args),
-        [pf](void*, void** argv) -> void* {
-            auto tup = ptx::detail::ArgvAsTuple<Args...>(argv, std::index_sequence_for<Args...>{});
-            auto call = [pf](auto&... a) -> Ret { return pf(a...); };
-            if constexpr (std::is_void_v<Ret>) {
-                ptx::detail::ApplyTuple(call, tup, std::index_sequence_for<Args...>{});
-                return nullptr;
-            } else {
-                Ret r = ptx::detail::ApplyTuple(call, tup, std::index_sequence_for<Args...>{});
-                return ptx::detail::BoxReturn(std::move(r));
-            }
-        }
-    };
-}
-
-
-} // namespace ptx
+} // namespace ptx::make

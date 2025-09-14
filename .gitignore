@@ -42,3 +42,7 @@
 .piolibdeps/
 .clang_complete
 .gcc-flags.json
+
+# External libraries
+lib/lua/
+lib/lua/*
