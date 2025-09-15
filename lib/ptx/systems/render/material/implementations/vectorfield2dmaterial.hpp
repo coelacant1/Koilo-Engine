@@ -7,6 +7,7 @@
 #include "../../../../core/math/vector3d.hpp"
 #include "../../shader/implementations/vectorfield2dparams.hpp"
 #include "../../shader/implementations/vectorfield2dshader.hpp"
+#include "../../../../registry/reflect_macros.hpp"
 
 /**
  * @file vectorfield2dmaterial.hpp
@@ -232,4 +233,30 @@ public:
             }
         }
     }
+
+    PTX_BEGIN_FIELDS(VectorField2DMaterial)
+        /* TODO: PTX_FIELD(VectorField2DMaterial, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(VectorField2DMaterial)
+        PTX_METHOD_AUTO(VectorField2DMaterial, SetSize, "Set size"),
+        PTX_METHOD_AUTO(VectorField2DMaterial, SetPosition, "Set position"),
+        PTX_METHOD_AUTO(VectorField2DMaterial, SetRotation, "Set rotation"),
+        PTX_METHOD_AUTO(VectorField2DMaterial, RenderDensity, "Render density"),
+        PTX_METHOD_AUTO(VectorField2DMaterial, RenderVector, "Render vector"),
+        PTX_METHOD_AUTO(VectorField2DMaterial, GetCountX, "Get count x"),
+        PTX_METHOD_AUTO(VectorField2DMaterial, GetCountY, "Get count y"),
+        PTX_METHOD_AUTO(VectorField2DMaterial, Boundary, "Boundary"),
+        PTX_METHOD_AUTO(VectorField2DMaterial, Diffuse, "Diffuse"),
+        PTX_METHOD_AUTO(VectorField2DMaterial, Advect, "Advect"),
+        PTX_METHOD_AUTO(VectorField2DMaterial, SineField, "Sine field"),
+        PTX_METHOD_AUTO(VectorField2DMaterial, StepField, "Step field"),
+        PTX_METHOD_AUTO(VectorField2DMaterial, MovingSquareField, "Moving square field"),
+        PTX_METHOD_AUTO(VectorField2DMaterial, SpiralField, "Spiral field")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(VectorField2DMaterial)
+        PTX_CTOR(VectorField2DMaterial, uint16_t, uint16_t)
+    PTX_END_DESCRIBE(VectorField2DMaterial)
+    
 };

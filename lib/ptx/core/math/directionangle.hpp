@@ -14,6 +14,7 @@
 
 #include "mathematics.hpp"
 #include "vector3d.hpp"
+#include "../../registry/reflect_macros.hpp"
 
 /**
  * @class DirectionAngle
@@ -54,4 +55,19 @@ public:
      * @return A string representing the `DirectionAngle` in the format "(rotation: X, direction: [X, Y, Z])".
      */
     ptx::UString ToString();
+
+    PTX_BEGIN_FIELDS(DirectionAngle)
+        PTX_FIELD(DirectionAngle, Rotation, "Rotation", __FLT_MIN__, __FLT_MAX__),
+        PTX_FIELD(DirectionAngle, Direction, "Direction", 0, 0)
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(DirectionAngle)
+        PTX_METHOD_AUTO(DirectionAngle, ToString, "To string")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(DirectionAngle)
+        PTX_CTOR(DirectionAngle, float, float, float, float),
+        PTX_CTOR(DirectionAngle, float, Vector3D)
+    PTX_END_DESCRIBE(DirectionAngle)
+    
 };

@@ -16,6 +16,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include "../../registry/reflect_macros.hpp"
 
 #include "../../core/color/rgbcolor.hpp"
 #include "../render/core/cameramanager.hpp"
@@ -91,11 +92,47 @@ private:
         std::string fb_name;      ///< SHM name: "/ptx_fb{idx}"
         std::string geom_name;    ///< SHM name: "/ptx_geom{idx}"
         std::string ui_name;      ///< UI label: "Camera{idx}" or custom
-    };
+    
+        PTX_BEGIN_FIELDS(PerCam)
+            PTX_FIELD(PerCam, shm, "Shm", 0, 0),
+            PTX_FIELD(PerCam, geom, "Geom", 0, 0),
+            PTX_FIELD(PerCam, count, "Count", 0, 4294967295),
+            PTX_FIELD(PerCam, W, "W", 0, 4294967295),
+            PTX_FIELD(PerCam, H, "H", 0, 4294967295),
+            PTX_FIELD(PerCam, rgb, "Rgb", -2147483648, 2147483647),
+            PTX_FIELD(PerCam, xy, "Xy", -2147483648, 2147483647),
+            PTX_FIELD(PerCam, fb_name, "Fb name", 0, 0),
+            PTX_FIELD(PerCam, geom_name, "Geom name", 0, 0),
+            PTX_FIELD(PerCam, ui_name, "Ui name", 0, 0)
+        PTX_END_FIELDS
+        
+        PTX_BEGIN_METHODS(PerCam)
+            /* TODO: PTX_METHOD_AUTO(PerCam, Method, "Doc") */
+        PTX_END_METHODS
+        
+        PTX_BEGIN_DESCRIBE(PerCam)
+            /* TODO: PTX_CTOR0(PerCam) or PTX_CTOR(PerCam, ...) */
+        PTX_END_DESCRIBE(PerCam)
+        
+};
 
     std::string ctrl_name_;  ///< Shared control channel name
     std::string reg_name_;   ///< Registry channel name
 
     PTXRegistry reg_{};           ///< Registry object (enumeration + camera meta)
     std::vector<PerCam> cams_;     ///< Per-camera SHM/state
+
+    PTX_BEGIN_FIELDS(VirtualController)
+        /* TODO: PTX_FIELD(VirtualController, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(VirtualController)
+        PTX_METHOD_AUTO(VirtualController, Initialize, "Initialize"),
+        PTX_METHOD_AUTO(VirtualController, Display, "Display")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(VirtualController)
+        PTX_CTOR(VirtualController, CameraManager *, const char *, const char *)
+    PTX_END_DESCRIBE(VirtualController)
+    
 };

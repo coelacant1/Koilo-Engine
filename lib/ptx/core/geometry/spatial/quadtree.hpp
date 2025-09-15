@@ -9,6 +9,7 @@
 #include <cstddef>
 #include "../../math/vector2d.hpp"
 #include "../2d/rectangle.hpp"
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class QuadTree
@@ -88,7 +89,28 @@ public:
         const Rectangle2D& GetBounds() const { return bounds; }
         T** GetItems() const { return items; }
         Node* GetChildren() const { return children; }
-    };
+    
+        PTX_BEGIN_FIELDS(Node)
+            /* TODO: PTX_FIELD(Node, member, "Doc", min, max) */
+        PTX_END_FIELDS
+        
+        PTX_BEGIN_METHODS(Node)
+            PTX_METHOD_AUTO(Node, Insert, "Insert"),
+            PTX_METHOD_AUTO(Node, FindLeaf, "Find leaf"),
+            PTX_METHOD_AUTO(Node, Subdivide, "Subdivide"),
+            PTX_METHOD_AUTO(Node, IsLeaf, "Is leaf"),
+            PTX_METHOD_AUTO(Node, GetItemCount, "Get item count"),
+            PTX_METHOD_AUTO(Node, GetCapacity, "Get capacity"),
+            PTX_METHOD_AUTO(Node, GetBounds, "Get bounds"),
+            PTX_METHOD_AUTO(Node, GetItems, "Get items"),
+            PTX_METHOD_AUTO(Node, GetChildren, "Get children")
+        PTX_END_METHODS
+        
+        PTX_BEGIN_DESCRIBE(Node)
+            PTX_CTOR(Node, const Rectangle2D &)
+        PTX_END_DESCRIBE(Node)
+        
+};
 
     /** @brief Constructs a QuadTree covering the specified rectangular area. */
     explicit QuadTree(const Rectangle2D& r);
@@ -117,6 +139,24 @@ public:
     /* --- Getters for tree properties --- */
     Node* GetRoot() { return root; }
     unsigned long GetItemCount() const { return totalItems; }
+
+    /* NOTE: QuadTree is a template; verify macros accept template types. */
+    PTX_BEGIN_FIELDS(QuadTree)
+        /* TODO: PTX_FIELD(QuadTree, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(QuadTree)
+        PTX_METHOD_AUTO(QuadTree, Insert, "Insert"),
+        PTX_METHOD_AUTO(QuadTree, QueryPoint, "Query point"),
+        PTX_METHOD_AUTO(QuadTree, Rebuild, "Rebuild"),
+        PTX_METHOD_AUTO(QuadTree, GetRoot, "Get root"),
+        PTX_METHOD_AUTO(QuadTree, GetItemCount, "Get item count")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(QuadTree)
+        PTX_CTOR(QuadTree, const Rectangle2D &)
+    PTX_END_DESCRIBE(QuadTree)
+    
 };
 
 // Include the implementation file for the templated class.

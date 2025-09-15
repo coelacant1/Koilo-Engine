@@ -15,6 +15,7 @@
 
 #include <cstdint>
 #include "../math/mathematics.hpp"
+#include "../../registry/reflect_macros.hpp"
 
 /**
  * @class DampedSpring
@@ -72,4 +73,21 @@ public:
      * @return Updated position as a float.
      */
     float Calculate(float target, float dT);
+
+    PTX_BEGIN_FIELDS(DampedSpring)
+        /* TODO: PTX_FIELD(DampedSpring, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(DampedSpring)
+        PTX_METHOD_AUTO(DampedSpring, GetCurrentPosition, "Get current position"),
+        PTX_METHOD_AUTO(DampedSpring, SetConstants, "Set constants"),
+        PTX_METHOD_AUTO(DampedSpring, Calculate, "Calculate"),
+        PTX_METHOD_AUTO(DampedSpring, Calculate, "Calculate")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(DampedSpring)
+        PTX_CTOR0(DampedSpring),
+        PTX_CTOR(DampedSpring, float, float)
+    PTX_END_DESCRIBE(DampedSpring)
+    
 };

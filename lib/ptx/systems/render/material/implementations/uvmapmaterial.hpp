@@ -3,6 +3,7 @@
 #include "../imaterial.hpp"
 #include "../materialt.hpp"
 #include "../../shader/ishader.hpp"
+#include "../../../../registry/reflect_macros.hpp"
 
 #include "../../shader/implementations/uvmapparams.hpp"
 #include "../../shader/implementations/uvmapshader.hpp"
@@ -56,4 +57,21 @@ public:
 
     /** @brief Rebind the source image (non-owning). */
     void SetImage(Image* img)       { this->image = img; }
+
+    PTX_BEGIN_FIELDS(UVMapMaterial)
+        /* TODO: PTX_FIELD(UVMapMaterial, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(UVMapMaterial)
+        PTX_METHOD_AUTO(UVMapMaterial, SetHueAngle, "Set hue angle"),
+        PTX_METHOD_AUTO(UVMapMaterial, SetFlipU, "Set flip u"),
+        PTX_METHOD_AUTO(UVMapMaterial, SetFlipV, "Set flip v"),
+        PTX_METHOD_AUTO(UVMapMaterial, SetSize, "Set size"),
+        PTX_METHOD_AUTO(UVMapMaterial, SetImage, "Set image")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(UVMapMaterial)
+        PTX_CTOR(UVMapMaterial, Image *)
+    PTX_END_DESCRIBE(UVMapMaterial)
+    
 };

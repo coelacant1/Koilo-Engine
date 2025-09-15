@@ -12,6 +12,7 @@
 
 #pragma once
 
+#include "../../../registry/reflect_macros.hpp"
 /**
  * @class KalmanFilter
  * @brief Implements a generic Kalman Filter for 1D data.
@@ -47,6 +48,20 @@ public:
      * @return The filtered estimate of the value.
      */
     T Filter(T value);
+
+    /* NOTE: KalmanFilter is a template; verify macros accept template types. */
+    PTX_BEGIN_FIELDS(KalmanFilter)
+        /* TODO: PTX_FIELD(KalmanFilter, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(KalmanFilter)
+        PTX_METHOD_AUTO(KalmanFilter, Filter, "Filter")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(KalmanFilter)
+        PTX_CTOR(KalmanFilter, T, T, T)
+    PTX_END_DESCRIBE(KalmanFilter)
+    
 };
 
 #include "kalmanfilter.tpp" // Includes the implementation of the template.

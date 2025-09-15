@@ -16,6 +16,7 @@
 #include "../../core/math/vector2d.hpp"      // Vector2D
 #include "../../core/math/mathematics.hpp"   // Mathematics::Map
 #include "../../core/color/rgbcolor.hpp"     // RGBColor
+#include "../../registry/reflect_macros.hpp"
 
 /**
  * @class Image
@@ -87,4 +88,22 @@ private:
     Vector2D size{1.0f, 1.0f};           ///< logical width/height in world units
     Vector2D offset{0.0f, 0.0f};         ///< center/rotation origin
     float angle = 0.0f;                  ///< degrees CCW
+
+    PTX_BEGIN_FIELDS(Image)
+        /* TODO: PTX_FIELD(Image, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(Image)
+        PTX_METHOD_AUTO(Image, SetData, "Set data"),
+        PTX_METHOD_AUTO(Image, SetColorPalette, "Set color palette"),
+        PTX_METHOD_AUTO(Image, SetSize, "Set size"),
+        PTX_METHOD_AUTO(Image, SetPosition, "Set position"),
+        PTX_METHOD_AUTO(Image, SetRotation, "Set rotation"),
+        PTX_METHOD_AUTO(Image, GetColorAtCoordinate, "Get color at coordinate")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(Image)
+        PTX_CTOR(Image, const uint8_t *, const uint8_t *, unsigned int, unsigned int, uint8_t)
+    PTX_END_DESCRIBE(Image)
+    
 };

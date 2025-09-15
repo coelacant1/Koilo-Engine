@@ -17,6 +17,7 @@
 #include "../../core/geometry/3d/triangle.hpp"
 #include "../../core/geometry/3d/triangle.hpp"
 #include "indexgroup.hpp"
+#include "../../registry/reflect_macros.hpp"
 
 /**
  * @class IStaticTriangleGroup
@@ -71,4 +72,24 @@ public:
      * @return A pointer to the IndexGroup array for UV vertices.
      */
     virtual const IndexGroup* GetUVIndexGroup() = 0;
+
+    PTX_BEGIN_FIELDS(IStaticTriangleGroup)
+        /* TODO: PTX_FIELD(IStaticTriangleGroup, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(IStaticTriangleGroup)
+        PTX_METHOD_AUTO(IStaticTriangleGroup, HasUV, "Has uv"),
+        PTX_METHOD_AUTO(IStaticTriangleGroup, GetIndexGroup, "Get index group"),
+        PTX_METHOD_AUTO(IStaticTriangleGroup, GetTriangleCount, "Get triangle count"),
+        PTX_METHOD_AUTO(IStaticTriangleGroup, GetVertices, "Get vertices"),
+        PTX_METHOD_AUTO(IStaticTriangleGroup, GetVertexCount, "Get vertex count"),
+        PTX_METHOD_AUTO(IStaticTriangleGroup, GetTriangles, "Get triangles"),
+        PTX_METHOD_AUTO(IStaticTriangleGroup, GetUVVertices, "Get uvvertices"),
+        PTX_METHOD_AUTO(IStaticTriangleGroup, GetUVIndexGroup, "Get uvindex group")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(IStaticTriangleGroup)
+        /* TODO: PTX_CTOR0(IStaticTriangleGroup) or PTX_CTOR(IStaticTriangleGroup, ...) */
+    PTX_END_DESCRIBE(IStaticTriangleGroup)
+    
 };

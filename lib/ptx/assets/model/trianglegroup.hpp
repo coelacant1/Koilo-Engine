@@ -16,6 +16,7 @@
 #include "itrianglegroup.hpp"
 #include "indexgroup.hpp"
 #include "istatictrianglegroup.hpp"
+#include "../../registry/reflect_macros.hpp"
 
 /**
  * @class TriangleGroup
@@ -70,6 +71,24 @@ public:
      * @return Pointer to the array of triangles.
      */
     Triangle3D* GetTriangles() override;
+
+    /* NOTE: TriangleGroup is a template; verify macros accept template types. */
+    PTX_BEGIN_FIELDS(TriangleGroup)
+        /* TODO: PTX_FIELD(TriangleGroup, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(TriangleGroup)
+        PTX_METHOD_AUTO(TriangleGroup, GetIndexGroup, "Get index group"),
+        PTX_METHOD_AUTO(TriangleGroup, GetTriangleCount, "Get triangle count"),
+        PTX_METHOD_AUTO(TriangleGroup, GetVertices, "Get vertices"),
+        PTX_METHOD_AUTO(TriangleGroup, GetVertexCount, "Get vertex count"),
+        PTX_METHOD_AUTO(TriangleGroup, GetTriangles, "Get triangles")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(TriangleGroup)
+        PTX_CTOR(TriangleGroup, IStaticTriangleGroup *)
+    PTX_END_DESCRIBE(TriangleGroup)
+    
 };
 
 #include "trianglegroup.tpp"

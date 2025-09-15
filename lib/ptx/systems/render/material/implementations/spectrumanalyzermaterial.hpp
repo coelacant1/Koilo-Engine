@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include "../../../../registry/reflect_macros.hpp"
 
 #include "../imaterial.hpp"
 #include "../materialt.hpp"
@@ -149,4 +150,37 @@ public:
 
 private:
     BouncePhysics* springs_[B]; ///< Allocated only when bounce is enabled.
+
+    /* NOTE: SpectrumAnalyzerMaterial is a template; verify macros accept template types. */
+    PTX_BEGIN_FIELDS(SpectrumAnalyzerMaterial)
+        /* TODO: PTX_FIELD(SpectrumAnalyzerMaterial, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(SpectrumAnalyzerMaterial)
+        PTX_METHOD_AUTO(SpectrumAnalyzerMaterial, SetSizeHalf, "Set size half"),
+        PTX_METHOD_AUTO(SpectrumAnalyzerMaterial, SetSizeFull, "Set size full"),
+        PTX_METHOD_AUTO(SpectrumAnalyzerMaterial, SetOffset, "Set offset"),
+        PTX_METHOD_AUTO(SpectrumAnalyzerMaterial, SetRotationDeg, "Set rotation deg"),
+        PTX_METHOD_AUTO(SpectrumAnalyzerMaterial, SetHueDeg, "Set hue deg"),
+        PTX_METHOD_AUTO(SpectrumAnalyzerMaterial, SetMirrorY, "Set mirror y"),
+        PTX_METHOD_AUTO(SpectrumAnalyzerMaterial, GetMirrorY, "Get mirror y"),
+        PTX_METHOD_AUTO(SpectrumAnalyzerMaterial, SetFlipY, "Set flip y"),
+        PTX_METHOD_AUTO(SpectrumAnalyzerMaterial, GetFlipY, "Get flip y"),
+        PTX_METHOD_AUTO(SpectrumAnalyzerMaterial, SetHeightScale, "Set height scale"),
+        PTX_METHOD_AUTO(SpectrumAnalyzerMaterial, GetHeightScale, "Get height scale"),
+        PTX_METHOD_AUTO(SpectrumAnalyzerMaterial, SetBounceEnabled, "Set bounce enabled"),
+        PTX_METHOD_AUTO(SpectrumAnalyzerMaterial, GetBounceEnabled, "Get bounce enabled"),
+        PTX_METHOD_AUTO(SpectrumAnalyzerMaterial, SetSpectrum, "Set spectrum"),
+        PTX_METHOD_AUTO(SpectrumAnalyzerMaterial, SetSpectrumAt, "Set spectrum at"),
+        PTX_METHOD_AUTO(SpectrumAnalyzerMaterial, GetSpectrumAt, "Get spectrum at"),
+        PTX_METHOD_AUTO(SpectrumAnalyzerMaterial, SpectrumData, "Spectrum data"),
+        PTX_METHOD_AUTO(SpectrumAnalyzerMaterial, SpectrumData, "Spectrum data"),
+        PTX_METHOD_AUTO(SpectrumAnalyzerMaterial, BindSamples, "Bind samples"),
+        PTX_METHOD_AUTO(SpectrumAnalyzerMaterial, Update, "Update")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(SpectrumAnalyzerMaterial)
+        PTX_CTOR0(SpectrumAnalyzerMaterial)
+    PTX_END_DESCRIBE(SpectrumAnalyzerMaterial)
+    
 };

@@ -7,6 +7,7 @@
 #pragma once
 
 #include "../../math/vector3d.hpp"
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class Triangle3D
@@ -42,4 +43,23 @@ public:
      * @return The point on the triangle's surface closest to p.
      */
     Vector3D ClosestPoint(const Vector3D& p) const;
+
+    PTX_BEGIN_FIELDS(Triangle3D)
+        PTX_FIELD(Triangle3D, p1, "P1", 0, 0),
+        PTX_FIELD(Triangle3D, p2, "P2", 0, 0),
+        PTX_FIELD(Triangle3D, p3, "P3", 0, 0)
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(Triangle3D)
+        PTX_METHOD_AUTO(Triangle3D, GetArea, "Get area"),
+        PTX_METHOD_AUTO(Triangle3D, GetNormal, "Get normal"),
+        PTX_METHOD_AUTO(Triangle3D, GetCentroid, "Get centroid"),
+        PTX_METHOD_AUTO(Triangle3D, ClosestPoint, "Closest point")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(Triangle3D)
+        PTX_CTOR0(Triangle3D),
+        PTX_CTOR(Triangle3D, const Vector3D &, const Vector3D &, const Vector3D &)
+    PTX_END_DESCRIBE(Triangle3D)
+    
 };

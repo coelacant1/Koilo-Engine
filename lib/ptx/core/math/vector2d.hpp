@@ -13,6 +13,7 @@
 #pragma once
 
 #include "mathematics.hpp"
+#include "../../registry/reflect_macros.hpp"
 
 /**
  * @class Vector2D
@@ -425,4 +426,60 @@ public:
      * @return A new `Vector2D` after division by `value`.
      */
     Vector2D operator /(const float& value) const;
+
+    PTX_BEGIN_FIELDS(Vector2D)
+        PTX_FIELD(Vector2D, X, "X", __FLT_MIN__, __FLT_MAX__),
+        PTX_FIELD(Vector2D, Y, "Y", __FLT_MIN__, __FLT_MAX__)
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(Vector2D)
+        PTX_METHOD_AUTO(Vector2D, Absolute, "Absolute"),
+        PTX_METHOD_AUTO(Vector2D, Normal, "Normal"),
+        PTX_METHOD_AUTO(Vector2D, Add, "Add"),
+        PTX_METHOD_AUTO(Vector2D, Subtract, "Subtract"),
+        PTX_METHOD_AUTO(Vector2D, Multiply, "Multiply"),
+        PTX_METHOD_AUTO(Vector2D, Divide, "Divide"),
+        PTX_METHOD_AUTO(Vector2D, Multiply, "Multiply"),
+        PTX_METHOD_AUTO(Vector2D, Divide, "Divide"),
+        PTX_METHOD_AUTO(Vector2D, CrossProduct, "Cross product"),
+        PTX_METHOD_AUTO(Vector2D, UnitCircle, "Unit circle"),
+        PTX_METHOD_AUTO(Vector2D, Constrain, "Constrain"),
+        PTX_METHOD_AUTO(Vector2D, Constrain, "Constrain"),
+        PTX_METHOD_AUTO(Vector2D, Minimum, "Minimum"),
+        PTX_METHOD_AUTO(Vector2D, Maximum, "Maximum"),
+        PTX_METHOD_AUTO(Vector2D, Rotate, "Rotate"),
+        PTX_METHOD_AUTO(Vector2D, CheckBounds, "Check bounds"),
+        PTX_METHOD_AUTO(Vector2D, Magnitude, "Magnitude"),
+        PTX_METHOD_AUTO(Vector2D, DotProduct, "Dot product"),
+        PTX_METHOD_AUTO(Vector2D, CalculateEuclideanDistance, "Calculate euclidean distance"),
+        PTX_METHOD_AUTO(Vector2D, Perpendicular, "Perpendicular"),
+        PTX_METHOD_AUTO(Vector2D, RightPerpendicular, "Right perpendicular"),
+        PTX_METHOD_AUTO(Vector2D, IsEqual, "Is equal"),
+        PTX_METHOD_AUTO(Vector2D, ToString, "To string"),
+        PTX_SMETHOD_AUTO(Vector2D::Normal, "Normal"),
+        PTX_SMETHOD_AUTO(Vector2D::Add, "Add"),
+        PTX_SMETHOD_AUTO(Vector2D::Subtract, "Subtract"),
+        PTX_SMETHOD_AUTO(Vector2D::Multiply, "Multiply"),
+        PTX_SMETHOD_AUTO(Vector2D::Divide, "Divide"),
+        PTX_SMETHOD_AUTO(Vector2D::Multiply, "Multiply"),
+        PTX_SMETHOD_AUTO(Vector2D::Multiply, "Multiply"),
+        PTX_SMETHOD_AUTO(Vector2D::Divide, "Divide"),
+        PTX_SMETHOD_AUTO(Vector2D::CrossProduct, "Cross product"),
+        PTX_SMETHOD_AUTO(Vector2D::DotProduct, "Dot product"),
+        PTX_SMETHOD_AUTO(Vector2D::CalculateEuclideanDistance, "Calculate euclidean distance"),
+        PTX_SMETHOD_AUTO(Vector2D::IsEqual, "Is equal"),
+        PTX_SMETHOD_AUTO(Vector2D::Minimum, "Minimum"),
+        PTX_SMETHOD_AUTO(Vector2D::Maximum, "Maximum"),
+        PTX_SMETHOD_AUTO(Vector2D::LERP, "Lerp"),
+        PTX_SMETHOD_AUTO(Vector2D::DegreesToRadians, "Degrees to radians"),
+        PTX_SMETHOD_AUTO(Vector2D::RadiansToDegrees, "Radians to degrees"),
+        PTX_SMETHOD_AUTO(Vector2D::LineSegmentsIntersect, "Line segments intersect")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(Vector2D)
+        PTX_CTOR0(Vector2D),
+        PTX_CTOR(Vector2D, const Vector2D &),
+        PTX_CTOR(Vector2D, const float &, const float &)
+    PTX_END_DESCRIBE(Vector2D)
+    
 };

@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <cmath>
+#include "../../../../registry/reflect_macros.hpp"
 
 #include "../ishader.hpp"
 #include "../../material/materialt.hpp"
@@ -82,4 +83,18 @@ public:
         accum = accum.Constrain(0.0f, 255.0f);
         return RGBColor(uint8_t(accum.X), uint8_t(accum.Y), uint8_t(accum.Z));
     }
+
+    /* NOTE: PhongLightShaderT is a template; verify macros accept template types. */
+    PTX_BEGIN_FIELDS(PhongLightShaderT)
+        /* TODO: PTX_FIELD(PhongLightShaderT, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(PhongLightShaderT)
+        PTX_METHOD_AUTO(PhongLightShaderT, Shade, "Shade")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(PhongLightShaderT)
+        /* TODO: PTX_CTOR0(PhongLightShaderT) or PTX_CTOR(PhongLightShaderT, ...) */
+    PTX_END_DESCRIBE(PhongLightShaderT)
+    
 };

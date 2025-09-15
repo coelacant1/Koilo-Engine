@@ -11,6 +11,7 @@
 
 #include <stdint.h>
 #include "../platform/time.hpp"
+#include "../../registry/reflect_macros.hpp"
 
 /**
  * @class Wait
@@ -38,4 +39,18 @@ public:
      * @return True if the duration has elapsed, otherwise false.
      */
     bool IsFinished();
+
+    PTX_BEGIN_FIELDS(Wait)
+        /* TODO: PTX_FIELD(Wait, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(Wait)
+        PTX_METHOD_AUTO(Wait, Reset, "Reset"),
+        PTX_METHOD_AUTO(Wait, IsFinished, "Is finished")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(Wait)
+        PTX_CTOR(Wait, uint32_t)
+    PTX_END_DESCRIBE(Wait)
+    
 };

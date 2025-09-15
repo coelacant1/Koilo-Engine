@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include "../../../../registry/reflect_macros.hpp"
 
 #include "../imaterial.hpp"
 #include "../materialt.hpp"
@@ -124,4 +125,31 @@ private:
     /** @brief Smoothing filters (window size 40) for dynamic range tracking. */
     MaxFilter<40> maxF_;
     MinFilter<40> minF_;
+
+    /* NOTE: OscilloscopeMaterial is a template; verify macros accept template types. */
+    PTX_BEGIN_FIELDS(OscilloscopeMaterial)
+        /* TODO: PTX_FIELD(OscilloscopeMaterial, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(OscilloscopeMaterial)
+        PTX_METHOD_AUTO(OscilloscopeMaterial, SetSizeHalf, "Set size half"),
+        PTX_METHOD_AUTO(OscilloscopeMaterial, SetSizeFull, "Set size full"),
+        PTX_METHOD_AUTO(OscilloscopeMaterial, SetOffset, "Set offset"),
+        PTX_METHOD_AUTO(OscilloscopeMaterial, SetRotationDeg, "Set rotation deg"),
+        PTX_METHOD_AUTO(OscilloscopeMaterial, SetHueDeg, "Set hue deg"),
+        PTX_METHOD_AUTO(OscilloscopeMaterial, SetLineThickness, "Set line thickness"),
+        PTX_METHOD_AUTO(OscilloscopeMaterial, SetHeightClamp, "Set height clamp"),
+        PTX_METHOD_AUTO(OscilloscopeMaterial, SetSpectrum, "Set spectrum"),
+        PTX_METHOD_AUTO(OscilloscopeMaterial, SetSpectrumAt, "Set spectrum at"),
+        PTX_METHOD_AUTO(OscilloscopeMaterial, GetSpectrumAt, "Get spectrum at"),
+        PTX_METHOD_AUTO(OscilloscopeMaterial, SpectrumData, "Spectrum data"),
+        PTX_METHOD_AUTO(OscilloscopeMaterial, SpectrumData, "Spectrum data"),
+        PTX_METHOD_AUTO(OscilloscopeMaterial, BindSamples, "Bind samples"),
+        PTX_METHOD_AUTO(OscilloscopeMaterial, UpdateScaling, "Update scaling")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(OscilloscopeMaterial)
+        PTX_CTOR0(OscilloscopeMaterial)
+    PTX_END_DESCRIBE(OscilloscopeMaterial)
+    
 };

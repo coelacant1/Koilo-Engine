@@ -14,6 +14,7 @@
 
 #include "../../math/rotation.hpp"
 #include "../../math/vector3d.hpp"
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class Sphere
@@ -63,4 +64,21 @@ public:
      * @param bO Pointer to the other Sphere.
      */
     void Collide(float elasticity, Sphere* bO);
+
+    PTX_BEGIN_FIELDS(Sphere)
+        PTX_FIELD(Sphere, velocity, "Velocity", 0, 0),
+        PTX_FIELD(Sphere, position, "Position", 0, 0)
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(Sphere)
+        PTX_METHOD_AUTO(Sphere, GetRadius, "Get radius"),
+        PTX_METHOD_AUTO(Sphere, Update, "Update"),
+        PTX_METHOD_AUTO(Sphere, IsIntersecting, "Is intersecting"),
+        PTX_METHOD_AUTO(Sphere, Collide, "Collide")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(Sphere)
+        PTX_CTOR(Sphere, Vector3D, float)
+    PTX_END_DESCRIBE(Sphere)
+    
 };

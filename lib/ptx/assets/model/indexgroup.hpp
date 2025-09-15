@@ -17,6 +17,7 @@
 #include "../../core/utils/casthelper.hpp"   // CastHelper::ToU16
 #include "../../core/math/mathematics.hpp"  // Mathematics::DoubleToCleanString
 #include "../../core/platform/ustring.hpp"  // ptx::UString
+#include "../../registry/reflect_macros.hpp"
 
 /**
  * @class IndexGroup
@@ -81,4 +82,25 @@ public:
      * @return UString formatted as "[A, B, C]".
      */
     ptx::UString ToString();
+
+    PTX_BEGIN_FIELDS(IndexGroup)
+        PTX_FIELD(IndexGroup, A, "A", 0, 65535),
+        PTX_FIELD(IndexGroup, B, "B", 0, 65535),
+        PTX_FIELD(IndexGroup, C, "C", 0, 65535)
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(IndexGroup)
+        PTX_METHOD_AUTO(IndexGroup, Add, "Add"),
+        PTX_METHOD_AUTO(IndexGroup, Subtract, "Subtract"),
+        PTX_METHOD_AUTO(IndexGroup, Multiply, "Multiply"),
+        PTX_METHOD_AUTO(IndexGroup, Divide, "Divide"),
+        PTX_METHOD_AUTO(IndexGroup, ToString, "To string")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(IndexGroup)
+        PTX_CTOR0(IndexGroup),
+        PTX_CTOR(IndexGroup, const IndexGroup &),
+        PTX_CTOR(IndexGroup, uint16_t, uint16_t, uint16_t)
+    PTX_END_DESCRIBE(IndexGroup)
+    
 };

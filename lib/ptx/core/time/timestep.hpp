@@ -11,6 +11,7 @@
 
 #include <stdint.h>
 #include "../platform/time.hpp"
+#include "../../registry/reflect_macros.hpp"
 
 /**
  * @class TimeStep
@@ -39,4 +40,18 @@ public:
      * @return True if the interval has elapsed, otherwise false.
      */
     bool IsReady();
+
+    PTX_BEGIN_FIELDS(TimeStep)
+        /* TODO: PTX_FIELD(TimeStep, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(TimeStep)
+        PTX_METHOD_AUTO(TimeStep, SetFrequency, "Set frequency"),
+        PTX_METHOD_AUTO(TimeStep, IsReady, "Is ready")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(TimeStep)
+        PTX_CTOR(TimeStep, float)
+    PTX_END_DESCRIBE(TimeStep)
+    
 };

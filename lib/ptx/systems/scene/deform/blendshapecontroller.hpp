@@ -15,6 +15,7 @@
 #include <cstddef>
 #include "../animation/easyeaseanimator.hpp" // Include for animation controller interface.
 #include "../../../core/math/vector3d.hpp" // Include for 3D vector operations.
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class BlendshapeController
@@ -115,6 +116,28 @@ public:
      * @return The cumulative rotation offset.
      */
     Vector3D GetRotationOffset();
+
+    /* NOTE: BlendshapeController is a template; verify macros accept template types. */
+    PTX_BEGIN_FIELDS(BlendshapeController)
+        /* TODO: PTX_FIELD(BlendshapeController, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(BlendshapeController)
+        PTX_METHOD_AUTO(BlendshapeController, AddBlendshape, "Add blendshape"),
+        PTX_METHOD_AUTO(BlendshapeController, AddBlendshape, "Add blendshape"),
+        PTX_METHOD_AUTO(BlendshapeController, AddBlendshape, "Add blendshape"),
+        PTX_METHOD_AUTO(BlendshapeController, SetBlendshapePositionOffset, "Set blendshape position offset"),
+        PTX_METHOD_AUTO(BlendshapeController, SetBlendshapeScaleOffset, "Set blendshape scale offset"),
+        PTX_METHOD_AUTO(BlendshapeController, SetBlendshapeRotationOffset, "Set blendshape rotation offset"),
+        PTX_METHOD_AUTO(BlendshapeController, GetPositionOffset, "Get position offset"),
+        PTX_METHOD_AUTO(BlendshapeController, GetScaleOffset, "Get scale offset"),
+        PTX_METHOD_AUTO(BlendshapeController, GetRotationOffset, "Get rotation offset")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(BlendshapeController)
+        PTX_CTOR(BlendshapeController, IEasyEaseAnimator *)
+    PTX_END_DESCRIBE(BlendshapeController)
+    
 };
 
 #include "blendshapecontroller.tpp" // Include the template implementation.

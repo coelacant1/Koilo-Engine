@@ -13,6 +13,7 @@
 
 #include "../../../core/color/rgbcolor.hpp" // Include for RGB color representation.
 #include "../../../core/geometry/2d/rectangle.hpp" // Include for 2D bounding box representation.
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class IPixelGroup
@@ -208,4 +209,37 @@ public:
      * @brief Sorts the pixels in a grid structure.
      */
     virtual void GridSort() = 0;
+
+    PTX_BEGIN_FIELDS(IPixelGroup)
+        /* TODO: PTX_FIELD(IPixelGroup, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(IPixelGroup)
+        PTX_METHOD_AUTO(IPixelGroup, GetCenterCoordinate, "Get center coordinate"),
+        PTX_METHOD_AUTO(IPixelGroup, GetSize, "Get size"),
+        PTX_METHOD_AUTO(IPixelGroup, GetCoordinate, "Get coordinate"),
+        PTX_METHOD_AUTO(IPixelGroup, GetPixelIndex, "Get pixel index"),
+        PTX_METHOD_AUTO(IPixelGroup, GetColor, "Get color"),
+        PTX_METHOD_AUTO(IPixelGroup, GetColors, "Get colors"),
+        PTX_METHOD_AUTO(IPixelGroup, GetColorBuffer, "Get color buffer"),
+        PTX_METHOD_AUTO(IPixelGroup, GetPixelCount, "Get pixel count"),
+        PTX_METHOD_AUTO(IPixelGroup, Overlaps, "Overlaps"),
+        PTX_METHOD_AUTO(IPixelGroup, ContainsVector2D, "Contains vector2 d"),
+        PTX_METHOD_AUTO(IPixelGroup, GetUpIndex, "Get up index"),
+        PTX_METHOD_AUTO(IPixelGroup, GetDownIndex, "Get down index"),
+        PTX_METHOD_AUTO(IPixelGroup, GetLeftIndex, "Get left index"),
+        PTX_METHOD_AUTO(IPixelGroup, GetRightIndex, "Get right index"),
+        PTX_METHOD_AUTO(IPixelGroup, GetAlternateXIndex, "Get alternate xindex"),
+        PTX_METHOD_AUTO(IPixelGroup, GetAlternateYIndex, "Get alternate yindex"),
+        PTX_METHOD_AUTO(IPixelGroup, GetOffsetXIndex, "Get offset xindex"),
+        PTX_METHOD_AUTO(IPixelGroup, GetOffsetYIndex, "Get offset yindex"),
+        PTX_METHOD_AUTO(IPixelGroup, GetOffsetXYIndex, "Get offset xyindex"),
+        PTX_METHOD_AUTO(IPixelGroup, GetRadialIndex, "Get radial index"),
+        PTX_METHOD_AUTO(IPixelGroup, GridSort, "Grid sort")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(IPixelGroup)
+        /* TODO: PTX_CTOR0(IPixelGroup) or PTX_CTOR(IPixelGroup, ...) */
+    PTX_END_DESCRIBE(IPixelGroup)
+    
 };

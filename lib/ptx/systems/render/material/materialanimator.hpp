@@ -8,6 +8,7 @@
 #include "../../scene/animation/easyeaseanimator.hpp"
 #include "../../../core/math/vector3d.hpp"
 #include "../../../core/color/rgbcolor.hpp"
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @file materialanimator.hpp
@@ -34,6 +35,20 @@ public:
      * @warning Uses @c static_cast to @c MaterialAnimator<N>; ensure the bound material matches N.
      */
     RGBColor Shade(const SurfaceProperties& sp, const IMaterial& m) override;
+
+    /* NOTE: MaterialAnimatorShader is a template; verify macros accept template types. */
+    PTX_BEGIN_FIELDS(MaterialAnimatorShader)
+        /* TODO: PTX_FIELD(MaterialAnimatorShader, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(MaterialAnimatorShader)
+        PTX_METHOD_AUTO(MaterialAnimatorShader, Shade, "Shade")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(MaterialAnimatorShader)
+        /* TODO: PTX_CTOR0(MaterialAnimatorShader) or PTX_CTOR(MaterialAnimatorShader, ...) */
+    PTX_END_DESCRIBE(MaterialAnimatorShader)
+    
 };
 
 /**
@@ -41,7 +56,20 @@ public:
  *
  * Kept to mirror the @c MaterialT pattern, even though state is owned by @c MaterialAnimator.
  */
-struct MaterialAnimatorParams { };
+struct MaterialAnimatorParams { 
+    PTX_BEGIN_FIELDS(MaterialAnimatorParams)
+        /* TODO: PTX_FIELD(MaterialAnimatorParams, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(MaterialAnimatorParams)
+        /* TODO: PTX_METHOD_AUTO(MaterialAnimatorParams, Method, "Doc") */
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(MaterialAnimatorParams)
+        /* TODO: PTX_CTOR0(MaterialAnimatorParams) or PTX_CTOR(MaterialAnimatorParams, ...) */
+    PTX_END_DESCRIBE(MaterialAnimatorParams)
+    
+};
 
 /**
  * @tparam materialCount Maximum number of material layers.
@@ -126,6 +154,27 @@ private:
     IMaterial* dictionary_[materialCount]     = { nullptr };///< Layer->material identity map
     uint8_t    currentMaterials_              = 0;         ///< Number of active layers
     bool       baseMaterialSet_               = false;     ///< Whether layer 0 is initialized
+
+    /* NOTE: MaterialAnimator is a template; verify macros accept template types. */
+    PTX_BEGIN_FIELDS(MaterialAnimator)
+        /* TODO: PTX_FIELD(MaterialAnimator, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(MaterialAnimator)
+        PTX_METHOD_AUTO(MaterialAnimator, SetBaseMaterial, "Set base material"),
+        PTX_METHOD_AUTO(MaterialAnimator, AddMaterial, "Add material"),
+        PTX_METHOD_AUTO(MaterialAnimator, AddMaterialFrame, "Add material frame"),
+        PTX_METHOD_AUTO(MaterialAnimator, GetMaterialOpacity, "Get material opacity"),
+        PTX_METHOD_AUTO(MaterialAnimator, Update, "Update"),
+        PTX_METHOD_AUTO(MaterialAnimator, GetCombiner, "Get combiner"),
+        PTX_METHOD_AUTO(MaterialAnimator, GetCombiner, "Get combiner")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(MaterialAnimator)
+        PTX_CTOR0(MaterialAnimator),
+        PTX_CTOR(MaterialAnimator, std::nullptr_t)
+    PTX_END_DESCRIBE(MaterialAnimator)
+    
 };
 
 #include "materialanimator.tpp"

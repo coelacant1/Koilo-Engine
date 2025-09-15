@@ -2,6 +2,7 @@
 
 #include "../ishader.hpp"  // for IMaterial*
 #include <cstdint>
+#include "../../../../registry/reflect_macros.hpp"
 
 /**
  * @file
@@ -34,4 +35,20 @@ struct DepthParams {
     float            depth  { 1.0f };           ///< Span length mapped into [0..1].
     float            offset { 0.0f };           ///< Offset applied along the axis.
     const IMaterial* gradient { nullptr };      ///< Non-owning gradient material (expects input in [0..1]).
+
+    PTX_BEGIN_FIELDS(DepthParams)
+        PTX_FIELD(DepthParams, axis, "Axis", 0, 0),
+        PTX_FIELD(DepthParams, depth, "Depth", __FLT_MIN__, __FLT_MAX__),
+        PTX_FIELD(DepthParams, offset, "Offset", __FLT_MIN__, __FLT_MAX__),
+        PTX_FIELD(DepthParams, gradient, "Gradient", 0, 0)
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(DepthParams)
+        /* TODO: PTX_METHOD_AUTO(DepthParams, Method, "Doc") */
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(DepthParams)
+        /* TODO: PTX_CTOR0(DepthParams) or PTX_CTOR(DepthParams, ...) */
+    PTX_END_DESCRIBE(DepthParams)
+    
 };

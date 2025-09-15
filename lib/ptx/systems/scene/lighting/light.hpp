@@ -14,6 +14,7 @@
 #pragma once
 
 #include "../../../core/math/vector3d.hpp"
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class Light
@@ -121,4 +122,29 @@ private:
     float falloff; ///< Falloff rate of the light.
     float a; ///< Attenuation curve parameter A.
     float b; ///< Attenuation curve parameter B.
+
+    PTX_BEGIN_FIELDS(Light)
+        /* TODO: PTX_FIELD(Light, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(Light)
+        PTX_METHOD_AUTO(Light, Set, "Set"),
+        PTX_METHOD_AUTO(Light, SetIntensity, "Set intensity"),
+        PTX_METHOD_AUTO(Light, SetFalloff, "Set falloff"),
+        PTX_METHOD_AUTO(Light, MoveTo, "Move to"),
+        PTX_METHOD_AUTO(Light, Translate, "Translate"),
+        PTX_METHOD_AUTO(Light, SetFalloff, "Set falloff"),
+        PTX_METHOD_AUTO(Light, SetCurve, "Set curve"),
+        PTX_METHOD_AUTO(Light, GetPosition, "Get position"),
+        PTX_METHOD_AUTO(Light, GetFalloff, "Get falloff"),
+        PTX_METHOD_AUTO(Light, GetCurveA, "Get curve a"),
+        PTX_METHOD_AUTO(Light, GetCurveB, "Get curve b"),
+        PTX_METHOD_AUTO(Light, GetIntensity, "Get intensity")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(Light)
+        PTX_CTOR0(Light),
+        PTX_CTOR(Light, Vector3D, Vector3D, float, float, float)
+    PTX_END_DESCRIBE(Light)
+    
 };

@@ -16,6 +16,7 @@
 #include "../../core/math/transform.hpp"
 #include "../../assets/model/trianglegroup.hpp"
 #include "../../assets/model/statictrianglegroup.hpp"
+#include "../../registry/reflect_macros.hpp"
 
 /**
  * @class Mesh
@@ -143,4 +144,32 @@ public:
      * @param material Pointer to the new `Material` to be assigned.
      */
     void SetMaterial(IMaterial* material);
+
+    PTX_BEGIN_FIELDS(Mesh)
+        /* TODO: PTX_FIELD(Mesh, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(Mesh)
+        PTX_METHOD_AUTO(Mesh, Enable, "Enable"),
+        PTX_METHOD_AUTO(Mesh, Disable, "Disable"),
+        PTX_METHOD_AUTO(Mesh, IsEnabled, "Is enabled"),
+        PTX_METHOD_AUTO(Mesh, HasUV, "Has uv"),
+        PTX_METHOD_AUTO(Mesh, GetUVVertices, "Get uvvertices"),
+        PTX_METHOD_AUTO(Mesh, GetUVIndexGroup, "Get uvindex group"),
+        PTX_METHOD_AUTO(Mesh, GetCenterOffset, "Get center offset"),
+        PTX_METHOD_AUTO(Mesh, GetMinMaxDimensions, "Get min max dimensions"),
+        PTX_METHOD_AUTO(Mesh, GetSize, "Get size"),
+        PTX_METHOD_AUTO(Mesh, GetTransform, "Get transform"),
+        PTX_METHOD_AUTO(Mesh, SetTransform, "Set transform"),
+        PTX_METHOD_AUTO(Mesh, ResetVertices, "Reset vertices"),
+        PTX_METHOD_AUTO(Mesh, UpdateTransform, "Update transform"),
+        PTX_METHOD_AUTO(Mesh, GetTriangleGroup, "Get triangle group"),
+        PTX_METHOD_AUTO(Mesh, GetMaterial, "Get material"),
+        PTX_METHOD_AUTO(Mesh, SetMaterial, "Set material")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(Mesh)
+        PTX_CTOR(Mesh, IStaticTriangleGroup *, ITriangleGroup *, IMaterial *)
+    PTX_END_DESCRIBE(Mesh)
+    
 };

@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <array>
+#include "../../../../registry/reflect_macros.hpp"
 
 #include "../../../../core/color/rgbcolor.hpp"
 #include "../../../../core/math/vector3d.hpp"
@@ -26,4 +27,23 @@ struct PhongLightParams {
 
     /// Lights owned by the material wrapper.
     std::array<Light, lightCount> lights{};
+
+    /* NOTE: PhongLightParams is a template; verify macros accept template types. */
+    PTX_BEGIN_FIELDS(PhongLightParams)
+        PTX_FIELD(PhongLightParams, ambientColor, "Ambient color", 0, 0),
+        PTX_FIELD(PhongLightParams, diffuseColor, "Diffuse color", 0, 0),
+        PTX_FIELD(PhongLightParams, specularColor, "Specular color", 0, 0),
+        PTX_FIELD(PhongLightParams, shininess, "Shininess", __FLT_MIN__, __FLT_MAX__),
+        PTX_FIELD(PhongLightParams, cameraPos, "Camera pos", 0, 0),
+        PTX_FIELD(PhongLightParams, lights, "Lights", 0, 0)
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(PhongLightParams)
+        /* TODO: PTX_METHOD_AUTO(PhongLightParams, Method, "Doc") */
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(PhongLightParams)
+        /* TODO: PTX_CTOR0(PhongLightParams) or PTX_CTOR(PhongLightParams, ...) */
+    PTX_END_DESCRIBE(PhongLightParams)
+    
 };

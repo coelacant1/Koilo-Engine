@@ -12,6 +12,7 @@
 #pragma once
 
 #include "../../../core/math/transform.hpp" // Include for mathematical transformations.
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class CameraLayout
@@ -108,4 +109,21 @@ public:
      * @return The rotation as a Quaternion.
      */
     Quaternion GetRotation();
+
+    PTX_BEGIN_FIELDS(CameraLayout)
+        /* TODO: PTX_FIELD(CameraLayout, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(CameraLayout)
+        PTX_METHOD_AUTO(CameraLayout, GetForwardAxis, "Get forward axis"),
+        PTX_METHOD_AUTO(CameraLayout, GetUpAxis, "Get up axis"),
+        PTX_METHOD_AUTO(CameraLayout, GetForwardVector, "Get forward vector"),
+        PTX_METHOD_AUTO(CameraLayout, GetUpVector, "Get up vector"),
+        PTX_METHOD_AUTO(CameraLayout, GetRotation, "Get rotation")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(CameraLayout)
+        PTX_CTOR(CameraLayout, ForwardAxis, UpAxis)
+    PTX_END_DESCRIBE(CameraLayout)
+    
 };

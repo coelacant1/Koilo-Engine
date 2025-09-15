@@ -17,6 +17,7 @@
 #include "../../scene/scene.hpp"
 #include "../../../core/geometry/2d/triangle.hpp"
 #include "../../../core/geometry/spatial/quadtree.hpp"
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class RayTracer
@@ -42,4 +43,17 @@ public:
      * @param camera Pointer to the camera used for projection.
      */
     static void RayTrace(Scene* scene, CameraBase* camera);
+
+    PTX_BEGIN_FIELDS(RayTracer)
+        /* TODO: PTX_FIELD(RayTracer, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(RayTracer)
+        PTX_SMETHOD_AUTO(RayTracer::RayTrace, "Ray trace")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(RayTracer)
+        /* TODO: PTX_CTOR0(RayTracer) or PTX_CTOR(RayTracer, ...) */
+    PTX_END_DESCRIBE(RayTracer)
+    
 };

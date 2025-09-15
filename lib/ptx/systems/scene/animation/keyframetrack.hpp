@@ -15,6 +15,7 @@
 #include "keyframe.hpp" // Include for keyframe data structure.
 #include "../../../core/math/mathematics.hpp" // Include for mathematical utilities.
 #include "../../../core/platform/time.hpp"
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class KeyFrameInterpolation
@@ -36,6 +37,19 @@ public:
         Cosine, ///< Smooth cosine interpolation.
         Step    ///< Step interpolation (discrete transitions).
     };
+
+    PTX_BEGIN_FIELDS(KeyFrameInterpolation)
+        /* TODO: PTX_FIELD(KeyFrameInterpolation, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(KeyFrameInterpolation)
+        /* TODO: PTX_METHOD_AUTO(KeyFrameInterpolation, Method, "Doc") */
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(KeyFrameInterpolation)
+        /* TODO: PTX_CTOR0(KeyFrameInterpolation) or PTX_CTOR(KeyFrameInterpolation, ...) */
+    PTX_END_DESCRIBE(KeyFrameInterpolation)
+    
 };
 
 /**
@@ -141,6 +155,28 @@ public:
      * @return The updated parameter value.
      */
     float Update();
+
+    /* NOTE: KeyFrameTrack is a template; verify macros accept template types. */
+    PTX_BEGIN_FIELDS(KeyFrameTrack)
+        /* TODO: PTX_FIELD(KeyFrameTrack, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(KeyFrameTrack)
+        PTX_METHOD_AUTO(KeyFrameTrack, GetCurrentTime, "Get current time"),
+        PTX_METHOD_AUTO(KeyFrameTrack, SetCurrentTime, "Set current time"),
+        PTX_METHOD_AUTO(KeyFrameTrack, Pause, "Pause"),
+        PTX_METHOD_AUTO(KeyFrameTrack, Play, "Play"),
+        PTX_METHOD_AUTO(KeyFrameTrack, AddParameter, "Add parameter"),
+        PTX_METHOD_AUTO(KeyFrameTrack, AddKeyFrame, "Add key frame"),
+        PTX_METHOD_AUTO(KeyFrameTrack, GetParameterValue, "Get parameter value"),
+        PTX_METHOD_AUTO(KeyFrameTrack, Reset, "Reset"),
+        PTX_METHOD_AUTO(KeyFrameTrack, Update, "Update")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(KeyFrameTrack)
+        PTX_CTOR(KeyFrameTrack, float, float, InterpolationMethod)
+    PTX_END_DESCRIBE(KeyFrameTrack)
+    
 };
 
 #include "keyframetrack.tpp" // Include the template implementation.

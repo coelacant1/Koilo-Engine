@@ -4,6 +4,7 @@
 #include "../../../core/color/rgbcolor.hpp"
 #include "../../../core/math/vector2d.hpp"
 #include "../../../core/math/vector3d.hpp"
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @file ishader.hpp
@@ -48,6 +49,24 @@ struct SurfaceProperties {
         const Vector3D& uvw_storage = Vector3D(uv.X, uv.Y, 0.0f);
         return SurfaceProperties(p, n, uvw_storage);
     }
+
+    PTX_BEGIN_FIELDS(SurfaceProperties)
+        PTX_FIELD(SurfaceProperties, position, "Position", 0, 0),
+        PTX_FIELD(SurfaceProperties, normal, "Normal", 0, 0),
+        PTX_FIELD(SurfaceProperties, uvw, "Uvw", 0, 0)
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(SurfaceProperties)
+        PTX_SMETHOD_AUTO(SurfaceProperties::FromUV, "From uv")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(SurfaceProperties)
+        PTX_CTOR(SurfaceProperties, const Vector3D &, const Vector3D &, const Vector3D &),
+        PTX_CTOR(SurfaceProperties, Vector3D &&, const Vector3D &, const Vector3D &),
+        PTX_CTOR(SurfaceProperties, const Vector3D &, Vector3D &&, const Vector3D &),
+        PTX_CTOR(SurfaceProperties, const Vector3D &, const Vector3D &, Vector3D &&)
+    PTX_END_DESCRIBE(SurfaceProperties)
+    
 };
 
 //  Forward declarations to break include cycles
@@ -69,4 +88,17 @@ public:
      */
     virtual RGBColor Shade(const SurfaceProperties& surf,
                            const IMaterial&         mat) const = 0;
+
+    PTX_BEGIN_FIELDS(IShader)
+        /* TODO: PTX_FIELD(IShader, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(IShader)
+        PTX_METHOD_AUTO(IShader, Shade, "Shade")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(IShader)
+        /* TODO: PTX_CTOR0(IShader) or PTX_CTOR(IShader, ...) */
+    PTX_END_DESCRIBE(IShader)
+    
 };

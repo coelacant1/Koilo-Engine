@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../../../../registry/reflect_macros.hpp"
 // Base interfaces
 #include "../imaterial.hpp"
 #include "../materialt.hpp"
@@ -53,4 +54,20 @@ public:
     void Update(float /*dt*/) override {
         if (this->sequence) this->sequence->Update();
     }
+
+    PTX_BEGIN_FIELDS(ImageSequenceMaterial)
+        /* TODO: PTX_FIELD(ImageSequenceMaterial, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(ImageSequenceMaterial)
+        PTX_METHOD_AUTO(ImageSequenceMaterial, SetHueAngle, "Set hue angle"),
+        PTX_METHOD_AUTO(ImageSequenceMaterial, UseUV, "Use uv"),
+        PTX_METHOD_AUTO(ImageSequenceMaterial, SetSequence, "Set sequence"),
+        PTX_METHOD_AUTO(ImageSequenceMaterial, Update, "Update")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(ImageSequenceMaterial)
+        PTX_CTOR(ImageSequenceMaterial, ImageSequence *)
+    PTX_END_DESCRIBE(ImageSequenceMaterial)
+    
 };

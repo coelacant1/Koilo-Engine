@@ -12,6 +12,7 @@
 #pragma once
 
 #include <cstdint>
+#include "../../registry/reflect_macros.hpp"
 
 #include "../../core/math/mathematics.hpp"
 #include "../../core/math/vector2d.hpp"
@@ -162,4 +163,31 @@ public:
      * @return A packed integer representing the vector components and density.
      */
     uint32_t GetVectorAtPosition(float x, float y, bool& inBounds);
+
+    PTX_BEGIN_FIELDS(VectorField2D)
+        /* TODO: PTX_FIELD(VectorField2D, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(VectorField2D)
+        PTX_METHOD_AUTO(VectorField2D, Boundary, "Boundary"),
+        PTX_METHOD_AUTO(VectorField2D, Diffuse, "Diffuse"),
+        PTX_METHOD_AUTO(VectorField2D, Advect, "Advect"),
+        PTX_METHOD_AUTO(VectorField2D, SineField, "Sine field"),
+        PTX_METHOD_AUTO(VectorField2D, StepField, "Step field"),
+        PTX_METHOD_AUTO(VectorField2D, MovingSquareField, "Moving square field"),
+        PTX_METHOD_AUTO(VectorField2D, SpiralField, "Spiral field"),
+        PTX_METHOD_AUTO(VectorField2D, GetCountX, "Get count x"),
+        PTX_METHOD_AUTO(VectorField2D, GetCountY, "Get count y"),
+        PTX_METHOD_AUTO(VectorField2D, RenderDensity, "Render density"),
+        PTX_METHOD_AUTO(VectorField2D, RenderVector, "Render vector"),
+        PTX_METHOD_AUTO(VectorField2D, SetSize, "Set size"),
+        PTX_METHOD_AUTO(VectorField2D, SetPosition, "Set position"),
+        PTX_METHOD_AUTO(VectorField2D, SetRotation, "Set rotation"),
+        PTX_METHOD_AUTO(VectorField2D, GetVectorAtPosition, "Get vector at position")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(VectorField2D)
+        PTX_CTOR(VectorField2D, uint16_t, uint16_t)
+    PTX_END_DESCRIBE(VectorField2D)
+    
 };

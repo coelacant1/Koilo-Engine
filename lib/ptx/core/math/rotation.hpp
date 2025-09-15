@@ -22,6 +22,7 @@
 #include "rotationmatrix.hpp"
 #include "vector3d.hpp"
 #include "yawpitchroll.hpp"
+#include "../../registry/reflect_macros.hpp"
 
 /**
  * @class Rotation
@@ -219,4 +220,30 @@ public:
      * @return The yaw-pitch-roll representation.
      */
     YawPitchRoll GetYawPitchRoll();
+
+    PTX_BEGIN_FIELDS(Rotation)
+        /* TODO: PTX_FIELD(Rotation, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(Rotation)
+        PTX_METHOD_AUTO(Rotation, GetQuaternion, "Get quaternion"),
+        PTX_METHOD_AUTO(Rotation, GetAxisAngle, "Get axis angle"),
+        PTX_METHOD_AUTO(Rotation, GetDirectionAngle, "Get direction angle"),
+        PTX_METHOD_AUTO(Rotation, GetRotationMatrix, "Get rotation matrix"),
+        PTX_METHOD_AUTO(Rotation, GetEulerAngles, "Get euler angles"),
+        PTX_METHOD_AUTO(Rotation, GetYawPitchRoll, "Get yaw pitch roll")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(Rotation)
+        PTX_CTOR0(Rotation),
+        PTX_CTOR(Rotation, const Quaternion &),
+        PTX_CTOR(Rotation, const AxisAngle &),
+        PTX_CTOR(Rotation, const DirectionAngle &),
+        PTX_CTOR(Rotation, const RotationMatrix &),
+        PTX_CTOR(Rotation, const Vector3D &, const Vector3D &, const Vector3D &),
+        PTX_CTOR(Rotation, const EulerAngles &),
+        PTX_CTOR(Rotation, const Vector3D &, const Vector3D &),
+        PTX_CTOR(Rotation, const YawPitchRoll &)
+    PTX_END_DESCRIBE(Rotation)
+    
 };

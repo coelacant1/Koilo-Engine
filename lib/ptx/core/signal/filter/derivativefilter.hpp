@@ -15,6 +15,7 @@
 #include "runningaveragefilter.hpp" // Includes the running average filter utility.
 #include "minfilter.hpp" // Includes the minimum filter utility.
 #include "../../math/mathematics.hpp" // Includes mathematical utilities for constraints and operations.
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class DerivativeFilter
@@ -50,4 +51,18 @@ public:
      * @return The filtered and normalized derivative value.
      */
     float Filter(float value);
+
+    PTX_BEGIN_FIELDS(DerivativeFilter)
+        /* TODO: PTX_FIELD(DerivativeFilter, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(DerivativeFilter)
+        PTX_METHOD_AUTO(DerivativeFilter, GetOutput, "Get output"),
+        PTX_METHOD_AUTO(DerivativeFilter, Filter, "Filter")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(DerivativeFilter)
+        PTX_CTOR0(DerivativeFilter)
+    PTX_END_DESCRIBE(DerivativeFilter)
+    
 };

@@ -3,6 +3,7 @@
 #include <utility>
 #include "../material/imaterial.hpp"
 #include "../shader/ishader.hpp"
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @file materialt.hpp
@@ -40,4 +41,18 @@ public:
     explicit MaterialT(Args&&... ArgsPack)
         : IMaterial(ShaderPtr()),
           ParamBlock(std::forward<Args>(ArgsPack)...) {}
+
+    /* NOTE: MaterialT is a template; verify macros accept template types. */
+    PTX_BEGIN_FIELDS(MaterialT)
+        /* TODO: PTX_FIELD(MaterialT, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(MaterialT)
+        /* TODO: PTX_METHOD_AUTO(MaterialT, Method, "Doc") */
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(MaterialT)
+        /* TODO: PTX_CTOR0(MaterialT) or PTX_CTOR(MaterialT, ...) */
+    PTX_END_DESCRIBE(MaterialT)
+    
 };

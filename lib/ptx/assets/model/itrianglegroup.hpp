@@ -15,6 +15,7 @@
 #include "../../core/geometry/3d/triangle.hpp"
 #include "indexgroup.hpp"
 #include "istatictrianglegroup.hpp"
+#include "../../registry/reflect_macros.hpp"
 
 /**
  * @class ITriangleGroup
@@ -52,4 +53,21 @@ public:
      */
     virtual Triangle3D* GetTriangles() = 0;
 
+
+    PTX_BEGIN_FIELDS(ITriangleGroup)
+        /* TODO: PTX_FIELD(ITriangleGroup, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(ITriangleGroup)
+        PTX_METHOD_AUTO(ITriangleGroup, GetIndexGroup, "Get index group"),
+        PTX_METHOD_AUTO(ITriangleGroup, GetTriangleCount, "Get triangle count"),
+        PTX_METHOD_AUTO(ITriangleGroup, GetVertices, "Get vertices"),
+        PTX_METHOD_AUTO(ITriangleGroup, GetVertexCount, "Get vertex count"),
+        PTX_METHOD_AUTO(ITriangleGroup, GetTriangles, "Get triangles")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(ITriangleGroup)
+        /* TODO: PTX_CTOR0(ITriangleGroup) or PTX_CTOR(ITriangleGroup, ...) */
+    PTX_END_DESCRIBE(ITriangleGroup)
+    
 };

@@ -15,6 +15,7 @@
 #include "../../../core/math/mathematics.hpp" // Include for mathematical utilities.
 #include "../../../core/control/dampedspring.hpp" // Include for damped spring physics.
 #include "../../../core/signal/filter/rampfilter.hpp" // Include for ramp filtering utilities.
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class IEasyEaseAnimator
@@ -104,4 +105,25 @@ public:
      * @brief Updates the animator, advancing all animations.
      */
     virtual void Update() = 0;
+
+    PTX_BEGIN_FIELDS(IEasyEaseAnimator)
+        /* TODO: PTX_FIELD(IEasyEaseAnimator, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(IEasyEaseAnimator)
+        PTX_METHOD_AUTO(IEasyEaseAnimator, SetConstants, "Set constants"),
+        PTX_METHOD_AUTO(IEasyEaseAnimator, GetValue, "Get value"),
+        PTX_METHOD_AUTO(IEasyEaseAnimator, GetTarget, "Get target"),
+        PTX_METHOD_AUTO(IEasyEaseAnimator, AddParameter, "Add parameter"),
+        PTX_METHOD_AUTO(IEasyEaseAnimator, AddParameterFrame, "Add parameter frame"),
+        PTX_METHOD_AUTO(IEasyEaseAnimator, SetInterpolationMethod, "Set interpolation method"),
+        PTX_METHOD_AUTO(IEasyEaseAnimator, Reset, "Reset"),
+        PTX_METHOD_AUTO(IEasyEaseAnimator, SetParameters, "Set parameters"),
+        PTX_METHOD_AUTO(IEasyEaseAnimator, Update, "Update")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(IEasyEaseAnimator)
+        /* TODO: PTX_CTOR0(IEasyEaseAnimator) or PTX_CTOR(IEasyEaseAnimator, ...) */
+    PTX_END_DESCRIBE(IEasyEaseAnimator)
+    
 };

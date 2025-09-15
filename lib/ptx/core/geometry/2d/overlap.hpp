@@ -14,6 +14,7 @@
 #include "circle.hpp"
 #include "ellipse.hpp"
 #include "triangle.hpp"
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class Overlap2D
@@ -130,4 +131,32 @@ public:
     static inline bool Overlaps(const Triangle2D& t, const Circle2D& c) { return Overlaps(c, t); }
     static inline bool Overlaps(const Ellipse2D& e, const Circle2D& c) { return Overlaps(c, e); }
     static inline bool Overlaps(const Ellipse2D& e, const Triangle2D& t) { return Overlaps(t, e); }
+
+    PTX_BEGIN_FIELDS(Overlap2D)
+        /* TODO: PTX_FIELD(Overlap2D, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(Overlap2D)
+        PTX_SMETHOD_AUTO(Overlap2D::Overlaps, "Overlaps"),
+        PTX_SMETHOD_AUTO(Overlap2D::Overlaps, "Overlaps"),
+        PTX_SMETHOD_AUTO(Overlap2D::Overlaps, "Overlaps"),
+        PTX_SMETHOD_AUTO(Overlap2D::Overlaps, "Overlaps"),
+        PTX_SMETHOD_AUTO(Overlap2D::Overlaps, "Overlaps"),
+        PTX_SMETHOD_AUTO(Overlap2D::Overlaps, "Overlaps"),
+        PTX_SMETHOD_AUTO(Overlap2D::Overlaps, "Overlaps"),
+        PTX_SMETHOD_AUTO(Overlap2D::Overlaps, "Overlaps"),
+        PTX_SMETHOD_AUTO(Overlap2D::Overlaps, "Overlaps"),
+        PTX_SMETHOD_AUTO(Overlap2D::Overlaps, "Overlaps"),
+        PTX_SMETHOD_AUTO(Overlap2D::Overlaps, "Overlaps"),
+        PTX_SMETHOD_AUTO(Overlap2D::Overlaps, "Overlaps"),
+        PTX_SMETHOD_AUTO(Overlap2D::Overlaps, "Overlaps"),
+        PTX_SMETHOD_AUTO(Overlap2D::Overlaps, "Overlaps"),
+        PTX_SMETHOD_AUTO(Overlap2D::Overlaps, "Overlaps"),
+        PTX_SMETHOD_AUTO(Overlap2D::Overlaps, "Overlaps")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(Overlap2D)
+        /* TODO: PTX_CTOR0(Overlap2D) or PTX_CTOR(Overlap2D, ...) */
+    PTX_END_DESCRIBE(Overlap2D)
+    
 };

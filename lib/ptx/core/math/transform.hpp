@@ -16,6 +16,7 @@
 #include "vector3d.hpp"
 #include "mathematics.hpp"
 #include "../platform/ustring.hpp"
+#include "../../registry/reflect_macros.hpp"
 
 /**
  * @class Transform
@@ -199,4 +200,41 @@ public:
      * @return A string representing the transform.
      */
     ptx::UString ToString();
+
+    PTX_BEGIN_FIELDS(Transform)
+        /* TODO: PTX_FIELD(Transform, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(Transform)
+        PTX_METHOD_AUTO(Transform, SetBaseRotation, "Set base rotation"),
+        PTX_METHOD_AUTO(Transform, GetBaseRotation, "Get base rotation"),
+        PTX_METHOD_AUTO(Transform, SetRotation, "Set rotation"),
+        PTX_METHOD_AUTO(Transform, SetRotation, "Set rotation"),
+        PTX_METHOD_AUTO(Transform, GetRotation, "Get rotation"),
+        PTX_METHOD_AUTO(Transform, SetPosition, "Set position"),
+        PTX_METHOD_AUTO(Transform, GetPosition, "Get position"),
+        PTX_METHOD_AUTO(Transform, SetScale, "Set scale"),
+        PTX_METHOD_AUTO(Transform, GetScale, "Get scale"),
+        PTX_METHOD_AUTO(Transform, SetScaleRotationOffset, "Set scale rotation offset"),
+        PTX_METHOD_AUTO(Transform, GetScaleRotationOffset, "Get scale rotation offset"),
+        PTX_METHOD_AUTO(Transform, SetRotationOffset, "Set rotation offset"),
+        PTX_METHOD_AUTO(Transform, GetRotationOffset, "Get rotation offset"),
+        PTX_METHOD_AUTO(Transform, SetScaleOffset, "Set scale offset"),
+        PTX_METHOD_AUTO(Transform, GetScaleOffset, "Get scale offset"),
+        PTX_METHOD_AUTO(Transform, Rotate, "Rotate"),
+        PTX_METHOD_AUTO(Transform, Rotate, "Rotate"),
+        PTX_METHOD_AUTO(Transform, Translate, "Translate"),
+        PTX_METHOD_AUTO(Transform, Scale, "Scale"),
+        PTX_METHOD_AUTO(Transform, ToString, "To string")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(Transform)
+        PTX_CTOR0(Transform),
+        PTX_CTOR(Transform, const Vector3D &, const Vector3D &, const Vector3D &),
+        PTX_CTOR(Transform, const Quaternion &, const Vector3D &, const Vector3D &),
+        PTX_CTOR(Transform, const Vector3D &, const Vector3D &, const Vector3D &, const Vector3D &, const Vector3D &),
+        PTX_CTOR(Transform, const Quaternion &, const Vector3D &, const Vector3D &, const Vector3D &, const Vector3D &),
+        PTX_CTOR(Transform, const Transform &)
+    PTX_END_DESCRIBE(Transform)
+    
 };

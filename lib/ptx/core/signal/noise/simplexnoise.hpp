@@ -15,6 +15,7 @@
 #include "../../platform/random.hpp"
 #include "../../math/mathematics.hpp"
 #include "../../math/vector3d.hpp"
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class SimplexNoise
@@ -124,4 +125,21 @@ public:
      * @return Returns the noise value at the position.
      */
     float GetNoise(Vector3D position) const;
+
+    PTX_BEGIN_FIELDS(SimplexNoise)
+        /* TODO: PTX_FIELD(SimplexNoise, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(SimplexNoise)
+        PTX_METHOD_AUTO(SimplexNoise, Noise, "Noise"),
+        PTX_METHOD_AUTO(SimplexNoise, Noise, "Noise"),
+        PTX_METHOD_AUTO(SimplexNoise, SetScale, "Set scale"),
+        PTX_METHOD_AUTO(SimplexNoise, SetZPosition, "Set zposition"),
+        PTX_METHOD_AUTO(SimplexNoise, GetNoise, "Get noise")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(SimplexNoise)
+        PTX_CTOR(SimplexNoise, int)
+    PTX_END_DESCRIBE(SimplexNoise)
+    
 };

@@ -3,6 +3,7 @@
 #include "../ishader.hpp"
 #include "../../material/materialt.hpp"     // for IMaterial::As<T>()
 #include "depthparams.hpp"
+#include "../../../../registry/reflect_macros.hpp"
 
 #include "../../../../core/math/mathematics.hpp"
 #include "../../../../core/math/vector2d.hpp"
@@ -69,4 +70,17 @@ public:
         SurfaceProperties sp { posL, nrmL, uvwL };
         return P.gradient->GetShader()->Shade(sp, *P.gradient);
     }
+
+    PTX_BEGIN_FIELDS(DepthShader)
+        /* TODO: PTX_FIELD(DepthShader, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(DepthShader)
+        PTX_METHOD_AUTO(DepthShader, Shade, "Shade")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(DepthShader)
+        /* TODO: PTX_CTOR0(DepthShader) or PTX_CTOR(DepthShader, ...) */
+    PTX_END_DESCRIBE(DepthShader)
+    
 };

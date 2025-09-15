@@ -7,6 +7,7 @@
 #include "../../../../core/math/mathematics.hpp"
 #include "../../../../core/color/rgbcolor.hpp"
 #include "normalparams.hpp"
+#include "../../../../registry/reflect_macros.hpp"
 
 /**
  * @file normalshader.hpp
@@ -33,4 +34,17 @@ public:
 
         return RGBColor(uint8_t(n.X), uint8_t(n.Y), uint8_t(n.Z));
     }
+
+    PTX_BEGIN_FIELDS(NormalShader)
+        /* TODO: PTX_FIELD(NormalShader, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(NormalShader)
+        PTX_METHOD_AUTO(NormalShader, Shade, "Shade")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(NormalShader)
+        /* TODO: PTX_CTOR0(NormalShader) or PTX_CTOR(NormalShader, ...) */
+    PTX_END_DESCRIBE(NormalShader)
+    
 };

@@ -11,6 +11,7 @@
 
 #include "vector3d.hpp"
 #include "mathematics.hpp"
+#include "../../registry/reflect_macros.hpp"
 
 /**
  * @class YawPitchRoll
@@ -52,4 +53,22 @@ public:
      * @return A string representation of the YawPitchRoll object.
      */
     ptx::UString ToString() const;
+
+    PTX_BEGIN_FIELDS(YawPitchRoll)
+        PTX_FIELD(YawPitchRoll, Yaw, "Yaw", __FLT_MIN__, __FLT_MAX__),
+        PTX_FIELD(YawPitchRoll, Pitch, "Pitch", __FLT_MIN__, __FLT_MAX__),
+        PTX_FIELD(YawPitchRoll, Roll, "Roll", __FLT_MIN__, __FLT_MAX__)
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(YawPitchRoll)
+        PTX_METHOD_AUTO(YawPitchRoll, ToString, "To string")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(YawPitchRoll)
+        PTX_CTOR0(YawPitchRoll),
+        PTX_CTOR(YawPitchRoll, Vector3D),
+        PTX_CTOR(YawPitchRoll, const YawPitchRoll &),
+        PTX_CTOR(YawPitchRoll, float, float, float)
+    PTX_END_DESCRIBE(YawPitchRoll)
+    
 };

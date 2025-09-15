@@ -14,6 +14,7 @@
 #include <cstddef>
 #include "ipixelgroup.hpp" // Include for the base pixel group interface.
 #include "../../../core/geometry/2d/overlap.hpp"
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class PixelGroup
@@ -89,6 +90,41 @@ public:
     bool GetOffsetXYIndex(uint16_t count, uint16_t* index, int x1, int y1) override;
     bool GetRadialIndex(uint16_t count, uint16_t* index, int pixels, float angle) override;
     void GridSort() override;
+
+    /* NOTE: PixelGroup is a template; verify macros accept template types. */
+    PTX_BEGIN_FIELDS(PixelGroup)
+        /* TODO: PTX_FIELD(PixelGroup, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(PixelGroup)
+        PTX_METHOD_AUTO(PixelGroup, GetCenterCoordinate, "Get center coordinate"),
+        PTX_METHOD_AUTO(PixelGroup, GetSize, "Get size"),
+        PTX_METHOD_AUTO(PixelGroup, GetCoordinate, "Get coordinate"),
+        PTX_METHOD_AUTO(PixelGroup, GetPixelIndex, "Get pixel index"),
+        PTX_METHOD_AUTO(PixelGroup, GetColor, "Get color"),
+        PTX_METHOD_AUTO(PixelGroup, GetColors, "Get colors"),
+        PTX_METHOD_AUTO(PixelGroup, GetColorBuffer, "Get color buffer"),
+        PTX_METHOD_AUTO(PixelGroup, GetPixelCount, "Get pixel count"),
+        PTX_METHOD_AUTO(PixelGroup, Overlaps, "Overlaps"),
+        PTX_METHOD_AUTO(PixelGroup, ContainsVector2D, "Contains vector2 d"),
+        PTX_METHOD_AUTO(PixelGroup, GetUpIndex, "Get up index"),
+        PTX_METHOD_AUTO(PixelGroup, GetDownIndex, "Get down index"),
+        PTX_METHOD_AUTO(PixelGroup, GetLeftIndex, "Get left index"),
+        PTX_METHOD_AUTO(PixelGroup, GetRightIndex, "Get right index"),
+        PTX_METHOD_AUTO(PixelGroup, GetAlternateXIndex, "Get alternate xindex"),
+        PTX_METHOD_AUTO(PixelGroup, GetAlternateYIndex, "Get alternate yindex"),
+        PTX_METHOD_AUTO(PixelGroup, GetOffsetXIndex, "Get offset xindex"),
+        PTX_METHOD_AUTO(PixelGroup, GetOffsetYIndex, "Get offset yindex"),
+        PTX_METHOD_AUTO(PixelGroup, GetOffsetXYIndex, "Get offset xyindex"),
+        PTX_METHOD_AUTO(PixelGroup, GetRadialIndex, "Get radial index"),
+        PTX_METHOD_AUTO(PixelGroup, GridSort, "Grid sort")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(PixelGroup)
+        PTX_CTOR(PixelGroup, Vector2D, Vector2D, uint16_t),
+        PTX_CTOR(PixelGroup, const Vector2D *, Direction)
+    PTX_END_DESCRIBE(PixelGroup)
+    
 };
 
 #include "pixelgroup.tpp" // Include the template implementation.

@@ -13,6 +13,7 @@
 #pragma once
 
 #include "ieasyeaseanimator.hpp" // Include for base interface class.
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class EasyEaseAnimator
@@ -115,6 +116,28 @@ public:
      * @brief Updates the animator, advancing all animations.
      */
     void Update() override;
+
+    /* NOTE: EasyEaseAnimator is a template; verify macros accept template types. */
+    PTX_BEGIN_FIELDS(EasyEaseAnimator)
+        /* TODO: PTX_FIELD(EasyEaseAnimator, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(EasyEaseAnimator)
+        PTX_METHOD_AUTO(EasyEaseAnimator, SetConstants, "Set constants"),
+        PTX_METHOD_AUTO(EasyEaseAnimator, GetValue, "Get value"),
+        PTX_METHOD_AUTO(EasyEaseAnimator, GetTarget, "Get target"),
+        PTX_METHOD_AUTO(EasyEaseAnimator, AddParameter, "Add parameter"),
+        PTX_METHOD_AUTO(EasyEaseAnimator, AddParameterFrame, "Add parameter frame"),
+        PTX_METHOD_AUTO(EasyEaseAnimator, SetInterpolationMethod, "Set interpolation method"),
+        PTX_METHOD_AUTO(EasyEaseAnimator, Reset, "Reset"),
+        PTX_METHOD_AUTO(EasyEaseAnimator, SetParameters, "Set parameters"),
+        PTX_METHOD_AUTO(EasyEaseAnimator, Update, "Update")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(EasyEaseAnimator)
+        PTX_CTOR(EasyEaseAnimator, InterpolationMethod, float, float)
+    PTX_END_DESCRIBE(EasyEaseAnimator)
+    
 };
 
 #include "easyeaseanimator.tpp" // Include the template implementation.

@@ -13,6 +13,7 @@
 
 #include "../../../core/math/mathematics.hpp" // Include for mathematical operations.
 #include "../../../assets/model/itrianglegroup.hpp" // Include for rendering triangle groups.
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class Morph
@@ -54,4 +55,18 @@ public:
      * @param obj Pointer to the ITriangleGroup representing the 3D object to morph.
      */
     void BlendObject3D(ITriangleGroup* obj);
+
+    PTX_BEGIN_FIELDS(Blendshape)
+        PTX_FIELD(Blendshape, Weight, "Weight", __FLT_MIN__, __FLT_MAX__)
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(Blendshape)
+        PTX_METHOD_AUTO(Blendshape, BlendObject3D, "Blend object3 d")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(Blendshape)
+        PTX_CTOR(Blendshape, int, int *, Vector3D *),
+        PTX_CTOR(Blendshape, int, const int *, const Vector3D *)
+    PTX_END_DESCRIBE(Blendshape)
+    
 };

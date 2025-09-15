@@ -2,6 +2,7 @@
 #pragma once
 #include <cstdint>
 #include <cmath>
+#include "../../../../registry/reflect_macros.hpp"
 
 #include "../../shader/ishader.hpp"
 #include "../../material/imaterial.hpp"
@@ -81,4 +82,17 @@ public:
         const float r = float(d) / 127.0f;
         return RGBColor(r, 0.0f, 1.0f - r);
     }
+
+    PTX_BEGIN_FIELDS(VectorField2DShader)
+        /* TODO: PTX_FIELD(VectorField2DShader, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(VectorField2DShader)
+        PTX_METHOD_AUTO(VectorField2DShader, Shade, "Shade")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(VectorField2DShader)
+        /* TODO: PTX_CTOR0(VectorField2DShader) or PTX_CTOR(VectorField2DShader, ...) */
+    PTX_END_DESCRIBE(VectorField2DShader)
+    
 };

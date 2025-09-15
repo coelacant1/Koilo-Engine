@@ -13,6 +13,7 @@
 
 #include "../../../core/color/rgbcolor.hpp" // Include for color representation.
 #include "../../../core/math/vector2d.hpp" // Include for 2D positional data.
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class Pixel
@@ -143,4 +144,30 @@ public:
      * @return Pointer to the pixel to the right, or nullptr if none exists.
      */
     Pixel* GetRightPixel();
+
+    PTX_BEGIN_FIELDS(Pixel)
+        PTX_FIELD(Pixel, Color, "Color", 0, 0)
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(Pixel)
+        PTX_METHOD_AUTO(Pixel, GetPosition, "Get position"),
+        PTX_METHOD_AUTO(Pixel, SetUpPixel, "Set up pixel"),
+        PTX_METHOD_AUTO(Pixel, SetDownPixel, "Set down pixel"),
+        PTX_METHOD_AUTO(Pixel, SetLeftPixel, "Set left pixel"),
+        PTX_METHOD_AUTO(Pixel, SetRightPixel, "Set right pixel"),
+        PTX_METHOD_AUTO(Pixel, HasUpPixel, "Has up pixel"),
+        PTX_METHOD_AUTO(Pixel, HasDownPixel, "Has down pixel"),
+        PTX_METHOD_AUTO(Pixel, HasLeftPixel, "Has left pixel"),
+        PTX_METHOD_AUTO(Pixel, HasRightPixel, "Has right pixel"),
+        PTX_METHOD_AUTO(Pixel, GetUpPixel, "Get up pixel"),
+        PTX_METHOD_AUTO(Pixel, GetDownPixel, "Get down pixel"),
+        PTX_METHOD_AUTO(Pixel, GetLeftPixel, "Get left pixel"),
+        PTX_METHOD_AUTO(Pixel, GetRightPixel, "Get right pixel")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(Pixel)
+        PTX_CTOR0(Pixel),
+        PTX_CTOR(Pixel, const Vector2D *)
+    PTX_END_DESCRIBE(Pixel)
+    
 };

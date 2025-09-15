@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.1.3] - 2025-09-14
+Automatic .hpp macro configuration
+
+### Added
+- UpdatePTXRegistry.py
+  - Automatically generate and link PTX macro functions to initialize registry
+
+### Changed
+- All .hpp files
+  - Now include base macro calls for registry initialization
+  - Overloaded functions not fixed, require manual tweaking
+  - Added reflect_macros.hpp include to all .hpp files
+
+### Next Tasks
+- Fix all overloaded functions, macro calls will fail due to overlap
 
 ## [0.1.2] - 2025-09-13
 Updated reflection for C++

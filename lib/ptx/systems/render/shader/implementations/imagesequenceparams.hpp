@@ -1,5 +1,6 @@
 #pragma once
 #include "../../../../assets/image/imagesequence.hpp"
+#include "../../../../registry/reflect_macros.hpp"
 
 /**
  * @file imagesequenceparams.hpp
@@ -22,4 +23,19 @@ struct ImageSequenceParams {
     ImageSequence* sequence = nullptr;  ///< Non-owning; must outlive the material using it.
     float          hueAngle = 0.0f;     ///< Hue rotation in degrees (post-sample tint).
     bool           useUV    = true;     ///< true: use UVs; false: use position XY.
+
+    PTX_BEGIN_FIELDS(ImageSequenceParams)
+        PTX_FIELD(ImageSequenceParams, sequence, "Sequence", 0, 0),
+        PTX_FIELD(ImageSequenceParams, hueAngle, "Hue angle", __FLT_MIN__, __FLT_MAX__),
+        PTX_FIELD(ImageSequenceParams, useUV, "Use uv", 0, 1)
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(ImageSequenceParams)
+        /* TODO: PTX_METHOD_AUTO(ImageSequenceParams, Method, "Doc") */
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(ImageSequenceParams)
+        /* TODO: PTX_CTOR0(ImageSequenceParams) or PTX_CTOR(ImageSequenceParams, ...) */
+    PTX_END_DESCRIBE(ImageSequenceParams)
+    
 };

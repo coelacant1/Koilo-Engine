@@ -3,6 +3,7 @@
 #include "../imaterial.hpp"
 #include "../materialt.hpp"
 #include "../../shader/ishader.hpp"
+#include "../../../../registry/reflect_macros.hpp"
 
 #include "../../shader/implementations/materialmaskparams.hpp"
 #include "../../shader/implementations/materialmaskshader.hpp"
@@ -55,4 +56,21 @@ public:
 
     /** @brief Set the outer/material used where the mask does not apply. */
     void SetMaterialOuter(const IMaterial* m)       { this->materialOuter = m; }
+
+    PTX_BEGIN_FIELDS(MaterialMask)
+        /* TODO: PTX_FIELD(MaterialMask, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(MaterialMask)
+        PTX_METHOD_AUTO(MaterialMask, SetOpacity, "Set opacity"),
+        PTX_METHOD_AUTO(MaterialMask, GetOpacityReference, "Get opacity reference"),
+        PTX_METHOD_AUTO(MaterialMask, SetShape, "Set shape"),
+        PTX_METHOD_AUTO(MaterialMask, SetMaterialShape, "Set material shape"),
+        PTX_METHOD_AUTO(MaterialMask, SetMaterialOuter, "Set material outer")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(MaterialMask)
+        PTX_CTOR(MaterialMask, const IMaterial *, const IMaterial *, Shape *)
+    PTX_END_DESCRIBE(MaterialMask)
+    
 };

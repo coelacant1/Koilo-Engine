@@ -21,6 +21,7 @@
 #include "../scene/scene.hpp"
 #include "../../core/geometry/3d/cube.hpp"
 #include "../../core/platform/time.hpp"
+#include "../../registry/reflect_macros.hpp"
 
 /**
  * @class PhysicsSimulator
@@ -55,4 +56,18 @@ public:
      * @param rotation The rotation quaternion applied to objects.
      */
     void Update(Vector3D acceleration, Quaternion rotation);
+
+    PTX_BEGIN_FIELDS(PhysicsSimulator)
+        /* TODO: PTX_FIELD(PhysicsSimulator, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(PhysicsSimulator)
+        PTX_METHOD_AUTO(PhysicsSimulator, GetScene, "Get scene"),
+        PTX_METHOD_AUTO(PhysicsSimulator, Update, "Update")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(PhysicsSimulator)
+        PTX_CTOR0(PhysicsSimulator)
+    PTX_END_DESCRIBE(PhysicsSimulator)
+    
 };

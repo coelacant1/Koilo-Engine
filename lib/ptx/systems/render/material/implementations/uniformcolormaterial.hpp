@@ -3,6 +3,7 @@
 #include "../imaterial.hpp"
 #include "../materialt.hpp"
 #include "../../shader/ishader.hpp"
+#include "../../../../registry/reflect_macros.hpp"
 
 #include "../../shader/implementations/uniformcolorparams.hpp"
 #include "../../shader/implementations/uniformcolorshader.hpp"
@@ -53,4 +54,18 @@ public:
         this->color = rgb;
         this->base  = rgb;
     }
+
+    PTX_BEGIN_FIELDS(UniformColorMaterial)
+        /* TODO: PTX_FIELD(UniformColorMaterial, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(UniformColorMaterial)
+        PTX_METHOD_AUTO(UniformColorMaterial, HueShift, "Hue shift"),
+        PTX_METHOD_AUTO(UniformColorMaterial, SetRGB, "Set rgb")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(UniformColorMaterial)
+        PTX_CTOR(UniformColorMaterial, RGBColor)
+    PTX_END_DESCRIBE(UniformColorMaterial)
+    
 };

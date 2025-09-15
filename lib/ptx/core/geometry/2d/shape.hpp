@@ -14,6 +14,7 @@
 #pragma once
 
 #include "../../math/vector2d.hpp"
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class Shape
@@ -24,7 +25,21 @@ public:
     struct Bounds {
         Vector2D minV;
         Vector2D maxV;
-    };
+    
+        PTX_BEGIN_FIELDS(Bounds)
+            PTX_FIELD(Bounds, minV, "Min v", 0, 0),
+            PTX_FIELD(Bounds, maxV, "Max v", 0, 0)
+        PTX_END_FIELDS
+        
+        PTX_BEGIN_METHODS(Bounds)
+            /* TODO: PTX_METHOD_AUTO(Bounds, Method, "Doc") */
+        PTX_END_METHODS
+        
+        PTX_BEGIN_DESCRIBE(Bounds)
+            /* TODO: PTX_CTOR0(Bounds) or PTX_CTOR(Bounds, ...) */
+        PTX_END_DESCRIBE(Bounds)
+        
+};
 
     /**
      * @brief Constructs a Shape object with specified center, size, and rotation.
@@ -124,5 +139,31 @@ public:
 protected:
     Bounds bounds;   ///< The bounds of the shape.
     float rotation;  ///< The rotation of the shape in degrees.
+    
+
+    PTX_BEGIN_FIELDS(Shape)
+        /* TODO: PTX_FIELD(Shape, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(Shape)
+        PTX_METHOD_AUTO(Shape, SetCenter, "Set center"),
+        PTX_METHOD_AUTO(Shape, SetBounds, "Set bounds"),
+        PTX_METHOD_AUTO(Shape, Translate, "Translate"),
+        PTX_METHOD_AUTO(Shape, GetCenter, "Get center"),
+        PTX_METHOD_AUTO(Shape, GetBounds, "Get bounds"),
+        PTX_METHOD_AUTO(Shape, SetSize, "Set size"),
+        PTX_METHOD_AUTO(Shape, Scale, "Scale"),
+        PTX_METHOD_AUTO(Shape, GetSize, "Get size"),
+        PTX_METHOD_AUTO(Shape, SetRotation, "Set rotation"),
+        PTX_METHOD_AUTO(Shape, Rotate, "Rotate"),
+        PTX_METHOD_AUTO(Shape, GetRotation, "Get rotation"),
+        PTX_METHOD_AUTO(Shape, IsInShape, "Is in shape"),
+        PTX_METHOD_AUTO(Shape, Overlaps, "Overlaps")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(Shape)
+        PTX_CTOR(Shape, Vector2D, Vector2D, float),
+        PTX_CTOR(Shape, Bounds, float)
+    PTX_END_DESCRIBE(Shape)
     
 };

@@ -14,6 +14,7 @@
 
 #include <cstdint>
 #include "../../math/mathematics.hpp" // Includes mathematical utilities for constraints and operations.
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class MaxFilter
@@ -54,6 +55,20 @@ public:
      * @return The maximum value within the memory window after updating with the new value.
      */
     float Filter(float value);
+
+    /* NOTE: MaxFilter is a template; verify macros accept template types. */
+    PTX_BEGIN_FIELDS(MaxFilter)
+        /* TODO: PTX_FIELD(MaxFilter, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(MaxFilter)
+        PTX_METHOD_AUTO(MaxFilter, Filter, "Filter")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(MaxFilter)
+        PTX_CTOR0(MaxFilter)
+    PTX_END_DESCRIBE(MaxFilter)
+    
 };
 
 #include "maxfilter.tpp" // Includes the implementation of the template class.

@@ -11,6 +11,7 @@
 
 #include "../math/mathematics.hpp"
 #include "../platform/time.hpp"
+#include "../../registry/reflect_macros.hpp"
 
 /**
  * @class FunctionGenerator
@@ -98,4 +99,19 @@ public:
      * @return The calculated wave value.
      */
     float Update();
+
+    PTX_BEGIN_FIELDS(FunctionGenerator)
+        /* TODO: PTX_FIELD(FunctionGenerator, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(FunctionGenerator)
+        PTX_METHOD_AUTO(FunctionGenerator, SetPeriod, "Set period"),
+        PTX_METHOD_AUTO(FunctionGenerator, SetFunction, "Set function"),
+        PTX_METHOD_AUTO(FunctionGenerator, Update, "Update")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(FunctionGenerator)
+        PTX_CTOR(FunctionGenerator, Function, float, float, float)
+    PTX_END_DESCRIBE(FunctionGenerator)
+    
 };

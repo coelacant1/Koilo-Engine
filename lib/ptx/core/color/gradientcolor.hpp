@@ -3,6 +3,7 @@
 #include "rgbcolor.hpp"
 #include "../math/mathematics.hpp"
 #include <cstddef>
+#include "../../registry/reflect_macros.hpp"
 
 /**
  * @file GradientColor.hpp
@@ -52,6 +53,22 @@ public:
      * @param newColorStops A pointer to the new array of RGBColor objects.
      */
     void SetColors(const RGBColor* newColorStops);
+
+    /* NOTE: GradientColor is a template; verify macros accept template types. */
+    PTX_BEGIN_FIELDS(GradientColor)
+        /* TODO: PTX_FIELD(GradientColor, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(GradientColor)
+        PTX_METHOD_AUTO(GradientColor, GetColorAt, "Get color at"),
+        PTX_METHOD_AUTO(GradientColor, SetColors, "Set colors")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(GradientColor)
+        PTX_CTOR(GradientColor, const RGBColor *, bool),
+        PTX_CTOR0(GradientColor)
+    PTX_END_DESCRIBE(GradientColor)
+    
 };
 
 #include "gradientcolor.tpp"

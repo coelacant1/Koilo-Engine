@@ -13,6 +13,7 @@
 #pragma once
 
 #include "mathematics.hpp"
+#include "../../registry/reflect_macros.hpp"
 
 /**
  * @class Vector3D
@@ -448,4 +449,63 @@ public:
      * @return A new `Vector3D` after division.
      */
     Vector3D operator /(const float& value) const;
+
+
+    PTX_BEGIN_FIELDS(Vector3D)
+        PTX_FIELD(Vector3D, X, "X", __FLT_MIN__, __FLT_MAX__),
+        PTX_FIELD(Vector3D, Y, "Y", __FLT_MIN__, __FLT_MAX__),
+        PTX_FIELD(Vector3D, Z, "Z", __FLT_MIN__, __FLT_MAX__)
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(Vector3D)
+        PTX_METHOD_AUTO(Vector3D, Absolute, "Absolute"),
+        PTX_METHOD_AUTO(Vector3D, Normal, "Normal"),
+        PTX_METHOD_AUTO(Vector3D, Add, "Add"),
+        PTX_METHOD_AUTO(Vector3D, Subtract, "Subtract"),
+        PTX_METHOD_AUTO(Vector3D, Add, "Add"),
+        PTX_METHOD_AUTO(Vector3D, Subtract, "Subtract"),
+        PTX_METHOD_AUTO(Vector3D, Multiply, "Multiply"),
+        PTX_METHOD_AUTO(Vector3D, Divide, "Divide"),
+        PTX_METHOD_AUTO(Vector3D, Multiply, "Multiply"),
+        PTX_METHOD_AUTO(Vector3D, Divide, "Divide"),
+        PTX_METHOD_AUTO(Vector3D, CrossProduct, "Cross product"),
+        PTX_METHOD_AUTO(Vector3D, UnitSphere, "Unit sphere"),
+        PTX_METHOD_AUTO(Vector3D, Constrain, "Constrain"),
+        PTX_METHOD_AUTO(Vector3D, Constrain, "Constrain"),
+        PTX_METHOD_AUTO(Vector3D, Permutate, "Permutate"),
+        PTX_METHOD_AUTO(Vector3D, Magnitude, "Magnitude"),
+        PTX_METHOD_AUTO(Vector3D, DotProduct, "Dot product"),
+        PTX_METHOD_AUTO(Vector3D, CalculateEuclideanDistance, "Calculate euclidean distance"),
+        PTX_METHOD_AUTO(Vector3D, AverageHighestTwoComponents, "Average highest two components"),
+        PTX_METHOD_AUTO(Vector3D, Max, "Max"),
+        PTX_METHOD_AUTO(Vector3D, Min, "Min"),
+        PTX_METHOD_AUTO(Vector3D, IsEqual, "Is equal"),
+        PTX_METHOD_AUTO(Vector3D, ToString, "To string"),
+        PTX_SMETHOD_AUTO(Vector3D::Max, "Max"),
+        PTX_SMETHOD_AUTO(Vector3D::Min, "Min"),
+        PTX_SMETHOD_AUTO(Vector3D::LERP, "Lerp"),
+        PTX_SMETHOD_AUTO(Vector3D::DegreesToRadians, "Degrees to radians"),
+        PTX_SMETHOD_AUTO(Vector3D::RadiansToDegrees, "Radians to degrees"),
+        PTX_SMETHOD_AUTO(Vector3D::Normal, "Normal"),
+        PTX_SMETHOD_AUTO(Vector3D::Add, "Add"),
+        PTX_SMETHOD_AUTO(Vector3D::Subtract, "Subtract"),
+        PTX_SMETHOD_AUTO(Vector3D::Multiply, "Multiply"),
+        PTX_SMETHOD_AUTO(Vector3D::Divide, "Divide"),
+        PTX_SMETHOD_AUTO(Vector3D::Multiply, "Multiply"),
+        PTX_SMETHOD_AUTO(Vector3D::Multiply, "Multiply"),
+        PTX_SMETHOD_AUTO(Vector3D::Divide, "Divide"),
+        PTX_SMETHOD_AUTO(Vector3D::CrossProduct, "Cross product"),
+        PTX_SMETHOD_AUTO(Vector3D::DotProduct, "Dot product"),
+        PTX_SMETHOD_AUTO(Vector3D::CalculateEuclideanDistance, "Calculate euclidean distance"),
+        PTX_SMETHOD_AUTO(Vector3D::Reflect, "Reflect"),
+        PTX_SMETHOD_AUTO(Vector3D::IsEqual, "Is equal")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(Vector3D)
+        PTX_CTOR0(Vector3D),
+        PTX_CTOR(Vector3D, const Vector3D &),
+        PTX_CTOR(Vector3D, const Vector3D *),
+        PTX_CTOR(Vector3D, const float &, const float &, const float &)
+    PTX_END_DESCRIBE(Vector3D)
+    
 };

@@ -3,6 +3,7 @@
 #include "../ishader.hpp"
 #include "../../material/materialt.hpp"
 #include "materialmaskparams.hpp"
+#include "../../../../registry/reflect_macros.hpp"
 
 #include "../../../../core/math/mathematics.hpp"
 #include "../../../../core/math/vector2d.hpp"
@@ -70,4 +71,17 @@ public:
             return p.materialOuter->GetShader()->Shade(surf, *p.materialOuter);
         }
     }
+
+    PTX_BEGIN_FIELDS(MaterialMaskShader)
+        /* TODO: PTX_FIELD(MaterialMaskShader, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(MaterialMaskShader)
+        PTX_METHOD_AUTO(MaterialMaskShader, Shade, "Shade")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(MaterialMaskShader)
+        /* TODO: PTX_CTOR0(MaterialMaskShader) or PTX_CTOR(MaterialMaskShader, ...) */
+    PTX_END_DESCRIBE(MaterialMaskShader)
+    
 };

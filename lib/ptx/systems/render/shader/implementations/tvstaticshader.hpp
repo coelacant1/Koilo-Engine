@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <cmath>
+#include "../../../../registry/reflect_macros.hpp"
 
 #include "../ishader.hpp"
 #include "../../material/materialt.hpp"
@@ -165,4 +166,18 @@ private:
                           (1.0f - SmoothStep(1.0f - softness, 1.0f, u)));
         return Mathematics::Constrain(e, 0.0f, 1.0f);
     }
+
+    /* NOTE: TVStaticShaderT is a template; verify macros accept template types. */
+    PTX_BEGIN_FIELDS(TVStaticShaderT)
+        /* TODO: PTX_FIELD(TVStaticShaderT, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(TVStaticShaderT)
+        PTX_METHOD_AUTO(TVStaticShaderT, Shade, "Shade")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(TVStaticShaderT)
+        PTX_CTOR0(TVStaticShaderT)
+    PTX_END_DESCRIBE(TVStaticShaderT)
+    
 };

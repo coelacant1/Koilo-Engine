@@ -18,6 +18,7 @@
 #include "mathematics.hpp"
 #include "vector2d.hpp"
 #include "vector3d.hpp"
+#include "../../registry/reflect_macros.hpp"
 
 /**
  * @class Quaternion
@@ -508,4 +509,70 @@ public:
      * @return The squared length of \p quaternion.
      */
     static float Normal(const Quaternion& quaternion);
+
+    PTX_BEGIN_FIELDS(Quaternion)
+        PTX_FIELD(Quaternion, W, "W", __FLT_MIN__, __FLT_MAX__),
+        PTX_FIELD(Quaternion, X, "X", __FLT_MIN__, __FLT_MAX__),
+        PTX_FIELD(Quaternion, Y, "Y", __FLT_MIN__, __FLT_MAX__),
+        PTX_FIELD(Quaternion, Z, "Z", __FLT_MIN__, __FLT_MAX__)
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(Quaternion)
+        PTX_METHOD_AUTO(Quaternion, RotateVector, "Rotate vector"),
+        PTX_METHOD_AUTO(Quaternion, RotateVectorUnit, "Rotate vector unit"),
+        PTX_METHOD_AUTO(Quaternion, UnrotateVector, "Unrotate vector"),
+        PTX_METHOD_AUTO(Quaternion, RotateVector, "Rotate vector"),
+        PTX_METHOD_AUTO(Quaternion, UnrotateVector, "Unrotate vector"),
+        PTX_METHOD_AUTO(Quaternion, GetBiVector, "Get bi vector"),
+        PTX_METHOD_AUTO(Quaternion, GetNormal, "Get normal"),
+        PTX_SMETHOD_AUTO(Quaternion::SphericalInterpolation, "Spherical interpolation"),
+        PTX_METHOD_AUTO(Quaternion, DeltaRotation, "Delta rotation"),
+        PTX_METHOD_AUTO(Quaternion, Add, "Add"),
+        PTX_METHOD_AUTO(Quaternion, Subtract, "Subtract"),
+        PTX_METHOD_AUTO(Quaternion, Multiply, "Multiply"),
+        PTX_METHOD_AUTO(Quaternion, Multiply, "Multiply"),
+        PTX_METHOD_AUTO(Quaternion, Divide, "Divide"),
+        PTX_METHOD_AUTO(Quaternion, Divide, "Divide"),
+        PTX_METHOD_AUTO(Quaternion, Power, "Power"),
+        PTX_METHOD_AUTO(Quaternion, Power, "Power"),
+        PTX_METHOD_AUTO(Quaternion, Permutate, "Permutate"),
+        PTX_METHOD_AUTO(Quaternion, Absolute, "Absolute"),
+        PTX_METHOD_AUTO(Quaternion, AdditiveInverse, "Additive inverse"),
+        PTX_METHOD_AUTO(Quaternion, MultiplicativeInverse, "Multiplicative inverse"),
+        PTX_METHOD_AUTO(Quaternion, Conjugate, "Conjugate"),
+        PTX_METHOD_AUTO(Quaternion, UnitQuaternion, "Unit quaternion"),
+        PTX_METHOD_AUTO(Quaternion, Magnitude, "Magnitude"),
+        PTX_METHOD_AUTO(Quaternion, DotProduct, "Dot product"),
+        PTX_METHOD_AUTO(Quaternion, Normal, "Normal"),
+        PTX_METHOD_AUTO(Quaternion, IsNaN, "Is na n"),
+        PTX_METHOD_AUTO(Quaternion, IsFinite, "Is finite"),
+        PTX_METHOD_AUTO(Quaternion, IsInfinite, "Is infinite"),
+        PTX_METHOD_AUTO(Quaternion, IsNonZero, "Is non zero"),
+        PTX_METHOD_AUTO(Quaternion, IsEqual, "Is equal"),
+        PTX_METHOD_AUTO(Quaternion, IsClose, "Is close"),
+        PTX_METHOD_AUTO(Quaternion, ToString, "To string"),
+        PTX_SMETHOD_AUTO(Quaternion::Add, "Add"),
+        PTX_SMETHOD_AUTO(Quaternion::Subtract, "Subtract"),
+        PTX_SMETHOD_AUTO(Quaternion::Multiply, "Multiply"),
+        PTX_SMETHOD_AUTO(Quaternion::Divide, "Divide"),
+        PTX_SMETHOD_AUTO(Quaternion::Power, "Power"),
+        PTX_SMETHOD_AUTO(Quaternion::DotProduct, "Dot product"),
+        PTX_SMETHOD_AUTO(Quaternion::Power, "Power"),
+        PTX_SMETHOD_AUTO(Quaternion::Permutate, "Permutate"),
+        PTX_SMETHOD_AUTO(Quaternion::Absolute, "Absolute"),
+        PTX_SMETHOD_AUTO(Quaternion::AdditiveInverse, "Additive inverse"),
+        PTX_SMETHOD_AUTO(Quaternion::MultiplicativeInverse, "Multiplicative inverse"),
+        PTX_SMETHOD_AUTO(Quaternion::Conjugate, "Conjugate"),
+        PTX_SMETHOD_AUTO(Quaternion::UnitQuaternion, "Unit quaternion"),
+        PTX_SMETHOD_AUTO(Quaternion::Magnitude, "Magnitude"),
+        PTX_SMETHOD_AUTO(Quaternion::Normal, "Normal")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(Quaternion)
+        PTX_CTOR0(Quaternion),
+        PTX_CTOR(Quaternion, const Quaternion &),
+        PTX_CTOR(Quaternion, const Vector3D &),
+        PTX_CTOR(Quaternion, const float &, const float &, const float &, const float &)
+    PTX_END_DESCRIBE(Quaternion)
+    
 };

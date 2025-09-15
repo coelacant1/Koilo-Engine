@@ -17,6 +17,7 @@
 #include "../core/camerabase.hpp"
 #include "../../../core/color/rgbcolor.hpp"
 #include "helpers/rastertriangle2d.hpp"
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class Rasterizer
@@ -41,4 +42,17 @@ public:
      * @param camera The camera defining the viewpoint and projection.
      */
     static void Rasterize(Scene* scene, CameraBase* camera);
+
+    PTX_BEGIN_FIELDS(Rasterizer)
+        /* TODO: PTX_FIELD(Rasterizer, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(Rasterizer)
+        PTX_SMETHOD_AUTO(Rasterizer::Rasterize, "Rasterize")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(Rasterizer)
+        /* TODO: PTX_CTOR0(Rasterizer) or PTX_CTOR(Rasterizer, ...) */
+    PTX_END_DESCRIBE(Rasterizer)
+    
 };

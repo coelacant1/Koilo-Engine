@@ -18,6 +18,7 @@
 #include "../../core/geometry/3d/triangle.hpp"
 #include "indexgroup.hpp"
 #include "istatictrianglegroup.hpp"
+#include "../../registry/reflect_macros.hpp"
 
 /**
  * @class StaticTriangleGroup
@@ -99,6 +100,28 @@ public:
      * @return Pointer to the UV IndexGroup, or nullptr if not available.
      */
     const IndexGroup* GetUVIndexGroup() override;
+
+    /* NOTE: StaticTriangleGroup is a template; verify macros accept template types. */
+    PTX_BEGIN_FIELDS(StaticTriangleGroup)
+        /* TODO: PTX_FIELD(StaticTriangleGroup, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(StaticTriangleGroup)
+        PTX_METHOD_AUTO(StaticTriangleGroup, HasUV, "Has uv"),
+        PTX_METHOD_AUTO(StaticTriangleGroup, GetIndexGroup, "Get index group"),
+        PTX_METHOD_AUTO(StaticTriangleGroup, GetTriangleCount, "Get triangle count"),
+        PTX_METHOD_AUTO(StaticTriangleGroup, GetVertices, "Get vertices"),
+        PTX_METHOD_AUTO(StaticTriangleGroup, GetVertexCount, "Get vertex count"),
+        PTX_METHOD_AUTO(StaticTriangleGroup, GetTriangles, "Get triangles"),
+        PTX_METHOD_AUTO(StaticTriangleGroup, GetUVVertices, "Get uvvertices"),
+        PTX_METHOD_AUTO(StaticTriangleGroup, GetUVIndexGroup, "Get uvindex group")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(StaticTriangleGroup)
+        PTX_CTOR(StaticTriangleGroup, Vector3D *, const IndexGroup *),
+        PTX_CTOR(StaticTriangleGroup, Vector3D *, const IndexGroup *, const IndexGroup *, const Vector2D *)
+    PTX_END_DESCRIBE(StaticTriangleGroup)
+    
 };
 
 #include "statictrianglegroup.tpp"

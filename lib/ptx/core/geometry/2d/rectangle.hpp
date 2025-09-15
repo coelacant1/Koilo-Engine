@@ -15,6 +15,7 @@
 #include "shape.hpp"
 #include "../../math/vector2d.hpp"
 #include "../../math/mathematics.hpp"
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class Rectangle
@@ -29,7 +30,20 @@ private:
 public:
     struct Corners {
         Vector2D corners[4];
-    };
+    
+        PTX_BEGIN_FIELDS(Corners)
+            PTX_FIELD(Corners, corners, "Corners", 0, 0)
+        PTX_END_FIELDS
+        
+        PTX_BEGIN_METHODS(Corners)
+            /* TODO: PTX_METHOD_AUTO(Corners, Method, "Doc") */
+        PTX_END_METHODS
+        
+        PTX_BEGIN_DESCRIBE(Corners)
+            /* TODO: PTX_CTOR0(Corners) or PTX_CTOR(Corners, ...) */
+        PTX_END_DESCRIBE(Corners)
+        
+};
 
     /**
      * @brief Constructs a Rectangle object with specified center, size, and rotation.
@@ -64,4 +78,26 @@ public:
     bool Overlaps(const Rectangle2D& other) const;
     bool Overlaps(const Vector2D& minI, const Vector2D& maxI) const;
     bool Contains(const Vector2D& v) const;
+
+    PTX_BEGIN_FIELDS(Rectangle2D)
+        /* TODO: PTX_FIELD(Rectangle2D, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(Rectangle2D)
+        PTX_METHOD_AUTO(Rectangle2D, IsInShape, "Is in shape"),
+        PTX_METHOD_AUTO(Rectangle2D, GetCorners, "Get corners"),
+        PTX_METHOD_AUTO(Rectangle2D, UpdateBounds, "Update bounds"),
+        PTX_METHOD_AUTO(Rectangle2D, GetMinimum, "Get minimum"),
+        PTX_METHOD_AUTO(Rectangle2D, GetMaximum, "Get maximum"),
+        PTX_METHOD_AUTO(Rectangle2D, GetCenter, "Get center"),
+        PTX_METHOD_AUTO(Rectangle2D, Overlaps, "Overlaps"),
+        PTX_METHOD_AUTO(Rectangle2D, Overlaps, "Overlaps"),
+        PTX_METHOD_AUTO(Rectangle2D, Contains, "Contains")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(Rectangle2D)
+        PTX_CTOR(Rectangle2D, Vector2D, Vector2D, float),
+        PTX_CTOR(Rectangle2D, Bounds, float)
+    PTX_END_DESCRIBE(Rectangle2D)
+    
 };

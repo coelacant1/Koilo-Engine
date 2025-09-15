@@ -2,6 +2,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "../../registry/reflect_macros.hpp"
 
 /**
  * @file characters.hpp
@@ -70,4 +71,17 @@ public:
      * @note The returned pointer refers to a static internal table; do not free or modify it.
      */
     static const uint8_t* GetCharacter(char character);
+
+    PTX_BEGIN_FIELDS(Characters)
+        /* TODO: PTX_FIELD(Characters, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(Characters)
+        PTX_SMETHOD_AUTO(Characters::GetCharacter, "Get character")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(Characters)
+        /* TODO: PTX_CTOR0(Characters) or PTX_CTOR(Characters, ...) */
+    PTX_END_DESCRIBE(Characters)
+    
 };

@@ -3,6 +3,7 @@
 #include <cstdint>          // uint8_t
 #include "effect.hpp"
 #include "../core/ipixelgroup.hpp"
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @file compositor.hpp
@@ -61,6 +62,24 @@ public:
 
     /** @brief Current number of effects in the chain. */
     uint8_t GetCount() const { return count; }
+
+    /* NOTE: Compositor is a template; verify macros accept template types. */
+    PTX_BEGIN_FIELDS(Compositor)
+        /* TODO: PTX_FIELD(Compositor, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(Compositor)
+        PTX_METHOD_AUTO(Compositor, AddEffect, "Add effect"),
+        PTX_METHOD_AUTO(Compositor, SetEnabled, "Set enabled"),
+        PTX_METHOD_AUTO(Compositor, Clear, "Clear"),
+        PTX_METHOD_AUTO(Compositor, Apply, "Apply"),
+        PTX_METHOD_AUTO(Compositor, GetCount, "Get count")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(Compositor)
+        PTX_CTOR0(Compositor)
+    PTX_END_DESCRIBE(Compositor)
+    
 };
 
 // Template implementation

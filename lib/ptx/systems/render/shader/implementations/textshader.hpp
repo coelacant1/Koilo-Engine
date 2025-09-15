@@ -3,6 +3,7 @@
 
 #include <cmath>
 #include <cstdint>
+#include "../../../../registry/reflect_macros.hpp"
 
 #include "../ishader.hpp"
 #include "../../material/materialt.hpp"
@@ -139,4 +140,18 @@ private:
 
         return sh->Shade(sp2, *P.fillMat);
     }
+
+    /* NOTE: TextBuilderShaderT is a template; verify macros accept template types. */
+    PTX_BEGIN_FIELDS(TextBuilderShaderT)
+        /* TODO: PTX_FIELD(TextBuilderShaderT, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(TextBuilderShaderT)
+        PTX_METHOD_AUTO(TextBuilderShaderT, Shade, "Shade")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(TextBuilderShaderT)
+        /* TODO: PTX_CTOR0(TextBuilderShaderT) or PTX_CTOR(TextBuilderShaderT, ...) */
+    PTX_END_DESCRIBE(TextBuilderShaderT)
+    
 };

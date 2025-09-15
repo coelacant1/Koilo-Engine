@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>  // for size_t
+#include "../../../../registry/reflect_macros.hpp"
 
 #include "../imaterial.hpp"
 #include "../materialt.hpp"
@@ -71,4 +72,20 @@ private:
         RGBColor(0, 255, 0),   // green
         RGBColor(0, 0, 255)    // blue
     };
+
+    PTX_BEGIN_FIELDS(DepthMaterial)
+        PTX_FIELD(DepthMaterial, gradient_, "Gradient", -2147483648, 2147483647)
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(DepthMaterial)
+        PTX_METHOD_AUTO(DepthMaterial, SetAxis, "Set axis"),
+        PTX_METHOD_AUTO(DepthMaterial, SetDepth, "Set depth"),
+        PTX_METHOD_AUTO(DepthMaterial, SetOffset, "Set offset"),
+        PTX_METHOD_AUTO(DepthMaterial, Gradient, "Gradient")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(DepthMaterial)
+        PTX_CTOR(DepthMaterial, DepthAxis, float, float)
+    PTX_END_DESCRIBE(DepthMaterial)
+    
 };

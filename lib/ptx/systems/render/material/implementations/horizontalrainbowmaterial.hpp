@@ -3,6 +3,7 @@
 #include "../imaterial.hpp"
 #include "../materialt.hpp"
 #include "../../shader/ishader.hpp"
+#include "../../../../registry/reflect_macros.hpp"
 
 #include "../../shader/implementations/horizontalrainbowparams.hpp"
 #include "../../shader/implementations/horizontalrainbowshader.hpp"
@@ -101,4 +102,31 @@ public:
     void SetScrollSpeed(float s)              { this->scrollSpeed = s; }
     /** @brief Get scroll speed. */
     float GetScrollSpeed() const              { return this->scrollSpeed; }
+
+    /* NOTE: HorizontalRainbowMaterial is a template; verify macros accept template types. */
+    PTX_BEGIN_FIELDS(HorizontalRainbowMaterial)
+        /* TODO: PTX_FIELD(HorizontalRainbowMaterial, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(HorizontalRainbowMaterial)
+        PTX_METHOD_AUTO(HorizontalRainbowMaterial, Update, "Update"),
+        PTX_METHOD_AUTO(HorizontalRainbowMaterial, SetSpectrum, "Set spectrum"),
+        PTX_METHOD_AUTO(HorizontalRainbowMaterial, SetSpectrumAt, "Set spectrum at"),
+        PTX_METHOD_AUTO(HorizontalRainbowMaterial, GetSpectrumAt, "Get spectrum at"),
+        PTX_METHOD_AUTO(HorizontalRainbowMaterial, SpectrumData, "Spectrum data"),
+        PTX_METHOD_AUTO(HorizontalRainbowMaterial, SpectrumData, "Spectrum data"),
+        PTX_METHOD_AUTO(HorizontalRainbowMaterial, SetPositionOffset, "Set position offset"),
+        PTX_METHOD_AUTO(HorizontalRainbowMaterial, GetPositionOffset, "Get position offset"),
+        PTX_METHOD_AUTO(HorizontalRainbowMaterial, SetRotationDeg, "Set rotation deg"),
+        PTX_METHOD_AUTO(HorizontalRainbowMaterial, GetRotationDeg, "Get rotation deg"),
+        PTX_METHOD_AUTO(HorizontalRainbowMaterial, SetGradientPeriod, "Set gradient period"),
+        PTX_METHOD_AUTO(HorizontalRainbowMaterial, GetGradientPeriod, "Get gradient period"),
+        PTX_METHOD_AUTO(HorizontalRainbowMaterial, SetScrollSpeed, "Set scroll speed"),
+        PTX_METHOD_AUTO(HorizontalRainbowMaterial, GetScrollSpeed, "Get scroll speed")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(HorizontalRainbowMaterial)
+        /* TODO: PTX_CTOR0(HorizontalRainbowMaterial) or PTX_CTOR(HorizontalRainbowMaterial, ...) */
+    PTX_END_DESCRIBE(HorizontalRainbowMaterial)
+    
 };

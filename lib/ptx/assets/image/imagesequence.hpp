@@ -18,6 +18,7 @@
 #include "../../core/platform/time.hpp"     // ptx::Time::Millis
 #include "../../core/color/rgbcolor.hpp"    // RGBColor
 #include "image.hpp"
+#include "../../registry/reflect_macros.hpp"
 
 /**
  * @class ImageSequence
@@ -75,4 +76,23 @@ private:
 
     unsigned int currentFrame = 0;      ///< Current frame index
     uint64_t startTime = 0;             ///< Start timestamp (ms)
+
+    PTX_BEGIN_FIELDS(ImageSequence)
+        /* TODO: PTX_FIELD(ImageSequence, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(ImageSequence)
+        PTX_METHOD_AUTO(ImageSequence, SetFPS, "Set fps"),
+        PTX_METHOD_AUTO(ImageSequence, SetSize, "Set size"),
+        PTX_METHOD_AUTO(ImageSequence, SetPosition, "Set position"),
+        PTX_METHOD_AUTO(ImageSequence, SetRotation, "Set rotation"),
+        PTX_METHOD_AUTO(ImageSequence, Reset, "Reset"),
+        PTX_METHOD_AUTO(ImageSequence, Update, "Update"),
+        PTX_METHOD_AUTO(ImageSequence, GetColorAtCoordinate, "Get color at coordinate")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(ImageSequence)
+        PTX_CTOR(ImageSequence, Image *, const uint8_t **, unsigned int, float)
+    PTX_END_DESCRIBE(ImageSequence)
+    
 };

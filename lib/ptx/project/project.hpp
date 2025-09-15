@@ -18,6 +18,7 @@
 #include "../core/signal/filter/runningaveragefilter.hpp" // Include for filtering utilities.
 #include "../core/platform/time.hpp"
 #include "../core/platform/console.hpp"
+#include "../registry/reflect_macros.hpp"
 
 /**
  * @class Project
@@ -137,4 +138,28 @@ public:
      * @brief Prints performance statistics such as frame rate and operation times.
      */
     void PrintStats();
+
+    PTX_BEGIN_FIELDS(Project)
+        /* TODO: PTX_FIELD(Project, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(Project)
+        PTX_METHOD_AUTO(Project, SetCameraManager, "Set camera manager"),
+        PTX_METHOD_AUTO(Project, SetController, "Set controller"),
+        PTX_METHOD_AUTO(Project, GetAnimationTime, "Get animation time"),
+        PTX_METHOD_AUTO(Project, GetRenderTime, "Get render time"),
+        PTX_METHOD_AUTO(Project, GetDisplayTime, "Get display time"),
+        PTX_METHOD_AUTO(Project, GetFrameRate, "Get frame rate"),
+        PTX_METHOD_AUTO(Project, Initialize, "Initialize"),
+        PTX_METHOD_AUTO(Project, Animate, "Animate"),
+        PTX_METHOD_AUTO(Project, Render, "Render"),
+        PTX_METHOD_AUTO(Project, Display, "Display"),
+        PTX_METHOD_AUTO(Project, PrintStats, "Print stats")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(Project)
+        PTX_CTOR0(Project),
+        PTX_CTOR(Project, CameraManager *, Controller *, uint8_t)
+    PTX_END_DESCRIBE(Project)
+    
 };

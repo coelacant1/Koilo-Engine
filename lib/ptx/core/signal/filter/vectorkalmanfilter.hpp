@@ -14,6 +14,7 @@
 
 #include "kalmanfilter.hpp"
 #include "../../math/vector3d.hpp"
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class VectorKalmanFilter
@@ -53,4 +54,18 @@ public:
      * @return The filtered `Vector3D`.
      */
     Vector3D Filter(Vector3D input);
+
+    /* NOTE: VectorKalmanFilter is a template; verify macros accept template types. */
+    PTX_BEGIN_FIELDS(VectorKalmanFilter)
+        /* TODO: PTX_FIELD(VectorKalmanFilter, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(VectorKalmanFilter)
+        PTX_METHOD_AUTO(VectorKalmanFilter, Filter, "Filter")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(VectorKalmanFilter)
+        PTX_CTOR(VectorKalmanFilter, T, T, T)
+    PTX_END_DESCRIBE(VectorKalmanFilter)
+    
 };

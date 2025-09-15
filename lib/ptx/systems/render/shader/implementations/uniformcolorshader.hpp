@@ -4,6 +4,7 @@
 #include "../ishader.hpp"
 #include "../../material/materialt.hpp"   // for IMaterial::As<T>()
 #include "uniformcolorparams.hpp"
+#include "../../../../registry/reflect_macros.hpp"
 
 /**
  * @file uniformcolorshader.hpp
@@ -29,4 +30,17 @@ public:
         const auto& p = m.As<MatBase>();
         return p.color;
     }
+
+    PTX_BEGIN_FIELDS(UniformColorShader)
+        /* TODO: PTX_FIELD(UniformColorShader, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(UniformColorShader)
+        PTX_METHOD_AUTO(UniformColorShader, Shade, "Shade")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(UniformColorShader)
+        /* TODO: PTX_CTOR0(UniformColorShader) or PTX_CTOR(UniformColorShader, ...) */
+    PTX_END_DESCRIBE(UniformColorShader)
+    
 };

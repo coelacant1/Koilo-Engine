@@ -8,6 +8,7 @@
 
 #include "shape.hpp"
 #include "../../math/vector2d.hpp"
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class Triangle2D
@@ -37,4 +38,22 @@ public:
      * @return true if (x,y) lies in or on the triangle
      */
     bool IsInShape(Vector2D point) override;
+
+    PTX_BEGIN_FIELDS(Triangle2D)
+        PTX_FIELD(Triangle2D, p1, "P1", 0, 0),
+        PTX_FIELD(Triangle2D, p2, "P2", 0, 0),
+        PTX_FIELD(Triangle2D, p3, "P3", 0, 0)
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(Triangle2D)
+        PTX_METHOD_AUTO(Triangle2D, GetArea, "Get area"),
+        PTX_METHOD_AUTO(Triangle2D, GetCentroid, "Get centroid"),
+        PTX_METHOD_AUTO(Triangle2D, IsInShape, "Is in shape")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(Triangle2D)
+        PTX_CTOR0(Triangle2D),
+        PTX_CTOR(Triangle2D, const Vector2D &, const Vector2D &, const Vector2D &)
+    PTX_END_DESCRIBE(Triangle2D)
+    
 };

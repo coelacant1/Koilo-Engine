@@ -5,6 +5,7 @@
 #include "../../../../core/signal/functiongenerator.hpp"
 #include "../../../../core/math/vector2d.hpp"
 #include <cmath>
+#include "../../../../registry/reflect_macros.hpp"
 
 /**
  * @class Fisheye
@@ -31,4 +32,19 @@ public:
 
     // New API (replaces ApplyEffect)
     void Apply(IPixelGroup* pixelGroup) override;
+
+    PTX_BEGIN_FIELDS(Fisheye)
+        /* TODO: PTX_FIELD(Fisheye, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(Fisheye)
+        PTX_METHOD_AUTO(Fisheye, SetPosition, "Set position"),
+        PTX_METHOD_AUTO(Fisheye, SetAmplitude, "Set amplitude"),
+        PTX_METHOD_AUTO(Fisheye, Apply, "Apply")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(Fisheye)
+        PTX_CTOR(Fisheye, float)
+    PTX_END_DESCRIBE(Fisheye)
+    
 };

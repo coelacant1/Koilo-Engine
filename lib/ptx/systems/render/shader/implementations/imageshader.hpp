@@ -2,6 +2,7 @@
 
 #include "../ishader.hpp"
 #include "../../material/materialt.hpp"
+#include "../../../../registry/reflect_macros.hpp"
 
 #include "../../../../core/math/vector2d.hpp"
 #include "../../../../core/color/rgbcolor.hpp"
@@ -40,4 +41,17 @@ public:
         RGBColor c = p.image->GetColorAtCoordinate(Vector2D(u, v));
         return c.HueShift(p.hueAngle);
     }
+
+    PTX_BEGIN_FIELDS(ImageShader)
+        /* TODO: PTX_FIELD(ImageShader, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(ImageShader)
+        PTX_METHOD_AUTO(ImageShader, Shade, "Shade")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(ImageShader)
+        /* TODO: PTX_CTOR0(ImageShader) or PTX_CTOR(ImageShader, ...) */
+    PTX_END_DESCRIBE(ImageShader)
+    
 };

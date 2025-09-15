@@ -13,6 +13,7 @@
 
 #include <stdint.h>
 #include <math.h>
+#include "../../registry/reflect_macros.hpp"
 
 /**
  * @class CastHelper
@@ -74,4 +75,18 @@ public:
     static inline float ToFloat(uint16_t v){
         return static_cast<float>(v);
     }
+
+    PTX_BEGIN_FIELDS(CastHelper)
+        /* TODO: PTX_FIELD(CastHelper, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(CastHelper)
+        PTX_SMETHOD_AUTO(CastHelper::ToU16, "To u16"),
+        PTX_SMETHOD_AUTO(CastHelper::ToFloat, "To float")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(CastHelper)
+        /* TODO: PTX_CTOR0(CastHelper) or PTX_CTOR(CastHelper, ...) */
+    PTX_END_DESCRIBE(CastHelper)
+    
 };

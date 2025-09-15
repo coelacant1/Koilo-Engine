@@ -13,6 +13,7 @@
 
 #include "../../core/math/mathematics.hpp" // Include for mathematical utilities.
 #include "../render/core/cameramanager.hpp" // Include for camera management.
+#include "../../registry/reflect_macros.hpp"
 
 /**
  * @class Controller
@@ -43,4 +44,18 @@ public:
      */
     virtual void Display() = 0;
 
+
+    PTX_BEGIN_FIELDS(Controller)
+        /* TODO: PTX_FIELD(Controller, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(Controller)
+        PTX_METHOD_AUTO(Controller, Initialize, "Initialize"),
+        PTX_METHOD_AUTO(Controller, Display, "Display")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(Controller)
+        /* TODO: PTX_CTOR0(Controller) or PTX_CTOR(Controller, ...) */
+    PTX_END_DESCRIBE(Controller)
+    
 };

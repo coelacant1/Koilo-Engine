@@ -5,6 +5,7 @@
 #include "../../../../core/math/vector2d.hpp"
 #include "../../../../core/math/mathematics.hpp"
 #include "../../../../core/signal/functiongenerator.hpp"
+#include "../../../../registry/reflect_macros.hpp"
 
 /**
  * @brief Magnetic “pull/warp” distortion using inverse-distance falloff.
@@ -33,4 +34,19 @@ public:
 
     // effect
     void Apply(IPixelGroup* pixelGroup) override;
+
+    PTX_BEGIN_FIELDS(Magnet)
+        /* TODO: PTX_FIELD(Magnet, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(Magnet)
+        PTX_METHOD_AUTO(Magnet, SetPosition, "Set position"),
+        PTX_METHOD_AUTO(Magnet, SetAmplitude, "Set amplitude"),
+        PTX_METHOD_AUTO(Magnet, Apply, "Apply")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(Magnet)
+        PTX_CTOR(Magnet, float)
+    PTX_END_DESCRIBE(Magnet)
+    
 };

@@ -14,6 +14,7 @@
 
 #include "../math/mathematics.hpp"
 #include "../signal/filter/runningaveragefilter.hpp"
+#include "../../registry/reflect_macros.hpp"
 
 /**
  * @class BouncePhysics
@@ -52,4 +53,18 @@ public:
      * @return Updated position after applying physics.
      */
     float Calculate(float velocity, float dT);
+
+    PTX_BEGIN_FIELDS(BouncePhysics)
+        /* TODO: PTX_FIELD(BouncePhysics, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(BouncePhysics)
+        PTX_METHOD_AUTO(BouncePhysics, Calculate, "Calculate"),
+        PTX_METHOD_AUTO(BouncePhysics, Calculate, "Calculate")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(BouncePhysics)
+        PTX_CTOR(BouncePhysics, float, float)
+    PTX_END_DESCRIBE(BouncePhysics)
+    
 };

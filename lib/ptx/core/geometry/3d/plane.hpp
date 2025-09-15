@@ -13,6 +13,7 @@
 
 #include "../../math/mathematics.hpp"
 #include "../../math/vector3d.hpp"
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class Plane
@@ -49,4 +50,19 @@ public:
      * @return A string describing the plane's centroid and normal vector.
      */
     ptx::UString ToString();
+
+    PTX_BEGIN_FIELDS(Plane)
+        PTX_FIELD(Plane, Centroid, "Centroid", 0, 0),
+        PTX_FIELD(Plane, Normal, "Normal", 0, 0)
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(Plane)
+        PTX_METHOD_AUTO(Plane, ToString, "To string")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(Plane)
+        PTX_CTOR0(Plane),
+        PTX_CTOR(Plane, Vector3D, Vector3D)
+    PTX_END_DESCRIBE(Plane)
+    
 };

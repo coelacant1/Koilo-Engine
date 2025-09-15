@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include "../../../../registry/reflect_macros.hpp"
 
 #include "../imaterial.hpp"
 #include "../materialt.hpp"
@@ -71,4 +72,25 @@ public:
 
     /** @brief Number of lights stored by this material. */
     constexpr size_t LightCount() const  { return lightCount; }
+
+    /* NOTE: PhongLightMaterial is a template; verify macros accept template types. */
+    PTX_BEGIN_FIELDS(PhongLightMaterial)
+        /* TODO: PTX_FIELD(PhongLightMaterial, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(PhongLightMaterial)
+        PTX_METHOD_AUTO(PhongLightMaterial, SetCameraPosition, "Set camera position"),
+        PTX_METHOD_AUTO(PhongLightMaterial, SetAmbient, "Set ambient"),
+        PTX_METHOD_AUTO(PhongLightMaterial, SetDiffuse, "Set diffuse"),
+        PTX_METHOD_AUTO(PhongLightMaterial, SetSpecular, "Set specular"),
+        PTX_METHOD_AUTO(PhongLightMaterial, SetShininess, "Set shininess"),
+        PTX_METHOD_AUTO(PhongLightMaterial, LightAt, "Light at"),
+        PTX_METHOD_AUTO(PhongLightMaterial, LightAt, "Light at"),
+        PTX_METHOD_AUTO(PhongLightMaterial, LightCount, "Light count")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(PhongLightMaterial)
+        PTX_CTOR0(PhongLightMaterial)
+    PTX_END_DESCRIBE(PhongLightMaterial)
+    
 };

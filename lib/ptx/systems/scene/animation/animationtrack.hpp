@@ -15,6 +15,7 @@
 
 #include <cstdint>
 #include "keyframetrack.hpp" // Include for KeyFrameTrack dependency.
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class AnimationTrack
@@ -115,6 +116,28 @@ public:
      * @param parameter A pointer to the parameter to be animated.
      */
     void AddParameter(float* parameter);
+
+    /* NOTE: AnimationTrack is a template; verify macros accept template types. */
+    PTX_BEGIN_FIELDS(AnimationTrack)
+        /* TODO: PTX_FIELD(AnimationTrack, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(AnimationTrack)
+        PTX_METHOD_AUTO(AnimationTrack, Play, "Play"),
+        PTX_METHOD_AUTO(AnimationTrack, Pause, "Pause"),
+        PTX_METHOD_AUTO(AnimationTrack, RestartTime, "Restart time"),
+        PTX_METHOD_AUTO(AnimationTrack, GetTime, "Get time"),
+        PTX_METHOD_AUTO(AnimationTrack, Reset, "Reset"),
+        PTX_METHOD_AUTO(AnimationTrack, GetParameterValue, "Get parameter value"),
+        PTX_METHOD_AUTO(AnimationTrack, Update, "Update"),
+        PTX_METHOD_AUTO(AnimationTrack, AddParameter, "Add parameter")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(AnimationTrack)
+        PTX_CTOR0(AnimationTrack),
+        PTX_CTOR(AnimationTrack, float, float, KeyFrameInterpolation::InterpolationMethod)
+    PTX_END_DESCRIBE(AnimationTrack)
+    
 };
 
 #include "animationtrack.tpp" // Include the template implementation.

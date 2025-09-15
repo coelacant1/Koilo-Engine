@@ -14,6 +14,7 @@
 
 #include <cstdint>
 #include "../../math/mathematics.hpp" // Includes mathematical utilities for constraints and operations.
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class MinFilter
@@ -57,6 +58,20 @@ public:
      * @return The minimum value within the memory window after updating with the new value.
      */
     float Filter(float value);
+
+    /* NOTE: MinFilter is a template; verify macros accept template types. */
+    PTX_BEGIN_FIELDS(MinFilter)
+        /* TODO: PTX_FIELD(MinFilter, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(MinFilter)
+        PTX_METHOD_AUTO(MinFilter, Filter, "Filter")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(MinFilter)
+        PTX_CTOR(MinFilter, bool)
+    PTX_END_DESCRIBE(MinFilter)
+    
 };
 
 #include "minfilter.tpp" // Includes the implementation of the template class.

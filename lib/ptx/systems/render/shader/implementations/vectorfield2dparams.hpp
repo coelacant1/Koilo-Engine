@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include "../../../../core/math/vector2d.hpp"
+#include "../../../../registry/reflect_macros.hpp"
 
 /**
  * @file vectorfield2dparams.hpp
@@ -45,4 +46,28 @@ struct VectorField2DParams {
         delete[] vecXP; delete[] vecYP; delete[] vecDP;
         delete[] vecX;  delete[] vecY;  delete[] vecD;
     }
+
+    PTX_BEGIN_FIELDS(VectorField2DParams)
+        PTX_FIELD(VectorField2DParams, size, "Size", 0, 0),
+        PTX_FIELD(VectorField2DParams, position, "Position", 0, 0),
+        PTX_FIELD(VectorField2DParams, rotation, "Rotation", __FLT_MIN__, __FLT_MAX__),
+        PTX_FIELD(VectorField2DParams, showDensity, "Show density", 0, 1),
+        PTX_FIELD(VectorField2DParams, countX, "Count x", 0, 65535),
+        PTX_FIELD(VectorField2DParams, countY, "Count y", 0, 65535),
+        PTX_FIELD(VectorField2DParams, vecXP, "Vec xp", -128, 127),
+        PTX_FIELD(VectorField2DParams, vecYP, "Vec yp", -128, 127),
+        PTX_FIELD(VectorField2DParams, vecDP, "Vec dp", -128, 127),
+        PTX_FIELD(VectorField2DParams, vecX, "Vec x", -128, 127),
+        PTX_FIELD(VectorField2DParams, vecY, "Vec y", -128, 127),
+        PTX_FIELD(VectorField2DParams, vecD, "Vec d", -128, 127)
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(VectorField2DParams)
+        /* TODO: PTX_METHOD_AUTO(VectorField2DParams, Method, "Doc") */
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(VectorField2DParams)
+        PTX_CTOR(VectorField2DParams, uint16_t, uint16_t)
+    PTX_END_DESCRIBE(VectorField2DParams)
+    
 };

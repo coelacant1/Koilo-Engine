@@ -2,6 +2,7 @@
 
 #include <type_traits>
 #include "../shader/ishader.hpp"
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @file imaterial.hpp
@@ -48,4 +49,18 @@ public:
 
 private:
     const IShader* ShaderPtr_;  ///< Non-owning shader pointer; lifetime managed externally.
+
+    PTX_BEGIN_FIELDS(IMaterial)
+        /* TODO: PTX_FIELD(IMaterial, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(IMaterial)
+        PTX_METHOD_AUTO(IMaterial, GetShader, "Get shader"),
+        PTX_METHOD_AUTO(IMaterial, Update, "Update")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(IMaterial)
+        PTX_CTOR(IMaterial, const IShader *)
+    PTX_END_DESCRIBE(IMaterial)
+    
 };

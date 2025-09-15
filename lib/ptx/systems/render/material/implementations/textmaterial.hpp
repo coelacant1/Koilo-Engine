@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include "../../../../registry/reflect_macros.hpp"
 
 #include "../imaterial.hpp"
 #include "../materialt.hpp"
@@ -140,4 +141,30 @@ public:
 private:
     /** @brief Shorthand to access the parameter block. */
     TextBuilderParamsT<lineCount, charWidth>& TextParams() { return *this; }
+
+    /* NOTE: TextBuilderMaterialT is a template; verify macros accept template types. */
+    PTX_BEGIN_FIELDS(TextBuilderMaterialT)
+        /* TODO: PTX_FIELD(TextBuilderMaterialT, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(TextBuilderMaterialT)
+        PTX_METHOD_AUTO(TextBuilderMaterialT, SetSize, "Set size"),
+        PTX_METHOD_AUTO(TextBuilderMaterialT, SetPositionOffset, "Set position offset"),
+        PTX_METHOD_AUTO(TextBuilderMaterialT, SetRotationOffset, "Set rotation offset"),
+        PTX_METHOD_AUTO(TextBuilderMaterialT, SetRotationAngle, "Set rotation angle"),
+        PTX_METHOD_AUTO(TextBuilderMaterialT, SetBlinkPeriodMs, "Set blink period ms"),
+        PTX_METHOD_AUTO(TextBuilderMaterialT, SetEfficient, "Set efficient"),
+        PTX_METHOD_AUTO(TextBuilderMaterialT, SetForegroundColor, "Set foreground color"),
+        PTX_METHOD_AUTO(TextBuilderMaterialT, SetBackgroundColor, "Set background color"),
+        PTX_METHOD_AUTO(TextBuilderMaterialT, SetFillMaterial, "Set fill material"),
+        PTX_METHOD_AUTO(TextBuilderMaterialT, Clear, "Clear"),
+        PTX_METHOD_AUTO(TextBuilderMaterialT, SetText, "Set text"),
+        PTX_METHOD_AUTO(TextBuilderMaterialT, SetText, "Set text"),
+        PTX_METHOD_AUTO(TextBuilderMaterialT, Update, "Update")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(TextBuilderMaterialT)
+        PTX_CTOR(TextBuilderMaterialT, bool)
+    PTX_END_DESCRIBE(TextBuilderMaterialT)
+    
 };

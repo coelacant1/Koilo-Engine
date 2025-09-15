@@ -5,6 +5,7 @@
 #include "../../../../core/math/vector2d.hpp"
 #include "../../../../core/color/rgbcolor.hpp"
 #include "imagesequenceparams.hpp"
+#include "../../../../registry/reflect_macros.hpp"
 
 /**
  * @file imagesequenceshader.hpp
@@ -37,4 +38,17 @@ public:
         RGBColor c = p.sequence->GetColorAtCoordinate(Vector2D(u, v));
         return c.HueShift(p.hueAngle);
     }
+
+    PTX_BEGIN_FIELDS(ImageSequenceShader)
+        /* TODO: PTX_FIELD(ImageSequenceShader, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(ImageSequenceShader)
+        PTX_METHOD_AUTO(ImageSequenceShader, Shade, "Shade")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(ImageSequenceShader)
+        /* TODO: PTX_CTOR0(ImageSequenceShader) or PTX_CTOR(ImageSequenceShader, ...) */
+    PTX_END_DESCRIBE(ImageSequenceShader)
+    
 };

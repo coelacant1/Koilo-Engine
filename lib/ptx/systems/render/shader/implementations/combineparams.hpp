@@ -5,6 +5,7 @@
 #include "../../../../core/color/rgbcolor.hpp"
 #include <cstdint>
 #include <algorithm>
+#include "../../../../registry/reflect_macros.hpp"
 
 /**
  * @file combineparams.hpp
@@ -82,4 +83,24 @@ struct CombineParams {
      * @param mat New non-owning material pointer.
      */
     void SetMaterial(uint8_t i, const IMaterial* mat) { if (i < count) materials[i] = mat; }
+
+    /* NOTE: CombineParams is a template; verify macros accept template types. */
+    PTX_BEGIN_FIELDS(CombineParams)
+        PTX_FIELD(CombineParams, method, "Method", 0, 0),
+        PTX_FIELD(CombineParams, materials, "Materials", 0, 0),
+        PTX_FIELD(CombineParams, opacity, "Opacity", 0, 0),
+        PTX_FIELD(CombineParams, count, "Count", 0, 255)
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(CombineParams)
+        PTX_METHOD_AUTO(CombineParams, Add, "Add"),
+        PTX_METHOD_AUTO(CombineParams, SetMethod, "Set method"),
+        PTX_METHOD_AUTO(CombineParams, SetOpacity, "Set opacity"),
+        PTX_METHOD_AUTO(CombineParams, SetMaterial, "Set material")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(CombineParams)
+        /* TODO: PTX_CTOR0(CombineParams) or PTX_CTOR(CombineParams, ...) */
+    PTX_END_DESCRIBE(CombineParams)
+    
 };

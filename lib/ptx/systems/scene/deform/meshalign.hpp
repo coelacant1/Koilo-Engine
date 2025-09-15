@@ -12,6 +12,7 @@
 
 #include "../../../core/geometry/3d/plane.hpp"
 #include "../mesh.hpp"
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class MeshAlign
@@ -297,4 +298,43 @@ public:
      * @param numObjects Number of objects in \p objs.
      */
     void AlignObjects(Mesh** objs, uint8_t numObjects);
+
+    PTX_BEGIN_FIELDS(MeshAlign)
+        /* TODO: PTX_FIELD(MeshAlign, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(MeshAlign)
+        PTX_METHOD_AUTO(MeshAlign, GetCentroid, "Get centroid"),
+        PTX_METHOD_AUTO(MeshAlign, GetCentroid, "Get centroid"),
+        PTX_METHOD_AUTO(MeshAlign, GetObjectCenter, "Get object center"),
+        PTX_METHOD_AUTO(MeshAlign, GetObjectCenter, "Get object center"),
+        PTX_METHOD_AUTO(MeshAlign, GetObjectSize, "Get object size"),
+        PTX_METHOD_AUTO(MeshAlign, GetObjectSize, "Get object size"),
+        PTX_METHOD_AUTO(MeshAlign, GetPlaneNormal, "Get plane normal"),
+        PTX_METHOD_AUTO(MeshAlign, GetPlaneNormal, "Get plane normal"),
+        PTX_METHOD_AUTO(MeshAlign, GetPlaneOrientation, "Get plane orientation"),
+        PTX_METHOD_AUTO(MeshAlign, GetPlaneOrientation, "Get plane orientation"),
+        PTX_METHOD_AUTO(MeshAlign, GetTransform, "Get transform"),
+        PTX_METHOD_AUTO(MeshAlign, GetTransform, "Get transform"),
+        PTX_METHOD_AUTO(MeshAlign, GetObjectPlanarityRatio, "Get object planarity ratio"),
+        PTX_METHOD_AUTO(MeshAlign, GetObjectPlanarityRatio, "Get object planarity ratio"),
+        PTX_METHOD_AUTO(MeshAlign, SetPlaneOffsetAngle, "Set plane offset angle"),
+        PTX_METHOD_AUTO(MeshAlign, SetEdgeMargin, "Set edge margin"),
+        PTX_METHOD_AUTO(MeshAlign, SetForwardVector, "Set forward vector"),
+        PTX_METHOD_AUTO(MeshAlign, SetCameraMin, "Set camera min"),
+        PTX_METHOD_AUTO(MeshAlign, SetCameraMax, "Set camera max"),
+        PTX_METHOD_AUTO(MeshAlign, SetMirrorX, "Set mirror x"),
+        PTX_METHOD_AUTO(MeshAlign, SetMirrorY, "Set mirror y"),
+        PTX_METHOD_AUTO(MeshAlign, SetJustification, "Set justification"),
+        PTX_METHOD_AUTO(MeshAlign, SetScale, "Set scale"),
+        PTX_METHOD_AUTO(MeshAlign, AlignObjectNoScale, "Align object no scale"),
+        PTX_METHOD_AUTO(MeshAlign, AlignObjectsNoScale, "Align objects no scale"),
+        PTX_METHOD_AUTO(MeshAlign, AlignObject, "Align object"),
+        PTX_METHOD_AUTO(MeshAlign, AlignObjects, "Align objects")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(MeshAlign)
+        PTX_CTOR(MeshAlign, Vector2D, Vector2D, Quaternion)
+    PTX_END_DESCRIBE(MeshAlign)
+    
 };

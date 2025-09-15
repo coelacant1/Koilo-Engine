@@ -4,6 +4,7 @@
 #include "../ishader.hpp"
 #include "../../material/materialt.hpp"   // for IMaterial::As<T>()
 #include "uvmapparams.hpp"
+#include "../../../../registry/reflect_macros.hpp"
 
 #include "../../../../core/math/vector2d.hpp"
 #include "../../../../core/color/rgbcolor.hpp"
@@ -40,4 +41,17 @@ public:
         RGBColor c = p.image->GetColorAtCoordinate(Vector2D(u, v));
         return c.HueShift(p.hueAngle);
     }
+
+    PTX_BEGIN_FIELDS(UVMapShader)
+        /* TODO: PTX_FIELD(UVMapShader, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(UVMapShader)
+        PTX_METHOD_AUTO(UVMapShader, Shade, "Shade")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(UVMapShader)
+        /* TODO: PTX_CTOR0(UVMapShader) or PTX_CTOR(UVMapShader, ...) */
+    PTX_END_DESCRIBE(UVMapShader)
+    
 };

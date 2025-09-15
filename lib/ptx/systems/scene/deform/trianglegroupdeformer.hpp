@@ -13,6 +13,7 @@
 #pragma once
 
 #include "../../../assets/model/itrianglegroup.hpp"
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class TriangleGroupDeformer
@@ -111,4 +112,22 @@ public:
      * @param valueCheckAxis Axis used to determine clipping.
      */
     void AxisZeroClipping(bool positive, Axis clipAxis, Axis valueCheckAxis);
+
+    PTX_BEGIN_FIELDS(TriangleGroupDeformer)
+        /* TODO: PTX_FIELD(TriangleGroupDeformer, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(TriangleGroupDeformer)
+        PTX_METHOD_AUTO(TriangleGroupDeformer, SinusoidalDeform, "Sinusoidal deform"),
+        PTX_METHOD_AUTO(TriangleGroupDeformer, DropwaveDeform, "Dropwave deform"),
+        PTX_METHOD_AUTO(TriangleGroupDeformer, SineWaveSurfaceDeform, "Sine wave surface deform"),
+        PTX_METHOD_AUTO(TriangleGroupDeformer, CosineInterpolationDeformer, "Cosine interpolation deformer"),
+        PTX_METHOD_AUTO(TriangleGroupDeformer, AxisZeroClipping, "Axis zero clipping")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(TriangleGroupDeformer)
+        PTX_CTOR(TriangleGroupDeformer, ITriangleGroup *),
+        PTX_CTOR(TriangleGroupDeformer, ITriangleGroup **, int)
+    PTX_END_DESCRIBE(TriangleGroupDeformer)
+    
 };

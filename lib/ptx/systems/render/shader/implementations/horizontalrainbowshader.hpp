@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cmath>
+#include "../../../../registry/reflect_macros.hpp"
 
 #include "../ishader.hpp"
 #include "../../material/materialt.hpp"
@@ -70,4 +71,18 @@ public:
 
         return grad.GetColorAt(t);
     }
+
+    /* NOTE: HorizontalRainbowShaderT is a template; verify macros accept template types. */
+    PTX_BEGIN_FIELDS(HorizontalRainbowShaderT)
+        /* TODO: PTX_FIELD(HorizontalRainbowShaderT, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(HorizontalRainbowShaderT)
+        PTX_METHOD_AUTO(HorizontalRainbowShaderT, Shade, "Shade")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(HorizontalRainbowShaderT)
+        /* TODO: PTX_CTOR0(HorizontalRainbowShaderT) or PTX_CTOR(HorizontalRainbowShaderT, ...) */
+    PTX_END_DESCRIBE(HorizontalRainbowShaderT)
+    
 };

@@ -13,6 +13,7 @@
 #pragma once
 
 #include "../../math/mathematics.hpp" // Includes mathematical utilities for constraints and operations.
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class RampFilter
@@ -68,4 +69,20 @@ public:
      * @param frames The number of frames for a complete transition.
      */
     void SetFrames(int frames);
+
+    PTX_BEGIN_FIELDS(RampFilter)
+        /* TODO: PTX_FIELD(RampFilter, member, "Doc", min, max) */
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(RampFilter)
+        PTX_METHOD_AUTO(RampFilter, Filter, "Filter"),
+        PTX_METHOD_AUTO(RampFilter, SetIncrement, "Set increment"),
+        PTX_METHOD_AUTO(RampFilter, SetFrames, "Set frames")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(RampFilter)
+        PTX_CTOR0(RampFilter),
+        PTX_CTOR(RampFilter, int, float)
+    PTX_END_DESCRIBE(RampFilter)
+    
 };

@@ -12,6 +12,7 @@
 #include "../../../render/material/imaterial.hpp"
 #include "../../../../core/geometry/2d/rectangle.hpp"
 #include "rastertriangle3d.hpp"
+#include "../../../../registry/reflect_macros.hpp"
 
 /**
  * @class RasterTriangle2D
@@ -96,4 +97,34 @@ private:
      * @brief Private helper to calculate the bounding box and barycentric denominator.
      */
     void CalculateBoundsAndDenominator();
+
+    PTX_BEGIN_FIELDS(RasterTriangle2D)
+        PTX_FIELD(RasterTriangle2D, t3p1, "T3p1", 0, 0),
+        PTX_FIELD(RasterTriangle2D, t3p2, "T3p2", 0, 0),
+        PTX_FIELD(RasterTriangle2D, t3p3, "T3p3", 0, 0),
+        PTX_FIELD(RasterTriangle2D, normal, "Normal", 0, 0),
+        PTX_FIELD(RasterTriangle2D, material, "Material", 0, 0),
+        PTX_FIELD(RasterTriangle2D, p1UV, "P1 uv", 0, 0),
+        PTX_FIELD(RasterTriangle2D, p2UV, "P2 uv", 0, 0),
+        PTX_FIELD(RasterTriangle2D, p3UV, "P3 uv", 0, 0),
+        PTX_FIELD(RasterTriangle2D, hasUV, "Has uv", 0, 1),
+        PTX_FIELD(RasterTriangle2D, averageDepth, "Average depth", __FLT_MIN__, __FLT_MAX__),
+        PTX_FIELD(RasterTriangle2D, denominator, "Denominator", __FLT_MIN__, __FLT_MAX__),
+        PTX_FIELD(RasterTriangle2D, v0, "V0", 0, 0),
+        PTX_FIELD(RasterTriangle2D, v1, "V1", 0, 0),
+        PTX_FIELD(RasterTriangle2D, bounds, "Bounds", 0, 0)
+    PTX_END_FIELDS
+    
+    PTX_BEGIN_METHODS(RasterTriangle2D)
+        PTX_METHOD_AUTO(RasterTriangle2D, GetBarycentricCoords, "Get barycentric coords"),
+        PTX_METHOD_AUTO(RasterTriangle2D, Overlaps, "Overlaps"),
+        PTX_METHOD_AUTO(RasterTriangle2D, GetMaterial, "Get material"),
+        PTX_METHOD_AUTO(RasterTriangle2D, ToString, "To string")
+    PTX_END_METHODS
+    
+    PTX_BEGIN_DESCRIBE(RasterTriangle2D)
+        PTX_CTOR0(RasterTriangle2D),
+        PTX_CTOR(RasterTriangle2D, const Transform &, const Quaternion &, const RasterTriangle3D &, IMaterial *)
+    PTX_END_DESCRIBE(RasterTriangle2D)
+    
 };
