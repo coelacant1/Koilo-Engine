@@ -148,7 +148,7 @@ public:
     PTX_BEGIN_FIELDS(Pixel)
         PTX_FIELD(Pixel, Color, "Color", 0, 0)
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(Pixel)
         PTX_METHOD_AUTO(Pixel, GetPosition, "Get position"),
         PTX_METHOD_AUTO(Pixel, SetUpPixel, "Set up pixel"),
@@ -164,10 +164,10 @@ public:
         PTX_METHOD_AUTO(Pixel, GetLeftPixel, "Get left pixel"),
         PTX_METHOD_AUTO(Pixel, GetRightPixel, "Get right pixel")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(Pixel)
         PTX_CTOR0(Pixel),
         PTX_CTOR(Pixel, const Vector2D *)
     PTX_END_DESCRIBE(Pixel)
-    
+
 };

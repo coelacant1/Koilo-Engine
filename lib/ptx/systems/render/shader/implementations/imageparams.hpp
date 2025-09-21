@@ -21,13 +21,13 @@ struct ImageParams {
         PTX_FIELD(ImageParams, hueAngle, "Hue angle", __FLT_MIN__, __FLT_MAX__),
         PTX_FIELD(ImageParams, useUV, "Use uv", 0, 1)
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(ImageParams)
-        /* TODO: PTX_METHOD_AUTO(ImageParams, Method, "Doc") */
+        /* No reflected methods. */
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(ImageParams)
-        /* TODO: PTX_CTOR0(ImageParams) or PTX_CTOR(ImageParams, ...) */
+        /* No reflected ctors. */
     PTX_END_DESCRIBE(ImageParams)
-    
+
 };

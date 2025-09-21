@@ -131,9 +131,9 @@ public:
     void AxisZeroClipping(bool positive, Axis clipAxis, Axis valueCheckAxis);
 
     PTX_BEGIN_FIELDS(MeshDeformer)
-        /* TODO: PTX_FIELD(MeshDeformer, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(MeshDeformer)
         PTX_METHOD_AUTO(MeshDeformer, PerspectiveDeform, "Perspective deform"),
         PTX_METHOD_AUTO(MeshDeformer, SinusoidalDeform, "Sinusoidal deform"),
@@ -142,10 +142,10 @@ public:
         PTX_METHOD_AUTO(MeshDeformer, CosineInterpolationDeformer, "Cosine interpolation deformer"),
         PTX_METHOD_AUTO(MeshDeformer, AxisZeroClipping, "Axis zero clipping")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(MeshDeformer)
         PTX_CTOR(MeshDeformer, Mesh *),
         PTX_CTOR(MeshDeformer, Mesh **, int)
     PTX_END_DESCRIBE(MeshDeformer)
-    
+
 };

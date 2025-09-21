@@ -58,9 +58,9 @@ public:
     void SetMaterialOuter(const IMaterial* m)       { this->materialOuter = m; }
 
     PTX_BEGIN_FIELDS(MaterialMask)
-        /* TODO: PTX_FIELD(MaterialMask, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(MaterialMask)
         PTX_METHOD_AUTO(MaterialMask, SetOpacity, "Set opacity"),
         PTX_METHOD_AUTO(MaterialMask, GetOpacityReference, "Get opacity reference"),
@@ -68,9 +68,9 @@ public:
         PTX_METHOD_AUTO(MaterialMask, SetMaterialShape, "Set material shape"),
         PTX_METHOD_AUTO(MaterialMask, SetMaterialOuter, "Set material outer")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(MaterialMask)
         PTX_CTOR(MaterialMask, const IMaterial *, const IMaterial *, Shape *)
     PTX_END_DESCRIBE(MaterialMask)
-    
+
 };

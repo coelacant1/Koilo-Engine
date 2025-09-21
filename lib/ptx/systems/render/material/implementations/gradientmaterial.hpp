@@ -2,7 +2,6 @@
 
 #include <array>
 #include <cstddef>  // for size_t
-#include "../../../../registry/reflect_macros.hpp"
 
 #include "../imaterial.hpp"
 #include "../materialt.hpp"
@@ -95,24 +94,4 @@ public:
         }
     }
 
-    /* NOTE: GradientMaterial is a template; verify macros accept template types. */
-    PTX_BEGIN_FIELDS(GradientMaterial)
-        /* TODO: PTX_FIELD(GradientMaterial, member, "Doc", min, max) */
-    PTX_END_FIELDS
-    
-    PTX_BEGIN_METHODS(GradientMaterial)
-        PTX_METHOD_AUTO(GradientMaterial, UpdateGradient, "Update gradient"),
-        PTX_METHOD_AUTO(GradientMaterial, SetPositionOffset, "Set position offset"),
-        PTX_METHOD_AUTO(GradientMaterial, SetRotationOffset, "Set rotation offset"),
-        PTX_METHOD_AUTO(GradientMaterial, SetRotationAngle, "Set rotation angle"),
-        PTX_METHOD_AUTO(GradientMaterial, SetGradientPeriod, "Set gradient period"),
-        PTX_METHOD_AUTO(GradientMaterial, GradientShift, "Gradient shift"),
-        PTX_METHOD_AUTO(GradientMaterial, HueShift, "Hue shift"),
-        PTX_METHOD_AUTO(GradientMaterial, UpdateRGB, "Update rgb")
-    PTX_END_METHODS
-    
-    PTX_BEGIN_DESCRIBE(GradientMaterial)
-        PTX_CTOR(GradientMaterial, RGBColor *, float, bool, bool)
-    PTX_END_DESCRIBE(GradientMaterial)
-    
 };

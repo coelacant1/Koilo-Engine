@@ -46,6 +46,18 @@ public: \
 #define PTX_METHOD_OVLD_CONST(CLASS, NAME, RET, /*Args...*/ ...) \
     ptx::make::MakeMethod<CLASS, static_cast<RET (CLASS::*)(__VA_ARGS__) const>(&CLASS::NAME)>(#NAME, nullptr)
 
+#define PTX_METHOD_OVLD0(CLASS, NAME, RET) \
+    ptx::make::MakeMethod<CLASS, static_cast<RET (CLASS::*)()>(&CLASS::NAME)>(#NAME, nullptr)
+
+#define PTX_METHOD_OVLD_CONST0(CLASS, NAME, RET) \
+    ptx::make::MakeMethod<CLASS, static_cast<RET (CLASS::*)() const>(&CLASS::NAME)>(#NAME, nullptr)
+
+#define PTX_SMETHOD_OVLD(CLASS, NAME, RET, /*Args...*/ ...) \
+    ptx::make::MakeSmethod<static_cast<RET (*)(__VA_ARGS__)>(&CLASS::NAME)>(#NAME, nullptr)
+
+#define PTX_SMETHOD_OVLD0(CLASS, NAME, RET) \
+    ptx::make::MakeSmethod<static_cast<RET (*)()>(&CLASS::NAME)>(#NAME, nullptr)
+
 #define PTX_CTOR0(CLASS) \
     ptx::make::MakeCtor<CLASS>(#CLASS "()")
 

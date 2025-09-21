@@ -14,7 +14,6 @@
 
 #include <cstdint>
 #include "../../math/mathematics.hpp" // Includes mathematical utilities for constraints and operations.
-#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class PeakDetection
@@ -64,19 +63,6 @@ public:
      */
     void Calculate(float* data, bool* peaks);
 
-    /* NOTE: PeakDetection is a template; verify macros accept template types. */
-    PTX_BEGIN_FIELDS(PeakDetection)
-        /* TODO: PTX_FIELD(PeakDetection, member, "Doc", min, max) */
-    PTX_END_FIELDS
-    
-    PTX_BEGIN_METHODS(PeakDetection)
-        PTX_METHOD_AUTO(PeakDetection, Calculate, "Calculate")
-    PTX_END_METHODS
-    
-    PTX_BEGIN_DESCRIBE(PeakDetection)
-        PTX_CTOR(PeakDetection, uint8_t, float, float)
-    PTX_END_DESCRIBE(PeakDetection)
-    
 };
 
 #include "peakdetection.tpp" // Includes the implementation of the template class.

@@ -44,16 +44,16 @@ public:
     bool IsInShape(Vector2D point) override;
 
     PTX_BEGIN_FIELDS(Ellipse2D)
-        /* TODO: PTX_FIELD(Ellipse2D, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(Ellipse2D)
         PTX_METHOD_AUTO(Ellipse2D, IsInShape, "Is in shape")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(Ellipse2D)
         PTX_CTOR(Ellipse2D, Vector2D, Vector2D, float),
         PTX_CTOR(Ellipse2D, Bounds, float)
     PTX_END_DESCRIBE(Ellipse2D)
-    
+
 };

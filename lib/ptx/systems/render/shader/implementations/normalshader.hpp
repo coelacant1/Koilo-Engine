@@ -36,15 +36,15 @@ public:
     }
 
     PTX_BEGIN_FIELDS(NormalShader)
-        /* TODO: PTX_FIELD(NormalShader, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(NormalShader)
         PTX_METHOD_AUTO(NormalShader, Shade, "Shade")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(NormalShader)
-        /* TODO: PTX_CTOR0(NormalShader) or PTX_CTOR(NormalShader, ...) */
+        /* No reflected ctors. */
     PTX_END_DESCRIBE(NormalShader)
-    
+
 };

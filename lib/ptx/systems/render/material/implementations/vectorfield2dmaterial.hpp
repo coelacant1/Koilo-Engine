@@ -235,9 +235,9 @@ public:
     }
 
     PTX_BEGIN_FIELDS(VectorField2DMaterial)
-        /* TODO: PTX_FIELD(VectorField2DMaterial, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(VectorField2DMaterial)
         PTX_METHOD_AUTO(VectorField2DMaterial, SetSize, "Set size"),
         PTX_METHOD_AUTO(VectorField2DMaterial, SetPosition, "Set position"),
@@ -254,9 +254,9 @@ public:
         PTX_METHOD_AUTO(VectorField2DMaterial, MovingSquareField, "Moving square field"),
         PTX_METHOD_AUTO(VectorField2DMaterial, SpiralField, "Spiral field")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(VectorField2DMaterial)
         PTX_CTOR(VectorField2DMaterial, uint16_t, uint16_t)
     PTX_END_DESCRIBE(VectorField2DMaterial)
-    
+
 };

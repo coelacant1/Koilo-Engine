@@ -4,9 +4,49 @@
 #include <type_traits>
 #include <utility>
 #include <functional>
+#include <memory>
 #include "registry.hpp"
 
 namespace ptx::detail {
+
+template<typename T>
+struct ReturnTraits {
+    using Storage = std::remove_cv_t<std::remove_reference_t<T>>;
+    static constexpr bool IsVoid = std::is_void_v<Storage>;
+    static constexpr bool IsPointer = std::is_pointer_v<Storage>;
+    static constexpr bool IsReference = std::is_reference_v<T>;
+    static constexpr bool Owns = !IsVoid && !IsPointer && !IsReference;
+    static constexpr std::size_t Size = []() constexpr {
+        if constexpr (IsVoid) {
+            return std::size_t(0);
+        } else {
+            return sizeof(Storage);
+        }
+    }();
+    using DestroyFn = void(*)(void*);
+    static constexpr DestroyFn Destroy = []() constexpr -> DestroyFn {
+        if constexpr (Owns) {
+            return +[](void* p) {
+                delete static_cast<Storage*>(p);
+            };
+        } else {
+            return nullptr;
+        }
+    }();
+};
+
+template<>
+struct ReturnTraits<void> {
+    using Storage = void;
+    static constexpr bool IsVoid = true;
+    static constexpr bool IsPointer = false;
+    static constexpr bool IsReference = false;
+    static constexpr bool Owns = false;
+    static constexpr std::size_t Size = std::size_t(0);
+    using DestroyFn = void(*)(void*);
+    static constexpr DestroyFn Destroy = nullptr;
+};
+
 
 template<class F, class Tuple, std::size_t... I>
 decltype(auto) ApplyTuple(F&& f, Tuple&& t, std::index_sequence<I...>) {
@@ -26,9 +66,18 @@ auto ArgvAsTuple(void** argv, std::index_sequence<I...>) {
 
 template<class T>
 void* BoxReturn(T&& v) {
-    using U = std::remove_reference_t<T>;
+    using Traits = ReturnTraits<T>;
+    using Storage = typename Traits::Storage;
 
-    return new U(std::forward<T>(v));
+    if constexpr (Traits::IsVoid) {
+        return nullptr;
+    } else if constexpr (Traits::IsReference) {
+        return const_cast<void*>(static_cast<const void*>(std::addressof(v)));
+    } else if constexpr (Traits::IsPointer) {
+        return const_cast<void*>(static_cast<const void*>(v));
+    } else {
+        return static_cast<void*>(new Storage(std::forward<T>(v)));
+    }
 }
 
 } // namespace ptx::detail
@@ -105,9 +154,9 @@ void* InstInvoke(void* self, void** argv) { // Member function thunk
 
         return nullptr;
     } else {
-        Ret r = ptx::detail::ApplyTuple(call, tup, std::make_index_sequence<N>{});
+        auto&& result = ptx::detail::ApplyTuple(call, tup, std::make_index_sequence<N>{});
 
-        return ptx::detail::BoxReturn(std::move(r));
+        return ptx::detail::BoxReturn(std::forward<decltype(result)>(result));
     }
 }
 
@@ -128,9 +177,9 @@ void* StaticInvoke(void*, void** argv) { // Static / free function thunk
 
         return nullptr;
     } else {
-        Ret r = ptx::detail::ApplyTuple(call, tup, std::make_index_sequence<N>{});
+        auto&& result = ptx::detail::ApplyTuple(call, tup, std::make_index_sequence<N>{});
 
-        return ptx::detail::BoxReturn(std::move(r));
+        return ptx::detail::BoxReturn(std::forward<decltype(result)>(result));
     }
 }
 
@@ -149,10 +198,8 @@ ptx::MethodDesc MakeMethod(const char* name, const char* doc) { // Member functi
         /* is_static  */ false,
         /* invoker    */ &ptx::make::InstInvoke<C, PMF>,
         /* signature  */ nullptr,
-        /*ret_size     */ std::is_void_v<Ret> ? size_t(0) : sizeof(Ret),
-        /*destroy_ret  */ std::is_void_v<Ret>
-                           ? nullptr
-                           : +[](void* p){ delete static_cast<Ret*>(p); }
+        /*ret_size     */ ptx::detail::ReturnTraits<Ret>::Size,
+        /*destroy_ret  */ ptx::detail::ReturnTraits<Ret>::Destroy
     };
 }
 
@@ -171,10 +218,8 @@ ptx::MethodDesc MakeSmethod(const char* name, const char* doc) { // Static / fre
         /* is_static  */ true,
         /* invoker    */ &ptx::make::StaticInvoke<PF>,
         /* signature  */ nullptr,
-        /*ret_size     */ std::is_void_v<Ret> ? size_t(0) : sizeof(Ret),
-        /*destroy_ret  */ std::is_void_v<Ret>
-                           ? nullptr
-                           : +[](void* p){ delete static_cast<Ret*>(p); }
+        /*ret_size     */ ptx::detail::ReturnTraits<Ret>::Size,
+        /*destroy_ret  */ ptx::detail::ReturnTraits<Ret>::Destroy
     };
 }
 

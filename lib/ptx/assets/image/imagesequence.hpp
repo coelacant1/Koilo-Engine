@@ -78,9 +78,9 @@ private:
     uint64_t startTime = 0;             ///< Start timestamp (ms)
 
     PTX_BEGIN_FIELDS(ImageSequence)
-        /* TODO: PTX_FIELD(ImageSequence, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(ImageSequence)
         PTX_METHOD_AUTO(ImageSequence, SetFPS, "Set fps"),
         PTX_METHOD_AUTO(ImageSequence, SetSize, "Set size"),
@@ -90,9 +90,9 @@ private:
         PTX_METHOD_AUTO(ImageSequence, Update, "Update"),
         PTX_METHOD_AUTO(ImageSequence, GetColorAtCoordinate, "Get color at coordinate")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(ImageSequence)
         PTX_CTOR(ImageSequence, Image *, const uint8_t **, unsigned int, float)
     PTX_END_DESCRIBE(ImageSequence)
-    
+
 };

@@ -218,7 +218,6 @@ public:
      */
     ptx::UString ToString() const;
 
-
     // --- Static function declarations ---
 
     /**
@@ -363,7 +362,6 @@ public:
      */
     static bool IsEqual(const Vector3D& v1, const Vector3D& v2);
 
-
     // --- Operator overloads ---
 
     /**
@@ -450,62 +448,61 @@ public:
      */
     Vector3D operator /(const float& value) const;
 
-
     PTX_BEGIN_FIELDS(Vector3D)
         PTX_FIELD(Vector3D, X, "X", __FLT_MIN__, __FLT_MAX__),
         PTX_FIELD(Vector3D, Y, "Y", __FLT_MIN__, __FLT_MAX__),
         PTX_FIELD(Vector3D, Z, "Z", __FLT_MIN__, __FLT_MAX__)
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(Vector3D)
         PTX_METHOD_AUTO(Vector3D, Absolute, "Absolute"),
-        PTX_METHOD_AUTO(Vector3D, Normal, "Normal"),
-        PTX_METHOD_AUTO(Vector3D, Add, "Add"),
-        PTX_METHOD_AUTO(Vector3D, Subtract, "Subtract"),
-        PTX_METHOD_AUTO(Vector3D, Add, "Add"),
-        PTX_METHOD_AUTO(Vector3D, Subtract, "Subtract"),
-        PTX_METHOD_AUTO(Vector3D, Multiply, "Multiply"),
-        PTX_METHOD_AUTO(Vector3D, Divide, "Divide"),
-        PTX_METHOD_AUTO(Vector3D, Multiply, "Multiply"),
-        PTX_METHOD_AUTO(Vector3D, Divide, "Divide"),
-        PTX_METHOD_AUTO(Vector3D, CrossProduct, "Cross product"),
+        /* Normal */ PTX_METHOD_OVLD_CONST0(Vector3D, Normal, Vector3D),
+        /* Add */ PTX_METHOD_OVLD_CONST(Vector3D, Add, Vector3D, const float &),
+        /* Subtract */ PTX_METHOD_OVLD_CONST(Vector3D, Subtract, Vector3D, const float &),
+        /* Add */ PTX_METHOD_OVLD_CONST(Vector3D, Add, Vector3D, const Vector3D &),
+        /* Subtract */ PTX_METHOD_OVLD_CONST(Vector3D, Subtract, Vector3D, const Vector3D &),
+        /* Multiply */ PTX_METHOD_OVLD_CONST(Vector3D, Multiply, Vector3D, const Vector3D &),
+        /* Divide */ PTX_METHOD_OVLD_CONST(Vector3D, Divide, Vector3D, const Vector3D &),
+        /* Multiply */ PTX_METHOD_OVLD_CONST(Vector3D, Multiply, Vector3D, const float &),
+        /* Divide */ PTX_METHOD_OVLD_CONST(Vector3D, Divide, Vector3D, const float &),
+        /* Cross product */ PTX_METHOD_OVLD_CONST(Vector3D, CrossProduct, Vector3D, const Vector3D &),
         PTX_METHOD_AUTO(Vector3D, UnitSphere, "Unit sphere"),
-        PTX_METHOD_AUTO(Vector3D, Constrain, "Constrain"),
-        PTX_METHOD_AUTO(Vector3D, Constrain, "Constrain"),
+        /* Constrain */ PTX_METHOD_OVLD_CONST(Vector3D, Constrain, Vector3D, const float &, const float &),
+        /* Constrain */ PTX_METHOD_OVLD_CONST(Vector3D, Constrain, Vector3D, const Vector3D &, const Vector3D &),
         PTX_METHOD_AUTO(Vector3D, Permutate, "Permutate"),
         PTX_METHOD_AUTO(Vector3D, Magnitude, "Magnitude"),
-        PTX_METHOD_AUTO(Vector3D, DotProduct, "Dot product"),
-        PTX_METHOD_AUTO(Vector3D, CalculateEuclideanDistance, "Calculate euclidean distance"),
+        /* Dot product */ PTX_METHOD_OVLD_CONST(Vector3D, DotProduct, float, const Vector3D &),
+        /* Calculate euclidean distance */ PTX_METHOD_OVLD_CONST(Vector3D, CalculateEuclideanDistance, float, const Vector3D &),
         PTX_METHOD_AUTO(Vector3D, AverageHighestTwoComponents, "Average highest two components"),
-        PTX_METHOD_AUTO(Vector3D, Max, "Max"),
-        PTX_METHOD_AUTO(Vector3D, Min, "Min"),
-        PTX_METHOD_AUTO(Vector3D, IsEqual, "Is equal"),
+        /* Max */ PTX_METHOD_OVLD_CONST0(Vector3D, Max, float),
+        /* Min */ PTX_METHOD_OVLD_CONST0(Vector3D, Min, float),
+        /* Is equal */ PTX_METHOD_OVLD_CONST(Vector3D, IsEqual, bool, const Vector3D &),
         PTX_METHOD_AUTO(Vector3D, ToString, "To string"),
-        PTX_SMETHOD_AUTO(Vector3D::Max, "Max"),
-        PTX_SMETHOD_AUTO(Vector3D::Min, "Min"),
+        /* Max */ PTX_SMETHOD_OVLD(Vector3D, Max, Vector3D, const Vector3D &, const Vector3D &),
+        /* Min */ PTX_SMETHOD_OVLD(Vector3D, Min, Vector3D, const Vector3D &, const Vector3D &),
         PTX_SMETHOD_AUTO(Vector3D::LERP, "Lerp"),
         PTX_SMETHOD_AUTO(Vector3D::DegreesToRadians, "Degrees to radians"),
         PTX_SMETHOD_AUTO(Vector3D::RadiansToDegrees, "Radians to degrees"),
-        PTX_SMETHOD_AUTO(Vector3D::Normal, "Normal"),
-        PTX_SMETHOD_AUTO(Vector3D::Add, "Add"),
-        PTX_SMETHOD_AUTO(Vector3D::Subtract, "Subtract"),
-        PTX_SMETHOD_AUTO(Vector3D::Multiply, "Multiply"),
-        PTX_SMETHOD_AUTO(Vector3D::Divide, "Divide"),
-        PTX_SMETHOD_AUTO(Vector3D::Multiply, "Multiply"),
-        PTX_SMETHOD_AUTO(Vector3D::Multiply, "Multiply"),
-        PTX_SMETHOD_AUTO(Vector3D::Divide, "Divide"),
-        PTX_SMETHOD_AUTO(Vector3D::CrossProduct, "Cross product"),
-        PTX_SMETHOD_AUTO(Vector3D::DotProduct, "Dot product"),
-        PTX_SMETHOD_AUTO(Vector3D::CalculateEuclideanDistance, "Calculate euclidean distance"),
+        /* Normal */ PTX_SMETHOD_OVLD(Vector3D, Normal, Vector3D, const Vector3D &),
+        /* Add */ PTX_SMETHOD_OVLD(Vector3D, Add, Vector3D, const Vector3D &, const Vector3D &),
+        /* Subtract */ PTX_SMETHOD_OVLD(Vector3D, Subtract, Vector3D, const Vector3D &, const Vector3D &),
+        /* Multiply */ PTX_SMETHOD_OVLD(Vector3D, Multiply, Vector3D, const Vector3D &, const Vector3D &),
+        /* Divide */ PTX_SMETHOD_OVLD(Vector3D, Divide, Vector3D, const Vector3D &, const Vector3D &),
+        /* Multiply */ PTX_SMETHOD_OVLD(Vector3D, Multiply, Vector3D, const Vector3D &, const float &),
+        /* Multiply */ PTX_SMETHOD_OVLD(Vector3D, Multiply, Vector3D, const float &, const Vector3D &),
+        /* Divide */ PTX_SMETHOD_OVLD(Vector3D, Divide, Vector3D, const Vector3D &, const float &),
+        /* Cross product */ PTX_SMETHOD_OVLD(Vector3D, CrossProduct, Vector3D, const Vector3D &, const Vector3D &),
+        /* Dot product */ PTX_SMETHOD_OVLD(Vector3D, DotProduct, float, const Vector3D &, const Vector3D &),
+        /* Calculate euclidean distance */ PTX_SMETHOD_OVLD(Vector3D, CalculateEuclideanDistance, float, const Vector3D &, const Vector3D &),
         PTX_SMETHOD_AUTO(Vector3D::Reflect, "Reflect"),
-        PTX_SMETHOD_AUTO(Vector3D::IsEqual, "Is equal")
+        /* Is equal */ PTX_SMETHOD_OVLD(Vector3D, IsEqual, bool, const Vector3D &, const Vector3D &)
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(Vector3D)
         PTX_CTOR0(Vector3D),
         PTX_CTOR(Vector3D, const Vector3D &),
         PTX_CTOR(Vector3D, const Vector3D *),
         PTX_CTOR(Vector3D, const float &, const float &, const float &)
     PTX_END_DESCRIBE(Vector3D)
-    
+
 };

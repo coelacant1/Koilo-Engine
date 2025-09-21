@@ -4,7 +4,6 @@
 #include <cstddef>
 #include "../../../../core/color/rgbcolor.hpp"
 #include "../../../../core/math/vector2d.hpp"
-#include "../../../../registry/reflect_macros.hpp"
 
 /**
  * @file spectrumanalyzerparams.hpp
@@ -44,27 +43,4 @@ struct SpectrumAnalyzerParamsT {
         RGBColor(  0, 0, 255), RGBColor(255,   0, 255)
     };
 
-    /* NOTE: SpectrumAnalyzerParamsT is a template; verify macros accept template types. */
-    PTX_BEGIN_FIELDS(SpectrumAnalyzerParamsT)
-        PTX_FIELD(SpectrumAnalyzerParamsT, sizeHalf, "Size half", 0, 0),
-        PTX_FIELD(SpectrumAnalyzerParamsT, offset, "Offset", 0, 0),
-        PTX_FIELD(SpectrumAnalyzerParamsT, angleDeg, "Angle deg", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(SpectrumAnalyzerParamsT, hueDeg, "Hue deg", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(SpectrumAnalyzerParamsT, mirrorY, "Mirror y", 0, 1),
-        PTX_FIELD(SpectrumAnalyzerParamsT, flipY, "Flip y", 0, 1),
-        PTX_FIELD(SpectrumAnalyzerParamsT, bounce, "Bounce", 0, 1),
-        PTX_FIELD(SpectrumAnalyzerParamsT, heightScale, "Height scale", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(SpectrumAnalyzerParamsT, samples, "Samples", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(SpectrumAnalyzerParamsT, bounceData, "Bounce data", 0, 0),
-        PTX_FIELD(SpectrumAnalyzerParamsT, spectrum, "Spectrum", 0, 0)
-    PTX_END_FIELDS
-    
-    PTX_BEGIN_METHODS(SpectrumAnalyzerParamsT)
-        /* TODO: PTX_METHOD_AUTO(SpectrumAnalyzerParamsT, Method, "Doc") */
-    PTX_END_METHODS
-    
-    PTX_BEGIN_DESCRIBE(SpectrumAnalyzerParamsT)
-        /* TODO: PTX_CTOR0(SpectrumAnalyzerParamsT) or PTX_CTOR(SpectrumAnalyzerParamsT, ...) */
-    PTX_END_DESCRIBE(SpectrumAnalyzerParamsT)
-    
 };

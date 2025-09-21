@@ -42,16 +42,16 @@ public:
     bool IsReady();
 
     PTX_BEGIN_FIELDS(TimeStep)
-        /* TODO: PTX_FIELD(TimeStep, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(TimeStep)
         PTX_METHOD_AUTO(TimeStep, SetFrequency, "Set frequency"),
         PTX_METHOD_AUTO(TimeStep, IsReady, "Is ready")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(TimeStep)
         PTX_CTOR(TimeStep, float)
     PTX_END_DESCRIBE(TimeStep)
-    
+
 };

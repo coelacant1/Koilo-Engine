@@ -44,15 +44,15 @@ public:
     static void Rasterize(Scene* scene, CameraBase* camera);
 
     PTX_BEGIN_FIELDS(Rasterizer)
-        /* TODO: PTX_FIELD(Rasterizer, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(Rasterizer)
         PTX_SMETHOD_AUTO(Rasterizer::Rasterize, "Rasterize")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(Rasterizer)
-        /* TODO: PTX_CTOR0(Rasterizer) or PTX_CTOR(Rasterizer, ...) */
+        /* No reflected ctors. */
     PTX_END_DESCRIBE(Rasterizer)
-    
+
 };

@@ -3,7 +3,6 @@
 #include <cstddef>
 #include "../../../../core/color/rgbcolor.hpp"
 #include "../../../../core/math/vector2d.hpp"
-#include "../../../../registry/reflect_macros.hpp"
 
 /**
  * @file horizontalrainbowparams.hpp
@@ -39,21 +38,4 @@ struct HorizontalRainbowParamsT {
     float    gradientPeriod = 96.0f;      ///< Repeat distance in world units.
     float    scrollSpeed    = -1.0f;      ///< Units per Update() applied along +X.
 
-    /* NOTE: HorizontalRainbowParamsT is a template; verify macros accept template types. */
-    PTX_BEGIN_FIELDS(HorizontalRainbowParamsT)
-        PTX_FIELD(HorizontalRainbowParamsT, spectrum, "Spectrum", 0, 0),
-        PTX_FIELD(HorizontalRainbowParamsT, positionOffset, "Position offset", 0, 0),
-        PTX_FIELD(HorizontalRainbowParamsT, rotationDeg, "Rotation deg", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(HorizontalRainbowParamsT, gradientPeriod, "Gradient period", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(HorizontalRainbowParamsT, scrollSpeed, "Scroll speed", __FLT_MIN__, __FLT_MAX__)
-    PTX_END_FIELDS
-    
-    PTX_BEGIN_METHODS(HorizontalRainbowParamsT)
-        /* TODO: PTX_METHOD_AUTO(HorizontalRainbowParamsT, Method, "Doc") */
-    PTX_END_METHODS
-    
-    PTX_BEGIN_DESCRIBE(HorizontalRainbowParamsT)
-        /* TODO: PTX_CTOR0(HorizontalRainbowParamsT) or PTX_CTOR(HorizontalRainbowParamsT, ...) */
-    PTX_END_DESCRIBE(HorizontalRainbowParamsT)
-    
 };

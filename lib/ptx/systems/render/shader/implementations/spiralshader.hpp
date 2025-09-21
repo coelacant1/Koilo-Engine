@@ -3,7 +3,6 @@
 
 #include <cmath>
 #include <cstdint>
-#include "../../../../registry/reflect_macros.hpp"
 
 #include "../ishader.hpp"
 #include "../../material/materialt.hpp"   // IMaterial::As<T>()
@@ -86,17 +85,4 @@ public:
         return P.colors[idx];
     }
 
-    /* NOTE: SpiralShaderT is a template; verify macros accept template types. */
-    PTX_BEGIN_FIELDS(SpiralShaderT)
-        /* TODO: PTX_FIELD(SpiralShaderT, member, "Doc", min, max) */
-    PTX_END_FIELDS
-    
-    PTX_BEGIN_METHODS(SpiralShaderT)
-        PTX_METHOD_AUTO(SpiralShaderT, Shade, "Shade")
-    PTX_END_METHODS
-    
-    PTX_BEGIN_DESCRIBE(SpiralShaderT)
-        /* TODO: PTX_CTOR0(SpiralShaderT) or PTX_CTOR(SpiralShaderT, ...) */
-    PTX_END_DESCRIBE(SpiralShaderT)
-    
 };

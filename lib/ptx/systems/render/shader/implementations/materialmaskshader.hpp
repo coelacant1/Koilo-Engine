@@ -73,15 +73,15 @@ public:
     }
 
     PTX_BEGIN_FIELDS(MaterialMaskShader)
-        /* TODO: PTX_FIELD(MaterialMaskShader, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(MaterialMaskShader)
         PTX_METHOD_AUTO(MaterialMaskShader, Shade, "Shade")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(MaterialMaskShader)
-        /* TODO: PTX_CTOR0(MaterialMaskShader) or PTX_CTOR(MaterialMaskShader, ...) */
+        /* No reflected ctors. */
     PTX_END_DESCRIBE(MaterialMaskShader)
-    
+
 };

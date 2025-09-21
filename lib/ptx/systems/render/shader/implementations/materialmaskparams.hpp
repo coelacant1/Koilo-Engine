@@ -30,13 +30,13 @@ struct MaterialMaskParams {
         PTX_FIELD(MaterialMaskParams, shape, "Shape", 0, 0),
         PTX_FIELD(MaterialMaskParams, opacity, "Opacity", __FLT_MIN__, __FLT_MAX__)
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(MaterialMaskParams)
-        /* TODO: PTX_METHOD_AUTO(MaterialMaskParams, Method, "Doc") */
+        /* No reflected methods. */
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(MaterialMaskParams)
-        /* TODO: PTX_CTOR0(MaterialMaskParams) or PTX_CTOR(MaterialMaskParams, ...) */
+        /* No reflected ctors. */
     PTX_END_DESCRIBE(MaterialMaskParams)
-    
+
 };

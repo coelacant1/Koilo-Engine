@@ -2,7 +2,6 @@
 #pragma once
 #include <array>
 #include <algorithm> // for std::copy_n
-#include "../../../../registry/reflect_macros.hpp"
 
 #include "../../../../core/color/rgbcolor.hpp"
 #include "../../../../core/math/vector2d.hpp"
@@ -89,25 +88,4 @@ struct SpiralParams {
     /** @brief Default constructor for aggregate initialization. */
     SpiralParams() = default;
 
-    /* NOTE: SpiralParams is a template; verify macros accept template types. */
-    PTX_BEGIN_FIELDS(SpiralParams)
-        PTX_FIELD(SpiralParams, colors, "Colors", 0, 0),
-        PTX_FIELD(SpiralParams, baseColors, "Base colors", 0, 0),
-        PTX_FIELD(SpiralParams, positionOffset, "Position offset", 0, 0),
-        PTX_FIELD(SpiralParams, rotationOffset, "Rotation offset", 0, 0),
-        PTX_FIELD(SpiralParams, width, "Width", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(SpiralParams, bend, "Bend", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(SpiralParams, rotationAngle, "Rotation angle", __FLT_MIN__, __FLT_MAX__)
-    PTX_END_FIELDS
-    
-    PTX_BEGIN_METHODS(SpiralParams)
-        /* TODO: PTX_METHOD_AUTO(SpiralParams, Method, "Doc") */
-    PTX_END_METHODS
-    
-    PTX_BEGIN_DESCRIBE(SpiralParams)
-        PTX_CTOR(SpiralParams, const RGBColor (&)[N], float, float, float, Vector2D, Vector2D, const RGBColor *),
-        PTX_CTOR(SpiralParams, const std::array<RGBColor, N> &, float, float, float, Vector2D, Vector2D, const RGBColor *),
-        PTX_CTOR0(SpiralParams)
-    PTX_END_DESCRIBE(SpiralParams)
-    
 };

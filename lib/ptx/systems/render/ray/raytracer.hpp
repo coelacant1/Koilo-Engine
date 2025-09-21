@@ -45,15 +45,15 @@ public:
     static void RayTrace(Scene* scene, CameraBase* camera);
 
     PTX_BEGIN_FIELDS(RayTracer)
-        /* TODO: PTX_FIELD(RayTracer, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(RayTracer)
         PTX_SMETHOD_AUTO(RayTracer::RayTrace, "Ray trace")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(RayTracer)
-        /* TODO: PTX_CTOR0(RayTracer) or PTX_CTOR(RayTracer, ...) */
+        /* No reflected ctors. */
     PTX_END_DESCRIBE(RayTracer)
-    
+
 };

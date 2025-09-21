@@ -114,17 +114,17 @@ private:
         PTX_FIELD(RasterTriangle2D, v1, "V1", 0, 0),
         PTX_FIELD(RasterTriangle2D, bounds, "Bounds", 0, 0)
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(RasterTriangle2D)
         PTX_METHOD_AUTO(RasterTriangle2D, GetBarycentricCoords, "Get barycentric coords"),
         PTX_METHOD_AUTO(RasterTriangle2D, Overlaps, "Overlaps"),
         PTX_METHOD_AUTO(RasterTriangle2D, GetMaterial, "Get material"),
         PTX_METHOD_AUTO(RasterTriangle2D, ToString, "To string")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(RasterTriangle2D)
         PTX_CTOR0(RasterTriangle2D),
         PTX_CTOR(RasterTriangle2D, const Transform &, const Quaternion &, const RasterTriangle3D &, IMaterial *)
     PTX_END_DESCRIBE(RasterTriangle2D)
-    
+
 };

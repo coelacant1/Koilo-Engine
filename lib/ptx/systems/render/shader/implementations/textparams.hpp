@@ -3,7 +3,6 @@
 
 #include <cstddef>
 #include <stdint.h>
-#include "../../../../registry/reflect_macros.hpp"
 
 #include "../../../../assets/font/characters.hpp"
 #include "../../../../core/color/rgbcolor.hpp"
@@ -54,27 +53,4 @@ struct TextBuilderParamsT {
                 lines[r][c] = ' ';
     }
 
-    /* NOTE: TextBuilderParamsT is a template; verify macros accept template types. */
-    PTX_BEGIN_FIELDS(TextBuilderParamsT)
-        PTX_FIELD(TextBuilderParamsT, size, "Size", 0, 0),
-        PTX_FIELD(TextBuilderParamsT, positionOffset, "Position offset", 0, 0),
-        PTX_FIELD(TextBuilderParamsT, rotationOffset, "Rotation offset", 0, 0),
-        PTX_FIELD(TextBuilderParamsT, rotationAngleDeg, "Rotation angle deg", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(TextBuilderParamsT, isEfficient, "Is efficient", 0, 1),
-        PTX_FIELD(TextBuilderParamsT, blinkPeriodMs, "Blink period ms", 0, 4294967295),
-        PTX_FIELD(TextBuilderParamsT, elapsedMs, "Elapsed ms", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(TextBuilderParamsT, fgWhite, "Fg white", 0, 0),
-        PTX_FIELD(TextBuilderParamsT, bgBlack, "Bg black", 0, 0),
-        PTX_FIELD(TextBuilderParamsT, fillMat, "Fill mat", 0, 0),
-        PTX_FIELD(TextBuilderParamsT, lines, "Lines", 0, 0)
-    PTX_END_FIELDS
-    
-    PTX_BEGIN_METHODS(TextBuilderParamsT)
-        PTX_METHOD_AUTO(TextBuilderParamsT, Clear, "Clear")
-    PTX_END_METHODS
-    
-    PTX_BEGIN_DESCRIBE(TextBuilderParamsT)
-        /* TODO: PTX_CTOR0(TextBuilderParamsT) or PTX_CTOR(TextBuilderParamsT, ...) */
-    PTX_END_DESCRIBE(TextBuilderParamsT)
-    
 };

@@ -50,16 +50,16 @@ public:
     uint8_t GetCameraCount();
 
     PTX_BEGIN_FIELDS(CameraManager)
-        /* TODO: PTX_FIELD(CameraManager, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(CameraManager)
         PTX_METHOD_AUTO(CameraManager, GetCameras, "Get cameras"),
         PTX_METHOD_AUTO(CameraManager, GetCameraCount, "Get camera count")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(CameraManager)
         PTX_CTOR(CameraManager, CameraBase **, uint8_t)
     PTX_END_DESCRIBE(CameraManager)
-    
+
 };

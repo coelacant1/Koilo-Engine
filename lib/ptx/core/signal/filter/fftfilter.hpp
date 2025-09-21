@@ -51,16 +51,16 @@ public:
     float Filter(float value);
 
     PTX_BEGIN_FIELDS(FFTFilter)
-        /* TODO: PTX_FIELD(FFTFilter, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(FFTFilter)
         PTX_METHOD_AUTO(FFTFilter, GetOutput, "Get output"),
         PTX_METHOD_AUTO(FFTFilter, Filter, "Filter")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(FFTFilter)
         PTX_CTOR0(FFTFilter)
     PTX_END_DESCRIBE(FFTFilter)
-    
+
 };

@@ -133,30 +133,30 @@ public:
     static inline bool Overlaps(const Ellipse2D& e, const Triangle2D& t) { return Overlaps(t, e); }
 
     PTX_BEGIN_FIELDS(Overlap2D)
-        /* TODO: PTX_FIELD(Overlap2D, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(Overlap2D)
-        PTX_SMETHOD_AUTO(Overlap2D::Overlaps, "Overlaps"),
-        PTX_SMETHOD_AUTO(Overlap2D::Overlaps, "Overlaps"),
-        PTX_SMETHOD_AUTO(Overlap2D::Overlaps, "Overlaps"),
-        PTX_SMETHOD_AUTO(Overlap2D::Overlaps, "Overlaps"),
-        PTX_SMETHOD_AUTO(Overlap2D::Overlaps, "Overlaps"),
-        PTX_SMETHOD_AUTO(Overlap2D::Overlaps, "Overlaps"),
-        PTX_SMETHOD_AUTO(Overlap2D::Overlaps, "Overlaps"),
-        PTX_SMETHOD_AUTO(Overlap2D::Overlaps, "Overlaps"),
-        PTX_SMETHOD_AUTO(Overlap2D::Overlaps, "Overlaps"),
-        PTX_SMETHOD_AUTO(Overlap2D::Overlaps, "Overlaps"),
-        PTX_SMETHOD_AUTO(Overlap2D::Overlaps, "Overlaps"),
-        PTX_SMETHOD_AUTO(Overlap2D::Overlaps, "Overlaps"),
-        PTX_SMETHOD_AUTO(Overlap2D::Overlaps, "Overlaps"),
-        PTX_SMETHOD_AUTO(Overlap2D::Overlaps, "Overlaps"),
-        PTX_SMETHOD_AUTO(Overlap2D::Overlaps, "Overlaps"),
-        PTX_SMETHOD_AUTO(Overlap2D::Overlaps, "Overlaps")
+        /* Overlaps */ PTX_SMETHOD_OVLD(Overlap2D, Overlaps, bool, const Ellipse2D &, const Ellipse2D &),
+        /* Overlaps */ PTX_SMETHOD_OVLD(Overlap2D, Overlaps, bool, const Circle2D &, const Circle2D &),
+        /* Overlaps */ PTX_SMETHOD_OVLD(Overlap2D, Overlaps, bool, const Rectangle2D &, const Rectangle2D &),
+        /* Overlaps */ PTX_SMETHOD_OVLD(Overlap2D, Overlaps, bool, const Triangle2D &, const Triangle2D &),
+        /* Overlaps */ PTX_SMETHOD_OVLD(Overlap2D, Overlaps, bool, const Rectangle2D &, const Circle2D &),
+        /* Overlaps */ PTX_SMETHOD_OVLD(Overlap2D, Overlaps, bool, const Rectangle2D &, const Triangle2D &),
+        /* Overlaps */ PTX_SMETHOD_OVLD(Overlap2D, Overlaps, bool, const Rectangle2D &, const Ellipse2D &),
+        /* Overlaps */ PTX_SMETHOD_OVLD(Overlap2D, Overlaps, bool, const Circle2D &, const Triangle2D &),
+        /* Overlaps */ PTX_SMETHOD_OVLD(Overlap2D, Overlaps, bool, const Circle2D &, const Ellipse2D &),
+        /* Overlaps */ PTX_SMETHOD_OVLD(Overlap2D, Overlaps, bool, const Triangle2D &, const Ellipse2D &),
+        /* Overlaps */ PTX_SMETHOD_OVLD(Overlap2D, Overlaps, bool, const Circle2D &, const Rectangle2D &),
+        /* Overlaps */ PTX_SMETHOD_OVLD(Overlap2D, Overlaps, bool, const Triangle2D &, const Rectangle2D &),
+        /* Overlaps */ PTX_SMETHOD_OVLD(Overlap2D, Overlaps, bool, const Ellipse2D &, const Rectangle2D &),
+        /* Overlaps */ PTX_SMETHOD_OVLD(Overlap2D, Overlaps, bool, const Triangle2D &, const Circle2D &),
+        /* Overlaps */ PTX_SMETHOD_OVLD(Overlap2D, Overlaps, bool, const Ellipse2D &, const Circle2D &),
+        /* Overlaps */ PTX_SMETHOD_OVLD(Overlap2D, Overlaps, bool, const Ellipse2D &, const Triangle2D &)
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(Overlap2D)
-        /* TODO: PTX_CTOR0(Overlap2D) or PTX_CTOR(Overlap2D, ...) */
+        /* No reflected ctors. */
     PTX_END_DESCRIBE(Overlap2D)
-    
+
 };

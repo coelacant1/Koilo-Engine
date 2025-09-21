@@ -49,16 +49,16 @@ public:
     static void RayTrace(Scene* scene, CameraManager* cameraManager);
 
     PTX_BEGIN_FIELDS(RenderingEngine)
-        /* TODO: PTX_FIELD(RenderingEngine, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(RenderingEngine)
         PTX_SMETHOD_AUTO(RenderingEngine::Rasterize, "Rasterize"),
         PTX_SMETHOD_AUTO(RenderingEngine::RayTrace, "Ray trace")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(RenderingEngine)
-        /* TODO: PTX_CTOR0(RenderingEngine) or PTX_CTOR(RenderingEngine, ...) */
+        /* No reflected ctors. */
     PTX_END_DESCRIBE(RenderingEngine)
-    
+
 };

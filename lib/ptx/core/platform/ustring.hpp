@@ -134,26 +134,26 @@ private:
     PImpl* pimpl; ///< Owning pointer to implementation.
 
     PTX_BEGIN_FIELDS(UString)
-        /* TODO: PTX_FIELD(UString, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(UString)
         PTX_SMETHOD_AUTO(UString::FromFloat, "From float"),
-        PTX_METHOD_AUTO(UString, Append, "Append"),
-        PTX_METHOD_AUTO(UString, Append, "Append"),
+        /* Append */ PTX_METHOD_OVLD(UString, Append, void, const char *),
+        /* Append */ PTX_METHOD_OVLD(UString, Append, void, const UString &),
         PTX_METHOD_AUTO(UString, Length, "Length"),
         PTX_METHOD_AUTO(UString, IsEmpty, "Is empty"),
         PTX_METHOD_AUTO(UString, Clear, "Clear"),
         PTX_METHOD_AUTO(UString, CStr, "Cstr")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(UString)
         PTX_CTOR0(UString),
         PTX_CTOR(UString, const char *),
         PTX_CTOR(UString, const UString &),
         PTX_CTOR(UString, UString &&)
     PTX_END_DESCRIBE(UString)
-    
+
 };
 
 // --- Non-member concatenation helpers ---

@@ -88,7 +88,7 @@ public:
         PTX_FIELD(IndexGroup, B, "B", 0, 65535),
         PTX_FIELD(IndexGroup, C, "C", 0, 65535)
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(IndexGroup)
         PTX_METHOD_AUTO(IndexGroup, Add, "Add"),
         PTX_METHOD_AUTO(IndexGroup, Subtract, "Subtract"),
@@ -96,11 +96,11 @@ public:
         PTX_METHOD_AUTO(IndexGroup, Divide, "Divide"),
         PTX_METHOD_AUTO(IndexGroup, ToString, "To string")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(IndexGroup)
         PTX_CTOR0(IndexGroup),
         PTX_CTOR(IndexGroup, const IndexGroup &),
         PTX_CTOR(IndexGroup, uint16_t, uint16_t, uint16_t)
     PTX_END_DESCRIBE(IndexGroup)
-    
+
 };

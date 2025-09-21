@@ -124,16 +124,16 @@ private:
     float b; ///< Attenuation curve parameter B.
 
     PTX_BEGIN_FIELDS(Light)
-        /* TODO: PTX_FIELD(Light, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(Light)
         PTX_METHOD_AUTO(Light, Set, "Set"),
         PTX_METHOD_AUTO(Light, SetIntensity, "Set intensity"),
-        PTX_METHOD_AUTO(Light, SetFalloff, "Set falloff"),
+        /* Set falloff */ PTX_METHOD_OVLD(Light, SetFalloff, void, float, float, float),
         PTX_METHOD_AUTO(Light, MoveTo, "Move to"),
         PTX_METHOD_AUTO(Light, Translate, "Translate"),
-        PTX_METHOD_AUTO(Light, SetFalloff, "Set falloff"),
+        /* Set falloff */ PTX_METHOD_OVLD(Light, SetFalloff, void, float),
         PTX_METHOD_AUTO(Light, SetCurve, "Set curve"),
         PTX_METHOD_AUTO(Light, GetPosition, "Get position"),
         PTX_METHOD_AUTO(Light, GetFalloff, "Get falloff"),
@@ -141,10 +141,10 @@ private:
         PTX_METHOD_AUTO(Light, GetCurveB, "Get curve b"),
         PTX_METHOD_AUTO(Light, GetIntensity, "Get intensity")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(Light)
         PTX_CTOR0(Light),
         PTX_CTOR(Light, Vector3D, Vector3D, float, float, float)
     PTX_END_DESCRIBE(Light)
-    
+
 };

@@ -75,19 +75,19 @@ public:
     float Calculate(float target, float dT);
 
     PTX_BEGIN_FIELDS(DampedSpring)
-        /* TODO: PTX_FIELD(DampedSpring, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(DampedSpring)
         PTX_METHOD_AUTO(DampedSpring, GetCurrentPosition, "Get current position"),
         PTX_METHOD_AUTO(DampedSpring, SetConstants, "Set constants"),
-        PTX_METHOD_AUTO(DampedSpring, Calculate, "Calculate"),
-        PTX_METHOD_AUTO(DampedSpring, Calculate, "Calculate")
+        /* Calculate */ PTX_METHOD_OVLD(DampedSpring, Calculate, float, float, uint32_t),
+        /* Calculate */ PTX_METHOD_OVLD(DampedSpring, Calculate, float, float, float)
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(DampedSpring)
         PTX_CTOR0(DampedSpring),
         PTX_CTOR(DampedSpring, float, float)
     PTX_END_DESCRIBE(DampedSpring)
-    
+
 };

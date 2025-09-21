@@ -81,16 +81,16 @@ public:
         PTX_FIELD(RasterTriangle3D, normal, "Normal", 0, 0),
         PTX_FIELD(RasterTriangle3D, hasUV, "Has uv", 0, 1)
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(RasterTriangle3D)
         PTX_METHOD_AUTO(RasterTriangle3D, IntersectsRay, "Intersects ray"),
         PTX_METHOD_AUTO(RasterTriangle3D, GetNormal, "Get normal")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(RasterTriangle3D)
         PTX_CTOR0(RasterTriangle3D),
         PTX_CTOR(RasterTriangle3D, const Vector3D *, const Vector3D *, const Vector3D *),
         PTX_CTOR(RasterTriangle3D, const Vector3D *, const Vector3D *, const Vector3D *, const Vector2D *, const Vector2D *, const Vector2D *)
     PTX_END_DESCRIBE(RasterTriangle3D)
-    
+
 };

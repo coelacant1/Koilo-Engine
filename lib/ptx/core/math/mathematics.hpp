@@ -353,11 +353,10 @@ public:
 	template<typename T>
 	static T ConstrainMap(T value, T inLow, T inMax, T outMin, T outMax);
 
-
     PTX_BEGIN_FIELDS(Mathematics)
-        /* TODO: PTX_FIELD(Mathematics, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(Mathematics)
         PTX_SMETHOD_AUTO(Mathematics::DoubleToCleanString, "Double to clean string"),
         PTX_SMETHOD_AUTO(Mathematics::IsNaN, "Is na n"),
@@ -382,11 +381,11 @@ public:
         PTX_SMETHOD_AUTO(Mathematics::PingPong, "Ping pong"),
         PTX_SMETHOD_AUTO(Mathematics::RoundUpWindow, "Round up window")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(Mathematics)
-        /* TODO: PTX_CTOR0(Mathematics) or PTX_CTOR(Mathematics, ...) */
+        /* No reflected ctors. */
     PTX_END_DESCRIBE(Mathematics)
-    
+
 };
 
 // Pull in template implementations.

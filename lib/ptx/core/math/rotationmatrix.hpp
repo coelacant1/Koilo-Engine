@@ -167,7 +167,7 @@ public:
         PTX_FIELD(RotationMatrix, YAxis, "Yaxis", 0, 0),
         PTX_FIELD(RotationMatrix, ZAxis, "Zaxis", 0, 0)
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(RotationMatrix)
         PTX_METHOD_AUTO(RotationMatrix, ConvertCoordinateToVector, "Convert coordinate to vector"),
         PTX_METHOD_AUTO(RotationMatrix, ReadjustMatrix, "Readjust matrix"),
@@ -176,8 +176,8 @@ public:
         PTX_METHOD_AUTO(RotationMatrix, RotateY, "Rotate y"),
         PTX_METHOD_AUTO(RotationMatrix, RotateZ, "Rotate z"),
         PTX_METHOD_AUTO(RotationMatrix, RotateRelative, "Rotate relative"),
-        PTX_METHOD_AUTO(RotationMatrix, Multiply, "Multiply"),
-        PTX_METHOD_AUTO(RotationMatrix, Multiply, "Multiply"),
+        /* Multiply */ PTX_METHOD_OVLD(RotationMatrix, Multiply, RotationMatrix, float),
+        /* Multiply */ PTX_METHOD_OVLD(RotationMatrix, Multiply, RotationMatrix, RotationMatrix),
         PTX_METHOD_AUTO(RotationMatrix, Normalize, "Normalize"),
         PTX_METHOD_AUTO(RotationMatrix, Transpose, "Transpose"),
         PTX_METHOD_AUTO(RotationMatrix, Inverse, "Inverse"),
@@ -186,11 +186,11 @@ public:
         PTX_SMETHOD_AUTO(RotationMatrix::RotateVector, "Rotate vector"),
         PTX_METHOD_AUTO(RotationMatrix, ToString, "To string")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(RotationMatrix)
         PTX_CTOR0(RotationMatrix),
         PTX_CTOR(RotationMatrix, Vector3D),
         PTX_CTOR(RotationMatrix, Vector3D, Vector3D, Vector3D)
     PTX_END_DESCRIBE(RotationMatrix)
-    
+
 };

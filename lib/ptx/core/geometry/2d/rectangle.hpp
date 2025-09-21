@@ -30,19 +30,19 @@ private:
 public:
     struct Corners {
         Vector2D corners[4];
-    
-        PTX_BEGIN_FIELDS(Corners)
-            PTX_FIELD(Corners, corners, "Corners", 0, 0)
-        PTX_END_FIELDS
-        
-        PTX_BEGIN_METHODS(Corners)
-            /* TODO: PTX_METHOD_AUTO(Corners, Method, "Doc") */
-        PTX_END_METHODS
-        
-        PTX_BEGIN_DESCRIBE(Corners)
-            /* TODO: PTX_CTOR0(Corners) or PTX_CTOR(Corners, ...) */
-        PTX_END_DESCRIBE(Corners)
-        
+
+    PTX_BEGIN_FIELDS(Corners)
+        PTX_FIELD(Corners, corners, "Corners", 0, 0)
+    PTX_END_FIELDS
+
+    PTX_BEGIN_METHODS(Corners)
+        /* No reflected methods. */
+    PTX_END_METHODS
+
+    PTX_BEGIN_DESCRIBE(Corners)
+        /* No reflected ctors. */
+    PTX_END_DESCRIBE(Corners)
+
 };
 
     /**
@@ -80,9 +80,9 @@ public:
     bool Contains(const Vector2D& v) const;
 
     PTX_BEGIN_FIELDS(Rectangle2D)
-        /* TODO: PTX_FIELD(Rectangle2D, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(Rectangle2D)
         PTX_METHOD_AUTO(Rectangle2D, IsInShape, "Is in shape"),
         PTX_METHOD_AUTO(Rectangle2D, GetCorners, "Get corners"),
@@ -90,14 +90,14 @@ public:
         PTX_METHOD_AUTO(Rectangle2D, GetMinimum, "Get minimum"),
         PTX_METHOD_AUTO(Rectangle2D, GetMaximum, "Get maximum"),
         PTX_METHOD_AUTO(Rectangle2D, GetCenter, "Get center"),
-        PTX_METHOD_AUTO(Rectangle2D, Overlaps, "Overlaps"),
-        PTX_METHOD_AUTO(Rectangle2D, Overlaps, "Overlaps"),
+        /* Overlaps */ PTX_METHOD_OVLD_CONST(Rectangle2D, Overlaps, bool, const Rectangle2D &),
+        /* Overlaps */ PTX_METHOD_OVLD_CONST(Rectangle2D, Overlaps, bool, const Vector2D &, const Vector2D &),
         PTX_METHOD_AUTO(Rectangle2D, Contains, "Contains")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(Rectangle2D)
         PTX_CTOR(Rectangle2D, Vector2D, Vector2D, float),
         PTX_CTOR(Rectangle2D, Bounds, float)
     PTX_END_DESCRIBE(Rectangle2D)
-    
+
 };

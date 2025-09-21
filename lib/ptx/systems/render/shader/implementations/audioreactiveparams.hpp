@@ -3,7 +3,6 @@
 #include <cstddef>
 #include "../../../../core/color/rgbcolor.hpp"
 #include "../../../../core/math/vector2d.hpp"
-#include "../../../../registry/reflect_macros.hpp"
 
 /**
  * @file audioreactiveparams.hpp
@@ -51,26 +50,4 @@ struct AudioReactiveParamsT {
         RGBColor(  0, 0, 255), RGBColor(255,   0, 255)
     };
 
-    /* NOTE: AudioReactiveParamsT is a template; verify macros accept template types. */
-    PTX_BEGIN_FIELDS(AudioReactiveParamsT)
-        PTX_FIELD(AudioReactiveParamsT, sizeHalf, "Size half", 0, 0),
-        PTX_FIELD(AudioReactiveParamsT, offset, "Offset", 0, 0),
-        PTX_FIELD(AudioReactiveParamsT, angleDeg, "Angle deg", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(AudioReactiveParamsT, hueDeg, "Hue deg", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(AudioReactiveParamsT, circular, "Circular", 0, 1),
-        PTX_FIELD(AudioReactiveParamsT, radius, "Radius", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(AudioReactiveParamsT, bounce, "Bounce", 0, 1),
-        PTX_FIELD(AudioReactiveParamsT, samples, "Samples", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(AudioReactiveParamsT, bounceData, "Bounce data", 0, 0),
-        PTX_FIELD(AudioReactiveParamsT, spectrum, "Spectrum", 0, 0)
-    PTX_END_FIELDS
-    
-    PTX_BEGIN_METHODS(AudioReactiveParamsT)
-        /* TODO: PTX_METHOD_AUTO(AudioReactiveParamsT, Method, "Doc") */
-    PTX_END_METHODS
-    
-    PTX_BEGIN_DESCRIBE(AudioReactiveParamsT)
-        /* TODO: PTX_CTOR0(AudioReactiveParamsT) or PTX_CTOR(AudioReactiveParamsT, ...) */
-    PTX_END_DESCRIBE(AudioReactiveParamsT)
-    
 };

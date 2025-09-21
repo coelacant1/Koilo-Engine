@@ -300,24 +300,24 @@ public:
     void AlignObjects(Mesh** objs, uint8_t numObjects);
 
     PTX_BEGIN_FIELDS(MeshAlign)
-        /* TODO: PTX_FIELD(MeshAlign, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(MeshAlign)
-        PTX_METHOD_AUTO(MeshAlign, GetCentroid, "Get centroid"),
-        PTX_METHOD_AUTO(MeshAlign, GetCentroid, "Get centroid"),
-        PTX_METHOD_AUTO(MeshAlign, GetObjectCenter, "Get object center"),
-        PTX_METHOD_AUTO(MeshAlign, GetObjectCenter, "Get object center"),
-        PTX_METHOD_AUTO(MeshAlign, GetObjectSize, "Get object size"),
-        PTX_METHOD_AUTO(MeshAlign, GetObjectSize, "Get object size"),
-        PTX_METHOD_AUTO(MeshAlign, GetPlaneNormal, "Get plane normal"),
-        PTX_METHOD_AUTO(MeshAlign, GetPlaneNormal, "Get plane normal"),
-        PTX_METHOD_AUTO(MeshAlign, GetPlaneOrientation, "Get plane orientation"),
-        PTX_METHOD_AUTO(MeshAlign, GetPlaneOrientation, "Get plane orientation"),
-        PTX_METHOD_AUTO(MeshAlign, GetTransform, "Get transform"),
-        PTX_METHOD_AUTO(MeshAlign, GetTransform, "Get transform"),
-        PTX_METHOD_AUTO(MeshAlign, GetObjectPlanarityRatio, "Get object planarity ratio"),
-        PTX_METHOD_AUTO(MeshAlign, GetObjectPlanarityRatio, "Get object planarity ratio"),
+        /* Get centroid */ PTX_METHOD_OVLD(MeshAlign, GetCentroid, Vector3D, Mesh *),
+        /* Get centroid */ PTX_METHOD_OVLD(MeshAlign, GetCentroid, Vector3D, Mesh **, uint8_t),
+        /* Get object center */ PTX_METHOD_OVLD(MeshAlign, GetObjectCenter, Vector3D, Mesh *),
+        /* Get object center */ PTX_METHOD_OVLD(MeshAlign, GetObjectCenter, Vector3D, Mesh **, uint8_t),
+        /* Get object size */ PTX_METHOD_OVLD(MeshAlign, GetObjectSize, Vector3D, Mesh *),
+        /* Get object size */ PTX_METHOD_OVLD(MeshAlign, GetObjectSize, Vector3D, Mesh **, uint8_t),
+        /* Get plane normal */ PTX_METHOD_OVLD(MeshAlign, GetPlaneNormal, Quaternion, Mesh *),
+        /* Get plane normal */ PTX_METHOD_OVLD(MeshAlign, GetPlaneNormal, Quaternion, Mesh **, uint8_t),
+        /* Get plane orientation */ PTX_METHOD_OVLD(MeshAlign, GetPlaneOrientation, Quaternion, Mesh *, Vector3D),
+        /* Get plane orientation */ PTX_METHOD_OVLD(MeshAlign, GetPlaneOrientation, Quaternion, Mesh **, uint8_t, Vector3D),
+        /* Get transform */ PTX_METHOD_OVLD(MeshAlign, GetTransform, Transform, Mesh *),
+        /* Get transform */ PTX_METHOD_OVLD(MeshAlign, GetTransform, Transform, Mesh **, uint8_t),
+        /* Get object planarity ratio */ PTX_METHOD_OVLD(MeshAlign, GetObjectPlanarityRatio, float, Mesh *),
+        /* Get object planarity ratio */ PTX_METHOD_OVLD(MeshAlign, GetObjectPlanarityRatio, float, Mesh **, uint8_t),
         PTX_METHOD_AUTO(MeshAlign, SetPlaneOffsetAngle, "Set plane offset angle"),
         PTX_METHOD_AUTO(MeshAlign, SetEdgeMargin, "Set edge margin"),
         PTX_METHOD_AUTO(MeshAlign, SetForwardVector, "Set forward vector"),
@@ -332,9 +332,9 @@ public:
         PTX_METHOD_AUTO(MeshAlign, AlignObject, "Align object"),
         PTX_METHOD_AUTO(MeshAlign, AlignObjects, "Align objects")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(MeshAlign)
         PTX_CTOR(MeshAlign, Vector2D, Vector2D, Quaternion)
     PTX_END_DESCRIBE(MeshAlign)
-    
+
 };

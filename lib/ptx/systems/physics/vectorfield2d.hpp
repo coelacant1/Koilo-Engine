@@ -165,9 +165,9 @@ public:
     uint32_t GetVectorAtPosition(float x, float y, bool& inBounds);
 
     PTX_BEGIN_FIELDS(VectorField2D)
-        /* TODO: PTX_FIELD(VectorField2D, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(VectorField2D)
         PTX_METHOD_AUTO(VectorField2D, Boundary, "Boundary"),
         PTX_METHOD_AUTO(VectorField2D, Diffuse, "Diffuse"),
@@ -185,9 +185,9 @@ public:
         PTX_METHOD_AUTO(VectorField2D, SetRotation, "Set rotation"),
         PTX_METHOD_AUTO(VectorField2D, GetVectorAtPosition, "Get vector at position")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(VectorField2D)
         PTX_CTOR(VectorField2D, uint16_t, uint16_t)
     PTX_END_DESCRIBE(VectorField2D)
-    
+
 };

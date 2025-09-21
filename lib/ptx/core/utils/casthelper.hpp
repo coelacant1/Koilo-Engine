@@ -24,39 +24,34 @@ public:
     /**
      * @brief Narrow unsigned value to 8-bit (wrap-around).
      */
-    template <typename T>
-    static inline uint8_t ToU8(T v){
+    static inline uint8_t ToU8(uint32_t v){
         return static_cast<uint8_t>(v);
     }
 
     /**
      * @brief Narrow unsigned value to 16-bit (wrap-around).
      */
-    template <typename T>
-    static inline uint16_t ToU16(T v){
+    static inline uint16_t ToU16(uint32_t v){
         return static_cast<uint16_t>(v);
     }
 
     /**
      * @brief Widen unsigned 16-bit to 32-bit.
      */
-    template <typename T>
-    static inline uint32_t ToU32(T v){
+    static inline uint32_t ToU32(uint16_t v){
         return static_cast<uint32_t>(v);
     }
 
     /**
      * @brief Convert unsigned 16-bit to signed 32-bit.
      */
-    template <typename T>
-    static inline int32_t ToI32(T v){
+    static inline int32_t ToI32(uint16_t v){
         return static_cast<int32_t>(v);
     }
 
     /**
      * @brief Round float to nearest int32 and cast.
      */
-    template <typename T>
     static inline int32_t ToI32(float v){
         return static_cast<int32_t>(roundf(v));
     }
@@ -77,16 +72,21 @@ public:
     }
 
     PTX_BEGIN_FIELDS(CastHelper)
-        /* TODO: PTX_FIELD(CastHelper, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(CastHelper)
-        PTX_SMETHOD_AUTO(CastHelper::ToU16, "To u16"),
+        PTX_SMETHOD_AUTO(CastHelper::ToU8, "To u8"),
+        /* To u16 */ PTX_SMETHOD_OVLD(CastHelper, ToU16, uint16_t, uint32_t),
+        PTX_SMETHOD_AUTO(CastHelper::ToU32, "To u32"),
+        /* To i32 */ PTX_SMETHOD_OVLD(CastHelper, ToI32, int32_t, uint16_t),
+        /* To i32 */ PTX_SMETHOD_OVLD(CastHelper, ToI32, int32_t, float),
+        /* To u16 */ PTX_SMETHOD_OVLD(CastHelper, ToU16, uint16_t, float),
         PTX_SMETHOD_AUTO(CastHelper::ToFloat, "To float")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(CastHelper)
-        /* TODO: PTX_CTOR0(CastHelper) or PTX_CTOR(CastHelper, ...) */
+        /* No reflected ctors. */
     PTX_END_DESCRIBE(CastHelper)
-    
+
 };

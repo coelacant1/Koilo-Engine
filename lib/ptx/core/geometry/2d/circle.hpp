@@ -39,15 +39,15 @@ public:
     bool IsInShape(Vector2D point) override;
 
     PTX_BEGIN_FIELDS(Circle2D)
-        /* TODO: PTX_FIELD(Circle2D, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(Circle2D)
         PTX_METHOD_AUTO(Circle2D, IsInShape, "Is in shape")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(Circle2D)
         PTX_CTOR(Circle2D, Vector2D, float)
     PTX_END_DESCRIBE(Circle2D)
-    
+
 };

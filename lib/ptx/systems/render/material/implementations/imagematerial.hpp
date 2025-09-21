@@ -51,17 +51,17 @@ public:
     void SetImage(Image* img)       { this->image = img; }
 
     PTX_BEGIN_FIELDS(ImageMaterial)
-        /* TODO: PTX_FIELD(ImageMaterial, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(ImageMaterial)
         PTX_METHOD_AUTO(ImageMaterial, SetHueAngle, "Set hue angle"),
         PTX_METHOD_AUTO(ImageMaterial, UseUV, "Use uv"),
         PTX_METHOD_AUTO(ImageMaterial, SetImage, "Set image")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(ImageMaterial)
         PTX_CTOR(ImageMaterial, Image *)
     PTX_END_DESCRIBE(ImageMaterial)
-    
+
 };

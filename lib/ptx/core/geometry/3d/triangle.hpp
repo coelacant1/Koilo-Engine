@@ -49,17 +49,17 @@ public:
         PTX_FIELD(Triangle3D, p2, "P2", 0, 0),
         PTX_FIELD(Triangle3D, p3, "P3", 0, 0)
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(Triangle3D)
         PTX_METHOD_AUTO(Triangle3D, GetArea, "Get area"),
         PTX_METHOD_AUTO(Triangle3D, GetNormal, "Get normal"),
         PTX_METHOD_AUTO(Triangle3D, GetCentroid, "Get centroid"),
         PTX_METHOD_AUTO(Triangle3D, ClosestPoint, "Closest point")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(Triangle3D)
         PTX_CTOR0(Triangle3D),
         PTX_CTOR(Triangle3D, const Vector3D &, const Vector3D &, const Vector3D &)
     PTX_END_DESCRIBE(Triangle3D)
-    
+
 };

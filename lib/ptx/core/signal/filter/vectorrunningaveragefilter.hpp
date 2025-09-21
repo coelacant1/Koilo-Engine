@@ -14,7 +14,6 @@
 
 #include "runningaveragefilter.hpp"
 #include "../../math/vector3d.hpp" // Includes mathematical utilities for constraints and operations.
-#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class VectorRunningAverageFilter
@@ -59,18 +58,4 @@ public:
      */
     Vector3D Filter(Vector3D input);
 
-    /* NOTE: VectorRunningAverageFilter is a template; verify macros accept template types. */
-    PTX_BEGIN_FIELDS(VectorRunningAverageFilter)
-        /* TODO: PTX_FIELD(VectorRunningAverageFilter, member, "Doc", min, max) */
-    PTX_END_FIELDS
-    
-    PTX_BEGIN_METHODS(VectorRunningAverageFilter)
-        PTX_METHOD_AUTO(VectorRunningAverageFilter, Filter, "Filter")
-    PTX_END_METHODS
-    
-    PTX_BEGIN_DESCRIBE(VectorRunningAverageFilter)
-        PTX_CTOR0(VectorRunningAverageFilter),
-        PTX_CTOR(VectorRunningAverageFilter, float)
-    PTX_END_DESCRIBE(VectorRunningAverageFilter)
-    
 };

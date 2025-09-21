@@ -78,17 +78,17 @@ public:
     float Calculate(float setpoint, float processVariable, float dT);
 
     PTX_BEGIN_FIELDS(PID)
-        /* TODO: PTX_FIELD(PID, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(PID)
-        PTX_METHOD_AUTO(PID, Calculate, "Calculate"),
-        PTX_METHOD_AUTO(PID, Calculate, "Calculate")
+        /* Calculate */ PTX_METHOD_OVLD(PID, Calculate, float, float, float, uint32_t),
+        /* Calculate */ PTX_METHOD_OVLD(PID, Calculate, float, float, float, float)
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(PID)
         PTX_CTOR0(PID),
         PTX_CTOR(PID, float, float, float)
     PTX_END_DESCRIBE(PID)
-    
+
 };

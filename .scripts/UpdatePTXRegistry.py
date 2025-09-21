@@ -1,6 +1,6 @@
 # UpdatePTXRegistry.py - auto-generate PTX reflection blocks from C++ headers
 #
-# Process
+# Process:
 # - Walk all .hpp under a root directory (default: lib/ptx)
 # - Parse classes (normal + templates) and their public API:
 #     * public non-static fields  -> PTX_FIELD
@@ -9,23 +9,28 @@
 # - Insert blocks after each class definition (or reorder/fix if present)
 # - Creates .bak backups when writing
 #
-# Parsing
+# Parsing:
 # - Preferred: libclang, pass extra compile args via --clang-arg.
 # - Fallback: regex parser that understands 'template<...> class/struct ... { ... };'
 #
-# Usage examples
-#   python UpdatePTXRegistry.py --root ./lib/ptx --write --verbose
-#   python UpdatePTXRegistry.py --root ./lib/ptx --write --only RGBColor Vector3D
-#   python UpdatePTXRegistry.py --root ./lib/ptx --write --clang-arg -I./lib --clang-arg -std=c++17
+# Usage examples:
+#   python UpdatePTXRegistry.py --root ./lib/ptx
+#   python UpdatePTXRegistry.py --root ./lib/ptx --write
+#   python UpdatePTXRegistry.py --root ./lib/ptx --write --force
 #
 
 import argparse
+import bisect
 import re
 import sys
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional, Tuple, Dict
+
+# Static helper names injected by the reflection macros that should never be
+# surfaced as part of the reflected API.
+REFLECTION_HELPER_NAMES = {"Fields", "Methods", "Describe"}
 
 # ------------------------ Type ranges & doc helpers ------------------------
 TYPE_RANGES: Dict[str, Tuple[str, str]] = {
@@ -52,6 +57,92 @@ TYPE_RANGES: Dict[str, Tuple[str, str]] = {
 }
 
 INCLUDE_RE = re.compile(r'^\s*#\s*include\s*[<"]([^">]+reflect_macros\.hpp)[">]', re.MULTILINE)
+
+PTX_BLOCK_ANY_RE = re.compile(
+    r'[\t ]*PTX_BEGIN_(?:FIELDS|METHODS|DESCRIBE)\s*\([^\n]*?\)'  # begin macro line
+    r'(?:\r?\n(?:.|\r?\n)*?)?'                                    # body up to
+    r'PTX_END_(?:FIELDS|METHODS|DESCRIBE)(?:\s*\([^\n]*?\))?'     # matching end macro
+    r'[\t ]*(?:\r?\n|)',
+    re.DOTALL,
+)
+
+
+def strip_ptx_blocks(text: str) -> str:
+    """Remove reflection PTX blocks from arbitrary text segments."""
+    prev = None
+    cur = text
+    while prev != cur:
+        prev = cur
+        cur = PTX_BLOCK_ANY_RE.sub("\n", cur, count=1)
+    cur = re.sub(r'(?:\r?\n){3,}', '\n\n', cur)
+    return cur
+
+
+
+def find_comment_spans(src: str) -> Tuple[List[int], List[Tuple[int, int]]]:
+    spans: List[Tuple[int, int]] = []
+    n = len(src)
+    i = 0
+    in_string = False
+    in_char = False
+
+    while i < n:
+        ch = src[i]
+        nxt = src[i + 1] if i + 1 < n else ''
+
+        if not in_string and not in_char:
+            if ch == '"':
+                in_string = True
+                i += 1
+                continue
+            if ch == "'":
+                in_char = True
+                i += 1
+                continue
+            if ch == '/' and nxt == '/':
+                start = i
+                i = src.find('\n', i)
+                if i == -1:
+                    spans.append((start, n))
+                    break
+                spans.append((start, i))
+                continue
+            if ch == '/' and nxt == '*':
+                start = i
+                end = src.find('*/', i + 2)
+                if end == -1:
+                    spans.append((start, n))
+                    break
+                spans.append((start, end + 2))
+                i = end + 2
+                continue
+        else:
+            if ch == '\\':
+                i += 2
+                continue
+            if in_string and ch == '"':
+                in_string = False
+                i += 1
+                continue
+            if in_char and ch == "'":
+                in_char = False
+                i += 1
+                continue
+
+        i += 1
+
+    spans.sort()
+    starts = [s for s, _ in spans]
+    return starts, spans
+
+
+def in_comment(idx: int, starts: List[int], spans: List[Tuple[int, int]]) -> bool:
+    if not spans:
+        return False
+    pos = bisect.bisect_right(starts, idx) - 1
+    if pos >= 0 and spans[pos][0] <= idx < spans[pos][1]:
+        return True
+    return False
 
 def ensure_reflect_include(src: str, header_path: Path, root_path: Path) -> tuple[str, bool, str]:
     """
@@ -112,6 +203,97 @@ def nice_doc_from_name(name: str) -> str:
     s = s.strip().capitalize()
     return s or name
 
+
+def _split_args(raw: str) -> List[str]:
+    args: List[str] = []
+    buf = ""
+    depth_paren = depth_angle = depth_brace = 0
+    i = 0
+    while i < len(raw):
+        ch = raw[i]
+        if ch == '<' and depth_paren == 0:
+            depth_angle += 1
+        elif ch == '>' and depth_paren == 0 and depth_angle > 0:
+            depth_angle -= 1
+        elif ch == '(':
+            depth_paren += 1
+        elif ch == ')' and depth_paren > 0:
+            depth_paren -= 1
+        elif ch == '{' and depth_paren == 0:
+            depth_brace += 1
+        elif ch == '}' and depth_paren == 0 and depth_brace > 0:
+            depth_brace -= 1
+        if ch == ',' and depth_paren == 0 and depth_angle == 0 and depth_brace == 0:
+            if buf.strip():
+                args.append(buf.strip())
+            buf = ""
+        else:
+            buf += ch
+        i += 1
+    if buf.strip():
+        args.append(buf.strip())
+    return args
+
+
+def _strip_default(expr: str) -> str:
+    depth_paren = depth_angle = depth_brace = 0
+    for i, ch in enumerate(expr):
+        if ch == '<':
+            depth_angle += 1
+        elif ch == '>' and depth_angle > 0:
+            depth_angle -= 1
+        elif ch == '(':
+            depth_paren += 1
+        elif ch == ')' and depth_paren > 0:
+            depth_paren -= 1
+        elif ch == '{':
+            depth_brace += 1
+        elif ch == '}' and depth_brace > 0:
+            depth_brace -= 1
+        elif ch == '=' and depth_paren == 0 and depth_angle == 0 and depth_brace == 0:
+            return expr[:i].strip()
+    return expr.strip()
+
+
+def _strip_leading_attributes(expr: str) -> str:
+    out = expr.strip()
+    while out.startswith('[['):
+        end = out.find(']]')
+        if end == -1:
+            break
+        out = out[end + 2 :].lstrip()
+    return out
+
+
+KEYWORDS_TO_DROP = re.compile(r"\b(?:inline|constexpr|virtual|explicit|friend|static|noexcept|override|final|PTX_API|PTX_EXPORT|PTX_PUBLIC)\b")
+
+
+def _clean_return_type(prefix: str) -> str:
+    cleaned = KEYWORDS_TO_DROP.sub("", prefix)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    return cleaned
+
+
+def _normalize_param_type(param: str) -> Tuple[str, bool]:
+    text = _strip_default(param)
+    text = _strip_leading_attributes(text)
+    if not text:
+        return text, False
+    if text == '...':
+        return text, True
+    # Remove trailing parameter name if present
+    m = re.match(r"(.+?)\s+((?:\w|::)+)$", text)
+    if m:
+        type_part = m.group(1).strip()
+        return type_part, True
+    # Handle parameter pack like "Args&&... args"
+    m_pack = re.match(r"(.+?\.\.\.)\s+((?:\w|::)+)$", text)
+    if m_pack:
+        type_part = m_pack.group(1).strip()
+        return type_part, True
+    # Could not confidently strip name
+    return text, False
+
 # ------------------------ Data models ------------------------
 @dataclass
 class FieldInfo:
@@ -122,6 +304,11 @@ class FieldInfo:
 class MethodInfo:
     name: str
     is_static: bool
+    return_type: Optional[str] = None
+    args: List[str] = field(default_factory=list)
+    is_const: bool = False
+    signature: str = ""
+    parsed: bool = True
 
 @dataclass
 class CtorInfo:
@@ -135,15 +322,18 @@ class ClassInfo:
     close_brace: int
     after_semicolon: int
     is_template: bool
+    in_template_scope: bool
     fields: List[FieldInfo] = field(default_factory=list)
     methods: List[MethodInfo] = field(default_factory=list)
     ctors: List[CtorInfo] = field(default_factory=list)
+    has_pure_virtual: bool = False
 
 # ------------------------ libclang front-end (preferred when available) ------------------------
 def try_clang_parse(paths: List[Path], clang_args: List[str]) -> Dict[Path, List[ClassInfo]]:
     try:
         from clang import cindex
     except Exception:
+        print("[clang] WARNING: libclang not available; falling back to regex parser.")
         return {}
 
     index = cindex.Index.create()
@@ -172,6 +362,20 @@ def try_clang_parse(paths: List[Path], clang_args: List[str]) -> Dict[Path, List
 
         src = path_to_text[p]
         out_list: List[ClassInfo] = []
+
+        def in_template_scope(cur) -> bool:
+            parent = getattr(cur, "semantic_parent", None)
+            while parent is not None:
+                kind = getattr(parent, "kind", None)
+                if kind in (
+                    cindex.CursorKind.CLASS_TEMPLATE,
+                    cindex.CursorKind.FUNCTION_TEMPLATE,
+                    cindex.CursorKind.CLASS_TEMPLATE_PARTIAL_SPECIALIZATION,
+                    cindex.CursorKind.TEMPLATE_TYPE_PARAMETER,
+                ):
+                    return True
+                parent = getattr(parent, "semantic_parent", None)
+            return False
 
         def visit(cursor):
             for c in cursor.get_children():
@@ -203,6 +407,7 @@ def try_clang_parse(paths: List[Path], clang_args: List[str]) -> Dict[Path, List
                 fields: List[FieldInfo] = []
                 methods: List[MethodInfo] = []
                 ctors: List[CtorInfo] = []
+                has_pure_virtual = getattr(c, "is_abstract_record", lambda: False)()
 
                 for ch in c.get_children():
                     if getattr(ch.location, "file", None) and Path(ch.location.file.name) != p:
@@ -215,12 +420,30 @@ def try_clang_parse(paths: List[Path], clang_args: List[str]) -> Dict[Path, List
                         nm = ch.spelling
                         if nm.startswith("operator") or nm.startswith("~"):
                             continue
-                        methods.append(MethodInfo(name=nm, is_static=ch.is_static_method()))
+                        if ch.is_static_method() and nm in REFLECTION_HELPER_NAMES:
+                            continue
+                        arg_types = [arg.type.spelling for arg in ch.get_arguments()]
+                        methods.append(MethodInfo(
+                            name=nm,
+                            is_static=ch.is_static_method(),
+                            return_type=ch.result_type.spelling if ch.result_type else None,
+                            args=arg_types,
+                            is_const=ch.is_const_method(),
+                            signature=ch.displayname or nm,
+                            parsed=True,
+                        ))
+                        if not has_pure_virtual and getattr(ch, "is_pure_virtual_method", None):
+                            try:
+                                if ch.is_pure_virtual_method():
+                                    has_pure_virtual = True
+                            except Exception:
+                                pass
                     elif ch.kind == cindex.CursorKind.CONSTRUCTOR:
                         arg_types = [arg.type.spelling for arg in ch.get_arguments()]
                         ctors.append(CtorInfo(args=arg_types))
 
                 is_templ = (c.kind == cindex.CursorKind.CLASS_TEMPLATE)
+                templ_scope = in_template_scope(c)
                 name_text = c.spelling
                 name_token = c.spelling
 
@@ -231,9 +454,11 @@ def try_clang_parse(paths: List[Path], clang_args: List[str]) -> Dict[Path, List
                     close_brace=close_brace if close_brace != -1 else end,
                     after_semicolon=end,
                     is_template=is_templ,
+                    in_template_scope=templ_scope,
                     fields=fields,
                     methods=methods,
-                    ctors=ctors
+                    ctors=ctors,
+                    has_pure_virtual=has_pure_virtual
                 ))
 
                 visit(c)
@@ -244,7 +469,7 @@ def try_clang_parse(paths: List[Path], clang_args: List[str]) -> Dict[Path, List
 
             print(f"{pcount} of {len(paths)} - Parsing clang of {p}")
         else:
-            print(f"{pcount} of {len(paths)} - Skipping {p}")
+            print(f"{pcount} of {len(paths)} - Skipping {p} does not contain a class")
         
         pcount += 1
 
@@ -294,25 +519,33 @@ def find_matching_brace(src: str, open_pos: int) -> int:
         i += 1
     return n - 1
 
-def parse_public_api_from_body(body: str, cls_name: str) -> Tuple[List[FieldInfo], List[MethodInfo], List[CtorInfo]]:
+
+
+
+
+def parse_public_api_from_body(body: str, cls_name: str) -> Tuple[List[FieldInfo], List[MethodInfo], List[CtorInfo], bool]:
     fields: List[FieldInfo] = []
     methods: List[MethodInfo] = []
     ctors: List[CtorInfo] = []
+    has_pure_virtual = False
+
+    comment_starts_body, comment_spans_body = find_comment_spans(body)
 
     sections = []
     last = 0
     for m in ACCESS_RE.finditer(body):
+        if in_comment(m.start(), comment_starts_body, comment_spans_body):
+            continue
         sections.append((last, m.start(), "implicit"))
         sections.append((m.end(), None, m.group(1)))
         last = m.end()
     sections.append((last, None, "implicit"))
 
     public_spans: List[Tuple[int, int]] = []
-    prev_end = 0
     for i in range(0, len(sections), 2):
-        start, end, kind = sections[i]
-        if end is None:
-            end = len(body)
+        start_idx, end_idx, kind = sections[i]
+        if end_idx is None:
+            end_idx = len(body)
         if i + 1 < len(sections):
             nxt = sections[i + 1]
             access_word = nxt[2]
@@ -321,26 +554,54 @@ def parse_public_api_from_body(body: str, cls_name: str) -> Tuple[List[FieldInfo
             if access_word == "public":
                 public_spans.append((nxt[0], nxt_end))
 
-    if not public_spans and "public:" not in body:
+    if not public_spans:
         public_spans = [(0, len(body))]
 
     decl_re = re.compile(r";")
+    pending_template = False
+
     for (s, e) in public_spans:
         segment = body[s:e]
-
         idx = 0
         while True:
             m = decl_re.search(segment, idx)
             if not m:
                 break
-            stmt = segment[idx:m.start()].strip()
+            stmt_start_rel = idx
+            stmt_end_rel = m.start()
+            raw_stmt = segment[stmt_start_rel:stmt_end_rel]
             idx = m.end()
+
+            stmt = raw_stmt.strip()
             if not stmt:
+                continue
+
+            leading_ws = len(raw_stmt) - len(raw_stmt.lstrip())
+            stmt_abs = s + stmt_start_rel + leading_ws
+
+            if in_comment(stmt_abs, comment_starts_body, comment_spans_body):
+                continue
+            if stmt.startswith(('/*', '//', '*')):
                 continue
             if re.match(r"^\s*(public|private|protected)\s*:$", stmt):
                 continue
             if re.match(r"^\s*(class|struct|enum)\b", stmt):
                 continue
+
+            if stmt.startswith("template"):
+                pending_template = True
+                continue
+
+            if pending_template:
+                if "(" in stmt and ")" in stmt:
+                    pending_template = False
+                    continue
+                # any other statement clears the flag as well
+                pending_template = False
+
+            if "template<" in stmt:
+                continue
+
             if "(" in stmt and ")" in stmt:
                 base_cls = re.sub(r"<.*>", "", cls_name).strip()
                 sig = stmt
@@ -349,16 +610,20 @@ def parse_public_api_from_body(body: str, cls_name: str) -> Tuple[List[FieldInfo
                 name = name_m.group(1) if name_m else ""
                 if name == base_cls:
                     args_inside = re.search(r"\((.*)\)", sig, re.DOTALL)
-                    arglist = []
+                    arglist: List[str] = []
                     if args_inside:
                         raw = args_inside.group(1).strip()
                         depth = angle = 0
                         buf = ""
                         for ch in raw:
-                            if ch == '<': angle += 1
-                            elif ch == '>': angle = max(0, angle - 1)
-                            elif ch == '(': depth += 1
-                            elif ch == ')': depth = max(0, depth - 1)
+                            if ch == '<':
+                                angle += 1
+                            elif ch == '>':
+                                angle = max(0, angle - 1)
+                            elif ch == '(':
+                                depth += 1
+                            elif ch == ')':
+                                depth = max(0, depth - 1)
                             if ch == ',' and depth == 0 and angle == 0:
                                 if buf.strip():
                                     arglist.append(buf.strip())
@@ -370,24 +635,114 @@ def parse_public_api_from_body(body: str, cls_name: str) -> Tuple[List[FieldInfo
                     ctors.append(CtorInfo(args=arglist if arglist != ['void'] else []))
                 else:
                     if name and not name.startswith("operator") and not name.startswith("~"):
-                        methods.append(MethodInfo(name=name, is_static=is_static))
-            else:
-                m2 = re.search(r"([A-Za-z_]\w*)\s*$", stmt)
-                if not m2:
-                    continue
-                fname = m2.group(1)
-                ftype = stmt[:m2.start()].strip()
-                ftype = re.sub(r"\b(?:mutable|constexpr|inline|volatile)\b", "", ftype).strip()
-                if fname and ftype and not ftype.endswith(")"):
-                    if " static " in f" {stmt} ":
-                        continue
-                    fields.append(FieldInfo(name=fname, type=ftype))
+                        if is_static and name in REFLECTION_HELPER_NAMES:
+                            continue
+                        args_inside = re.search(r"\((.*)\)", sig, re.DOTALL)
+                        arg_types: List[str] = []
+                        args_ok = True
+                        if args_inside:
+                            raw_args = args_inside.group(1).strip()
+                            if raw_args and raw_args != 'void':
+                                for part in _split_args(raw_args):
+                                    arg_type, ok = _normalize_param_type(part)
+                                    arg_types.append(arg_type)
+                                    args_ok = args_ok and ok
+                        is_const_method = bool(re.search(r"\)\s*const\b", sig))
 
-    return fields, methods, ctors
+                        ret_type: Optional[str] = None
+                        parsed_ok = True
+                        arrow_pos = sig.find('->')
+                        if arrow_pos != -1:
+                            tail = sig[arrow_pos + 2 :].strip()
+                            tail = re.split(r"\b(?:noexcept|override|final)\b", tail)[0].strip()
+                            tail = tail.rstrip(';').strip()
+                            ret_type = tail or None
+                        elif name_m:
+                            prefix = sig[:name_m.start()].strip()
+                            ret_type = _clean_return_type(prefix) or None
+                        if not ret_type:
+                            parsed_ok = False
+                        pure_virtual = bool(re.search(r'=\s*0\s*$', sig))
+                        if pure_virtual:
+                            has_pure_virtual = True
+                        methods.append(MethodInfo(
+                            name=name,
+                            is_static=is_static,
+                            return_type=ret_type,
+                            args=arg_types,
+                            is_const=is_const_method,
+                            signature=sig.strip(),
+                            parsed=parsed_ok and args_ok,
+                        ))
+                continue
+
+            m2 = re.search(r"([A-Za-z_]\w*)\s*$", stmt)
+            if not m2:
+                continue
+            fname = m2.group(1)
+            ftype = stmt[:m2.start()].strip()
+            ftype = re.sub(r"\b(?:mutable|constexpr|inline|volatile)\b", "", ftype).strip()
+            if fname and ftype and not ftype.endswith(")"):
+                if " static " in f" {stmt} ":
+                    continue
+                fields.append(FieldInfo(name=fname, type=ftype))
+
+    return fields, methods, ctors, has_pure_virtual
+
+def validate_macro_blocks(src: str) -> None:
+    """Ensure PTX macro blocks are present at most once per class and well-formed."""
+    starts, spans = find_comment_spans(src)
+
+    begin_patterns: Dict[str, re.Pattern] = {
+        'FIELDS': re.compile(r'PTX_BEGIN_FIELDS\(\s*([^\)]+?)\s*\)'),
+        'METHODS': re.compile(r'PTX_BEGIN_METHODS\(\s*([^\)]+?)\s*\)'),
+        'DESCRIBE': re.compile(r'PTX_BEGIN_DESCRIBE\(\s*([^\)]+?)\s*\)'),
+    }
+    end_patterns: Dict[str, re.Pattern] = {
+        'FIELDS': re.compile(r'PTX_END_FIELDS'),
+        'METHODS': re.compile(r'PTX_END_METHODS'),
+        'DESCRIBE': re.compile(r'PTX_END_DESCRIBE'),
+    }
+
+    begin_counts: Dict[Tuple[str, str], int] = {}
+    total_begin: Dict[str, int] = {k: 0 for k in begin_patterns}
+    total_end: Dict[str, int] = {k: 0 for k in end_patterns}
+
+    for kind, pattern in begin_patterns.items():
+        for match in pattern.finditer(src):
+            if in_comment(match.start(), starts, spans):
+                continue
+            cls = match.group(1).strip()
+            key = (cls, kind)
+            begin_counts[key] = begin_counts.get(key, 0) + 1
+            total_begin[kind] += 1
+
+    for kind, pattern in end_patterns.items():
+        for match in pattern.finditer(src):
+            if in_comment(match.start(), starts, spans):
+                continue
+            total_end[kind] += 1
+
+    duplicates = [(cls, kind, count) for (cls, kind), count in begin_counts.items() if count > 1]
+    mismatched = [kind for kind in total_begin if total_begin[kind] != total_end[kind]]
+
+    if duplicates or mismatched:
+        messages = []
+        if duplicates:
+            for cls, kind, count in duplicates:
+                messages.append(f"Duplicate PTX_{kind} block for {cls} ({count} occurrences)")
+        if mismatched:
+            for kind in mismatched:
+                messages.append(f"Mismatched PTX_{kind} blocks: begins={total_begin[kind]}, ends={total_end[kind]}")
+        raise RuntimeError("Invalid PTX macro blocks detected:\n" + "\n".join(messages))
+
 
 def regex_parse_file(path: Path, text: str) -> List[ClassInfo]:
     out: List[ClassInfo] = []
+    comment_starts, comment_spans = find_comment_spans(text)
     for m in CLASS_RE.finditer(text):
+        if in_comment(m.start(), comment_starts, comment_spans):
+            continue
         is_templ = bool(m.group("templ"))
         name = m.group("name").strip()
         open_brace = m.end() - 1
@@ -398,7 +753,7 @@ def regex_parse_file(path: Path, text: str) -> List[ClassInfo]:
         if after < len(text) and text[after] == ';':
             after += 1
         body = text[open_brace + 1: close_brace]
-        fields, methods, ctors = parse_public_api_from_body(body, name)
+        fields, methods, ctors, has_pure_virtual = parse_public_api_from_body(body, name)
         name_token = re.sub(r"<.*>", "", name).strip()
         out.append(ClassInfo(
             name=name,
@@ -407,9 +762,11 @@ def regex_parse_file(path: Path, text: str) -> List[ClassInfo]:
             close_brace=close_brace,
             after_semicolon=after,
             is_template=is_templ,
+            in_template_scope=False,
             fields=fields,
             methods=methods,
             ctors=ctors,
+            has_pure_virtual=has_pure_virtual,
         ))
     return out
 
@@ -433,13 +790,53 @@ def gen_blocks(ci: ClassInfo) -> str:
         field_lines[-1] = field_lines[-1].rstrip(',')
 
     # Methods
-    method_lines = []
+    method_lines: List[str] = []
+    method_counts: Dict[Tuple[str, bool], int] = {}
+    for m in ci.methods:
+        key = (m.name, m.is_static)
+        method_counts[key] = method_counts.get(key, 0) + 1
+
+    static_names = {m.name for m in ci.methods if m.is_static}
+    member_names = {m.name for m in ci.methods if not m.is_static}
+
+    def format_member_overload(m: MethodInfo) -> str:
+        if not m.args:
+            macro = 'PTX_METHOD_OVLD_CONST0' if m.is_const else 'PTX_METHOD_OVLD0'
+            return f'{macro}({cls}, {m.name}, {m.return_type})'
+        macro = 'PTX_METHOD_OVLD_CONST' if m.is_const else 'PTX_METHOD_OVLD'
+        arg_list = ', '.join(m.args)
+        return f'{macro}({cls}, {m.name}, {m.return_type}, {arg_list})'
+
+    def format_static_overload(m: MethodInfo) -> str:
+        if not m.args:
+            return f'PTX_SMETHOD_OVLD0({cls}, {m.name}, {m.return_type})'
+        arg_list = ', '.join(m.args)
+        return f'PTX_SMETHOD_OVLD({cls}, {m.name}, {m.return_type}, {arg_list})'
+
     for m in ci.methods:
         doc = nice_doc_from_name(m.name)
+        overloaded = method_counts[(m.name, m.is_static)] > 1
+        conflict_with_static = (not m.is_static) and (m.name in static_names)
+        doc_prefix = f'/* {doc} */ ' if doc else ''
+
         if m.is_static:
-            method_lines.append(f'PTX_SMETHOD_AUTO({cls}::{m.name}, "{doc}"),')
+            if overloaded or m.name in member_names:
+                if m.parsed and m.return_type:
+                    method_lines.append(f'{doc_prefix}{format_static_overload(m)},')
+                else:
+                    method_lines.append(f'/* Unsupported static overload: {cls}::{m.name} */')
+            else:
+                method_lines.append(f'PTX_SMETHOD_AUTO({cls}::{m.name}, "{doc}"),')
+            continue
+
+        if overloaded or conflict_with_static:
+            if m.parsed and m.return_type:
+                method_lines.append(f'{doc_prefix}{format_member_overload(m)},')
+            else:
+                method_lines.append(f'/* Unsupported overload: {cls}::{m.name} */')
         else:
             method_lines.append(f'PTX_METHOD_AUTO({cls}, {m.name}, "{doc}"),')
+
     if method_lines:
         method_lines[-1] = method_lines[-1].rstrip(',')
 
@@ -458,28 +855,31 @@ def gen_blocks(ci: ClassInfo) -> str:
         ctor_lines[-1] = ctor_lines[-1].rstrip(',')
 
     if not field_lines:
-        field_lines = [f'/* TODO: PTX_FIELD({cls}, member, "Doc", min, max) */']
+        field_lines = ['/* No reflected fields. */']
     if not method_lines:
-        method_lines = [f'/* TODO: PTX_METHOD_AUTO({cls}, Method, "Doc") */']
+        method_lines = ['/* No reflected methods. */']
     if not ctor_lines:
-        ctor_lines = [f'/* TODO: PTX_CTOR0({cls}) or PTX_CTOR({cls}, ...) */']
+        ctor_lines = ['/* No reflected ctors. */']
 
     parts = []
     parts.append(f'PTX_BEGIN_FIELDS({cls})')
-    parts.extend([f'    {ln}' for ln in field_lines])
+    for ln in field_lines:
+        parts.append(f'    {ln}')
     parts.append('PTX_END_FIELDS')
     parts.append('')
+
     parts.append(f'PTX_BEGIN_METHODS({cls})')
-    parts.extend([f'    {ln}' for ln in method_lines])
+    for ln in method_lines:
+        parts.append(f'    {ln}')
     parts.append('PTX_END_METHODS')
     parts.append('')
+    
     parts.append(f'PTX_BEGIN_DESCRIBE({cls})')
-    parts.extend([f'    {ln}' for ln in ctor_lines])
+    for ln in ctor_lines:
+        parts.append(f'    {ln}')
     parts.append(f'PTX_END_DESCRIBE({cls})')
     parts.append('')
     
-    if ci.is_template:
-        parts.insert(0, f'/* NOTE: {ci.name} is a template; verify macros accept template types. */')
     return "\n".join(parts)
 
 def find_existing_block(src: str, macro: str, cls_token: str, with_class_in_end: bool) -> Optional[re.Match]:
@@ -491,31 +891,116 @@ def find_existing_block(src: str, macro: str, cls_token: str, with_class_in_end:
         pat = rf'{macro}\(\s*{re.escape(cls_token)}\s*\)(?P<body>.*?)\s*{end_macro}'
     return re.search(pat, src, re.DOTALL)
 
-def ensure_blocks_in_file(src: str, ci: ClassInfo) -> Tuple[str, bool, List[str]]:
-    changed = False
+def ensure_blocks_in_file(src: str, ci: ClassInfo, force: bool = False) -> Tuple[str, bool]:
     cls = ci.name_token
+
+    template_note_re = re.compile(r'\n?[ \t]*/\*[^*]*template[^*]*\*/\n?', re.IGNORECASE)
+
+    def _remove_existing_blocks(text: str) -> str:
+        for macro, with_end in (
+            ("PTX_BEGIN_FIELDS", False),
+            ("PTX_BEGIN_METHODS", False),
+            ("PTX_BEGIN_DESCRIBE", True),
+        ):
+            while True:
+                match = find_existing_block(text, macro, cls, with_class_in_end=with_end)
+                if not match:
+                    break
+                start = match.start()
+                note_match = template_note_re.search(text, 0, start)
+                if note_match and note_match.end() == start:
+                    start = note_match.start()
+                else:
+                    line_start = text.rfind('\n', 0, start)
+                    if line_start != -1:
+                        start = line_start + 1
+                end = match.end()
+                while end < len(text) and text[end] in ' \t':
+                    end += 1
+                removed_newline = False
+                while end < len(text) and text[end] == '\n':
+                    end += 1
+                    removed_newline = True
+                text = text[:start] + text[end:]
+                if removed_newline:
+                    text = re.sub(r'\n{3,}', '\n\n', text)
+        text = template_note_re.sub('\n', text)
+        text = re.sub(r'(?:\n[ \t]*){3,}', '\n\n', text)
+        return text
+
+    def _render_block(text: str) -> Tuple[str, bool]:
+        open_brace = text.find('{', ci.start)
+        if open_brace == -1:
+            return text, False
+        close_brace = find_matching_brace(text, open_brace)
+        block_text = gen_blocks(ci)
+
+        line_break = text.rfind("\n", 0, close_brace)
+        if line_break == -1:
+            prefix = text[:close_brace]
+            closing_indent = ""
+        else:
+            prefix = text[:line_break + 1]
+            closing_indent = text[line_break + 1:close_brace]
+
+        suffix = text[close_brace:]
+
+        prefix = prefix.rstrip()
+        if prefix:
+            prefix += "\n\n"
+
+        base_indent = closing_indent + "    "
+        lines = block_text.strip().split('\n')
+        formatted_lines = [base_indent + ln if ln else "" for ln in lines]
+        formatted = "\n".join(formatted_lines)
+
+        new_text = prefix + formatted + "\n\n" + closing_indent + suffix
+        return new_text, True
+
+    if ci.is_template or ci.in_template_scope:
+        original = src
+        src = _remove_existing_blocks(src)
+        src = template_note_re.sub('\n', src)
+        span_start = ci.start
+        span_end = ci.after_semicolon
+        segment = src[span_start:span_end]
+        cleaned_segment = strip_ptx_blocks(segment)
+        if cleaned_segment != segment:
+            src = src[:span_start] + cleaned_segment + src[span_end:]
+        if original != src:
+            kind = "template" if ci.is_template else "template-scope"
+            print(f"Skipped {kind} class {ci.name}.")
+            return src, True
+        return src, False
+
+    if ci.has_pure_virtual:
+        original = src
+        src = _remove_existing_blocks(src)
+        if original != src:
+            print(f"Skipped abstract class {ci.name} (pure virtual).")
+            return src, True
+        return src, False
+
+    if force:
+        src = _remove_existing_blocks(src)
+        return _render_block(src)
+
+    changed = False
 
     has_fields = find_existing_block(src, "PTX_BEGIN_FIELDS", cls, with_class_in_end=False) is not None
     has_methods = find_existing_block(src, "PTX_BEGIN_METHODS", cls, with_class_in_end=False) is not None
     has_desc = find_existing_block(src, "PTX_BEGIN_DESCRIBE", cls, with_class_in_end=True) is not None
 
     if not (has_fields and has_methods and has_desc):
-        block_text = gen_blocks(ci)
-
-        line_start = src.rfind("\n", 0, ci.close_brace) + 1
-        base_indent = re.match(r"[ \t]*", src[line_start:ci.close_brace]).group(0)
-        inner = base_indent + "    "
-        indented = inner + block_text.replace("\n", "\n" + inner) + "\n"
-
-        src = src[:ci.close_brace] + "\n" + indented + src[ci.close_brace:]
-
-        changed = True
-        missing = []
-        if not has_fields: missing.append("FIELDS")
-        if not has_methods: missing.append("METHODS")
-        if not has_desc: missing.append("DESCRIBE")
-        print(f"Inserted {', '.join(missing)} for {ci.name}.")
-        return src, changed
+        src = _remove_existing_blocks(src)
+        src, inserted = _render_block(src)
+        if inserted:
+            missing = []
+            if not has_fields: missing.append("FIELDS")
+            if not has_methods: missing.append("METHODS")
+            if not has_desc: missing.append("DESCRIBE")
+            print(f"Inserted {', '.join(missing)} for {ci.name}.")
+        return src, inserted
 
     m_fields = find_existing_block(src, "PTX_BEGIN_FIELDS", cls, False)
     m_methods = find_existing_block(src, "PTX_BEGIN_METHODS", cls, False)
@@ -525,51 +1010,76 @@ def ensure_blocks_in_file(src: str, ci: ClassInfo) -> Tuple[str, bool, List[str]
                     (m_desc.start(), "DESCRIBE", m_desc.group(0))], key=lambda x: x[0])
     order = [x[1] for x in spans]
     if order != ["FIELDS", "METHODS", "DESCRIBE"]:
-        for m in sorted([m_fields, m_methods, m_desc], key=lambda m: m.start(), reverse=True):
-            src = src[:m.start()] + src[m.end():]
-        rein = "\n\n".join([s[2] for s in sorted(spans, key=lambda x: ["FIELDS","METHODS","DESCRIBE"].index(x[1]))]) + "\n"
-        src = src[:ci.after_semicolon] + "\n\n" + rein + src[ci.after_semicolon:]
-        changed = True
-        print(f"Reordered PTX blocks for {ci.name}.")
+        src = _remove_existing_blocks(src)
+        src, inserted = _render_block(src)
+        if inserted:
+            print(f"Reordered PTX blocks for {ci.name}.")
+        return src, inserted
+
     return src, changed
 
+
+def remove_reflect_include(src: str) -> Tuple[str, bool]:
+    m = INCLUDE_RE.search(src)
+    if not m:
+        return src, False
+    line_start = src.rfind('\n', 0, m.start()) + 1
+    line_end = src.find('\n', m.end())
+    if line_end == -1:
+        line_end = len(src)
+    removed = src[:line_start] + src[line_end + 1:]
+    return removed, removed != src
+
 # ------------------------ Main ------------------------
+# Directories we refuse to touch (relative to project root). The registry definitions are
+# treated as read-only so hand-authored reflection helpers remain intact.
+EXCLUDED_SUBTREES = {"registry", "platform"}
+
 def main():
     ap = argparse.ArgumentParser(description="Generate/repair PTX reflection blocks from headers")
     ap.add_argument("--root", default="lib/ptx", help="Root dir to scan (default: lib/ptx)")
-    ap.add_argument("--write", action="store_true", help="Write changes back (creates .bak)")
-    ap.add_argument("--only", nargs="*", help="Only process these class names (base name or template name)")
-    ap.add_argument("--clang-arg", action="append", default=[], help="Extra arg for libclang (e.g. -Iinc -std=c++17)")
-    ap.add_argument('--no-backup', action='store_true', help='Skip creating .bak backups when writing in-place')
-    ap.add_argument('--exclude-dir', action='append', default=[],help='Folder name(s) to exclude, pass multiple times, e.g. --exclude-dir physics --exclude-dir render')
+    ap.add_argument("--write", action="store_true", help="Write changes back in-place")
+    ap.add_argument("--force", action="store_true", help="Regenerate macros even when they already exist")
 
     args = ap.parse_args()
 
-    root = Path(args.root)
-    exclude_dirs = {d for d in (args.exclude_dir or []) if d}
+    script_dir = Path(__file__).resolve().parent
+    project_root = script_dir.parent
 
+    root_arg = Path(args.root)
+    if root_arg.is_absolute():
+        root = root_arg
+    else:
+        candidate = (project_root / root_arg).resolve()
+        if candidate.exists():
+            root = candidate
+        else:
+            root = root_arg.resolve()
     def is_excluded(path: Path) -> bool:
-        return any(seg in exclude_dirs for seg in path.parts[:-1])
+        parts = Path(path).relative_to(root).parts
+        return parts and parts[0] in EXCLUDED_SUBTREES
 
     headers = [p for p in root.rglob('*.hpp') if not is_excluded(p)]
     texts = {p: p.read_text(encoding="utf-8", errors="ignore") for p in headers}
-    clang_results = try_clang_parse(headers, args.clang_arg)
-    make_backup = not args.no_backup
+    clang_results = try_clang_parse(headers, [])
 
     total_changed = 0
     total_files = 0
 
+    force = args.force
+
     for p in headers:
         src = texts[p]
+
+        try:
+            validate_macro_blocks(src)
+        except RuntimeError as exc:
+            raise RuntimeError(f"{p}: {exc}") from exc
 
         if p in clang_results:
             classes = clang_results[p]
         else:
             classes = regex_parse_file(p, src)
-
-        if args.only:
-            onlyset = set(args.only)
-            classes = [ci for ci in classes if (ci.name_token in onlyset or ci.name in onlyset)]
 
         if not classes:
             continue
@@ -577,21 +1087,26 @@ def main():
         classes_sorted = sorted(classes, key=lambda c: c.after_semicolon, reverse=True)
         changed_any = False
         for ci in classes_sorted:
-            src, changed = ensure_blocks_in_file(src, ci)
+            src, changed = ensure_blocks_in_file(src, ci, force=force)
             changed_any = changed_any or changed
 
-        uses_macros = re.search(r'\bPTX_BEGIN_(FIELDS|METHODS|DESCRIBE)\s*\(', src) is not None
-        if uses_macros:
-            src, inc_changed, rel = ensure_reflect_include(src, header_path=p, root_path=Path(args.root))
+        has_macros = re.search(r'\bPTX_BEGIN_(FIELDS|METHODS|DESCRIBE)\s*\(', src) is not None
+        if has_macros:
+            src, inc_changed, rel = ensure_reflect_include(src, header_path=p, root_path=root)
             if inc_changed:
                 changed_any = True
                 print(f"{p}: inserted #include \"{rel}\"")
+        else:
+            src, removed = remove_reflect_include(src)
+            if removed:
+                changed_any = True
+
+        try:
+            validate_macro_blocks(src)
+        except RuntimeError as exc:
+            raise RuntimeError(f"{p}: {exc}") from exc
 
         if changed_any and args.write:
-            if make_backup:
-                bak = p.with_suffix(p.suffix + ".bak")
-                if not bak.exists():
-                    bak.write_text(texts[p], encoding="utf-8")
             p.write_text(src, encoding="utf-8")
             total_changed += 1
         total_files += 1

@@ -3,7 +3,6 @@
 #include "../ishader.hpp"
 #include "../../material/materialt.hpp"    // for IMaterial::As<T>()
 #include "combineparams.hpp"
-#include "../../../../registry/reflect_macros.hpp"
 
 #include "../../../../core/math/mathematics.hpp"
 #include "../../../../core/math/vector3d.hpp"
@@ -152,17 +151,4 @@ public:
         return RGBColor( uint8_t(rgb.X), uint8_t(rgb.Y), uint8_t(rgb.Z) );
     }
 
-    /* NOTE: CombineShaderT is a template; verify macros accept template types. */
-    PTX_BEGIN_FIELDS(CombineShaderT)
-        /* TODO: PTX_FIELD(CombineShaderT, member, "Doc", min, max) */
-    PTX_END_FIELDS
-    
-    PTX_BEGIN_METHODS(CombineShaderT)
-        PTX_METHOD_AUTO(CombineShaderT, Shade, "Shade")
-    PTX_END_METHODS
-    
-    PTX_BEGIN_DESCRIBE(CombineShaderT)
-        /* TODO: PTX_CTOR0(CombineShaderT) or PTX_CTOR(CombineShaderT, ...) */
-    PTX_END_DESCRIBE(CombineShaderT)
-    
 };

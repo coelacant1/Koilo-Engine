@@ -20,6 +20,7 @@
  * @var DepthAxis::Y Use the Y component.
  * @var DepthAxis::Z Use the Z component.
  */
+
 enum class DepthAxis : uint8_t { X, Y, Z };
 
 /**
@@ -31,9 +32,13 @@ enum class DepthAxis : uint8_t { X, Y, Z };
  * the @ref gradient material.
  */
 struct DepthParams {
+
     DepthAxis        axis   { DepthAxis::Z };   ///< Axis used to compute depth.
+
     float            depth  { 1.0f };           ///< Span length mapped into [0..1].
+
     float            offset { 0.0f };           ///< Offset applied along the axis.
+
     const IMaterial* gradient { nullptr };      ///< Non-owning gradient material (expects input in [0..1]).
 
     PTX_BEGIN_FIELDS(DepthParams)
@@ -42,13 +47,13 @@ struct DepthParams {
         PTX_FIELD(DepthParams, offset, "Offset", __FLT_MIN__, __FLT_MAX__),
         PTX_FIELD(DepthParams, gradient, "Gradient", 0, 0)
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(DepthParams)
-        /* TODO: PTX_METHOD_AUTO(DepthParams, Method, "Doc") */
+        /* No reflected methods. */
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(DepthParams)
-        /* TODO: PTX_CTOR0(DepthParams) or PTX_CTOR(DepthParams, ...) */
+        /* No reflected ctors. */
     PTX_END_DESCRIBE(DepthParams)
-    
+
 };

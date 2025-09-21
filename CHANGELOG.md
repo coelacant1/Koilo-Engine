@@ -4,6 +4,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.1.4] - 2025-09-21
+Added to .hpp automatic macro configuration to handle additional edge cases
+
+### Added
+- reflect_capi.cpp
+  - Backend link between C ABI -> C++ PTX library
+- reflect.h
+  - Header for C ABI/API
+- tasks.json
+  - Task file for setting up header smoke test (unfinished)
+  - Task for initializing/setting up the python workspace/venv
+  - Task for updating the PTX registry macros in all of the .hpp files
+- BuildSharedReflectLib.py
+  - Working on build script for C ABI
+- PTXEngine virtual environment with automatic configuration when called via task
+
+### Changed
+- Added detection for span comments to ignore "class" in comments
+- Added detection for macro calls to avoid recursive calls
+- Handles pure virtual/template classes now
+- Added macro block validation to ensure no duplication/bad formatting
+- Added overload macro automation
+- Added function to remove current macro blocks
+- Added subtree exclusions for registry and platform
+- Changed .gitignore to include new .scripts/ __pycache__ excludes
+
+### Next Tasks
+- Modify template classes and convert to runtime versions
+- Finish C api and implement test
+- Validate overload calls
+
+
 ## [0.1.3] - 2025-09-14
 Automatic .hpp macro configuration
 
@@ -19,6 +51,7 @@ Automatic .hpp macro configuration
 
 ### Next Tasks
 - Fix all overloaded functions, macro calls will fail due to overlap
+
 
 ## [0.1.2] - 2025-09-13
 Updated reflection for C++
@@ -55,6 +88,7 @@ Updated reflection for C++
 - Implement ptx_capi/reflect_capi (cpp mapping side)
 - Implement ptx_platform for library static/library linking for runtime initialization via capi on mcus and posix
 
+
 ## [0.1.1] - 2025-09-08
 First working end-to-end reflection pipeline: discover -> access -> invoke.
 
@@ -84,6 +118,7 @@ First working end-to-end reflection pipeline: discover -> access -> invoke.
   - Dynamically reads/writes fields (R, G, B)
   - Dynamically invokes methods (Add, Scale, HueShift, ToString, InterpolateColors)
   - Prints expected round-trip values
+
 
 ## [0.1.0] - 2025-08-18
 
@@ -120,6 +155,7 @@ Implementing frontend shared memory and virtual controller
 - Implement animator
 - Implement entity
 
+
 ## [0.0.6] - 2025-07-26
  
 Building out and decoupling functionality
@@ -145,6 +181,7 @@ Building out and decoupling functionality
 - Write ray trace function
 - Finish FFT implementation
 
+
 ## [0.0.5] - 2025-07-09
  
 Building out and decoupling functionality
@@ -168,6 +205,7 @@ Building out and decoupling functionality
 - Assets density field?
 - Write ray trace function
 
+
 ## [0.0.4] - 2025-07-02
  
 Building out and decoupling functionality
@@ -185,9 +223,10 @@ Building out and decoupling functionality
 - Implement post effects/compositors
 - Implement rest of shaders/materials
 - Implement hasUV under rasterizer
-- render core colorspace
+- Render core colorspace
 - Assets density field?
-- make ray trace function
+- Make ray trace function
+
 
 ## [0.0.3] - 2025-06-25
  
@@ -210,13 +249,13 @@ Building out and decoupling functionality
 ### Next Tasks
 - Verify if GetMaterial under animated material needs to exist
 - Assets density field?
-- render core colorspace
-- render material shadermaterial
-- mesh align -> use triangle 3d for rasterizing?
-- material shaders
-- make ray trace function to replace rasterize
-- split effect from scene and add to compositor
-  - render post
+- Render core colorspace
+- Render material shadermaterial
+- Mesh align -> use triangle 3d for rasterizing?
+- Material shaders
+- Make ray trace function to replace rasterize
+- Split effect from scene and add to compositor
+  - Render post
 
 
 ## [0.0.2] - 2025-06-18
@@ -243,8 +282,6 @@ Building out and decoupling functionality
 - Imported base mathematics, signaling, geometry, control, time classes
 
 
-
-
 ## [X.X.X] - 2025-06-18
 
 This is a template
@@ -258,3 +295,5 @@ This is a template
 ### Removed
 
 ### Testing
+
+### Next Tasks

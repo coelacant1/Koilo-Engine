@@ -26,13 +26,13 @@ struct UVMapParams {
         PTX_FIELD(UVMapParams, flipV, "Flip v", 0, 1),
         PTX_FIELD(UVMapParams, hueAngle, "Hue angle", __FLT_MIN__, __FLT_MAX__)
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(UVMapParams)
-        /* TODO: PTX_METHOD_AUTO(UVMapParams, Method, "Doc") */
+        /* No reflected methods. */
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(UVMapParams)
-        /* TODO: PTX_CTOR0(UVMapParams) or PTX_CTOR(UVMapParams, ...) */
+        /* No reflected ctors. */
     PTX_END_DESCRIBE(UVMapParams)
-    
+
 };

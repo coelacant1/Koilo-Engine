@@ -13,15 +13,15 @@ struct NormalParams {
     // intentionally empty
 
     PTX_BEGIN_FIELDS(NormalParams)
-        /* TODO: PTX_FIELD(NormalParams, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(NormalParams)
-        /* TODO: PTX_METHOD_AUTO(NormalParams, Method, "Doc") */
+        /* No reflected methods. */
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(NormalParams)
-        /* TODO: PTX_CTOR0(NormalParams) or PTX_CTOR(NormalParams, ...) */
+        /* No reflected ctors. */
     PTX_END_DESCRIBE(NormalParams)
-    
+
 };

@@ -1,0 +1,53 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "ptxvenv",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "if [ ! -d .venv ]; then python -m venv .venv && source .venv/bin/activate && pip install --upgrade pip && pip install -r requirements.txt; fi"
+      ],
+      "options": { "cwd": "${workspaceFolder}/.scripts" },
+      "presentation": { "reveal": "never", "panel": "dedicated" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Update PTX Registry",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "source .venv/bin/activate && python UpdatePTXRegistry.py --root lib/ptx --write --force"
+      ],
+      "options": { "cwd": "${workspaceFolder}/.scripts" },
+      "dependsOn": ["ptxvenv"],
+      "dependsOrder": "sequence",
+      "problemMatcher": []
+    },
+    {
+      "label": "Run PTX Pre-Scripts",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "source .venv/bin/activate && python GeneratePTXAll.py && python HeaderCheck.py"
+      ],
+      "options": { "cwd": "${workspaceFolder}/.scripts" },
+      "dependsOn": ["ptxvenv"],
+      "dependsOrder": "sequence",
+      "problemMatcher": []
+    },
+    {
+      "label": "Smoke Test Header",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "cd '${workspaceFolder}/' && .scripts/HeaderCompile.sh '${file}'"
+      ],
+      "problemMatcher": []
+    }
+  ]
+}

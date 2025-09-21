@@ -26,15 +26,16 @@
  * @tparam vertexCount Number of vertices in the group.
  * @tparam triangleCount Number of triangles in the group.
  */
-template<int vertexCount, int triangleCount>
 class StaticTriangleGroup : public IStaticTriangleGroup {
 private:
-    Triangle3D triangles[triangleCount]; ///< Array of 3D triangles in the group.
+    Triangle3D* triangles; ///< Array of 3D triangles in the group.
     Vector3D* vertices; ///< Array of vertex positions.
     const IndexGroup* indexGroup; ///< Index group defining triangle vertex indices.
     const IndexGroup* uvIndexGroup; ///< Index group for UV coordinates (if available).
     const Vector2D* uvVertices; ///< Array of UV coordinates for texture mapping.
     const bool hasUV; ///< Indicates whether the group contains UV data.
+    const int vertexCount; ///< Number of vertices in the group.
+    const int triangleCount; ///< Number of triangles in the group.
 
 public:
     /**
@@ -42,7 +43,7 @@ public:
      * @param vertices Array of vertex positions.
      * @param indexGroup Index group defining triangle vertex indices.
      */
-    StaticTriangleGroup(Vector3D* vertices, const IndexGroup* indexGroup);
+    StaticTriangleGroup(Vector3D* vertices, const IndexGroup* indexGroup, int vertexCount, int triangleCount);
 
     /**
      * @brief Constructor for a group with UV data.
@@ -51,7 +52,7 @@ public:
      * @param uvIndexGroup Index group for UV coordinates.
      * @param uvVertices Array of UV coordinates for texture mapping.
      */
-    StaticTriangleGroup(Vector3D* vertices, const IndexGroup* indexGroup, const IndexGroup* uvIndexGroup, const Vector2D* uvVertices);
+    StaticTriangleGroup(Vector3D* vertices, const IndexGroup* indexGroup, const IndexGroup* uvIndexGroup, const Vector2D* uvVertices, int vertexCount, int triangleCount);
 
     /**
      * @brief Checks if the group has UV data.
@@ -101,11 +102,10 @@ public:
      */
     const IndexGroup* GetUVIndexGroup() override;
 
-    /* NOTE: StaticTriangleGroup is a template; verify macros accept template types. */
     PTX_BEGIN_FIELDS(StaticTriangleGroup)
-        /* TODO: PTX_FIELD(StaticTriangleGroup, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(StaticTriangleGroup)
         PTX_METHOD_AUTO(StaticTriangleGroup, HasUV, "Has uv"),
         PTX_METHOD_AUTO(StaticTriangleGroup, GetIndexGroup, "Get index group"),
@@ -116,12 +116,10 @@ public:
         PTX_METHOD_AUTO(StaticTriangleGroup, GetUVVertices, "Get uvvertices"),
         PTX_METHOD_AUTO(StaticTriangleGroup, GetUVIndexGroup, "Get uvindex group")
     PTX_END_METHODS
-    
-    PTX_BEGIN_DESCRIBE(StaticTriangleGroup)
-        PTX_CTOR(StaticTriangleGroup, Vector3D *, const IndexGroup *),
-        PTX_CTOR(StaticTriangleGroup, Vector3D *, const IndexGroup *, const IndexGroup *, const Vector2D *)
-    PTX_END_DESCRIBE(StaticTriangleGroup)
-    
-};
 
-#include "statictrianglegroup.tpp"
+    PTX_BEGIN_DESCRIBE(StaticTriangleGroup)
+        PTX_CTOR(StaticTriangleGroup, Vector3D *, const IndexGroup *, int, int),
+        PTX_CTOR(StaticTriangleGroup, Vector3D *, const IndexGroup *, const IndexGroup *, const Vector2D *, int, int)
+    PTX_END_DESCRIBE(StaticTriangleGroup)
+
+};

@@ -23,13 +23,13 @@ struct UniformColorParams {
         PTX_FIELD(UniformColorParams, color, "Color", 0, 0),
         PTX_FIELD(UniformColorParams, base, "Base", 0, 0)
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(UniformColorParams)
-        /* TODO: PTX_METHOD_AUTO(UniformColorParams, Method, "Doc") */
+        /* No reflected methods. */
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(UniformColorParams)
-        /* TODO: PTX_CTOR0(UniformColorParams) or PTX_CTOR(UniformColorParams, ...) */
+        /* No reflected ctors. */
     PTX_END_DESCRIBE(UniformColorParams)
-    
+
 };

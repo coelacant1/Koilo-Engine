@@ -222,9 +222,9 @@ public:
     YawPitchRoll GetYawPitchRoll();
 
     PTX_BEGIN_FIELDS(Rotation)
-        /* TODO: PTX_FIELD(Rotation, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(Rotation)
         PTX_METHOD_AUTO(Rotation, GetQuaternion, "Get quaternion"),
         PTX_METHOD_AUTO(Rotation, GetAxisAngle, "Get axis angle"),
@@ -233,7 +233,7 @@ public:
         PTX_METHOD_AUTO(Rotation, GetEulerAngles, "Get euler angles"),
         PTX_METHOD_AUTO(Rotation, GetYawPitchRoll, "Get yaw pitch roll")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(Rotation)
         PTX_CTOR0(Rotation),
         PTX_CTOR(Rotation, const Quaternion &),
@@ -245,5 +245,5 @@ public:
         PTX_CTOR(Rotation, const Vector3D &, const Vector3D &),
         PTX_CTOR(Rotation, const YawPitchRoll &)
     PTX_END_DESCRIBE(Rotation)
-    
+
 };

@@ -146,9 +146,9 @@ public:
     void SetMaterial(IMaterial* material);
 
     PTX_BEGIN_FIELDS(Mesh)
-        /* TODO: PTX_FIELD(Mesh, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(Mesh)
         PTX_METHOD_AUTO(Mesh, Enable, "Enable"),
         PTX_METHOD_AUTO(Mesh, Disable, "Disable"),
@@ -167,9 +167,9 @@ public:
         PTX_METHOD_AUTO(Mesh, GetMaterial, "Get material"),
         PTX_METHOD_AUTO(Mesh, SetMaterial, "Set material")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(Mesh)
         PTX_CTOR(Mesh, IStaticTriangleGroup *, ITriangleGroup *, IMaterial *)
     PTX_END_DESCRIBE(Mesh)
-    
+
 };

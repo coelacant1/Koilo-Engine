@@ -43,15 +43,15 @@ public:
     }
 
     PTX_BEGIN_FIELDS(UVMapShader)
-        /* TODO: PTX_FIELD(UVMapShader, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(UVMapShader)
         PTX_METHOD_AUTO(UVMapShader, Shade, "Shade")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(UVMapShader)
-        /* TODO: PTX_CTOR0(UVMapShader) or PTX_CTOR(UVMapShader, ...) */
+        /* No reflected ctors. */
     PTX_END_DESCRIBE(UVMapShader)
-    
+
 };

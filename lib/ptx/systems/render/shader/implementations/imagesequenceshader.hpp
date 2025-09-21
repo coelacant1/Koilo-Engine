@@ -40,15 +40,15 @@ public:
     }
 
     PTX_BEGIN_FIELDS(ImageSequenceShader)
-        /* TODO: PTX_FIELD(ImageSequenceShader, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(ImageSequenceShader)
         PTX_METHOD_AUTO(ImageSequenceShader, Shade, "Shade")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(ImageSequenceShader)
-        /* TODO: PTX_CTOR0(ImageSequenceShader) or PTX_CTOR(ImageSequenceShader, ...) */
+        /* No reflected ctors. */
     PTX_END_DESCRIBE(ImageSequenceShader)
-    
+
 };

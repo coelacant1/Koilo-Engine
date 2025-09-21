@@ -3,7 +3,6 @@
 
 #include <cstddef>
 #include <cmath>
-#include "../../../../registry/reflect_macros.hpp"
 
 #include "../ishader.hpp"
 #include "../../material/materialt.hpp"
@@ -60,17 +59,4 @@ public:
         return gradient.GetColorAt(t);
     }
 
-    /* NOTE: ProceduralNoiseShaderT is a template; verify macros accept template types. */
-    PTX_BEGIN_FIELDS(ProceduralNoiseShaderT)
-        /* TODO: PTX_FIELD(ProceduralNoiseShaderT, member, "Doc", min, max) */
-    PTX_END_FIELDS
-    
-    PTX_BEGIN_METHODS(ProceduralNoiseShaderT)
-        PTX_METHOD_AUTO(ProceduralNoiseShaderT, Shade, "Shade")
-    PTX_END_METHODS
-    
-    PTX_BEGIN_DESCRIBE(ProceduralNoiseShaderT)
-        /* TODO: PTX_CTOR0(ProceduralNoiseShaderT) or PTX_CTOR(ProceduralNoiseShaderT, ...) */
-    PTX_END_DESCRIBE(ProceduralNoiseShaderT)
-    
 };

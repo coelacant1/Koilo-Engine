@@ -61,13 +61,13 @@ struct VectorField2DParams {
         PTX_FIELD(VectorField2DParams, vecY, "Vec y", -128, 127),
         PTX_FIELD(VectorField2DParams, vecD, "Vec d", -128, 127)
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(VectorField2DParams)
-        /* TODO: PTX_METHOD_AUTO(VectorField2DParams, Method, "Doc") */
+        /* No reflected methods. */
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(VectorField2DParams)
         PTX_CTOR(VectorField2DParams, uint16_t, uint16_t)
     PTX_END_DESCRIBE(VectorField2DParams)
-    
+
 };

@@ -67,6 +67,7 @@
 #include "platform/ipc/ptx_shm.hpp"
 #include "project/project.hpp"
 #include "registry/demangle.hpp"
+#include "registry/global_registry.hpp"
 #include "registry/reflect_helpers.hpp"
 #include "registry/reflect_macros.hpp"
 #include "registry/reflect_make.hpp"

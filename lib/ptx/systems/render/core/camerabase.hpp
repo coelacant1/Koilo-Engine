@@ -14,7 +14,6 @@
 #include "cameralayout.hpp" // Include for camera layout management.
 #include "ipixelgroup.hpp" // Include for pixel group interface.
 #include "../../../core/math/transform.hpp" // Include for transformation utilities.
-#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class CameraBase
@@ -128,28 +127,4 @@ public:
      */
     Quaternion GetLookOffset();
 
-    PTX_BEGIN_FIELDS(CameraBase)
-        /* TODO: PTX_FIELD(CameraBase, member, "Doc", min, max) */
-    PTX_END_FIELDS
-    
-    PTX_BEGIN_METHODS(CameraBase)
-        PTX_METHOD_AUTO(CameraBase, GetCameraMinCoordinate, "Get camera min coordinate"),
-        PTX_METHOD_AUTO(CameraBase, GetCameraMaxCoordinate, "Get camera max coordinate"),
-        PTX_METHOD_AUTO(CameraBase, GetCameraCenterCoordinate, "Get camera center coordinate"),
-        PTX_METHOD_AUTO(CameraBase, GetCameraTransformMin, "Get camera transform min"),
-        PTX_METHOD_AUTO(CameraBase, GetCameraTransformMax, "Get camera transform max"),
-        PTX_METHOD_AUTO(CameraBase, GetCameraTransformCenter, "Get camera transform center"),
-        PTX_METHOD_AUTO(CameraBase, GetPixelGroup, "Get pixel group"),
-        PTX_METHOD_AUTO(CameraBase, GetCameraLayout, "Get camera layout"),
-        PTX_METHOD_AUTO(CameraBase, GetTransform, "Get transform"),
-        PTX_METHOD_AUTO(CameraBase, Is2D, "Is2 d"),
-        PTX_METHOD_AUTO(CameraBase, Set2D, "Set2 d"),
-        PTX_METHOD_AUTO(CameraBase, SetLookOffset, "Set look offset"),
-        PTX_METHOD_AUTO(CameraBase, GetLookOffset, "Get look offset")
-    PTX_END_METHODS
-    
-    PTX_BEGIN_DESCRIBE(CameraBase)
-        PTX_CTOR0(CameraBase)
-    PTX_END_DESCRIBE(CameraBase)
-    
 };

@@ -101,17 +101,17 @@ public:
     float Update();
 
     PTX_BEGIN_FIELDS(FunctionGenerator)
-        /* TODO: PTX_FIELD(FunctionGenerator, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(FunctionGenerator)
         PTX_METHOD_AUTO(FunctionGenerator, SetPeriod, "Set period"),
         PTX_METHOD_AUTO(FunctionGenerator, SetFunction, "Set function"),
         PTX_METHOD_AUTO(FunctionGenerator, Update, "Update")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(FunctionGenerator)
         PTX_CTOR(FunctionGenerator, Function, float, float, float)
     PTX_END_DESCRIBE(FunctionGenerator)
-    
+
 };

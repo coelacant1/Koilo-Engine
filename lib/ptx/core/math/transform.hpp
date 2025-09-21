@@ -202,14 +202,14 @@ public:
     ptx::UString ToString();
 
     PTX_BEGIN_FIELDS(Transform)
-        /* TODO: PTX_FIELD(Transform, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(Transform)
         PTX_METHOD_AUTO(Transform, SetBaseRotation, "Set base rotation"),
         PTX_METHOD_AUTO(Transform, GetBaseRotation, "Get base rotation"),
-        PTX_METHOD_AUTO(Transform, SetRotation, "Set rotation"),
-        PTX_METHOD_AUTO(Transform, SetRotation, "Set rotation"),
+        /* Set rotation */ PTX_METHOD_OVLD(Transform, SetRotation, void, const Quaternion &),
+        /* Set rotation */ PTX_METHOD_OVLD(Transform, SetRotation, void, const Vector3D &),
         PTX_METHOD_AUTO(Transform, GetRotation, "Get rotation"),
         PTX_METHOD_AUTO(Transform, SetPosition, "Set position"),
         PTX_METHOD_AUTO(Transform, GetPosition, "Get position"),
@@ -221,13 +221,13 @@ public:
         PTX_METHOD_AUTO(Transform, GetRotationOffset, "Get rotation offset"),
         PTX_METHOD_AUTO(Transform, SetScaleOffset, "Set scale offset"),
         PTX_METHOD_AUTO(Transform, GetScaleOffset, "Get scale offset"),
-        PTX_METHOD_AUTO(Transform, Rotate, "Rotate"),
-        PTX_METHOD_AUTO(Transform, Rotate, "Rotate"),
+        /* Rotate */ PTX_METHOD_OVLD(Transform, Rotate, void, const Vector3D &),
+        /* Rotate */ PTX_METHOD_OVLD(Transform, Rotate, void, const Quaternion &),
         PTX_METHOD_AUTO(Transform, Translate, "Translate"),
         PTX_METHOD_AUTO(Transform, Scale, "Scale"),
         PTX_METHOD_AUTO(Transform, ToString, "To string")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(Transform)
         PTX_CTOR0(Transform),
         PTX_CTOR(Transform, const Vector3D &, const Vector3D &, const Vector3D &),
@@ -236,5 +236,5 @@ public:
         PTX_CTOR(Transform, const Quaternion &, const Vector3D &, const Vector3D &, const Vector3D &, const Vector3D &),
         PTX_CTOR(Transform, const Transform &)
     PTX_END_DESCRIBE(Transform)
-    
+
 };

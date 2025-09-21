@@ -81,7 +81,7 @@ public:
         PTX_FIELD(Cube, velocity, "Velocity", 0, 0),
         PTX_FIELD(Cube, position, "Position", 0, 0)
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(Cube)
         PTX_METHOD_AUTO(Cube, GetPosition, "Get position"),
         PTX_METHOD_AUTO(Cube, GetSize, "Get size"),
@@ -90,9 +90,9 @@ public:
         PTX_METHOD_AUTO(Cube, Update, "Update"),
         PTX_METHOD_AUTO(Cube, IsIntersecting, "Is intersecting")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(Cube)
         PTX_CTOR(Cube, Vector3D, Vector3D)
     PTX_END_DESCRIBE(Cube)
-    
+
 };

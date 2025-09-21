@@ -13,13 +13,12 @@
 #pragma once
 
 #include <cstdint>
+#include "../../registry/reflect_macros.hpp"
 
 #include "../math/mathematics.hpp"
 #include "../math/quaternion.hpp"
 #include "../math/vector3d.hpp"
 #include "../platform/ustring.hpp"
-
-#include "../../registry/reflect_macros.hpp"
 
 /**
  * @class RGBColor
@@ -128,7 +127,6 @@ public:
      */
     RGBColor& operator-=(const RGBColor& other);
 
-
     /**
      * @brief Scales the color by a float value (component-wise).
      * @param scalar The scaling factor.
@@ -186,22 +184,27 @@ public:
     RGBColor& operator/=(const RGBColor& other);
 
     // -------- Reflection: Fields --------
+
     PTX_BEGIN_FIELDS(RGBColor)
-        PTX_FIELD(RGBColor, R, "Red",   0, 255),
-        PTX_FIELD(RGBColor, G, "Green", 0, 255),
-        PTX_FIELD(RGBColor, B, "Blue",  0, 255)
+        PTX_FIELD(RGBColor, R, "R", 0, 255),
+        PTX_FIELD(RGBColor, G, "G", 0, 255),
+        PTX_FIELD(RGBColor, B, "B", 0, 255)
     PTX_END_FIELDS
 
     PTX_BEGIN_METHODS(RGBColor)
-        PTX_METHOD_AUTO(RGBColor, Add,      "Add brightness"),
-        PTX_METHOD_AUTO(RGBColor, Scale,    "Scale"),
+        PTX_METHOD_AUTO(RGBColor, SetColor, "Set color"),
+        PTX_METHOD_AUTO(RGBColor, Scale, "Scale"),
+        PTX_METHOD_AUTO(RGBColor, Add, "Add"),
         PTX_METHOD_AUTO(RGBColor, HueShift, "Hue shift"),
-        PTX_METHOD_AUTO(RGBColor, ToString, "ToString"),
-        PTX_SMETHOD_AUTO(RGBColor::InterpolateColors, "Lerp two colors")
+        PTX_SMETHOD_AUTO(RGBColor::InterpolateColors, "Interpolate colors"),
+        PTX_METHOD_AUTO(RGBColor, ToString, "To string")
     PTX_END_METHODS
 
     PTX_BEGIN_DESCRIBE(RGBColor)
         PTX_CTOR0(RGBColor),
-        PTX_CTOR(RGBColor, const uint8_t&, const uint8_t&, const uint8_t&)
+        PTX_CTOR(RGBColor, const uint8_t &, const uint8_t &, const uint8_t &),
+        PTX_CTOR(RGBColor, const RGBColor &),
+        PTX_CTOR(RGBColor, const Vector3D &)
     PTX_END_DESCRIBE(RGBColor)
+
 };

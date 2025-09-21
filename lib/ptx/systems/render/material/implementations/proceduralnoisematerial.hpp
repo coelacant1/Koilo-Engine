@@ -3,7 +3,6 @@
 #include "../imaterial.hpp"
 #include "../materialt.hpp"
 #include "../../shader/ishader.hpp"
-#include "../../../../registry/reflect_macros.hpp"
 
 // Templated params/shader
 #include "../../shader/implementations/proceduralnoiseparams.hpp"   // ProceduralNoiseParamsT<N>
@@ -110,29 +109,4 @@ public:
     /** @brief Get hue shift angle in degrees. */
     float GetHueShiftAngle() const   { return this->hueShiftAngleDeg; }
 
-    /* NOTE: ProceduralNoiseMaterial is a template; verify macros accept template types. */
-    PTX_BEGIN_FIELDS(ProceduralNoiseMaterial)
-        /* TODO: PTX_FIELD(ProceduralNoiseMaterial, member, "Doc", min, max) */
-    PTX_END_FIELDS
-    
-    PTX_BEGIN_METHODS(ProceduralNoiseMaterial)
-        PTX_METHOD_AUTO(ProceduralNoiseMaterial, SetSpectrum, "Set spectrum"),
-        PTX_METHOD_AUTO(ProceduralNoiseMaterial, SetSpectrum, "Set spectrum"),
-        PTX_METHOD_AUTO(ProceduralNoiseMaterial, GetSpectrum, "Get spectrum"),
-        PTX_METHOD_AUTO(ProceduralNoiseMaterial, SpectrumData, "Spectrum data"),
-        PTX_METHOD_AUTO(ProceduralNoiseMaterial, SpectrumData, "Spectrum data"),
-        PTX_METHOD_AUTO(ProceduralNoiseMaterial, SetNoiseScale, "Set noise scale"),
-        PTX_METHOD_AUTO(ProceduralNoiseMaterial, GetNoiseScale, "Get noise scale"),
-        PTX_METHOD_AUTO(ProceduralNoiseMaterial, SetSimplexDepth, "Set simplex depth"),
-        PTX_METHOD_AUTO(ProceduralNoiseMaterial, GetSimplexDepth, "Get simplex depth"),
-        PTX_METHOD_AUTO(ProceduralNoiseMaterial, SetGradientPeriod, "Set gradient period"),
-        PTX_METHOD_AUTO(ProceduralNoiseMaterial, GetGradientPeriod, "Get gradient period"),
-        PTX_METHOD_AUTO(ProceduralNoiseMaterial, SetHueShiftAngle, "Set hue shift angle"),
-        PTX_METHOD_AUTO(ProceduralNoiseMaterial, GetHueShiftAngle, "Get hue shift angle")
-    PTX_END_METHODS
-    
-    PTX_BEGIN_DESCRIBE(ProceduralNoiseMaterial)
-        /* TODO: PTX_CTOR0(ProceduralNoiseMaterial) or PTX_CTOR(ProceduralNoiseMaterial, ...) */
-    PTX_END_DESCRIBE(ProceduralNoiseMaterial)
-    
 };

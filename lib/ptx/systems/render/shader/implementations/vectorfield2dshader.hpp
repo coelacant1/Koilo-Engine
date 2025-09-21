@@ -84,15 +84,15 @@ public:
     }
 
     PTX_BEGIN_FIELDS(VectorField2DShader)
-        /* TODO: PTX_FIELD(VectorField2DShader, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(VectorField2DShader)
         PTX_METHOD_AUTO(VectorField2DShader, Shade, "Shade")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(VectorField2DShader)
-        /* TODO: PTX_CTOR0(VectorField2DShader) or PTX_CTOR(VectorField2DShader, ...) */
+        /* No reflected ctors. */
     PTX_END_DESCRIBE(VectorField2DShader)
-    
+
 };

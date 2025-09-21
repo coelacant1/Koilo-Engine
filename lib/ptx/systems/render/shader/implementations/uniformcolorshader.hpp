@@ -32,15 +32,15 @@ public:
     }
 
     PTX_BEGIN_FIELDS(UniformColorShader)
-        /* TODO: PTX_FIELD(UniformColorShader, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(UniformColorShader)
         PTX_METHOD_AUTO(UniformColorShader, Shade, "Shade")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(UniformColorShader)
-        /* TODO: PTX_CTOR0(UniformColorShader) or PTX_CTOR(UniformColorShader, ...) */
+        /* No reflected ctors. */
     PTX_END_DESCRIBE(UniformColorShader)
-    
+
 };

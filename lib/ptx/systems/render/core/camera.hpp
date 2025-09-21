@@ -13,7 +13,6 @@
 
 #include "camerabase.hpp" // Include for base camera functionality.
 #include "pixelgroup.hpp" // Include for pixel group management.
-#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class Camera
@@ -100,26 +99,6 @@ public:
      */
     Vector3D GetCameraTransformCenter() override;
 
-    /* NOTE: Camera is a template; verify macros accept template types. */
-    PTX_BEGIN_FIELDS(Camera)
-        /* TODO: PTX_FIELD(Camera, member, "Doc", min, max) */
-    PTX_END_FIELDS
-    
-    PTX_BEGIN_METHODS(Camera)
-        PTX_METHOD_AUTO(Camera, GetPixelGroup, "Get pixel group"),
-        PTX_METHOD_AUTO(Camera, GetCameraMinCoordinate, "Get camera min coordinate"),
-        PTX_METHOD_AUTO(Camera, GetCameraMaxCoordinate, "Get camera max coordinate"),
-        PTX_METHOD_AUTO(Camera, GetCameraCenterCoordinate, "Get camera center coordinate"),
-        PTX_METHOD_AUTO(Camera, GetCameraTransformMin, "Get camera transform min"),
-        PTX_METHOD_AUTO(Camera, GetCameraTransformMax, "Get camera transform max"),
-        PTX_METHOD_AUTO(Camera, GetCameraTransformCenter, "Get camera transform center")
-    PTX_END_METHODS
-    
-    PTX_BEGIN_DESCRIBE(Camera)
-        PTX_CTOR(Camera, Transform *, PixelGroup<pixelCount> *),
-        PTX_CTOR(Camera, Transform *, CameraLayout *, PixelGroup<pixelCount> *)
-    PTX_END_DESCRIBE(Camera)
-    
 };
 
 #include "camera.tpp" // Include the template implementation.

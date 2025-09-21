@@ -5,7 +5,6 @@
 #include "../../../../core/color/rgbcolor.hpp"
 #include "../../../../core/math/vector2d.hpp"
 #include "../../../../core/math/vector3d.hpp"
-#include "../../../../registry/reflect_macros.hpp"
 
 /**
  * @file tvstaticparams.hpp
@@ -50,30 +49,4 @@ struct TVStaticParamsT {
     // --- Blend constants ---
     float    scanMultiplyOpacity {0.75f};        ///< Multiply contribution opacity.
 
-    /* NOTE: TVStaticParamsT is a template; verify macros accept template types. */
-    PTX_BEGIN_FIELDS(TVStaticParamsT)
-        PTX_FIELD(TVStaticParamsT, noiseSpectrum, "Noise spectrum", 0, 0),
-        PTX_FIELD(TVStaticParamsT, noiseGradientPeriod, "Noise gradient period", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(TVStaticParamsT, noiseHueDeg, "Noise hue deg", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(TVStaticParamsT, noiseScale, "Noise scale", 0, 0),
-        PTX_FIELD(TVStaticParamsT, noiseZ, "Noise z", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(TVStaticParamsT, scanSpectrum, "Scan spectrum", 0, 0),
-        PTX_FIELD(TVStaticParamsT, scanGradientPeriod, "Scan gradient period", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(TVStaticParamsT, scanRotationDeg, "Scan rotation deg", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(TVStaticParamsT, scanShift, "Scan shift", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(TVStaticParamsT, barsCenter, "Bars center", 0, 0),
-        PTX_FIELD(TVStaticParamsT, barsHueDeg, "Bars hue deg", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(TVStaticParamsT, barsSize, "Bars size", 0, 0),
-        PTX_FIELD(TVStaticParamsT, barsSoftness, "Bars softness", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(TVStaticParamsT, scanMultiplyOpacity, "Scan multiply opacity", __FLT_MIN__, __FLT_MAX__)
-    PTX_END_FIELDS
-    
-    PTX_BEGIN_METHODS(TVStaticParamsT)
-        /* TODO: PTX_METHOD_AUTO(TVStaticParamsT, Method, "Doc") */
-    PTX_END_METHODS
-    
-    PTX_BEGIN_DESCRIBE(TVStaticParamsT)
-        /* TODO: PTX_CTOR0(TVStaticParamsT) or PTX_CTOR(TVStaticParamsT, ...) */
-    PTX_END_DESCRIBE(TVStaticParamsT)
-    
 };

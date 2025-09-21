@@ -37,7 +37,6 @@ private:
                           Vector3D(1, 0, 1), Vector3D(-1, 0, 1), Vector3D(1, 0, -1), Vector3D(-1, 0, -1), 
                           Vector3D(0, 1, 1), Vector3D(0, -1, 1), Vector3D(0, 1, -1), Vector3D(0, -1, -1) };
 
-
     uint8_t p_supply[256] = {151,160,137,91,90,15, //this contains all the numbers between 0 and 255, these are put in a random order depending upon the seed
     131,13,201,95,96,53,194,233,7,225,140,36,103,30,69,142,8,99,37,240,21,10,23,
     190, 6,148,247,120,234,75,0,26,197,62,94,252,219,203,117,35,11,32,57,177,33,
@@ -127,19 +126,19 @@ public:
     float GetNoise(Vector3D position) const;
 
     PTX_BEGIN_FIELDS(SimplexNoise)
-        /* TODO: PTX_FIELD(SimplexNoise, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(SimplexNoise)
-        PTX_METHOD_AUTO(SimplexNoise, Noise, "Noise"),
-        PTX_METHOD_AUTO(SimplexNoise, Noise, "Noise"),
+        /* Noise */ PTX_METHOD_OVLD_CONST(SimplexNoise, Noise, float, float, float),
+        /* Noise */ PTX_METHOD_OVLD_CONST(SimplexNoise, Noise, float, float, float, float),
         PTX_METHOD_AUTO(SimplexNoise, SetScale, "Set scale"),
         PTX_METHOD_AUTO(SimplexNoise, SetZPosition, "Set zposition"),
         PTX_METHOD_AUTO(SimplexNoise, GetNoise, "Get noise")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(SimplexNoise)
         PTX_CTOR(SimplexNoise, int)
     PTX_END_DESCRIBE(SimplexNoise)
-    
+
 };

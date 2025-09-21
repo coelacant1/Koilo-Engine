@@ -91,14 +91,14 @@ public:
         PTX_FIELD(EulerOrder, FrameTaken, "Frame taken", 0, 0),
         PTX_FIELD(EulerOrder, Permutation, "Permutation", 0, 0)
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(EulerOrder)
         PTX_METHOD_AUTO(EulerOrder, ToString, "To string")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(EulerOrder)
         PTX_CTOR0(EulerOrder),
         PTX_CTOR(EulerOrder, Axis, AxisFrame, Vector3D)
     PTX_END_DESCRIBE(EulerOrder)
-    
+
 };

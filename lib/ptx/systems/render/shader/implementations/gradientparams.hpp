@@ -1,6 +1,5 @@
 #pragma once
 #include <array>
-#include "../../../../registry/reflect_macros.hpp"
 
 #include "../../../../core/color/rgbcolor.hpp"
 #include "../../../../core/math/vector2d.hpp"
@@ -59,25 +58,4 @@ struct GradientParams {
     /** Render with discrete steps (true) or smoothly interpolated (false). */
     bool     isStepped{false};            
 
-    /* NOTE: GradientParams is a template; verify macros accept template types. */
-    PTX_BEGIN_FIELDS(GradientParams)
-        PTX_FIELD(GradientParams, colors, "Colors", 0, 0),
-        PTX_FIELD(GradientParams, baseColors, "Base colors", 0, 0),
-        PTX_FIELD(GradientParams, positionOffset, "Position offset", 0, 0),
-        PTX_FIELD(GradientParams, rotationOffset, "Rotation offset", 0, 0),
-        PTX_FIELD(GradientParams, gradientPeriod, "Gradient period", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(GradientParams, rotationAngle, "Rotation angle", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(GradientParams, gradientShift, "Gradient shift", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(GradientParams, isRadial, "Is radial", 0, 1),
-        PTX_FIELD(GradientParams, isStepped, "Is stepped", 0, 1)
-    PTX_END_FIELDS
-    
-    PTX_BEGIN_METHODS(GradientParams)
-        /* TODO: PTX_METHOD_AUTO(GradientParams, Method, "Doc") */
-    PTX_END_METHODS
-    
-    PTX_BEGIN_DESCRIBE(GradientParams)
-        /* TODO: PTX_CTOR0(GradientParams) or PTX_CTOR(GradientParams, ...) */
-    PTX_END_DESCRIBE(GradientParams)
-    
 };

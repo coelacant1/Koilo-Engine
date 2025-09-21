@@ -73,15 +73,15 @@ public:
     static const uint8_t* GetCharacter(char character);
 
     PTX_BEGIN_FIELDS(Characters)
-        /* TODO: PTX_FIELD(Characters, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(Characters)
         PTX_SMETHOD_AUTO(Characters::GetCharacter, "Get character")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(Characters)
-        /* TODO: PTX_CTOR0(Characters) or PTX_CTOR(Characters, ...) */
+        /* No reflected ctors. */
     PTX_END_DESCRIBE(Characters)
-    
+
 };

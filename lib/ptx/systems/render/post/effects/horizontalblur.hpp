@@ -21,15 +21,15 @@ public:
     void Apply(IPixelGroup* pixelGroup) override;
 
     PTX_BEGIN_FIELDS(HorizontalBlur)
-        /* TODO: PTX_FIELD(HorizontalBlur, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(HorizontalBlur)
         PTX_METHOD_AUTO(HorizontalBlur, Apply, "Apply")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(HorizontalBlur)
         PTX_CTOR(HorizontalBlur, uint8_t)
     PTX_END_DESCRIBE(HorizontalBlur)
-    
+
 };

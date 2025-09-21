@@ -90,9 +90,9 @@ private:
     float angle = 0.0f;                  ///< degrees CCW
 
     PTX_BEGIN_FIELDS(Image)
-        /* TODO: PTX_FIELD(Image, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(Image)
         PTX_METHOD_AUTO(Image, SetData, "Set data"),
         PTX_METHOD_AUTO(Image, SetColorPalette, "Set color palette"),
@@ -101,9 +101,9 @@ private:
         PTX_METHOD_AUTO(Image, SetRotation, "Set rotation"),
         PTX_METHOD_AUTO(Image, GetColorAtCoordinate, "Get color at coordinate")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(Image)
         PTX_CTOR(Image, const uint8_t *, const uint8_t *, unsigned int, unsigned int, uint8_t)
     PTX_END_DESCRIBE(Image)
-    
+
 };

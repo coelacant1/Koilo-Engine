@@ -15,7 +15,6 @@
 #include <cstddef>
 #include <cstdint>
 #include "../../math/mathematics.hpp" // Includes mathematical utilities for constraints and operations.
-#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class RunningAverageFilter
@@ -65,21 +64,6 @@ public:
      */
     float Filter(float value);
 
-    /* NOTE: RunningAverageFilter is a template; verify macros accept template types. */
-    PTX_BEGIN_FIELDS(RunningAverageFilter)
-        /* TODO: PTX_FIELD(RunningAverageFilter, member, "Doc", min, max) */
-    PTX_END_FIELDS
-    
-    PTX_BEGIN_METHODS(RunningAverageFilter)
-        PTX_METHOD_AUTO(RunningAverageFilter, SetGain, "Set gain"),
-        PTX_METHOD_AUTO(RunningAverageFilter, Filter, "Filter")
-    PTX_END_METHODS
-    
-    PTX_BEGIN_DESCRIBE(RunningAverageFilter)
-        PTX_CTOR0(RunningAverageFilter),
-        PTX_CTOR(RunningAverageFilter, float)
-    PTX_END_DESCRIBE(RunningAverageFilter)
-    
 };
 
 #include "runningaveragefilter.tpp"

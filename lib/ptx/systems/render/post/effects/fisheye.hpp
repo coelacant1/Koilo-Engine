@@ -34,17 +34,17 @@ public:
     void Apply(IPixelGroup* pixelGroup) override;
 
     PTX_BEGIN_FIELDS(Fisheye)
-        /* TODO: PTX_FIELD(Fisheye, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(Fisheye)
         PTX_METHOD_AUTO(Fisheye, SetPosition, "Set position"),
         PTX_METHOD_AUTO(Fisheye, SetAmplitude, "Set amplitude"),
         PTX_METHOD_AUTO(Fisheye, Apply, "Apply")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(Fisheye)
         PTX_CTOR(Fisheye, float)
     PTX_END_DESCRIBE(Fisheye)
-    
+
 };

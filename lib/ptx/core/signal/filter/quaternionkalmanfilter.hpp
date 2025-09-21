@@ -70,16 +70,16 @@ public:
     ~QuaternionKalmanFilter();
 
     PTX_BEGIN_FIELDS(QuaternionKalmanFilter)
-        /* TODO: PTX_FIELD(QuaternionKalmanFilter, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(QuaternionKalmanFilter)
         PTX_METHOD_AUTO(QuaternionKalmanFilter, Filter, "Filter")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(QuaternionKalmanFilter)
         PTX_CTOR0(QuaternionKalmanFilter),
         PTX_CTOR(QuaternionKalmanFilter, float, int)
     PTX_END_DESCRIBE(QuaternionKalmanFilter)
-    
+
 };

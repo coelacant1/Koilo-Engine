@@ -208,7 +208,6 @@ public:
      */
     ptx::UString ToString() const;
 
-
     // --- Static function declarations ---
 
     /**
@@ -335,7 +334,6 @@ public:
      */
     static Vector2D LERP(const Vector2D& start, const Vector2D& finish, const float& ratio);
 
-
     /**
      * @brief Converts a vector of degrees to radians (component-wise).
      * @param degrees The vector in degrees.
@@ -360,7 +358,6 @@ public:
      */
     static bool LineSegmentsIntersect(const Vector2D& p1, const Vector2D& p2,
                                       const Vector2D& q1, const Vector2D& q2);
-
 
     // --- Operator overloads ---
 
@@ -431,55 +428,55 @@ public:
         PTX_FIELD(Vector2D, X, "X", __FLT_MIN__, __FLT_MAX__),
         PTX_FIELD(Vector2D, Y, "Y", __FLT_MIN__, __FLT_MAX__)
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(Vector2D)
         PTX_METHOD_AUTO(Vector2D, Absolute, "Absolute"),
-        PTX_METHOD_AUTO(Vector2D, Normal, "Normal"),
-        PTX_METHOD_AUTO(Vector2D, Add, "Add"),
-        PTX_METHOD_AUTO(Vector2D, Subtract, "Subtract"),
-        PTX_METHOD_AUTO(Vector2D, Multiply, "Multiply"),
-        PTX_METHOD_AUTO(Vector2D, Divide, "Divide"),
-        PTX_METHOD_AUTO(Vector2D, Multiply, "Multiply"),
-        PTX_METHOD_AUTO(Vector2D, Divide, "Divide"),
-        PTX_METHOD_AUTO(Vector2D, CrossProduct, "Cross product"),
+        /* Normal */ PTX_METHOD_OVLD_CONST0(Vector2D, Normal, Vector2D),
+        /* Add */ PTX_METHOD_OVLD_CONST(Vector2D, Add, Vector2D, const Vector2D &),
+        /* Subtract */ PTX_METHOD_OVLD_CONST(Vector2D, Subtract, Vector2D, const Vector2D &),
+        /* Multiply */ PTX_METHOD_OVLD_CONST(Vector2D, Multiply, Vector2D, const Vector2D &),
+        /* Divide */ PTX_METHOD_OVLD_CONST(Vector2D, Divide, Vector2D, const Vector2D &),
+        /* Multiply */ PTX_METHOD_OVLD_CONST(Vector2D, Multiply, Vector2D, const float &),
+        /* Divide */ PTX_METHOD_OVLD_CONST(Vector2D, Divide, Vector2D, const float &),
+        /* Cross product */ PTX_METHOD_OVLD_CONST(Vector2D, CrossProduct, float, const Vector2D &),
         PTX_METHOD_AUTO(Vector2D, UnitCircle, "Unit circle"),
-        PTX_METHOD_AUTO(Vector2D, Constrain, "Constrain"),
-        PTX_METHOD_AUTO(Vector2D, Constrain, "Constrain"),
-        PTX_METHOD_AUTO(Vector2D, Minimum, "Minimum"),
-        PTX_METHOD_AUTO(Vector2D, Maximum, "Maximum"),
+        /* Constrain */ PTX_METHOD_OVLD_CONST(Vector2D, Constrain, Vector2D, const float &, const float &),
+        /* Constrain */ PTX_METHOD_OVLD_CONST(Vector2D, Constrain, Vector2D, const Vector2D &, const Vector2D &),
+        /* Minimum */ PTX_METHOD_OVLD_CONST(Vector2D, Minimum, Vector2D, const Vector2D &),
+        /* Maximum */ PTX_METHOD_OVLD_CONST(Vector2D, Maximum, Vector2D, const Vector2D &),
         PTX_METHOD_AUTO(Vector2D, Rotate, "Rotate"),
         PTX_METHOD_AUTO(Vector2D, CheckBounds, "Check bounds"),
         PTX_METHOD_AUTO(Vector2D, Magnitude, "Magnitude"),
-        PTX_METHOD_AUTO(Vector2D, DotProduct, "Dot product"),
-        PTX_METHOD_AUTO(Vector2D, CalculateEuclideanDistance, "Calculate euclidean distance"),
+        /* Dot product */ PTX_METHOD_OVLD_CONST(Vector2D, DotProduct, float, const Vector2D &),
+        /* Calculate euclidean distance */ PTX_METHOD_OVLD_CONST(Vector2D, CalculateEuclideanDistance, float, const Vector2D &),
         PTX_METHOD_AUTO(Vector2D, Perpendicular, "Perpendicular"),
         PTX_METHOD_AUTO(Vector2D, RightPerpendicular, "Right perpendicular"),
-        PTX_METHOD_AUTO(Vector2D, IsEqual, "Is equal"),
+        /* Is equal */ PTX_METHOD_OVLD_CONST(Vector2D, IsEqual, bool, const Vector2D &),
         PTX_METHOD_AUTO(Vector2D, ToString, "To string"),
-        PTX_SMETHOD_AUTO(Vector2D::Normal, "Normal"),
-        PTX_SMETHOD_AUTO(Vector2D::Add, "Add"),
-        PTX_SMETHOD_AUTO(Vector2D::Subtract, "Subtract"),
-        PTX_SMETHOD_AUTO(Vector2D::Multiply, "Multiply"),
-        PTX_SMETHOD_AUTO(Vector2D::Divide, "Divide"),
-        PTX_SMETHOD_AUTO(Vector2D::Multiply, "Multiply"),
-        PTX_SMETHOD_AUTO(Vector2D::Multiply, "Multiply"),
-        PTX_SMETHOD_AUTO(Vector2D::Divide, "Divide"),
-        PTX_SMETHOD_AUTO(Vector2D::CrossProduct, "Cross product"),
-        PTX_SMETHOD_AUTO(Vector2D::DotProduct, "Dot product"),
-        PTX_SMETHOD_AUTO(Vector2D::CalculateEuclideanDistance, "Calculate euclidean distance"),
-        PTX_SMETHOD_AUTO(Vector2D::IsEqual, "Is equal"),
-        PTX_SMETHOD_AUTO(Vector2D::Minimum, "Minimum"),
-        PTX_SMETHOD_AUTO(Vector2D::Maximum, "Maximum"),
+        /* Normal */ PTX_SMETHOD_OVLD(Vector2D, Normal, Vector2D, const Vector2D &),
+        /* Add */ PTX_SMETHOD_OVLD(Vector2D, Add, Vector2D, const Vector2D &, const Vector2D &),
+        /* Subtract */ PTX_SMETHOD_OVLD(Vector2D, Subtract, Vector2D, const Vector2D &, const Vector2D &),
+        /* Multiply */ PTX_SMETHOD_OVLD(Vector2D, Multiply, Vector2D, const Vector2D &, const Vector2D &),
+        /* Divide */ PTX_SMETHOD_OVLD(Vector2D, Divide, Vector2D, const Vector2D &, const Vector2D &),
+        /* Multiply */ PTX_SMETHOD_OVLD(Vector2D, Multiply, Vector2D, const Vector2D &, const float &),
+        /* Multiply */ PTX_SMETHOD_OVLD(Vector2D, Multiply, Vector2D, const float &, const Vector2D &),
+        /* Divide */ PTX_SMETHOD_OVLD(Vector2D, Divide, Vector2D, const Vector2D &, const float &),
+        /* Cross product */ PTX_SMETHOD_OVLD(Vector2D, CrossProduct, float, const Vector2D &, const Vector2D &),
+        /* Dot product */ PTX_SMETHOD_OVLD(Vector2D, DotProduct, float, const Vector2D &, const Vector2D &),
+        /* Calculate euclidean distance */ PTX_SMETHOD_OVLD(Vector2D, CalculateEuclideanDistance, float, const Vector2D &, const Vector2D &),
+        /* Is equal */ PTX_SMETHOD_OVLD(Vector2D, IsEqual, bool, const Vector2D &, const Vector2D &),
+        /* Minimum */ PTX_SMETHOD_OVLD(Vector2D, Minimum, Vector2D, const Vector2D &, const Vector2D &),
+        /* Maximum */ PTX_SMETHOD_OVLD(Vector2D, Maximum, Vector2D, const Vector2D &, const Vector2D &),
         PTX_SMETHOD_AUTO(Vector2D::LERP, "Lerp"),
         PTX_SMETHOD_AUTO(Vector2D::DegreesToRadians, "Degrees to radians"),
         PTX_SMETHOD_AUTO(Vector2D::RadiansToDegrees, "Radians to degrees"),
         PTX_SMETHOD_AUTO(Vector2D::LineSegmentsIntersect, "Line segments intersect")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(Vector2D)
         PTX_CTOR0(Vector2D),
         PTX_CTOR(Vector2D, const Vector2D &),
         PTX_CTOR(Vector2D, const float &, const float &)
     PTX_END_DESCRIBE(Vector2D)
-    
+
 };

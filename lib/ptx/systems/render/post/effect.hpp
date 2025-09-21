@@ -2,7 +2,6 @@
 
 #include "../core/ipixelgroup.hpp"
 #include "../../../core/math/mathematics.hpp"
-#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @file effect.hpp
@@ -44,17 +43,4 @@ public:
      */
     virtual void Apply(IPixelGroup* pixelGroup) = 0;
 
-    PTX_BEGIN_FIELDS(Effect)
-        /* TODO: PTX_FIELD(Effect, member, "Doc", min, max) */
-    PTX_END_FIELDS
-    
-    PTX_BEGIN_METHODS(Effect)
-        PTX_METHOD_AUTO(Effect, SetRatio, "Set ratio"),
-        PTX_METHOD_AUTO(Effect, Apply, "Apply")
-    PTX_END_METHODS
-    
-    PTX_BEGIN_DESCRIBE(Effect)
-        /* TODO: PTX_CTOR0(Effect) or PTX_CTOR(Effect, ...) */
-    PTX_END_DESCRIBE(Effect)
-    
 };

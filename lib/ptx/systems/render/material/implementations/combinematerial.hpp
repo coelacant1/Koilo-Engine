@@ -2,7 +2,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include "../../../../registry/reflect_macros.hpp"
 
 #include "../imaterial.hpp"
 #include "../materialt.hpp"
@@ -62,20 +61,4 @@ public:
         this->template CombineParams<N>::SetMaterial(index, material);
     }
 
-    /* NOTE: CombineMaterial is a template; verify macros accept template types. */
-    PTX_BEGIN_FIELDS(CombineMaterial)
-        /* TODO: PTX_FIELD(CombineMaterial, member, "Doc", min, max) */
-    PTX_END_FIELDS
-    
-    PTX_BEGIN_METHODS(CombineMaterial)
-        PTX_METHOD_AUTO(CombineMaterial, AddMaterial, "Add material"),
-        PTX_METHOD_AUTO(CombineMaterial, SetMethod, "Set method"),
-        PTX_METHOD_AUTO(CombineMaterial, SetOpacity, "Set opacity"),
-        PTX_METHOD_AUTO(CombineMaterial, SetMaterial, "Set material")
-    PTX_END_METHODS
-    
-    PTX_BEGIN_DESCRIBE(CombineMaterial)
-        PTX_CTOR0(CombineMaterial)
-    PTX_END_DESCRIBE(CombineMaterial)
-    
 };

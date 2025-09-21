@@ -55,14 +55,14 @@ public:
         PTX_FIELD(EulerAngles, Angles, "Angles", 0, 0),
         PTX_FIELD(EulerAngles, Order, "Order", 0, 0)
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(EulerAngles)
         PTX_METHOD_AUTO(EulerAngles, ToString, "To string")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(EulerAngles)
         PTX_CTOR0(EulerAngles),
         PTX_CTOR(EulerAngles, Vector3D, EulerOrder)
     PTX_END_DESCRIBE(EulerAngles)
-    
+
 };

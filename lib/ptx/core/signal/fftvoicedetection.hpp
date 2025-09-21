@@ -40,17 +40,17 @@ public:
     };
 
     PTX_BEGIN_FIELDS(Viseme)
-        /* TODO: PTX_FIELD(Viseme, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(Viseme)
-        /* TODO: PTX_METHOD_AUTO(Viseme, Method, "Doc") */
+        /* No reflected methods. */
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(Viseme)
-        /* TODO: PTX_CTOR0(Viseme) or PTX_CTOR(Viseme, ...) */
+        /* No reflected ctors. */
     PTX_END_DESCRIBE(Viseme)
-    
+
 };
 
 /**
@@ -153,23 +153,6 @@ public:
      */
     void Update(float* peaks, float maxFrequency);
 
-    /* NOTE: FFTVoiceDetection is a template; verify macros accept template types. */
-    PTX_BEGIN_FIELDS(FFTVoiceDetection)
-        /* TODO: PTX_FIELD(FFTVoiceDetection, member, "Doc", min, max) */
-    PTX_END_FIELDS
-    
-    PTX_BEGIN_METHODS(FFTVoiceDetection)
-        PTX_METHOD_AUTO(FFTVoiceDetection, SetThreshold, "Set threshold"),
-        PTX_METHOD_AUTO(FFTVoiceDetection, GetViseme, "Get viseme"),
-        PTX_METHOD_AUTO(FFTVoiceDetection, ToString, "To string"),
-        PTX_METHOD_AUTO(FFTVoiceDetection, ResetVisemes, "Reset visemes"),
-        PTX_METHOD_AUTO(FFTVoiceDetection, Update, "Update")
-    PTX_END_METHODS
-    
-    PTX_BEGIN_DESCRIBE(FFTVoiceDetection)
-        PTX_CTOR0(FFTVoiceDetection)
-    PTX_END_DESCRIBE(FFTVoiceDetection)
-    
 };
 
 #include "fftvoicedetection.tpp" // Include the template implementation.

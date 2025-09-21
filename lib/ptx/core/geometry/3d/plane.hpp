@@ -55,14 +55,14 @@ public:
         PTX_FIELD(Plane, Centroid, "Centroid", 0, 0),
         PTX_FIELD(Plane, Normal, "Normal", 0, 0)
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(Plane)
         PTX_METHOD_AUTO(Plane, ToString, "To string")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(Plane)
         PTX_CTOR0(Plane),
         PTX_CTOR(Plane, Vector3D, Vector3D)
     PTX_END_DESCRIBE(Plane)
-    
+
 };

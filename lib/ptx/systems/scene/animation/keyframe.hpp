@@ -55,14 +55,14 @@ public:
         PTX_FIELD(KeyFrame, Time, "Time", __FLT_MIN__, __FLT_MAX__),
         PTX_FIELD(KeyFrame, Value, "Value", __FLT_MIN__, __FLT_MAX__)
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(KeyFrame)
         PTX_METHOD_AUTO(KeyFrame, Set, "Set")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(KeyFrame)
         PTX_CTOR0(KeyFrame),
         PTX_CTOR(KeyFrame, float, float)
     PTX_END_DESCRIBE(KeyFrame)
-    
+
 };

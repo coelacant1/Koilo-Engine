@@ -55,16 +55,16 @@ public:
     float Calculate(float velocity, float dT);
 
     PTX_BEGIN_FIELDS(BouncePhysics)
-        /* TODO: PTX_FIELD(BouncePhysics, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(BouncePhysics)
-        PTX_METHOD_AUTO(BouncePhysics, Calculate, "Calculate"),
-        PTX_METHOD_AUTO(BouncePhysics, Calculate, "Calculate")
+        /* Calculate */ PTX_METHOD_OVLD(BouncePhysics, Calculate, float, float, uint32_t),
+        /* Calculate */ PTX_METHOD_OVLD(BouncePhysics, Calculate, float, float, float)
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(BouncePhysics)
         PTX_CTOR(BouncePhysics, float, float)
     PTX_END_DESCRIBE(BouncePhysics)
-    
+
 };

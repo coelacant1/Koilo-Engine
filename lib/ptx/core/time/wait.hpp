@@ -41,16 +41,16 @@ public:
     bool IsFinished();
 
     PTX_BEGIN_FIELDS(Wait)
-        /* TODO: PTX_FIELD(Wait, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(Wait)
         PTX_METHOD_AUTO(Wait, Reset, "Reset"),
         PTX_METHOD_AUTO(Wait, IsFinished, "Is finished")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(Wait)
         PTX_CTOR(Wait, uint32_t)
     PTX_END_DESCRIBE(Wait)
-    
+
 };

@@ -111,9 +111,9 @@ public:
     Quaternion GetRotation();
 
     PTX_BEGIN_FIELDS(CameraLayout)
-        /* TODO: PTX_FIELD(CameraLayout, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(CameraLayout)
         PTX_METHOD_AUTO(CameraLayout, GetForwardAxis, "Get forward axis"),
         PTX_METHOD_AUTO(CameraLayout, GetUpAxis, "Get up axis"),
@@ -121,9 +121,9 @@ public:
         PTX_METHOD_AUTO(CameraLayout, GetUpVector, "Get up vector"),
         PTX_METHOD_AUTO(CameraLayout, GetRotation, "Get rotation")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(CameraLayout)
         PTX_CTOR(CameraLayout, ForwardAxis, UpAxis)
     PTX_END_DESCRIBE(CameraLayout)
-    
+
 };

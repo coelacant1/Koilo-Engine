@@ -58,14 +58,14 @@ public:
         PTX_FIELD(AxisAngle, Rotation, "Rotation", __FLT_MIN__, __FLT_MAX__),
         PTX_FIELD(AxisAngle, Axis, "Axis", 0, 0)
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(AxisAngle)
         PTX_METHOD_AUTO(AxisAngle, ToString, "To string")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(AxisAngle)
         PTX_CTOR(AxisAngle, float, float, float, float),
         PTX_CTOR(AxisAngle, float, Vector3D)
     PTX_END_DESCRIBE(AxisAngle)
-    
+
 };

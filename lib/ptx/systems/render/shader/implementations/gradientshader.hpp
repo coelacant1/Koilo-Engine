@@ -2,7 +2,6 @@
 
 #include <cmath>
 #include <cstdint>
-#include "../../../../registry/reflect_macros.hpp"
 
 #include "../ishader.hpp"
 #include "../../material/materialt.hpp"   // for IMaterial::As<T>()
@@ -97,17 +96,4 @@ public:
         return RGBColor::InterpolateColors(P.colors[i0], P.colors[i1], mu);
     }
 
-    /* NOTE: GradientShaderT is a template; verify macros accept template types. */
-    PTX_BEGIN_FIELDS(GradientShaderT)
-        /* TODO: PTX_FIELD(GradientShaderT, member, "Doc", min, max) */
-    PTX_END_FIELDS
-    
-    PTX_BEGIN_METHODS(GradientShaderT)
-        PTX_METHOD_AUTO(GradientShaderT, Shade, "Shade")
-    PTX_END_METHODS
-    
-    PTX_BEGIN_DESCRIBE(GradientShaderT)
-        /* TODO: PTX_CTOR0(GradientShaderT) or PTX_CTOR(GradientShaderT, ...) */
-    PTX_END_DESCRIBE(GradientShaderT)
-    
 };

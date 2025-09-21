@@ -53,16 +53,16 @@ public:
     float Filter(float value);
 
     PTX_BEGIN_FIELDS(DerivativeFilter)
-        /* TODO: PTX_FIELD(DerivativeFilter, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(DerivativeFilter)
         PTX_METHOD_AUTO(DerivativeFilter, GetOutput, "Get output"),
         PTX_METHOD_AUTO(DerivativeFilter, Filter, "Filter")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(DerivativeFilter)
         PTX_CTOR0(DerivativeFilter)
     PTX_END_DESCRIBE(DerivativeFilter)
-    
+
 };

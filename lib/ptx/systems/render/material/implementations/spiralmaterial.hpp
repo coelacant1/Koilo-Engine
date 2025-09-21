@@ -2,7 +2,6 @@
 
 #include <array>
 #include <cstddef>
-#include "../../../../registry/reflect_macros.hpp"
 
 #include "../imaterial.hpp"
 #include "../materialt.hpp"
@@ -89,23 +88,4 @@ public:
             this->colors[i] = this->baseColors[i];
     }
 
-    /* NOTE: SpiralMaterial is a template; verify macros accept template types. */
-    PTX_BEGIN_FIELDS(SpiralMaterial)
-        /* TODO: PTX_FIELD(SpiralMaterial, member, "Doc", min, max) */
-    PTX_END_FIELDS
-    
-    PTX_BEGIN_METHODS(SpiralMaterial)
-        PTX_METHOD_AUTO(SpiralMaterial, SetPositionOffset, "Set position offset"),
-        PTX_METHOD_AUTO(SpiralMaterial, SetRotationOffset, "Set rotation offset"),
-        PTX_METHOD_AUTO(SpiralMaterial, SetRotationAngle, "Set rotation angle"),
-        PTX_METHOD_AUTO(SpiralMaterial, SetWidth, "Set width"),
-        PTX_METHOD_AUTO(SpiralMaterial, SetBend, "Set bend"),
-        PTX_METHOD_AUTO(SpiralMaterial, HueShift, "Hue shift"),
-        PTX_METHOD_AUTO(SpiralMaterial, UpdateRGB, "Update rgb")
-    PTX_END_METHODS
-    
-    PTX_BEGIN_DESCRIBE(SpiralMaterial)
-        PTX_CTOR(SpiralMaterial, const RGBColor *, float, float)
-    PTX_END_DESCRIBE(SpiralMaterial)
-    
 };

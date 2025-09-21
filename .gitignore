@@ -42,6 +42,8 @@
 .piolibdeps/
 .clang_complete
 .gcc-flags.json
+.scripts/.venv/
+.scripts/__pycache__/
 
 # External libraries
 lib/lua/

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstddef>
-#include "../../../../registry/reflect_macros.hpp"
 
 #include "../imaterial.hpp"
 #include "../materialt.hpp"
@@ -153,34 +152,4 @@ public:
 private:
     BouncePhysics* bPhy_[B]; ///< Lazily allocated per channel when bounce is enabled.
 
-    /* NOTE: AudioReactiveMaterial is a template; verify macros accept template types. */
-    PTX_BEGIN_FIELDS(AudioReactiveMaterial)
-        /* TODO: PTX_FIELD(AudioReactiveMaterial, member, "Doc", min, max) */
-    PTX_END_FIELDS
-    
-    PTX_BEGIN_METHODS(AudioReactiveMaterial)
-        PTX_METHOD_AUTO(AudioReactiveMaterial, SetSizeHalf, "Set size half"),
-        PTX_METHOD_AUTO(AudioReactiveMaterial, SetSizeFull, "Set size full"),
-        PTX_METHOD_AUTO(AudioReactiveMaterial, SetOffset, "Set offset"),
-        PTX_METHOD_AUTO(AudioReactiveMaterial, SetRotationDeg, "Set rotation deg"),
-        PTX_METHOD_AUTO(AudioReactiveMaterial, SetHueDeg, "Set hue deg"),
-        PTX_METHOD_AUTO(AudioReactiveMaterial, SetCircular, "Set circular"),
-        PTX_METHOD_AUTO(AudioReactiveMaterial, GetCircular, "Get circular"),
-        PTX_METHOD_AUTO(AudioReactiveMaterial, SetRadius, "Set radius"),
-        PTX_METHOD_AUTO(AudioReactiveMaterial, GetRadius, "Get radius"),
-        PTX_METHOD_AUTO(AudioReactiveMaterial, SetBounceEnabled, "Set bounce enabled"),
-        PTX_METHOD_AUTO(AudioReactiveMaterial, GetBounceEnabled, "Get bounce enabled"),
-        PTX_METHOD_AUTO(AudioReactiveMaterial, SetSpectrum, "Set spectrum"),
-        PTX_METHOD_AUTO(AudioReactiveMaterial, SetSpectrumAt, "Set spectrum at"),
-        PTX_METHOD_AUTO(AudioReactiveMaterial, GetSpectrumAt, "Get spectrum at"),
-        PTX_METHOD_AUTO(AudioReactiveMaterial, SpectrumData, "Spectrum data"),
-        PTX_METHOD_AUTO(AudioReactiveMaterial, SpectrumData, "Spectrum data"),
-        PTX_METHOD_AUTO(AudioReactiveMaterial, BindSamples, "Bind samples"),
-        PTX_METHOD_AUTO(AudioReactiveMaterial, Update, "Update")
-    PTX_END_METHODS
-    
-    PTX_BEGIN_DESCRIBE(AudioReactiveMaterial)
-        PTX_CTOR0(AudioReactiveMaterial)
-    PTX_END_DESCRIBE(AudioReactiveMaterial)
-    
 };

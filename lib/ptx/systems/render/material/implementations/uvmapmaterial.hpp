@@ -59,9 +59,9 @@ public:
     void SetImage(Image* img)       { this->image = img; }
 
     PTX_BEGIN_FIELDS(UVMapMaterial)
-        /* TODO: PTX_FIELD(UVMapMaterial, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(UVMapMaterial)
         PTX_METHOD_AUTO(UVMapMaterial, SetHueAngle, "Set hue angle"),
         PTX_METHOD_AUTO(UVMapMaterial, SetFlipU, "Set flip u"),
@@ -69,9 +69,9 @@ public:
         PTX_METHOD_AUTO(UVMapMaterial, SetSize, "Set size"),
         PTX_METHOD_AUTO(UVMapMaterial, SetImage, "Set image")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(UVMapMaterial)
         PTX_CTOR(UVMapMaterial, Image *)
     PTX_END_DESCRIBE(UVMapMaterial)
-    
+
 };

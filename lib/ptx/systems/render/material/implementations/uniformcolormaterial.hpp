@@ -56,16 +56,16 @@ public:
     }
 
     PTX_BEGIN_FIELDS(UniformColorMaterial)
-        /* TODO: PTX_FIELD(UniformColorMaterial, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(UniformColorMaterial)
         PTX_METHOD_AUTO(UniformColorMaterial, HueShift, "Hue shift"),
         PTX_METHOD_AUTO(UniformColorMaterial, SetRGB, "Set rgb")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(UniformColorMaterial)
         PTX_CTOR(UniformColorMaterial, RGBColor)
     PTX_END_DESCRIBE(UniformColorMaterial)
-    
+
 };

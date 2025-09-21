@@ -95,20 +95,20 @@ public:
     uint32_t GetTotalTriangleCount() const;
 
     PTX_BEGIN_FIELDS(Scene)
-        /* TODO: PTX_FIELD(Scene, member, "Doc", min, max) */
+        /* No reflected fields. */
     PTX_END_FIELDS
-    
+
     PTX_BEGIN_METHODS(Scene)
         PTX_METHOD_AUTO(Scene, AddMesh, "Add mesh"),
-        PTX_METHOD_AUTO(Scene, RemoveMesh, "Remove mesh"),
-        PTX_METHOD_AUTO(Scene, RemoveMesh, "Remove mesh"),
+        /* Remove mesh */ PTX_METHOD_OVLD(Scene, RemoveMesh, void, unsigned int),
+        /* Remove mesh */ PTX_METHOD_OVLD(Scene, RemoveMesh, void, Mesh *),
         PTX_METHOD_AUTO(Scene, GetMeshes, "Get meshes"),
         PTX_METHOD_AUTO(Scene, GetMeshCount, "Get mesh count"),
         PTX_METHOD_AUTO(Scene, GetTotalTriangleCount, "Get total triangle count")
     PTX_END_METHODS
-    
+
     PTX_BEGIN_DESCRIBE(Scene)
         PTX_CTOR(Scene, unsigned int)
     PTX_END_DESCRIBE(Scene)
-    
+
 };
