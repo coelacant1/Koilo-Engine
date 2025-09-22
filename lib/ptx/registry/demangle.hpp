@@ -5,6 +5,7 @@
   #include <memory>
 #endif
 
+namespace ptx {
 inline std::string Demangle(const char* name) {
 #if defined(__GNUG__)
     int status = 0;
@@ -15,3 +16,4 @@ inline std::string Demangle(const char* name) {
     return std::string(name);
 #endif
 }
+} // namespace ptx

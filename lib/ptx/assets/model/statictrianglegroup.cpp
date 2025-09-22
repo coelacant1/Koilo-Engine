@@ -1,9 +1,7 @@
-#pragma once
-
 #include "statictrianglegroup.hpp"
 
 StaticTriangleGroup::StaticTriangleGroup(Vector3D* vertices, const IndexGroup* indexGroup, int vertexCount, int triangleCount)
-    : vertices(vertices), indexGroup(indexGroup), vertexCount(vertexCount), triangleCount(triangleCount), hasUV(false) {
+    : triangles(nullptr), vertices(vertices), indexGroup(indexGroup), uvIndexGroup(nullptr), uvVertices(nullptr), hasUV(false), vertexCount(vertexCount), triangleCount(triangleCount) {
 
     for (int i = 0; i < triangleCount; i++) {
         triangles[i].p1 = &vertices[indexGroup[i].A];
@@ -13,7 +11,7 @@ StaticTriangleGroup::StaticTriangleGroup(Vector3D* vertices, const IndexGroup* i
 }
 
 StaticTriangleGroup::StaticTriangleGroup(Vector3D* vertices, const IndexGroup* indexGroup, const IndexGroup* uvIndexGroup, const Vector2D* uvVertices, int vertexCount, int triangleCount)
-    : vertices(vertices), indexGroup(indexGroup), uvIndexGroup(uvIndexGroup), uvVertices(uvVertices), vertexCount(vertexCount), triangleCount(triangleCount), hasUV(true) {
+    : triangles(nullptr), vertices(vertices), indexGroup(indexGroup), uvIndexGroup(uvIndexGroup), uvVertices(uvVertices), hasUV(true), vertexCount(vertexCount), triangleCount(triangleCount) {
 
     for (int i = 0; i < triangleCount; i++) {
         triangles[i].p1 = &vertices[indexGroup[i].A];

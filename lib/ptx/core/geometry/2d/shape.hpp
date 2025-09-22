@@ -22,6 +22,7 @@
  */
 class Shape {
 public:
+    virtual ~Shape() = default;
     struct Bounds {
         Vector2D minV;
         Vector2D maxV;

@@ -28,11 +28,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional, Tuple, Dict
 
-# Static helper names injected by the reflection macros that should never be
-# surfaced as part of the reflected API.
+# Static helper names injected by the reflection macros
 REFLECTION_HELPER_NAMES = {"Fields", "Methods", "Describe"}
 
-# ------------------------ Type ranges & doc helpers ------------------------
 TYPE_RANGES: Dict[str, Tuple[str, str]] = {
     "bool": ("0", "1"),
     "char": ("-128", "127"),
@@ -66,9 +64,7 @@ PTX_BLOCK_ANY_RE = re.compile(
     re.DOTALL,
 )
 
-
 def strip_ptx_blocks(text: str) -> str:
-    """Remove reflection PTX blocks from arbitrary text segments."""
     prev = None
     cur = text
     while prev != cur:
@@ -76,8 +72,6 @@ def strip_ptx_blocks(text: str) -> str:
         cur = PTX_BLOCK_ANY_RE.sub("\n", cur, count=1)
     cur = re.sub(r'(?:\r?\n){3,}', '\n\n', cur)
     return cur
-
-
 
 def find_comment_spans(src: str) -> Tuple[List[int], List[Tuple[int, int]]]:
     spans: List[Tuple[int, int]] = []
@@ -145,11 +139,6 @@ def in_comment(idx: int, starts: List[int], spans: List[Tuple[int, int]]) -> boo
     return False
 
 def ensure_reflect_include(src: str, header_path: Path, root_path: Path) -> tuple[str, bool, str]:
-    """
-    Ensure the file includes the PTX macros header with a relative path:
-      #include "<rel-to-file>/registry/reflect_macros.hpp"
-    Returns (new_src, changed, relpath_used).
-    """
     if INCLUDE_RE.search(src):
         return src, False, ""
 
@@ -328,7 +317,6 @@ class ClassInfo:
     ctors: List[CtorInfo] = field(default_factory=list)
     has_pure_virtual: bool = False
 
-# ------------------------ libclang front-end (preferred when available) ------------------------
 def try_clang_parse(paths: List[Path], clang_args: List[str]) -> Dict[Path, List[ClassInfo]]:
     try:
         from clang import cindex
@@ -475,8 +463,6 @@ def try_clang_parse(paths: List[Path], clang_args: List[str]) -> Dict[Path, List
 
     return results
 
-
-# ------------------------ regex fallback parser ------------------------
 CLASS_RE = re.compile(
     r"""
     (?P<templ>template\s*<[^>]+>\s*)?
@@ -518,10 +504,6 @@ def find_matching_brace(src: str, open_pos: int) -> int:
                     return i
         i += 1
     return n - 1
-
-
-
-
 
 def parse_public_api_from_body(body: str, cls_name: str) -> Tuple[List[FieldInfo], List[MethodInfo], List[CtorInfo], bool]:
     fields: List[FieldInfo] = []
@@ -690,7 +672,6 @@ def parse_public_api_from_body(body: str, cls_name: str) -> Tuple[List[FieldInfo
     return fields, methods, ctors, has_pure_virtual
 
 def validate_macro_blocks(src: str) -> None:
-    """Ensure PTX macro blocks are present at most once per class and well-formed."""
     starts, spans = find_comment_spans(src)
 
     begin_patterns: Dict[str, re.Pattern] = {
@@ -1030,9 +1011,6 @@ def remove_reflect_include(src: str) -> Tuple[str, bool]:
     removed = src[:line_start] + src[line_end + 1:]
     return removed, removed != src
 
-# ------------------------ Main ------------------------
-# Directories we refuse to touch (relative to project root). The registry definitions are
-# treated as read-only so hand-authored reflection helpers remain intact.
 EXCLUDED_SUBTREES = {"registry", "platform"}
 
 def main():

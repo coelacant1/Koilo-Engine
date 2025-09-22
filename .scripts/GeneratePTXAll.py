@@ -13,20 +13,15 @@ from pathlib import Path
 import os
 import sys
 
-# 1. Locate the repo root - two cases
 try:
-    # We are inside PlatformIO => PROJECT_DIR exists
-    Import("env")                         # pylint: disable=undefined-variable
+    Import("env")
     REPO_ROOT = Path(env["PROJECT_DIR"]).resolve()
 except NameError:
-    # Stand-alone run: script lives in <root>/.scripts/
     REPO_ROOT = Path(__file__).resolve().parents[1]
 
 INCLUDE_ROOT = REPO_ROOT / "lib" / "ptx"
 OUTPUT_FILE  = INCLUDE_ROOT / "ptxall.hpp"
 
-
-# 2. Collect all .hpp headers (skip the umbrella itself)
 def gather_headers() -> list[str]:
     headers: list[str] = []
     for path, _, files in os.walk(INCLUDE_ROOT):
@@ -36,8 +31,6 @@ def gather_headers() -> list[str]:
                 headers.append(str(rel).replace(os.sep, "/"))
     return sorted(headers)
 
-
-# 3. Write the umbrella header 
 def generate() -> int:
     hdrs = gather_headers()
     OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
@@ -56,8 +49,6 @@ def generate() -> int:
     print(f"Regenerated {OUTPUT_FILE} with {len(hdrs)} headers")
     return 0
 
-
-# 4. Execute immediately (both PIO + CLI)
 if __name__ == "__main__":
     sys.exit(generate())
 else:

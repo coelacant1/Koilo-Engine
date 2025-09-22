@@ -19,7 +19,7 @@ int main() {
         const auto& fd = fields.data[i];
         std::cout << "  Field[" << i << "]: name=" << fd.name
                   << ", size=" << fd.size
-                  << ", type=" << Demangle(fd.type->name()) << "\n";
+                  << ", type=" << ptx::Demangle(fd.type->name()) << "\n";
     }
 
     // --- Basic object and field get/set via reflection
@@ -84,7 +84,6 @@ int main() {
         }
     }
 
-    // Call static method: InterpolateColors(const RGBColor&, const RGBColor&, const float&)
     if (const auto* lerpM = ptx::FindMethod(methods, "InterpolateColors")) {
         RGBColor a{0, 0, 0}, b{255, 128, 64};
         float t = 0.25f;
@@ -134,7 +133,6 @@ int main() {
 
         if (owned) {
             printColor("Constructed via Describe()", *owned);
-            // also exercise ToString reflectively on the constructed instance
             if (const auto* toStr2 = ptx::FindMethod(methods, "ToString")) {
                 std::unique_ptr<ptx::UString> s(
                     static_cast<ptx::UString*>(toStr2->invoker(owned.get(), nullptr))

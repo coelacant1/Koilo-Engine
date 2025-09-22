@@ -12,14 +12,12 @@ if [[ $# -gt 0 ]]; then
         *) echo "Smoke test only supports C++ headers, got $hdr" >&2; exit 1;;
     esac
 
-    # normalise to repo‑relative path
     rel=$(realpath --relative-to="$ROOT/lib" "$hdr")
     echo "Header smoke test: $rel"
     g++ -std=c++17 -Wno-pragmas -I"$INC" -xc++ -c "$INC/$rel" -o /dev/null
     exit $?
 fi
 
-# ANSI colours: enabled when stdout is a TTY *or* FORCE_COLOR=1
 if [[ -t 1 || "${FORCE_COLOR:-0}" == "1" ]]; then
     RED='\033[31m'; GREEN='\033[32m'; BLUE='\033[34m'
     BOLD='\033[1m'; RESET='\033[0m'

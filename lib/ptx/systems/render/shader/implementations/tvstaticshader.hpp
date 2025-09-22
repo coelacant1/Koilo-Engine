@@ -125,7 +125,12 @@ private:
         // Normalize to [0,1] across width then to bar index
         float u   = (x + halfW) / (P.barsSize.X);
         int   idx = (int)Mathematics::FFloor(u * kNumBars);
-        if (idx < 0) idx = 0; if (idx >= kNumBars) idx = kNumBars - 1;
+        if (idx < 0) {
+            idx = 0;
+        }
+        if (idx >= kNumBars) {
+            idx = kNumBars - 1;
+        }
 
         // canonical bar colors
         static const RGBColor kBars[kNumBars] = {

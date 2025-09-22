@@ -24,6 +24,7 @@
  */
 class IStaticTriangleGroup {
 public:
+    virtual ~IStaticTriangleGroup() = default;
     /**
      * @brief Checks if the triangle group has UV coordinates.
      * @return True if UV coordinates are present, false otherwise.

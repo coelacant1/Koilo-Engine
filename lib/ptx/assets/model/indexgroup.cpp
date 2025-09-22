@@ -1,5 +1,6 @@
 // indexgroup.cpp
 #include "indexgroup.hpp"
+#include "../../core/utils/casthelper.hpp"
 
 /**
  * @file indexgroup.cpp
@@ -16,34 +17,33 @@ IndexGroup::IndexGroup(uint16_t A, uint16_t B, uint16_t C) : A(A), B(B), C(C) {}
 
 IndexGroup IndexGroup::Add(IndexGroup indexGroup) {
     return IndexGroup{
-        CastHelper::ToU16(this->A + indexGroup.A),
-        CastHelper::ToU16(this->B + indexGroup.B),
-        CastHelper::ToU16(this->C + indexGroup.C)
+        CastHelper::ToU16(CastHelper::ToU32(this->A) + CastHelper::ToU32(indexGroup.A)),
+        CastHelper::ToU16(CastHelper::ToU32(this->B) + CastHelper::ToU32(indexGroup.B)),
+        CastHelper::ToU16(CastHelper::ToU32(this->C) + CastHelper::ToU32(indexGroup.C))
     };
 }
 
 IndexGroup IndexGroup::Subtract(IndexGroup indexGroup) {
     return IndexGroup{
-        CastHelper::ToU16(this->A - indexGroup.A),
-        CastHelper::ToU16(this->B - indexGroup.B),
-        CastHelper::ToU16(this->C - indexGroup.C)
+        CastHelper::ToU16(CastHelper::ToU32(this->A) - CastHelper::ToU32(indexGroup.A)),
+        CastHelper::ToU16(CastHelper::ToU32(this->B) - CastHelper::ToU32(indexGroup.B)),
+        CastHelper::ToU16(CastHelper::ToU32(this->C) - CastHelper::ToU32(indexGroup.C))
     };
 }
 
 IndexGroup IndexGroup::Multiply(IndexGroup indexGroup) {
     return IndexGroup{
-        CastHelper::ToU16(this->A * indexGroup.A),
-        CastHelper::ToU16(this->B * indexGroup.B),
-        CastHelper::ToU16(this->C * indexGroup.C)
+        CastHelper::ToU16(CastHelper::ToU32(this->A) * CastHelper::ToU32(indexGroup.A)),
+        CastHelper::ToU16(CastHelper::ToU32(this->B) * CastHelper::ToU32(indexGroup.B)),
+        CastHelper::ToU16(CastHelper::ToU32(this->C) * CastHelper::ToU32(indexGroup.C))
     };
 }
 
 IndexGroup IndexGroup::Divide(IndexGroup indexGroup) {
-    // Caller is responsible for ensuring indexGroup.A/B/C are non-zero.
     return IndexGroup{
-        CastHelper::ToU16(this->A / indexGroup.A),
-        CastHelper::ToU16(this->B / indexGroup.B),
-        CastHelper::ToU16(this->C / indexGroup.C)
+        CastHelper::ToU16(CastHelper::ToU32(this->A) / CastHelper::ToU32(indexGroup.A)),
+        CastHelper::ToU16(CastHelper::ToU32(this->B) / CastHelper::ToU32(indexGroup.B)),
+        CastHelper::ToU16(CastHelper::ToU32(this->C) / CastHelper::ToU32(indexGroup.C))
     };
 }
 
@@ -51,5 +51,6 @@ ptx::UString IndexGroup::ToString() {
     ptx::UString sa = Mathematics::DoubleToCleanString(A);
     ptx::UString sb = Mathematics::DoubleToCleanString(B);
     ptx::UString sc = Mathematics::DoubleToCleanString(C);
+    
     return "[" + sa + ", " + sb + ", " + sc + "]";
 }

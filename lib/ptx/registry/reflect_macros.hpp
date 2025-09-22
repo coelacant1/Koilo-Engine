@@ -9,8 +9,8 @@
     {   #MEMBER, &typeid(decltype(std::declval<CLASS>().MEMBER)), \
         sizeof(decltype(std::declval<CLASS>().MEMBER)), \
         ptx::FieldAccess{ \
-            +[](void* obj)->void* { return &static_cast<CLASS*>(obj)->MEMBER; }, \
-            +[](const void* obj)->const void* { return &static_cast<const CLASS*>(obj)->MEMBER; } \
+            +[](void* obj)->void* { return const_cast<void*>(static_cast<const void*>(&static_cast<CLASS*>(obj)->MEMBER)); }, \
+            +[](const void* obj)->const void* { return static_cast<const void*>(&static_cast<const CLASS*>(obj)->MEMBER); } \
         }, \
         DESC, double(MINv), double(MAXv) }
 

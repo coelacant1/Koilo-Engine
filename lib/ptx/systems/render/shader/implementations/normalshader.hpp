@@ -25,7 +25,6 @@ public:
      * @return RGBColor where R,G,Z represent the remapped normal components.
      */
     RGBColor Shade(const SurfaceProperties& surf, const IMaterial& m) const override {
-        using NormalMatBase = MaterialT<NormalParams, NormalShader>;
         (void)m;
 
         Vector3D n = Vector3D(surf.normal).UnitSphere();   // normalize

@@ -2,141 +2,80 @@
 
 [![compilecheck](https://github.com/coelacant1/PTXEngine/actions/workflows/ci.yml/badge.svg)](https://github.com/coelacant1/PTXEngine/actions/workflows/ci.yml)
 
-`PTX Engine` started as the math backbone of **ProtoTracer** - an embedded 3D rendering engine. It is now a stand-alone **header-first** library that runs on:
-* 32-bit Cortex-M / ESP32 boards (STM32, Teensy, ESP32-S3)
-* Linux / Windows / macOS desktops
-* 8-bit AVR boards (Arduino UNO, Nano)
+`PTX Engine` is a header-first C++17 library providing a compact math, geometry
+and rendering core designed to run on both microcontrollers and desktop
+platforms. The project focuses on portability, low-overhead primitives, and a
+small footprint suitable for embedded use while maintaining a full-featured
+desktop simulator for development.
 
-The same codebase powers hardware **and** a full-speed desktop simulator, so you prototype algorithms on the workstation and drop them onto a board unchanged.
+This project started as the backbone of `ProtoTracer` - an embedded 3D rendering engine. It is now a stand-alone **header-first** library that runs on:
+* 32-bit Cortex-M / ESP32 boards (STM32, Teensy, ESP32-S3)
+* Linux / Windows desktops
+* 8-bit AVR boards (Arduino UNO, Nano)
 
 > **Work in progress** - the APIs and structure may change without notice while working on the first major release.
 >
-> This code is currently being migrated from ProtoTracer to act as a submodule and generalize the functionality for more use cases.
-> - **Project Goals**:
->     - Have a generic C++ library that can be used as a backbone to speed up development on microcontrollers as well as desktop computers
->     - Re-integrate this functionality as a sub-module into ProtoTracer
->     - Create a desktop GUI application that can utilize and simulate the same functionality as the embedded pipeline. 
+> This repository is actively being developed. Recent work focuses on a runtime
+reflection system, a C ABI layer for bindings, and a ctypes-based Python helper
+to explore reflection metadata from Python.
 
----
+## Key focuses
+- Header-first, portable C++17 code usable on MCUs and desktops
+- Reflection system for runtime discovery/invocation of types and members
+- Tooling to build a self-contained `ptx_reflect.so` that embeds the core
+    library and reflection registration
+- A small Python `ctypes` wrapper to load and exercise reflection from Python
 
-## Features (2025-07 snapshot)
+## Status
+- Core library: in active development, most subsystems compile header-first
+- Reflection: working -- generator and build scripts produce `ptx_reflect.so`
+- Python: ctypes wrapper + demo available in `lib/ptx_python`
 
-> WIP
+## Quick start (build reflect shared library)
 
-| Domain                  | Capabilities (all header-first unless noted)                                                                                              |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| **Math (core)**         | Vec2/3, Mat3/4, quaternions, axis<->angle, Euler orders, transforms, projection helpers, interpolation                                      |
-| **Geometry (analytic)** | Circle, ellipse, rectangle, oriented triangle, sphere, cube, plane + SAT/AABB overlap tests                                               |
-| **Spatial**             | Fixed-capacity quadtree (header-only), easy swap-in for legacy API                                                                        |
-| **Signal / DSP**        | Radix-2 FFT, Kalman / running / peak / derivative filters, voice FFT detector, Simplex noise, function generator                          |
-| **Control & Timing**    | PID controller, damped spring, bounce physics, timestep helper, non-blocking Wait, easy-ease animator                                     |
-| **Physics systems**     | Boundary motion simulator, 2-D vector-field, generic physics simulator                                                                    |
-| **Rendering (core)**    | Camera hierarchy, pixel buffer, tile CPU rasteriser, WIP path/ray tracer                                                                  |
-| **Materials & Shaders** | Image / image-sequence, Phong, procedural-noise, combine masks, animated material graph; shader interface                                 |
-| **Post-processing**     | Fixed-array compositor + built-in effects (fisheye, radial/gaussian blur, glitch, phase offset, etc.)                                     |
-| **Scene graph**         | Entities, meshes, text builder, lights, animation tracks, timeline, volumetric light support                                              |
-| **Mesh deform**         | Blend-shape controller, mesh aligner, triangle-group deformers                                                                            |
-| **Assets / IO**         | Static & dynamic triangle groups, STL-style index groups, fonts, images, image sequences, voxel density fields                            |
-| **Platform utils**      | Cross-platform Console helper (Serial / std::cout), Random helper (Arduino `random()` <-> `rand()`), Cast helper, µString, time abstraction |
-| **Apps**                | Project wrapper + stub desktop GUI (simulation pipeline in progress)                                                                      |
-| **Portability focus**   | No STL in hot loops, raw arrays, compile-time capacities; builds on AVR, ESP32, RP2040, STM32, Linux/Win/macOS                            |
-
-*Everything above compiles with **-std=c++17** on MCU tool-chains and desktop GCC.*
-
----
-
-## Planned / in-progress
-
-* 4×4 matrix + projection utilities for graphics pipelines
-* Additional procedural noise
-* Doxygen-based website hosted on GitHub Pages
-* BVH builder + on-device path tracer (`ray/`)
-* More procedural noise
-* Binary asset packer + CLI viewer
-
----
-
-## Directory layout
-
-```
-lib/ptx/
-|-- app/                     top-level runtime & project wrapper
-|   |-- app.hpp
-|   |-- project/             project-file I/O
-|       |-- project.hpp
-|       |-- project.cpp
-|
-|-- assets/                  load-once, immutable data
-|   |-- font/                bitmap / vector font tables
-|   |-- image/               stills & sequences
-|   |-- model/               mesh + triangle-group containers
-|   |-- volume/              density / voxel fields
-|
-|-- core/                    reusable engine subsystems
-|   |-- color/               RGB565, gradients, color-space helpers
-|   |-- control/             PID, springs, bounce
-|   |-- geometry/            analytic shapes + spatial structures
-|   |   |-- 2d/              circle, ellipse, rectangle, triangle, overlap
-|   |   |-- 3d/              cube, sphere, plane, triangle
-|   |   |-- spatial/         quadtree, KD-tree (WIP)
-|   |-- math/                vectors, matrices, quaternions, transforms
-|   |-- platform/            cross-platform console, random, ustring, time
-|   |-- signal/              FFT & filter toolbox
-|   |-- time/                timestep + non-blocking wait
-|   |-- utils/               casthelper and misc header-only helpers
-|
-|-- systems/                 high-level engine systems
-|   |-- physics/             boundary / vector-field simulators
-|   |-- render/              full render stack
-|       |-- core/            camera, pixel buffer
-|       |-- engine/          renderer facade
-|       |-- material/        material graph + PBR, image, noise
-|       |-- post/            screen-space compositor & effects
-|       |-- raster/          CPU rasteriser helpers
-|       |-- ray/             path / ray tracer (WIP)
-|       |-- shader/          shader interfaces & prototypes
-|
-|-- scene/                   run-time scene
-    |-- entity.hpp
-    |-- mesh / text / lighting sub-modules
-    |-- animation/           keyframes, tracks, easy-ease animators
-    |-- deform/              blend-shapes, mesh alignment & deformation
-
-```
-
----
-
-## Quick-start (desktop)
+From repository root:
 
 ```bash
-git clone https://github.com/CoelaCant/PTXEngine.git
-cd PTXEngine
-# compile
-# run test program for native
-````
-
->WIP - no test programs yet
-
----
-
-## Quick-start (embedded | PlatformIO)
-
-```bash
-# build and run unit tests for native
-pio test -e native
-
-# compile example for native
-pio run -e native
+# Build the reflect shared library which links a static libptx into ptx_reflect.so
+platformio run --environment nativereflectlib
 ```
 
----
+The produced shared library will be at:
 
-## Contributing & security
+```
+.pio/build/nativereflectlib/ptx_reflect.so
+```
 
-Please read **[CONTRIBUTING.md](CONTRIBUTING.md)** for style rules (lower-case file names, Upper CamelCase funcs, no STL on hot paths, etc).
+Using the Python ctypes wrapper (quick demo)
 
----
+1. Change to the Python demo folder and run the demo with the built library:
+
+```bash
+cd lib/ptx_python
+PYTHONPATH=../../src python3 reflection_demo.py --lib ../../.pio/build/nativereflectlib/ptx_reflect.so
+```
+
+2. Or export `PTX_C_API_LIB` with the full path and run without `--lib`:
+
+```bash
+export PTX_C_API_LIB=/full/path/to/ptx_reflect.so
+PYTHONPATH=../../src python3 reflection_demo.py
+```
+
+## Developer notes
+- The build script `.scripts/BuildSharedReflectLib.py` runs the header
+    umbrella generator and creates `src/reflection_entry_gen.cpp` which forces
+    `Class::Describe()` calls to ensure registration objects are emitted in the
+    final shared object.
+- The Python wrapper is at `lib/ptx_python/ptx/reflection.py` and exposes
+    `PTXReflection` to enumerate classes, create instances, read/write fields,
+    and invoke methods.
+- For debug: use `ldd .pio/build/nativereflectlib/ptx_reflect.so` (Linux) to
+    inspect shared dependencies and `PYTHONPATH=src` when running the demo.
+
+## Contributing
+- See `CONTRIBUTING.md` for coding style and platform guidance.
 
 ## License
-
-`PTXEngine` is released under the [AGPL-3.0](https://choosealicense.com/licenses/agpl-3.0/). If you ship modified versions (embedded or desktop) you must publish the modified source, ensuring improvements stay in the commons.
+- PTX Engine is released under the AGPL-3.0 license. See `LICENSE` in the
+    repository root for details.

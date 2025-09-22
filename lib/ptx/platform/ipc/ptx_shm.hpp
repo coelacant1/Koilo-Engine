@@ -4,6 +4,7 @@
 #include <cstring>
 #include <vector>
 #include <algorithm>
+#include <new>
 #include <cstdio>   // std::snprintf
 
 /**
@@ -202,7 +203,7 @@ inline bool ptx_shm_init(PTXShm& S, const char* fb_name, uint32_t w, uint32_t h,
     S.ctrl_base = mmap(nullptr, S.ctrl_size, PROT_READ | PROT_WRITE, MAP_SHARED, S.ctrl_fd, 0);
     if (S.ctrl_base == MAP_FAILED) return false;
     S.ctrl = reinterpret_cast<PTXCtrl*>(S.ctrl_base);
-    std::memset(S.ctrl, 0, S.ctrl_size);
+    new (S.ctrl) PTXCtrl{}; // placement-new value-initialization
     S.ctrl->dt_scale = 1.0f;
     S.ctrl->cam_look[2] = -1.0f;
     return true;

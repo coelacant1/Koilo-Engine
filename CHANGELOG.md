@@ -4,6 +4,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.1.5] - 2025-09-22
+Integration and hardening of the reflection build pipeline, a ctypes-based
+Python wrapper for runtime reflection, and a number of safety/formatting fixes.
+
+### Added
+- `lib/ptx_python/ptx/reflection.py`
+  - A self-contained `ctypes`-based wrapper that loads the reflection shared
+    library and provides `PTXReflection`/`PTXClass`/`PTXField` helpers for
+    Python usage (demo in `lib/ptx_python/reflection_demo.py`).
+- `lib/ptx_c_api/README.md`
+  - Documentation for C ABI layer exposing registry functions
+- `lib/ptx_python/README.md`
+  - Documentation for using the Python ctypes wrapper and demo commands
+
+### Changed
+- `.scripts/BuildSharedReflectLib.py` (finalized)
+  - Runs `GeneratePTXAll.py`, scans `lib/ptx` headers for reflection describes,
+    generates `src/reflection_entry_gen.cpp` that forces `Class::Describe()` calls,
+    builds a static `libptx` and links it into `ptx_reflect.so`.
+- Header scanner in `.scripts/BuildSharedReflectLib.py` hardened
+  - Skips macro-definition lines and comment/span constructs, filters placeholder
+    tokens (e.g., `CLASS`), avoids nested/unqualified type names, and attempts
+    to qualify names with enclosing namespaces when detected
+
+### Fixed
+- Ensure `ptx_reflect.so` contains the full registry at runtime by generating
+  and compiling `reflection_entry_gen.cpp` so all `Class::Describe()` statics are
+  emitted and initialised when the shared library is loaded
+
+### Notes / Next Tasks
+- The header scanner is heuristic-based; consider a C++ parser
+- Optionally add a standalone CLI generator to emit `src/reflection_entry_gen.cpp`
+  without invoking the full PlatformIO build pipeline
+
+
 ## [0.1.4] - 2025-09-21
 Added to .hpp automatic macro configuration to handle additional edge cases
 
