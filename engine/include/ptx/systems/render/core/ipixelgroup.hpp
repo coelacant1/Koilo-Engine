@@ -24,6 +24,8 @@
  */
 class IPixelGroup {
 public:
+    virtual ~IPixelGroup() = default;
+
     /**
      * @enum Direction
      * @brief Specifies traversal directions for pixels.

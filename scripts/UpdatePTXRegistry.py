@@ -1,7 +1,7 @@
 # UpdatePTXRegistry.py - auto-generate PTX reflection blocks from C++ headers
 #
 # Process:
-# - Walk all .hpp under a root directory (default: lib/ptx)
+# - Walk all .hpp under a root directory (default: engine/include/ptx)
 # - Parse classes (normal + templates) and their public API:
 #     * public non-static fields  -> PTX_FIELD
 #     * public methods            -> PTX_METHOD_AUTO / PTX_SMETHOD_AUTO
@@ -14,9 +14,9 @@
 # - Fallback: regex parser that understands 'template<...> class/struct ... { ... };'
 #
 # Usage examples:
-#   python UpdatePTXRegistry.py --root ./lib/ptx
-#   python UpdatePTXRegistry.py --root ./lib/ptx --write
-#   python UpdatePTXRegistry.py --root ./lib/ptx --write --force
+#   python UpdatePTXRegistry.py --root ./engine/include/ptx
+#   python UpdatePTXRegistry.py --root ./engine/include/ptx --write
+#   python UpdatePTXRegistry.py --root ./engine/include/ptx --write --force
 #
 
 import argparse
@@ -29,6 +29,10 @@ import hashlib
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import List, Optional, Tuple, Dict, Any
+
+DEFAULT_HEADER_ROOT = Path("engine") / "include" / "ptx"
+DEFAULT_HEADER_ROOT_STR = DEFAULT_HEADER_ROOT.as_posix()
+LEGACY_HEADER_ROOT = Path("lib") / "ptx"
 
 # Static helper names injected by the reflection macros
 REFLECTION_HELPER_NAMES = {"Fields", "Methods", "Describe"}
@@ -1097,9 +1101,10 @@ EXCLUDED_SUBTREES = {"registry", "platform"}
 
 def main():
     ap = argparse.ArgumentParser(description="Generate/repair PTX reflection blocks from headers")
-    ap.add_argument("--root", default="lib/ptx", help="Root dir to scan (default: lib/ptx)")
+    ap.add_argument("--root", default=DEFAULT_HEADER_ROOT_STR, help="Root dir to scan (default: engine/include/ptx)")
     ap.add_argument("--write", action="store_true", help="Write changes back in-place")
     ap.add_argument("--force", action="store_true", help="Regenerate macros even when they already exist")
+    ap.add_argument("--list-skipped", action="store_true", help="Print the headers filtered out due to templates or virtuals")
     ap.add_argument("--cache", dest="use_cache", action="store_true", help="Enable parse result cache (default)")
     ap.add_argument("--no-cache", dest="use_cache", action="store_false", help="Disable parse result cache")
     ap.set_defaults(use_cache=True)
@@ -1119,27 +1124,53 @@ def main():
         if candidate.exists():
             root = candidate
         else:
-            root = root_arg.resolve()
+            legacy_candidate = (project_root / LEGACY_HEADER_ROOT).resolve()
+            if args.root == DEFAULT_HEADER_ROOT_STR and legacy_candidate.exists():
+                root = legacy_candidate
+            else:
+                root = root_arg.resolve()
     def is_excluded(path: Path) -> bool:
         parts = Path(path).relative_to(root).parts
         return parts and parts[0] in EXCLUDED_SUBTREES
 
     # Gather all headers, then filter out templated and virtual-only files
     all_headers = [p for p in root.rglob('*.hpp') if not is_excluded(p)]
-    skipped_templated: List[Path] = []
-    skipped_virtual: List[Path] = []
+    skipped_templated: List[Tuple[Path, str]] = []
+    skipped_virtual: List[Tuple[Path, str]] = []
     headers: List[Path] = []
     for p in all_headers:
         text = p.read_text(encoding="utf-8", errors="ignore")
-        if re.search(r'\btemplate\s*<', text):
-            skipped_templated.append(p)
+        m_template = re.search(r'\btemplate\s*<', text)
+        if m_template:
+            line = text.count('\n', 0, m_template.start()) + 1
+            line_end = text.find('\n', m_template.start())
+            if line_end == -1:
+                line_end = len(text)
+            snippet = text[m_template.start(): line_end]
+            skipped_templated.append((p, f"line {line}: {snippet.strip()}"))
             continue
-        if re.search(r'\bvirtual\b', text):
-            skipped_virtual.append(p)
+        m_virtual = re.search(r'\bvirtual\b', text)
+        if m_virtual:
+            line = text.count('\n', 0, m_virtual.start()) + 1
+            line_end = text.find('\n', m_virtual.start())
+            if line_end == -1:
+                line_end = len(text)
+            snippet = text[m_virtual.start(): line_end]
+            skipped_virtual.append((p, f"line {line}: {snippet.strip()}"))
             continue
         headers.append(p)
     # Report skipped counts
     print(f"[filter] skipped {len(skipped_templated)} templated files, {len(skipped_virtual)} virtual files")
+    if args.list_skipped and skipped_templated:
+        print("[filter] templated headers:")
+        for path, reason in skipped_templated:
+            rel = path.relative_to(root)
+            print(f"  - {rel.as_posix()} ({reason})")
+    if args.list_skipped and skipped_virtual:
+        print("[filter] virtual headers:")
+        for path, reason in skipped_virtual:
+            rel = path.relative_to(root)
+            print(f"  - {rel.as_posix()} ({reason})")
 
     cache_path = (project_root / args.cache_file) if not Path(args.cache_file).is_absolute() else Path(args.cache_file)
     cache: Dict[str, Any] = {}
@@ -1213,10 +1244,8 @@ def main():
     total_files = 0
     force = args.force
 
-    # We still must read source text for all headers for macro maintenance; for reused headers we lazily read now.
     for p in headers:
         if p not in texts:
-            # Not parsed this run (cache reuse) -> load text now only if we might modify or write
             texts[p] = p.read_text(encoding="utf-8", errors="ignore")
         orig_src = texts[p]
         src = orig_src

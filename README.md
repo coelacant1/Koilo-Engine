@@ -28,7 +28,7 @@ to explore reflection metadata from Python.
 
 ## Status
 - Core library: in active development, most subsystems compile header-first
-- Reflection: working -- generator and build scripts produce `ptx_reflect.so`
+- Reflection: working - generator and build scripts produce `ptx_reflect.so`
 - Python: ctypes wrapper + demo available in `lib/ptx_python`
 
 ## Quick start (build reflect shared library)
@@ -67,6 +67,18 @@ PYTHONPATH=../../src python3 reflection_demo.py
     umbrella generator and creates `src/reflection_entry_gen.cpp` which forces
     `Class::Describe()` calls to ensure registration objects are emitted in the
     final shared object.
+- The CMake target `ptx_update_registry` regenerates the reflection umbrella
+    header (`generated/ptx/ptxall.hpp`) and updates the PTX registry cache. It
+    is built automatically, but you can run it manually with:
+
+    ```bash
+    cmake --build build --target ptx_update_registry
+    ```
+- Static utility namespaces (for example `ptx::Console`, `ptx::Random`,
+    `ptx::Time`) expose a nested `Reflection` struct that forwards to their
+    static functions so they appear in the registry without requiring
+    instances. Follow this pattern for other static-only modules that need
+    runtime access.
 - The Python wrapper is at `lib/ptx_python/ptx/reflection.py` and exposes
     `PTXReflection` to enumerate classes, create instances, read/write fields,
     and invoke methods.

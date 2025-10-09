@@ -1,8 +1,9 @@
 // tvstaticshader.hpp
 #pragma once
 
-#include <cstddef>
 #include <cmath>
+#include <utility>
+#include <vector>
 
 #include "../ishader.hpp"
 #include "../../material/materialt.hpp"
@@ -27,33 +28,37 @@
  *   bars = color bars overlay                          // lighten/overlay
  *   out  = max(mix1, bars)                             // lighten
  *
- * @tparam NNoise Number of gradient keys for noise coloration.
- * @tparam NScan  Number of gradient keys for scanline coloration.
  */
-template <std::size_t NNoise, std::size_t NScan>
-class TVStaticShaderT final : public IShader {
+class TVStaticShader final : public IShader {
 public:
     /** @brief Construct with default simplex noise seed/state. */
-    TVStaticShaderT() : noise_(0) {}
+    TVStaticShader() : noise_(0) {}
 
     /**
      * @brief Shade a surface point using TV static composition.
      * @param sp Surface properties (position in world/screen space).
-     * @param m  Material instance expected to be MaterialT<TVStaticParamsT<NNoise,NScan>, TVStaticShaderT>.
+     * @param m  Material instance expected to be MaterialT<TVStaticParams, TVStaticShader>.
      * @return Final RGB color after noise/scan/bars composition.
      */
     RGBColor Shade(const SurfaceProperties& sp, const IMaterial& m) const override {
-        using MatBase = MaterialT<TVStaticParamsT<NNoise, NScan>, TVStaticShaderT<NNoise, NScan>>;
+        using MatBase = MaterialT<TVStaticParams, TVStaticShader>;
         const auto& P = m.As<MatBase>();
 
         // --- Build hue-shifted gradients ---
-        RGBColor nk[NNoise];
-        for (std::size_t i = 0; i < NNoise; ++i) nk[i] = RGBColor(P.noiseSpectrum[i]).HueShift(P.noiseHueDeg);
-        GradientColor<NNoise> gNoise(nk, /*stepped=*/true);
+        const std::size_t noiseCount = P.noiseSpectrum.size();
+        const std::size_t scanCount  = P.scanSpectrum.size();
+        if (noiseCount == 0 || scanCount == 0) {
+            return RGBColor();
+        }
 
-        RGBColor sk[NScan];
-        for (std::size_t i = 0; i < NScan; ++i) sk[i] = P.scanSpectrum[i];
-        GradientColor<NScan> gScan(sk, /*stepped=*/false);
+        std::vector<RGBColor> noiseKeys(noiseCount);
+        for (std::size_t i = 0; i < noiseCount; ++i) {
+            noiseKeys[i] = RGBColor(P.noiseSpectrum[i]).HueShift(P.noiseHueDeg);
+        }
+        GradientColor gNoise(std::move(noiseKeys), /*stepped=*/true);
+
+        const RGBColor* scanPtr = P.scanSpectrum.empty() ? nullptr : P.scanSpectrum.data();
+        GradientColor gScan(scanPtr, scanCount, /*stepped=*/false);
 
         // --- 1) Base noise color (simplex -> gradient) ---
         Vector3D ns(sp.position.X * P.noiseScale.X,
@@ -101,14 +106,11 @@ private:
 
     /**
      * @brief PAL/NTSC-style color bars with soft edges, within a rectangular region.
-     * @tparam NN Noise key count (forwarded from TVStaticParamsT).
-     * @tparam NS Scanline key count (forwarded from TVStaticParamsT).
      * @param pos Position to shade (expects XY components).
      * @param P   Parameter block.
      * @return Color bars contribution at @p pos.
      */
-    template <std::size_t NN, std::size_t NS>
-    static RGBColor ColorBars(const Vector3D& pos, const TVStaticParamsT<NN, NS>& P) {
+    static RGBColor ColorBars(const Vector3D& pos, const TVStaticParams& P) {
         // local coords centered at barsCenter
         float x = pos.X - P.barsCenter.X;
         float y = pos.Y - P.barsCenter.Y;
@@ -151,7 +153,7 @@ private:
         // Soft horizontal edges between bars
         float barU   = u * kNumBars - (float)idx;      // 0..1 within current bar
         float edge   = EdgeMask(barU, P.barsSoftness / P.barsSize.X);
-        RGBColor col = kBars[idx].HueShift(P.barsHueDeg);
+    RGBColor col = RGBColor(kBars[idx]).HueShift(P.barsHueDeg);
 
         return RGBColor(col.R * vm * edge,
                         col.G * vm * edge,

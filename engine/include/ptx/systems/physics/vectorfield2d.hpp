@@ -12,6 +12,7 @@
 #pragma once
 
 #include <cstdint>
+#include <vector>
 #include "../../registry/reflect_macros.hpp"
 
 #include "../../core/math/mathematics.hpp"
@@ -23,12 +24,12 @@
  */
 class VectorField2D {
 private:
-    int8_t* vecXP; ///< X-component of previous vectors.
-    int8_t* vecYP; ///< Y-component of previous vectors.
-    int8_t* vecDP; ///< Density of previous vectors.
-    int8_t* vecX; ///< X-component of current vectors.
-    int8_t* vecY; ///< Y-component of current vectors.
-    int8_t* vecD; ///< Density of current vectors.
+    std::vector<int8_t> vecXP; ///< X-component of previous vectors.
+    std::vector<int8_t> vecYP; ///< Y-component of previous vectors.
+    std::vector<int8_t> vecDP; ///< Density of previous vectors.
+    std::vector<int8_t> vecX; ///< X-component of current vectors.
+    std::vector<int8_t> vecY; ///< Y-component of current vectors.
+    std::vector<int8_t> vecD; ///< Density of current vectors.
 
     Vector2D size; ///< Size of the vector field.
     Vector2D position; ///< Position of the vector field.
@@ -36,6 +37,8 @@ private:
     const uint16_t countY; ///< Number of vectors along the Y-axis.
     float rotation = 0.0f; ///< Rotation of the field in degrees.
     bool density = false; ///< Indicates if the field should render density values.
+
+    [[nodiscard]] size_t SampleCount() const noexcept { return static_cast<size_t>(countX) * countY; }
 
 public:
     /**
@@ -45,11 +48,6 @@ public:
      * @param y Number of vectors along the Y-axis.
      */
     VectorField2D(uint16_t x, uint16_t y);
-
-    /**
-     * @brief Destructor for the `VectorField2D` class.
-     */
-    ~VectorField2D();
 
     /**
      * @brief Applies boundary conditions to the vector field.

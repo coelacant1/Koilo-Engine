@@ -126,14 +126,39 @@ cmake --build build -j
 ```
 
 Artifacts:
-* `build/ptx.so` - Lua module (OUTPUT_NAME set so `require('ptx')` works directly).
-* `build/libptx_reflect.so` - reflection shared library (copied next to `ptx.so` after build).
+* `build/ptx.so` - native Lua module (OUTPUT_NAME set so `require('ptx')` works directly when on `package.cpath`).
+* `build/libptx_reflect.so` - reflection shared library (runtime dependency, located via `$ORIGIN`).
 
 Runtime linking uses an embedded RPATH of `$ORIGIN` so `ptx.so` can locate `libptx_reflect.so` when they reside in the same directory.
 
-Quick test (from repo root):
+### Quick Dev Usage
+
+Instead of copying `ptx.so` into your Lua script directory, use the dev loader:
+
+> Ensure the pure-Lua helpers live on `package.path`. The snippets below prepend
+> `bindings/lua/?.lua` so `require('ptx_sugar')` and friends resolve.
+
+```lua
+-- test.lua
+local ptx = require('ptx_dev')          -- adds build/ to package.cpath and loads native module
+local sugar = require('ptx_sugar')       -- optional high-level wrapper
+print('Classes:', #ptx.list_classes())
+```
+
+Run from repo root:
+
 ```bash
-lua -e "package.cpath='build/?.so;'..package.cpath; local ptx=require('ptx'); print('Class count', #ptx.list_classes())"
+lua -e "package.path='bindings/lua/?.lua;'..package.path; require('ptx_dev'); print('class count', #require('ptx').list_classes())"
+```
+
+Environment overrides:
+* `PTX_LUA_BUILD_DIR` (default: `build`) - path holding `ptx.so`
+* `PTX_LUA_NATIVE_NAME` (default: `ptx`) - module base name
+
+Manual (without dev loader):
+```lua
+package.cpath = 'build/?.so;build/?/init.so;' .. package.cpath
+local ptx = require('ptx')
 ```
 
 ## Microcontroller Notes
@@ -147,11 +172,45 @@ lua -e "package.cpath='build/?.so;'..package.cpath; local ptx=require('ptx'); pr
 * Descriptor caching tables (each lookup still queries C API each time).
 * Remaining cosmetic const warning (tracked separately).
 
-## Roadmap (proposed)
-1. Object argument support improvements.
-2. Unified signature-based method dispatch sugar.
-3. String/UString conversion layer.
-4. Optional descriptor cache for hot loops.
-5. Auto-generated high-level facades.
-6. MCU footprint configuration macros.
+## New (Experimental) Performance & Sugar Layer
+
+Recent enhancements introduced two layers of ergonomics and speed:
+
+1. Per-instance descriptor caching (C): The first time you access a field or method on a userdata, its descriptor (field decl or method closure) is cached in the userdata's uservalue table. Subsequent accesses avoid repeated reflection lookups.
+2. Global class metadata caches (C): Upon first use of a class, its fields, methods, and constructors are scanned once and lightweight type tags (enum) are stored for fast argument boxing and primitive return unboxing. This removes repeated string parsing (`strstr` on type names) in hot call paths.
+3. High-level Lua sugar wrapper (`ptx_sugar.lua`): Optional pure Lua module that provides class proxies so you can write:
+
+```lua
+local ptx = require('ptx_sugar')
+local Color = ptx.RGBColor
+local c = Color(10,20,30)
+c.G = 42
+c:Add(5)
+-- static method
+Color.static.SomeUtility(c)
+```
+
+You can still `require('ptx')` directly for the minimal surface.
+
+### Performance Notes
+* Field get/set after warmup: O(1) Lua table lookup + direct memory read/write (primitive types) - no additional reflection traversal.
+* Method invoke (primitive args/returns): Single cached descriptor + pre-tagged arg boxing loop (no per-call type string scanning).
+* Static vs instance method calls share the same cached metadata array.
+
+### Planned Bench Harness
+A micro benchmark (future) will measure:
+* Cold vs warm field access
+* Cold vs warm method invoke (1-4 primitive args)
+* Overhead of sugar wrapper vs direct native module
+
+### Opting Out
+Embedded builds can define a future compile-time macro (planned) to disable global metadata caches if flash pressure outweighs speed needs.
+
+## Roadmap
+1. Object argument support improvements
+2. Unified signature-based method dispatch sugar
+3. String/UString conversion layer
+4. Optional descriptor cache for hot loops
+5. Auto-generated high-level facades
+6. MCU footprint configuration macros
 

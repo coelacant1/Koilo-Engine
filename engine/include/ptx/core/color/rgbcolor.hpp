@@ -50,6 +50,11 @@ public:
     RGBColor(const RGBColor& rgbColor);
 
     /**
+     * @brief Copy assignment operator.
+     */
+    RGBColor& operator=(const RGBColor& rgbColor) = default;
+
+    /**
      * @brief Constructor to initialize RGBColor from a Vector3D.
      * @param color Vector3D representing RGB values.
      */

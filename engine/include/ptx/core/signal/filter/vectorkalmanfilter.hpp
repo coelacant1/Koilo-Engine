@@ -12,8 +12,9 @@
 
 #pragma once
 
-#include "kalmanfilter.hpp"
-#include "../../math/vector3d.hpp"
+#include <ptx/core/signal/filter/kalmanfilter.hpp>
+#include <ptx/core/math/vector3d.hpp>
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class VectorKalmanFilter
@@ -22,14 +23,12 @@
  * The `VectorKalmanFilter` class uses three `KalmanFilter` instances to process the
  * X, Y, and Z components of a `Vector3D`, providing a smooth output for noisy 3D data.
  *
- * @tparam T The numeric type used for calculations (e.g., `float` or `double`).
  */
-template <typename T>
 class VectorKalmanFilter {
 private:
-    KalmanFilter<T> X; ///< Kalman filter for the X component of the vector.
-    KalmanFilter<T> Y; ///< Kalman filter for the Y component of the vector.
-    KalmanFilter<T> Z; ///< Kalman filter for the Z component of the vector.
+     KalmanFilter X; ///< Kalman filter for the X component of the vector.
+     KalmanFilter Y; ///< Kalman filter for the Y component of the vector.
+     KalmanFilter Z; ///< Kalman filter for the Z component of the vector.
 
 public:
     /**
@@ -42,7 +41,7 @@ public:
      * @param sensorNoise The sensor noise for the Kalman filter.
      * @param errorCovariance The initial error covariance for the Kalman filter.
      */
-    VectorKalmanFilter(T processNoise, T sensorNoise, T errorCovariance);
+    VectorKalmanFilter(float processNoise, float sensorNoise, float errorCovariance);
 
     /**
      * @brief Filters a 3D vector input using the Kalman filter.
@@ -52,6 +51,21 @@ public:
      * @param input The input `Vector3D` to filter.
      * @return The filtered `Vector3D`.
      */
-    Vector3D Filter(Vector3D input);
+    Vector3D Filter(const Vector3D& input);
+
+    void Reset(Vector3D estimation = Vector3D(), float errorCovariance = 1.0f);
+
+    PTX_BEGIN_FIELDS(VectorKalmanFilter)
+        /* No reflected fields. */
+    PTX_END_FIELDS
+
+    PTX_BEGIN_METHODS(VectorKalmanFilter)
+        PTX_METHOD_AUTO(VectorKalmanFilter, Filter, "Filter"),
+        PTX_METHOD_AUTO(VectorKalmanFilter, Reset, "Reset")
+    PTX_END_METHODS
+
+    PTX_BEGIN_DESCRIBE(VectorKalmanFilter)
+        PTX_CTOR(VectorKalmanFilter, float, float, float)
+    PTX_END_DESCRIBE(VectorKalmanFilter)
 
 };

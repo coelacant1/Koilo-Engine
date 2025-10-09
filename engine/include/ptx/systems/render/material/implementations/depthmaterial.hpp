@@ -34,7 +34,7 @@ public:
     static constexpr size_t kN = 4;
 
     /** @brief Internal gradient used by the shader via the params block. */
-    GradientMaterial<kN> gradient_;
+    GradientMaterial gradient_;
 
     /**
      * @brief Construct and bind the internal gradient; initialize axis/depth/offset.
@@ -44,7 +44,7 @@ public:
      */
     DepthMaterial(DepthAxis axis, float depth, float zOffset)
     : Base()
-    , gradient_(spectrum_, /*period*/ 2.0f, /*isRadial*/ false)
+    , gradient_(kN, spectrum_, /*period*/ 2.0f, /*isRadial*/ false)
     {
         this->axis    = axis;
         this->depth   = depth;
@@ -62,7 +62,7 @@ public:
     void SetOffset(float off)     { this->offset = off; }
 
     /** @brief Access the underlying gradient for customization. */
-    GradientMaterial<kN>& Gradient() { return gradient_; }
+    GradientMaterial& Gradient() { return gradient_; }
 
 private:
     /** @brief Default spectrum read by @ref gradient_. */

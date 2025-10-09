@@ -22,7 +22,7 @@
  */
 class BouncePhysics {
 private:
-    RunningAverageFilter<10> velocityFilter; ///< Filter to smooth out velocity fluctuations.
+    RunningAverageFilter velocityFilter; ///< Filter to smooth out velocity fluctuations.
     float currentVelocity; ///< Current velocity of the object.
     float currentPosition; ///< Current position of the object.
     float velocityRatio; ///< Ratio to control velocity damping.

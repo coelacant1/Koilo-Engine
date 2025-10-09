@@ -26,7 +26,7 @@
  */
 class FFTFilter {
 private:
-    RunningAverageFilter<20> minKF = RunningAverageFilter<20>(0.05f); ///< Running average filter for baseline normalization.
+    RunningAverageFilter minKF{20, 0.05f}; ///< Running average filter for baseline normalization.
     float outputValue = 0.0f; ///< Stores the most recent filtered output value.
 
 public:

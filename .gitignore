@@ -42,11 +42,12 @@
 .piolibdeps/
 .clang_complete
 .gcc-flags.json
+.ptx_reflect_cache.json
 *__pycache__/
 build/
-external/
+external/unity/*
 */.venv/
-
+docs/
 
 # External libraries
 lib/lua/

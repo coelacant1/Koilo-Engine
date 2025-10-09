@@ -14,7 +14,7 @@ void Begin(std::uint32_t baud) {
     // Optional: wait for serial port to connect. Needed for native USB on some boards.
     // while (!Serial) { ; }
 #else
-    // This is a no-op on native platforms, but we acknowledge the parameter
+    // This is a no-op on native platforms, but acknowledge the parameter
     // to prevent "unused parameter" warnings.
     (void)baud;
 #endif

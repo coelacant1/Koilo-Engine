@@ -11,42 +11,62 @@
  */
 
 #pragma once
+
+#include "../../../registry/reflect_macros.hpp"
 /**
  * @class KalmanFilter
- * @brief Implements a generic Kalman Filter for 1D data.
+ * @brief Implements a 1D Kalman Filter with runtime-configurable parameters.
  *
- * This class provides a template-based implementation of a Kalman Filter
- * for filtering noisy data. It estimates the true value by accounting for
- * process noise and sensor noise.
- *
- * @tparam T The numeric type for the filter (e.g., `float`, `double`).
+ * The runtime version mirrors the original template behaviour but stores state
+ * using single-precision floats to keep the implementation in a translation unit.
  */
-template<typename T>
 class KalmanFilter {
 private:
-    T processNoise; ///< The process noise variance.
-    T sensorNoise; ///< The sensor noise variance.
-    T estimation; ///< The current estimation of the value.
-    T errorCovariance; ///< The error covariance of the estimation.
+    float processNoise;      ///< Process noise variance.
+    float sensorNoise;       ///< Sensor noise variance.
+    float estimation;        ///< Current estimated value.
+    float errorCovariance;   ///< Error covariance of the estimation.
 
 public:
-    /**
-     * @brief Constructs a `KalmanFilter` with specified noise parameters.
-     *
-     * @param processNoise The process noise variance.
-     * @param sensorNoise The sensor noise variance.
-     * @param errorCovariance The initial error covariance.
-     */
-    KalmanFilter(T processNoise, T sensorNoise, T errorCovariance);
+    KalmanFilter(float processNoise, float sensorNoise, float errorCovariance);
 
     /**
-     * @brief Filters the given input value using the Kalman Filter algorithm.
-     *
-     * @param value The noisy input value to be filtered.
-     * @return The filtered estimate of the value.
+     * @brief Resets the filter state to a known estimation and covariance.
      */
-    T Filter(T value);
+    void Reset(float estimationValue = 0.0f, float errorCovarianceValue = 1.0f);
+
+    /**
+     * @brief Filters the given input value using the Kalman update equations.
+     */
+    float Filter(float value);
+
+    float GetEstimation() const { return estimation; }
+    float GetProcessNoise() const { return processNoise; }
+    float GetSensorNoise() const { return sensorNoise; }
+    float GetErrorCovariance() const { return errorCovariance; }
+
+    void SetProcessNoise(float value) { processNoise = value; }
+    void SetSensorNoise(float value) { sensorNoise = value; }
+    void SetErrorCovariance(float value) { errorCovariance = value; }
+
+    PTX_BEGIN_FIELDS(KalmanFilter)
+        /* No reflected fields. */
+    PTX_END_FIELDS
+
+    PTX_BEGIN_METHODS(KalmanFilter)
+        PTX_METHOD_AUTO(KalmanFilter, Reset, "Reset"),
+        PTX_METHOD_AUTO(KalmanFilter, Filter, "Filter"),
+        PTX_METHOD_AUTO(KalmanFilter, GetEstimation, "Get estimation"),
+        PTX_METHOD_AUTO(KalmanFilter, GetProcessNoise, "Get process noise"),
+        PTX_METHOD_AUTO(KalmanFilter, GetSensorNoise, "Get sensor noise"),
+        PTX_METHOD_AUTO(KalmanFilter, GetErrorCovariance, "Get error covariance"),
+        PTX_METHOD_AUTO(KalmanFilter, SetProcessNoise, "Set process noise"),
+        PTX_METHOD_AUTO(KalmanFilter, SetSensorNoise, "Set sensor noise"),
+        PTX_METHOD_AUTO(KalmanFilter, SetErrorCovariance, "Set error covariance")
+    PTX_END_METHODS
+
+    PTX_BEGIN_DESCRIBE(KalmanFilter)
+        PTX_CTOR(KalmanFilter, float, float, float)
+    PTX_END_DESCRIBE(KalmanFilter)
 
 };
-
-#include "kalmanfilter.tpp" // Includes the implementation of the template.

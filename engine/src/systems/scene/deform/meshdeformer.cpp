@@ -25,16 +25,15 @@ bool MeshDeformer::CheckClipAxis(Vector3D base, bool positive, Axis valueCheckAx
 }
 
 MeshDeformer::MeshDeformer(Mesh* object){
-    objects = new Mesh*[1];
-    
-    objects[0] = object;
-    
+    objects = {object};
     objectCount = 1;
 }
 
 MeshDeformer::MeshDeformer(Mesh** objects, int objectCount){
-    this->objects = objects;
-    this->objectCount = objectCount;
+    if (objects && objectCount > 0) {
+        this->objects.assign(objects, objects + objectCount);
+        this->objectCount = objectCount;
+    }
 }
 
 void MeshDeformer::PerspectiveDeform(float scaleRatio, Vector3D center, Axis axis){//0.0f close, 1.0f uniform, infinite infinite

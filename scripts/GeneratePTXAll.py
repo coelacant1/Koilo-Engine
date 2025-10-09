@@ -3,15 +3,15 @@
 ---------------------
 Generate an umbrella header that `#include`s every public *.hpp under a root.
 
-Default legacy behavior (no --output provided): write into `<root>/ptxall.hpp`.
+Default behavior (no --output provided): write into `<root>/ptxall.hpp`.
 Preferred modern usage: supply an explicit --output path inside the CMake
 build tree (e.g. `${CMAKE_BINARY_DIR}/generated/ptx/ptxall.hpp`) so the file
 is not tracked in the source repo.
 
 Examples:
-    python .scripts/GeneratePTXAll.py --root lib/ptx \
+    python scripts/GeneratePTXAll.py --root engine/include/ptx \
                  --output build/generated/ptx/ptxall.hpp
-    python .scripts/GeneratePTXAll.py --root engine/include/ptx --output build/gen/ptx/ptxall.hpp
+    python scripts/GeneratePTXAll.py --root engine/include/ptx --output build/gen/ptx/ptxall.hpp
 """
 
 from pathlib import Path
@@ -25,9 +25,11 @@ try:  # When invoked via PlatformIO extra_scripts
 except Exception:  # Stand-alone
     DEFAULT_REPO_ROOT = Path(__file__).resolve().parents[1]
 
+DEFAULT_HEADER_ROOT = Path("engine") / "include" / "ptx"
+
 def parse_args() -> argparse.Namespace:
     ap = argparse.ArgumentParser(description="Generate umbrella ptxall.hpp")
-    ap.add_argument("--root", default="lib/ptx", help="Header root to scan (default: lib/ptx)")
+    ap.add_argument("--root", default=str(DEFAULT_HEADER_ROOT), help="Header root to scan (default: engine/include/ptx)")
     ap.add_argument("--output", default=None, help="Output file path (default: <root>/ptxall.hpp)")
     return ap.parse_args()
 
@@ -80,10 +82,12 @@ def main_cli() -> int:
 
 if __name__ == "__main__":
     sys.exit(main_cli())
-else:  # Imported (e.g. via PlatformIO) -- retain legacy behavior
+else:  # Imported (e.g. via PlatformIO) - retain legacy behavior
     try:
-        legacy_root = DEFAULT_REPO_ROOT / "lib" / "ptx"
-        legacy_out = legacy_root / "ptxall.hpp"
-        generate(legacy_root, legacy_out)
+        root_candidate = DEFAULT_REPO_ROOT / DEFAULT_HEADER_ROOT
+        if not root_candidate.exists():
+            root_candidate = DEFAULT_REPO_ROOT / "lib" / "ptx"
+        legacy_out = root_candidate / "ptxall.hpp"
+        generate(root_candidate, legacy_out)
     except Exception:
         pass

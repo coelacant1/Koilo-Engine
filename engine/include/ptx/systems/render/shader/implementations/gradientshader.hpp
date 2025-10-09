@@ -1,7 +1,8 @@
 #pragma once
 
+#include <cstddef>
 #include <cmath>
-#include <cstdint>
+#include "../../../../registry/reflect_macros.hpp"
 
 #include "../ishader.hpp"
 #include "../../material/materialt.hpp"   // for IMaterial::As<T>()
@@ -18,27 +19,19 @@
 
 /**
  * @file gradientshader.hpp
- * @brief Stateless shader that samples a linear or radial N-key gradient.
+ * @brief Stateless shader that samples a linear or radial gradient with runtime-sized keys.
  *
  * Uses the bound material’s @ref GradientParams to compute a phase along +X (linear)
  * or radial distance (radial), applies optional rotation about a configurable origin,
  * and returns either stepped or interpolated color between adjacent keys.
- *
- * @tparam N Number of colors (keys) in the gradient.
  */
 
-/**
- * @tparam N Number of colors in the gradient.
- * @class GradientShaderT
- * @brief Implements gradient sampling for materials mixing in @ref GradientParams.
- */
-template <size_t N>
-class GradientShaderT final : public IShader {
+class GradientShader final : public IShader {
 public:
     /**
      * @brief Shade a surface point by evaluating the configured gradient.
      * @param surf Surface properties (position used; XY plane evaluation).
-     * @param m    Bound material; expected to be @c MaterialT<GradientParams<N>, GradientShaderT<N>>.
+    * @param m    Bound material; expected to be @c MaterialT<GradientParams, GradientShader>.
      * @return RGB color sampled from the gradient.
      *
      * @details
@@ -50,8 +43,13 @@ public:
      * 5. If @c isStepped, return @c colors[i0]; otherwise interpolate i0->i1 by the fractional part.
      */
     RGBColor Shade(const SurfaceProperties& surf, const IMaterial& m) const override {
-        using MatBase = MaterialT<GradientParams<N>, GradientShaderT<N>>;
+        using MatBase = MaterialT<GradientParams, GradientShader>;
         const auto& P = m.As<MatBase>();
+
+        const std::size_t colorCount = P.colors.size();
+        if (colorCount == 0) {
+            return RGBColor(0, 0, 0);
+        }
 
         // --- Position prep (XY plane), with rotation about P.rotationOffset
         Vector3D pos = surf.position;
@@ -84,16 +82,33 @@ public:
         }
 
         // map 0..period -> 0..N
-        const float t     = Mathematics::Map(phase, 0.0f, P.gradientPeriod, 0.0f, float(N));
-        const uint8_t i0  = (uint8_t)std::floor(t);
-        const uint8_t i1  = (i0 + 1u >= (uint8_t)N) ? 0u : (uint8_t)(i0 + 1u);
+        const float maxPeriod = (P.gradientPeriod > 0.00001f) ? P.gradientPeriod : 1.0f;
+        const float mapped    = Mathematics::Map(phase, 0.0f, maxPeriod, 0.0f, static_cast<float>(colorCount));
+        float t = std::fmod(mapped, static_cast<float>(colorCount));
+        if (t < 0.0f) t += static_cast<float>(colorCount);
 
-        if (P.isStepped) {
+        std::size_t i0 = static_cast<std::size_t>(std::floor(t));
+        if (i0 >= colorCount) i0 = colorCount - 1;
+        const std::size_t i1 = (colorCount == 1) ? 0 : ((i0 + 1) % colorCount);
+
+        if (P.isStepped || colorCount == 1) {
             return P.colors[i0];
         }
 
-        const float mu = Mathematics::Map(t, float(i0), float(i0 + 1u), 0.0f, 1.0f);
+        const float mu = t - static_cast<float>(i0);
         return RGBColor::InterpolateColors(P.colors[i0], P.colors[i1], mu);
     }
+
+    PTX_BEGIN_FIELDS(GradientShader)
+        /* No reflected fields. */
+    PTX_END_FIELDS
+
+    PTX_BEGIN_METHODS(GradientShader)
+        PTX_METHOD_AUTO(GradientShader, Shade, "Shade")
+    PTX_END_METHODS
+
+    PTX_BEGIN_DESCRIBE(GradientShader)
+        /* No reflected ctors. */
+    PTX_END_DESCRIBE(GradientShader)
 
 };

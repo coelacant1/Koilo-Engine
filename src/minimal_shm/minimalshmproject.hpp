@@ -32,11 +32,11 @@ private:
     CameraLayout layout2_ { CameraLayout::ZForward, CameraLayout::YUp };
     Transform    cam1Xform_ { Vector3D(), Vector3D(0,0,-500), Vector3D(1,1,1) };
     Transform    cam2Xform_ { Vector3D(), Vector3D(0,0,-500), Vector3D(1,1,1) };
-    PixelGroup<kCount> pixels_ { Vector2D(float(kW) * 3.0f, float(kH) * 3.0f), Vector2D(0,0), kW };
-    //PixelGroup<kCount> ws35pg { Vector2D(float(kW), float(kH)), Vector2D(0,0), kW };
-    PixelGroup<571> ws35pg {WS35Layout::WS35Pixels, IPixelGroup::Direction::MAXTOZERO};
-    Camera<kCount>     camera_ { &cam1Xform_, &layout1_, &pixels_ };
-    Camera<571> ks35           { &cam2Xform_, &layout2_, &ws35pg };
+    PixelGroup pixels_ { static_cast<uint16_t>(kCount), Vector2D(float(kW) * 3.0f, float(kH) * 3.0f), Vector2D(0,0), static_cast<uint16_t>(kW) };
+    //PixelGroup ws35pg { static_cast<uint16_t>(kCount), Vector2D(float(kW), float(kH)), Vector2D(0,0), static_cast<uint16_t>(kW) };
+    PixelGroup ws35pg { WS35Layout::WS35Pixels, static_cast<uint16_t>(571), IPixelGroup::Direction::MAXTOZERO };
+    Camera     camera_ { &cam1Xform_, &layout1_, &pixels_ };
+    Camera     ks35    { &cam2Xform_, &layout2_, &ws35pg };
     CameraManager      cams_   { new CameraBase*[2]{ &camera_, &ks35 }, 2 };
 
     VirtualController  vctrl_  { &cams_, "/ptx_ctrl", "/ptx_reg" };

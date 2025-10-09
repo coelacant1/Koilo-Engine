@@ -12,6 +12,7 @@ PTXEngine unified build helper
 Usage: $0 [command]
 Commands:
   configure         Run CMake configure step
+  registry          Regenerate reflection umbrella and registry cache
   core              Build ptx_core
   reflect           Build ptx_reflect (implies generation)
   lua               Build Lua module (ptx_lua)
@@ -40,6 +41,8 @@ shift || true
 case "$cmd" in
   configure)
     cmake_configure "$@" ;;
+  registry)
+    cmake_configure ; cmake_build ptx_update_registry ;;
   core)
     cmake_configure ; cmake_build ptx_core ;;
   reflect)

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstddef>
+#include <memory>
+#include <vector>
 
 #include "../imaterial.hpp"
 #include "../materialt.hpp"
@@ -17,8 +19,6 @@
  * @file spectrumanalyzermaterial.hpp
  * @brief Material that visualizes a B-bin spectrum with an N-color gradient and optional bounce smoothing.
  *
- * @tparam N Number of spectrum keys (gradient control points).
- * @tparam B Number of spectrum bins processed per frame.
  */
 
 /**
@@ -28,23 +28,16 @@
  * Binds an external samples buffer (non-owning) and, on update, writes either smoothed
  * values (bounce enabled) or raw samples into @c bounceData for the shader.
  */
-template <std::size_t N = 6, std::size_t B = 128>
 class SpectrumAnalyzerMaterial
-    : public MaterialT<SpectrumAnalyzerParamsT<N, B>, SpectrumAnalyzerShaderT<N, B>> {
+    : public MaterialT<SpectrumAnalyzerParams, SpectrumAnalyzerShader> {
 
-    using Base = MaterialT<SpectrumAnalyzerParamsT<N, B>, SpectrumAnalyzerShaderT<N, B>>;
+    using Base = MaterialT<SpectrumAnalyzerParams, SpectrumAnalyzerShader>;
 
 public:
-    using Base::Base;
-
-    /** @brief Default-construct; springs are allocated on demand when bounce is enabled. */
-    SpectrumAnalyzerMaterial() : Base() {
-        for (std::size_t i = 0; i < B; ++i) springs_[i] = nullptr;
-    }
-
-    /** @brief Destroy and free any allocated BouncePhysics instances. */
-    ~SpectrumAnalyzerMaterial() override {
-        for (std::size_t i = 0; i < B; ++i) { delete springs_[i]; springs_[i] = nullptr; }
+    /** @brief Construct with desired spectrum key count and bin count. */
+    explicit SpectrumAnalyzerMaterial(std::size_t spectrumCount = 6, std::size_t binCount = 128)
+        : Base(spectrumCount, binCount) {
+        springs_.resize(binCount);
     }
 
     // ---------- config: transform & shaping ----------
@@ -79,6 +72,29 @@ public:
     /** @brief Get vertical scale multiplier. */
     float GetHeightScale() const             { return this->heightScale; }
 
+    /** @brief Set the number of spectrum keys, optionally feeding default rainbow colors. */
+    void SetSpectrumCount(std::size_t count) {
+        this->ResizeSpectrum(count);
+    }
+
+    /** @brief Set the number of bins (per-frame samples). Resets bounce storage. */
+    void SetBinCount(std::size_t count) {
+        const std::size_t spectrumCount = this->SpectrumCount();
+        this->Resize(spectrumCount, count);
+        springs_.resize(count);
+        if (!this->bounce) {
+            for (auto& spring : springs_) spring.reset();
+        } else {
+            EnsureSprings();
+        }
+    }
+
+    /** @brief Current spectrum key count. */
+    [[nodiscard]] std::size_t SpectrumCount() const { return this->SpectrumAnalyzerParams::SpectrumCount(); }
+
+    /** @brief Current bin/sample count. */
+    [[nodiscard]] std::size_t BinCount() const { return this->SpectrumAnalyzerParams::BinCount(); }
+
     /**
      * @brief Toggle per-bin bounce smoothing.
      * @details Allocates @ref BouncePhysics when enabling; frees when disabling to save memory.
@@ -87,10 +103,9 @@ public:
         if (this->bounce == on) return;
         this->bounce = on;
         if (on) {
-            for (std::size_t i = 0; i < B; ++i)
-                if (!springs_[i]) springs_[i] = new BouncePhysics(35.0f, 15.0f);
+            EnsureSprings();
         } else {
-            for (std::size_t i = 0; i < B; ++i) { delete springs_[i]; springs_[i] = nullptr; }
+            for (auto& spring : springs_) spring.reset();
         }
     }
     /** @brief Query bounce-smoothing state. */
@@ -98,56 +113,101 @@ public:
 
     // ---------- gradient config ----------
 
-    /** @brief Replace the entire N-key spectrum. */
-    void SetSpectrum(const RGBColor (&colors)[N]) {
-        for (std::size_t i = 0; i < N; ++i) this->spectrum[i] = colors[i];
-    }
-
-    /** @brief Set a single spectrum key (index clamped to [0..N-1]). */
-    void SetSpectrumAt(std::size_t i, const RGBColor& c) {
-        if (i >= N) i = N - 1;
-        this->spectrum[i] = c;
-    }
-
-    /** @brief Get a single spectrum key (index clamped to [0..N-1]). */
-    RGBColor GetSpectrumAt(std::size_t i) const {
-        if (i >= N) i = N - 1;
-        return this->spectrum[i];
-    }
-
-    /** @brief Mutable pointer to the spectrum array (size N). */
-    RGBColor*       SpectrumData()       { return this->spectrum; }
-
-    /** @brief Const pointer to the spectrum array (size N). */
-    const RGBColor* SpectrumData() const { return this->spectrum; }
-
-    // ---------- data binding / update ----------
-
-    /** @brief Bind external pointer to B floats (non-owning). */
-    void BindSamples(const float* samplesPtr) { this->samples = samplesPtr; }
-
-    /**
-     * @brief Per-frame update of bounceData from input samples.
-     * @param readData Optional pointer to B samples; if null uses previously bound samples.
-     *
-     * Writes smoothed values when bounce is enabled; otherwise mirrors raw samples.
-     * The shader consumes @c bounceData regardless of mode.
-     */
-    void Update(const float* readData = nullptr) override {
-        if (readData) this->samples = readData;
-        if (!this->samples) return;
-
-        if (this->bounce) {
-            for (std::size_t i = 0; i < B; ++i) {
-                const float in = this->samples[i];
-                this->bounceData[i] = springs_[i] ? springs_[i]->Calculate(in, 0.1f) : in;
-            }
-        } else {
-            for (std::size_t i = 0; i < B; ++i) this->bounceData[i] = this->samples[i];
+    /** @brief Replace the spectrum from a pointer/count pair. */
+    void SetSpectrum(const RGBColor* colors, std::size_t count) {
+        if (!colors || count == 0) {
+            return;
+        }
+        this->ResizeSpectrum(count);
+        RGBColor* data = this->SpectrumData();
+        if (!data) return;
+        for (std::size_t i = 0; i < count; ++i) {
+            data[i] = colors[i];
         }
     }
 
+    /** @brief Replace the entire spectrum from a container. */
+    void SetSpectrum(const std::vector<RGBColor>& colors) {
+        SetSpectrum(colors.data(), colors.size());
+    }
+
+    /** @brief Replace the entire spectrum from a fixed-size array. */
+    template <std::size_t Count>
+    void SetSpectrum(const RGBColor (&colors)[Count]) {
+        SetSpectrum(colors, Count);
+    }
+
+    /** @brief Set a single spectrum key (index clamped to [0..count-1]). */
+    void SetSpectrumAt(std::size_t i, const RGBColor& c) {
+        if (this->SpectrumCount() == 0) return;
+        if (i >= this->SpectrumCount()) i = this->SpectrumCount() - 1;
+        RGBColor* data = this->SpectrumData();
+        if (data) data[i] = c;
+    }
+
+    /** @brief Get a single spectrum key (index clamped to [0..count-1]). */
+    RGBColor GetSpectrumAt(std::size_t i) const {
+        const std::size_t count = this->SpectrumCount();
+        if (count == 0) return RGBColor();
+        if (i >= count) i = count - 1;
+        const RGBColor* data = this->SpectrumData();
+        return data ? data[i] : RGBColor();
+    }
+
+    /** @brief Mutable pointer to the spectrum array (size determined at runtime). */
+    RGBColor*       SpectrumDataMutable()       { return this->SpectrumData(); }
+
+    /** @brief Const pointer to the spectrum array (size determined at runtime). */
+    const RGBColor* SpectrumDataMutable() const { return this->SpectrumData(); }
+
+    // ---------- data binding / update ----------
+
+    /** @brief Bind external pointer to floats (non-owning). */
+    void BindSamples(const float* samplesPtr) { this->samples = samplesPtr; }
+
+    /** @brief Update via IMaterial interface (uses previously bound samples). */
+    void Update(float /*deltaTime*/) override { ProcessSamples(nullptr); }
+
+    /**
+     * @brief Update bounce data using the provided samples pointer.
+     * @details If @p readData is null, the last bound pointer is used.
+     */
+    void UpdateSamples(const float* readData = nullptr) { ProcessSamples(readData); }
+
 private:
-    BouncePhysics* springs_[B]; ///< Allocated only when bounce is enabled.
+    void EnsureSprings() {
+        const std::size_t bins = this->BinCount();
+        springs_.resize(bins);
+        for (std::size_t i = 0; i < bins; ++i) {
+            if (!springs_[i]) {
+                springs_[i] = std::make_unique<BouncePhysics>(35.0f, 15.0f);
+            }
+        }
+    }
+
+    void ProcessSamples(const float* readData) {
+        if (readData) this->samples = readData;
+        if (!this->samples || this->BinCount() == 0) return;
+
+        float* bounceTarget = this->BounceData();
+        if (!bounceTarget) {
+            return;
+        }
+
+        if (this->bounce) {
+            EnsureSprings();
+            for (std::size_t i = 0; i < this->BinCount(); ++i) {
+                const float in = this->samples[i];
+                auto& spring = springs_[i];
+                bounceTarget[i] = spring ? spring->Calculate(in, 0.1f) : in;
+            }
+        } else {
+            for (std::size_t i = 0; i < this->BinCount(); ++i) {
+                bounceTarget[i] = this->samples[i];
+            }
+        }
+    }
+
+    std::vector<std::unique_ptr<BouncePhysics>> springs_{}; ///< Allocated only when bounce is enabled.
 
 };

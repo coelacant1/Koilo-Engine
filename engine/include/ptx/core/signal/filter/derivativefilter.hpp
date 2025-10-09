@@ -26,8 +26,8 @@
  */
 class DerivativeFilter {
 private:
-    RunningAverageFilter<10> output = RunningAverageFilter<10>(0.2f); ///< Running average filter for smoothing the derivative output.
-    MinFilter<40> minFilter; ///< Minimum filter for baseline normalization.
+    RunningAverageFilter output{10, 0.2f}; ///< Running average filter for smoothing the derivative output.
+    MinFilter minFilter{40}; ///< Minimum filter for baseline normalization.
     float previousReading = 0.0f; ///< Stores the previous input value for calculating the rate of change.
     float outputValue = 0.0f; ///< Stores the most recent filtered derivative value.
 

@@ -29,7 +29,7 @@ void Image::SetColorPalette(const uint8_t* rgbColors) {
 }
 
 RGBColor Image::GetColorAtCoordinate(Vector2D point) {
-    // Apply inverse rotation about 'offset' so we can do axis-aligned mapping.
+    // Apply inverse rotation about 'offset' to do axis-aligned mapping.
     Vector2D rPos = angle != 0.0f ? point.Rotate(angle, offset) - offset : point - offset;
 
     // Map world-space to pixel-space (origin top-left, y increases downward).

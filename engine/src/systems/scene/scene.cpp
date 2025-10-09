@@ -1,28 +1,34 @@
 #include <ptx/systems/scene/scene.hpp>
 
-Scene::Scene(unsigned int maxMeshes) : maxMeshes(maxMeshes) {
-	meshes = new Mesh*[maxMeshes];
-}
-
-Scene::~Scene() {
-	delete[] meshes;
+Scene::Scene(unsigned int maxMeshes) : maxMeshes(static_cast<int>(maxMeshes)) {
+	meshes.reserve(this->maxMeshes);
 }
 
 void Scene::AddMesh(Mesh* mesh) {
-	meshes[numMeshes] = mesh;
-	numMeshes++;
+	if (numMeshes >= static_cast<unsigned int>(maxMeshes)) {
+		return;
+	}
+
+	if (numMeshes < meshes.size()) {
+		meshes[numMeshes] = mesh;
+	} else {
+		meshes.push_back(mesh);
+	}
+	numMeshes = static_cast<unsigned int>(meshes.size());
 }
 
 void Scene::RemoveElement(unsigned int element) {
-	for (unsigned int i = element; i < numMeshes - 1; i++) {
-		meshes[i] = meshes[i + 1];
+	if (element >= meshes.size()) {
+		return;
 	}
+
+	meshes.erase(meshes.begin() + element);
+	numMeshes = static_cast<unsigned int>(meshes.size());
 }
 
 void Scene::RemoveMesh(unsigned int i) {
-	if (i < numMeshes && i >= 0) {
+	if (i < numMeshes) {
 		RemoveElement(i);
-		numMeshes--;
 	}
 }
 
@@ -36,11 +42,11 @@ void Scene::RemoveMesh(Mesh* mesh) {
 }
 
 Mesh** Scene::GetMeshes() {
-	return meshes;
+	return meshes.data();
 }
 
 uint8_t Scene::GetMeshCount() {
-	return numMeshes;
+	return static_cast<uint8_t>(numMeshes);
 }
 
 uint32_t Scene::GetTotalTriangleCount() const {

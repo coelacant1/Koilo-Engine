@@ -1,7 +1,7 @@
 #include <ptx/core/control/bouncephysics.hpp>
 
 BouncePhysics::BouncePhysics(float gravity, float velocityRatio) :
-    velocityFilter(0.4f),
+    velocityFilter(10, 0.4f),
     currentVelocity(0.0f),
     currentPosition(0.0f),
     velocityRatio(velocityRatio),

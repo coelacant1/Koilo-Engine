@@ -1,14 +1,10 @@
 #include <ptx/systems/scene/deform/meshalign.hpp>
 
+#include <array>
+
 Vector3D MeshAlign::GetCentroid(Mesh* obj) {
-    Mesh** objs = new Mesh*[1];
-    objs[0] = obj;
-
-    Vector3D output = GetCentroid(objs, 1);
-
-    delete[] objs;
-
-    return output;
+    std::array<Mesh*, 1> objs{obj};
+    return GetCentroid(objs.data(), static_cast<uint8_t>(objs.size()));
 }
 
 Vector3D MeshAlign::GetCentroid(Mesh** objs, uint8_t numObjects) {
@@ -28,14 +24,8 @@ Vector3D MeshAlign::GetCentroid(Mesh** objs, uint8_t numObjects) {
 }
 
 Vector3D MeshAlign::GetObjectCenter(Mesh* obj) {
-    Mesh** objs = new Mesh*[1];
-    objs[0] = obj;
-
-    Vector3D output = GetObjectCenter(objs, 1);
-
-    delete[] objs;
-
-    return output;
+    std::array<Mesh*, 1> objs{obj};
+    return GetObjectCenter(objs.data(), static_cast<uint8_t>(objs.size()));
 }
 
 Vector3D MeshAlign::GetObjectCenter(Mesh** objs, uint8_t numObjects) {
@@ -54,14 +44,8 @@ Vector3D MeshAlign::GetObjectCenter(Mesh** objs, uint8_t numObjects) {
 }
 
 Vector3D MeshAlign::GetObjectSize(Mesh* obj) {
-    Mesh** objs = new Mesh*[1];
-    objs[0] = obj;
-
-    Vector3D output = GetObjectSize(objs, 1);
-
-    delete[] objs;
-
-    return output;
+    std::array<Mesh*, 1> objs{obj};
+    return GetObjectSize(objs.data(), static_cast<uint8_t>(objs.size()));
 }
 
 Vector3D MeshAlign::GetObjectSize(Mesh** objs, uint8_t numObjects) {
@@ -107,14 +91,8 @@ void MeshAlign::NormalizeObjectCenter(Mesh** objs, uint8_t numObjects, Vector3D 
 }
 
 float MeshAlign::GetObjectPlanarityRatio(Mesh* obj) {
-    Mesh** objs = new Mesh*[1];
-    objs[0] = obj;
-
-    float planarity = GetObjectPlanarityRatio(objs, 1);
-
-    delete[] objs;
-
-    return planarity;
+    std::array<Mesh*, 1> objs{obj};
+    return GetObjectPlanarityRatio(objs.data(), static_cast<uint8_t>(objs.size()));
 }
 
 // Main function to check planarity of objects
@@ -145,14 +123,8 @@ float MeshAlign::GetObjectPlanarityRatio(Mesh** objs, uint8_t numObjects) {
 }
 
 Quaternion MeshAlign::GetPlaneNormal(Mesh* obj) {
-    Mesh** objs = new Mesh*[1];
-    objs[0] = obj;
-
-    Quaternion output = GetPlaneNormal(objs, 1);
-
-    delete[] objs;
-
-    return output;
+    std::array<Mesh*, 1> objs{obj};
+    return GetPlaneNormal(objs.data(), static_cast<uint8_t>(objs.size()));
 }
 
 Quaternion MeshAlign::GetPlaneNormal(Mesh** objs, uint8_t numObjects) {
@@ -178,14 +150,8 @@ Quaternion MeshAlign::GetPlaneNormal(Mesh** objs, uint8_t numObjects) {
 }
 
 Quaternion MeshAlign::GetPlaneOrientation(Mesh* obj, Vector3D centroid) {
-    Mesh** objs = new Mesh*[1];
-    objs[0] = obj;
-
-    Quaternion output = GetPlaneOrientation(objs, 1, centroid);
-
-    delete[] objs;
-
-    return output;
+    std::array<Mesh*, 1> objs{obj};
+    return GetPlaneOrientation(objs.data(), static_cast<uint8_t>(objs.size()), centroid);
 }
 
 Quaternion MeshAlign::GetPlaneOrientation(Mesh** objs, uint8_t numObjects, Vector3D centroid) {
@@ -290,12 +256,8 @@ void MeshAlign::SetScale(float scaleX, float scaleY) {
 
 //Aligns object, does not move or scale object
 Transform MeshAlign::GetTransform(Mesh* obj){
-    Mesh** objs = new Mesh*[1];
-    objs[0] = obj;
-    Transform objectCenter = GetTransform(objs, 1);
-    delete[] objs;
-
-    return objectCenter;
+    std::array<Mesh*, 1> objs{obj};
+    return GetTransform(objs.data(), static_cast<uint8_t>(objs.size()));
 }
 
 Transform MeshAlign::GetTransform(Mesh** objs, uint8_t numObjects){
@@ -368,10 +330,8 @@ Transform MeshAlign::GetTransform(Mesh** objs, uint8_t numObjects){
 }
 
 void MeshAlign::AlignObjectNoScale(Mesh* obj) {
-    Mesh** objs = new Mesh*[1];
-    objs[0] = obj;
-    AlignObjectsNoScale(objs, 1);
-    delete[] objs;
+    std::array<Mesh*, 1> objs{obj};
+    AlignObjectsNoScale(objs.data(), static_cast<uint8_t>(objs.size()));
 }
 
 void MeshAlign::AlignObjectsNoScale(Mesh** objs, uint8_t numObjects) {
@@ -394,10 +354,8 @@ void MeshAlign::AlignObjectsNoScale(Mesh** objs, uint8_t numObjects) {
 }
 
 void MeshAlign::AlignObject(Mesh* obj) {
-    Mesh** objs = new Mesh*[1];
-    objs[0] = obj;
-    AlignObjects(objs, 1);
-    delete[] objs;
+    std::array<Mesh*, 1> objs{obj};
+    AlignObjects(objs.data(), static_cast<uint8_t>(objs.size()));
 }
 
 void MeshAlign::AlignObjects(Mesh** objs, uint8_t numObjects) {

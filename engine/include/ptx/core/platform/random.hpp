@@ -2,6 +2,8 @@
 
 #include <cstdint> // For std::uint32_t
 
+#include "../../registry/reflect_macros.hpp"
+
 /**
  * @file Random.hpp
  * @brief A platform-agnostic API for pseudo-random number generation.
@@ -13,7 +15,8 @@
  * @namespace ptx::Random
  * @brief Unifies random number generation between Arduino and native C++.
  */
-namespace ptx::Random {
+namespace ptx {
+namespace Random {
 
     /**
      * @brief Seeds the underlying random number generator.
@@ -37,4 +40,23 @@ namespace ptx::Random {
      */
     float Float(float min, float max);
 
-} // namespace ptx::Random
+    struct Reflection {
+        static void Seed(std::uint32_t seed) { ::ptx::Random::Seed(seed); }
+        static int Int(int min, int max) { return ::ptx::Random::Int(min, max); }
+        static float Float(float min, float max) { return ::ptx::Random::Float(min, max); }
+
+        PTX_BEGIN_FIELDS(Reflection)
+            /* No reflected fields. */
+        PTX_END_FIELDS
+
+        PTX_BEGIN_METHODS(Reflection)
+            PTX_SMETHOD_OVLD(Reflection, Seed, void, std::uint32_t),
+            PTX_SMETHOD_OVLD(Reflection, Int, int, int, int),
+            PTX_SMETHOD_OVLD(Reflection, Float, float, float, float)
+        PTX_END_METHODS
+
+        PTX_BEGIN_DESCRIBE(Reflection)
+        PTX_END_DESCRIBE(Reflection)
+    };
+} // namespace Random
+} // namespace ptx

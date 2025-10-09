@@ -1,6 +1,6 @@
 /**
  * @file blendshapecontroller.hpp
- * @brief Declares the BlendshapeController template class for handling 3D transformations.
+ * @brief Declares the runtime BlendshapeController class for handling 3D transformations.
  *
  * This file defines the BlendshapeController class, which manages position, scale, and
  * rotation offsets for 3D transformations using a dictionary-based approach and
@@ -13,36 +13,43 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
+#include <limits>
+#include <vector>
+#include "../../../registry/reflect_macros.hpp"
+
 #include "../animation/easyeaseanimator.hpp" // Include for animation controller interface.
 #include "../../../core/math/vector3d.hpp" // Include for 3D vector operations.
 
 /**
  * @class BlendshapeController
- * @brief A template class for managing 3D transformations using blendshape targets.
- *
+ * @brief Runtime-managed blendshape controller with a fixed capacity supplied at construction.
+
  * The BlendshapeController class allows the definition of multiple blendshape targets with position,
  * scale, and rotation offsets. It integrates with an animation controller to dynamically
  * calculate the resulting transformation based on animation values.
- *
- * @tparam maxBlendshapes The maximum number of blendshape targets this class can handle.
  */
-template<size_t maxBlendshapes>
 class BlendshapeController {
 private:
-    IEasyEaseAnimator* eEA; ///< Pointer to the animation controller.
-    uint16_t dictionary[maxBlendshapes]; ///< Dictionary mapping blendshape targets to identifiers.
-    uint16_t currentBlendshapes = 0; ///< Current number of blendshape targets.
-    Vector3D positionOffsets[maxBlendshapes]; ///< Array of position offsets for blendshape targets.
-    Vector3D scaleOffsets[maxBlendshapes]; ///< Array of scale offsets for blendshape targets.
-    Vector3D rotationOffsets[maxBlendshapes]; ///< Array of rotation offsets for blendshape targets.
+    using Index = std::size_t;
 
 public:
+    /// Sentinel value indicating no matching blendshape.
+    static constexpr Index kInvalidIndex = std::numeric_limits<Index>::max();
+
     /**
      * @brief Constructs a BlendshapeController object with an animation controller.
      *
      * @param eEA Pointer to the IEasyEaseAnimator instance.
+     * @param maxBlendshapes Maximum number of blendshape targets that can be registered.
      */
-    BlendshapeController(IEasyEaseAnimator* eEA);
+    explicit BlendshapeController(IEasyEaseAnimator* eEA, std::size_t maxBlendshapes = 16);
+
+    /** @return Number of currently registered blendshape targets. */
+    [[nodiscard]] std::size_t GetBlendshapeCount() const { return currentBlendshapes_; }
+
+    /** @return Maximum number of blendshape targets supported. */
+    [[nodiscard]] std::size_t GetCapacity() const { return capacity_; }
 
     /**
      * @brief Adds a blendshape target with a position offset.
@@ -116,6 +123,37 @@ public:
      */
     Vector3D GetRotationOffset();
 
-};
+private:
+    [[nodiscard]] Index FindIndex(uint16_t dictionaryValue) const;
 
-#include "blendshapecontroller.tpp" // Include the template implementation.
+    IEasyEaseAnimator* eEA_; ///< Pointer to the animation controller.
+    std::size_t        capacity_; ///< Maximum number of blendshape targets.
+    std::size_t        currentBlendshapes_ = 0; ///< Current number of blendshape targets.
+    std::vector<uint16_t> dictionary_; ///< Dictionary mapping blendshape targets to identifiers.
+    std::vector<Vector3D> positionOffsets_; ///< Array of position offsets for blendshape targets.
+    std::vector<Vector3D> scaleOffsets_; ///< Array of scale offsets for blendshape targets.
+    std::vector<Vector3D> rotationOffsets_; ///< Array of rotation offsets for blendshape targets.
+
+    PTX_BEGIN_FIELDS(BlendshapeController)
+        /* No reflected fields. */
+    PTX_END_FIELDS
+
+    PTX_BEGIN_METHODS(BlendshapeController)
+        PTX_METHOD_AUTO(BlendshapeController, GetBlendshapeCount, "Get blendshape count"),
+        PTX_METHOD_AUTO(BlendshapeController, GetCapacity, "Get capacity"),
+        /* Add blendshape */ PTX_METHOD_OVLD(BlendshapeController, AddBlendshape, void, uint16_t, Vector3D),
+        /* Add blendshape */ PTX_METHOD_OVLD(BlendshapeController, AddBlendshape, void, uint16_t, Vector3D, Vector3D),
+        /* Add blendshape */ PTX_METHOD_OVLD(BlendshapeController, AddBlendshape, void, uint16_t, Vector3D, Vector3D, Vector3D),
+        PTX_METHOD_AUTO(BlendshapeController, SetBlendshapePositionOffset, "Set blendshape position offset"),
+        PTX_METHOD_AUTO(BlendshapeController, SetBlendshapeScaleOffset, "Set blendshape scale offset"),
+        PTX_METHOD_AUTO(BlendshapeController, SetBlendshapeRotationOffset, "Set blendshape rotation offset"),
+        PTX_METHOD_AUTO(BlendshapeController, GetPositionOffset, "Get position offset"),
+        PTX_METHOD_AUTO(BlendshapeController, GetScaleOffset, "Get scale offset"),
+        PTX_METHOD_AUTO(BlendshapeController, GetRotationOffset, "Get rotation offset")
+    PTX_END_METHODS
+
+    PTX_BEGIN_DESCRIBE(BlendshapeController)
+        PTX_CTOR(BlendshapeController, IEasyEaseAnimator *, std::size_t)
+    PTX_END_DESCRIBE(BlendshapeController)
+
+};

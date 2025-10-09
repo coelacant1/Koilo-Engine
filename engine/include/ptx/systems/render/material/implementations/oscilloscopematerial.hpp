@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <vector>
 
 #include "../imaterial.hpp"
 #include "../materialt.hpp"
@@ -16,10 +17,7 @@
 
 /**
  * @file oscilloscopematerial.hpp
- * @brief Material that visualizes a B-sample signal as an oscilloscope trace with N-color spectrum.
- *
- * @tparam N Number of spectrum keys.
- * @tparam B Number of audio/signal samples processed per update.
+ * @brief Material that visualizes runtime signal samples as an oscilloscope trace with runtime-sized spectrum.
  */
 
 /**
@@ -29,17 +27,15 @@
  * Exposes setters for size/position/rotation/hue/line thickness/spectrum. The input `samples`
  * pointer is external and non-owning; bind via @ref BindSamples.
  */
-template <size_t N = 6, size_t B = 128>
 class OscilloscopeMaterial
-    : public MaterialT<OscilloscopeParamsT<N, B>, OscilloscopeShaderT<N, B>> {
+    : public MaterialT<OscilloscopeParams, OscilloscopeShader> {
 
-    using Base = MaterialT<OscilloscopeParamsT<N, B>, OscilloscopeShaderT<N, B>>;
+    using Base = MaterialT<OscilloscopeParams, OscilloscopeShader>;
 
 public:
-    using Base::Base; ///< Allow aggregate-init if desired.
-
-    /** @brief Default constructor. */
-    OscilloscopeMaterial() : Base() {}
+    /** @brief Construct with desired spectrum key count and bin count. */
+    explicit OscilloscopeMaterial(std::size_t spectrumCount = 6, std::size_t binCount = 128)
+        : Base(spectrumCount, binCount), maxF_(40), minF_(40) {}
 
     // ---------- configuration ----------
 
@@ -66,49 +62,100 @@ public:
 
     // Spectrum helpers
 
-    /** @brief Replace the entire N-key spectrum. */
-    void SetSpectrum(const RGBColor (&colors)[N]) {
-        for (size_t i = 0; i < N; ++i) this->spectrum[i] = colors[i];
+    /** @brief Set the number of spectrum keys, optionally feeding default rainbow colors. */
+    void SetSpectrumCount(std::size_t count) {
+        this->ResizeSpectrum(count);
     }
 
-    /** @brief Set a single spectrum key (index clamped to [0..N-1]). */
+    /** @brief Set the number of bins (per-frame samples). */
+    void SetBinCount(std::size_t count) {
+        const std::size_t spectrumCount = this->SpectrumCount();
+        this->Resize(spectrumCount, count);
+    }
+
+    /** @brief Current spectrum key count. */
+    [[nodiscard]] std::size_t SpectrumCount() const { return this->OscilloscopeParams::SpectrumCount(); }
+
+    /** @brief Current bin/sample count. */
+    [[nodiscard]] std::size_t BinCount() const { return this->OscilloscopeParams::BinCount(); }
+
+    /**
+     * @brief Replace the spectrum from a pointer/count pair.
+     */
+    void SetSpectrum(const RGBColor* colors, std::size_t count) {
+        if (!colors || count == 0) {
+            return;
+        }
+        this->ResizeSpectrum(count);
+        RGBColor* data = this->SpectrumData();
+        if (!data) return;
+        for (std::size_t i = 0; i < count; ++i) {
+            data[i] = colors[i];
+        }
+    }
+
+    /**
+     * @brief Replace the entire spectrum from a container.
+     */
+    void SetSpectrum(const std::vector<RGBColor>& colors) {
+        SetSpectrum(colors.data(), colors.size());
+    }
+
+    /**
+     * @brief Replace the entire spectrum from a fixed-size array.
+     */
+    template <std::size_t Count>
+    void SetSpectrum(const RGBColor (&colors)[Count]) {
+        SetSpectrum(colors, Count);
+    }
+
+    /** @brief Set a single spectrum key (index clamped to [0..count-1]). */
     void SetSpectrumAt(size_t i, const RGBColor& c) {
-        if (i >= N) i = N - 1;
-        this->spectrum[i] = c;
+        if (this->SpectrumCount() == 0) return;
+        if (i >= this->SpectrumCount()) i = this->SpectrumCount() - 1;
+        RGBColor* data = this->SpectrumData();
+        if (data) data[i] = c;
     }
 
-    /** @brief Get a single spectrum key (index clamped to [0..N-1]). */
+    /** @brief Get a single spectrum key (index clamped to [0..count-1]). */
     RGBColor GetSpectrumAt(size_t i) const {
-        if (i >= N) i = N - 1;
-        return this->spectrum[i];
+        const std::size_t count = this->SpectrumCount();
+        if (count == 0) return RGBColor();
+        if (i >= count) i = count - 1;
+        const RGBColor* data = this->SpectrumData();
+        return data ? data[i] : RGBColor();
     }
 
-    /** @brief Mutable pointer to the spectrum array (size N). */
-    RGBColor*       SpectrumData()       { return this->spectrum; }
+    /** @brief Mutable pointer to the spectrum array (size determined at runtime). */
+    RGBColor*       SpectrumDataMutable()       { return this->SpectrumData(); }
 
-    /** @brief Const pointer to the spectrum array (size N). */
-    const RGBColor* SpectrumData() const { return this->spectrum; }
+    /** @brief Const pointer to the spectrum array (size determined at runtime). */
+    const RGBColor* SpectrumDataMutable() const { return this->SpectrumData(); }
 
     // ---------- data feed ----------
 
     /**
-     * @brief Bind external pointer to B floats (non-owning).
-     * @param samplesPtr Pointer to an array of B samples; must remain valid during use.
+     * @brief Bind external pointer to floats (non-owning).
+     * @param samplesPtr Pointer to an array of samples; must remain valid during use.
      */
     void BindSamples(const float* samplesPtr) { this->samples = samplesPtr; }
 
     /**
      * @brief Update min/max/midPoint smoothing from a representative bin.
-     * @param binIndex Source sample index (default is middle bin); clamped to [0..B-1].
+     * @param binIndex Source sample index (default is middle bin); clamped to [0..binCount-1].
      *
      * Uses internal MinFilter/MaxFilter to smooth dynamic range and updates:
      * - @ref minValue
      * - @ref maxValue
      * - @ref midPoint  (average of smoothed min/max)
      */
-    void UpdateScaling(size_t binIndex = B / 2) {
-        if (!this->samples) return;
-        if (binIndex >= B) binIndex = B - 1;
+    void UpdateScaling(size_t binIndex = 0) {
+        if (!this->samples || this->BinCount() == 0) return;
+        
+        if (binIndex == 0) {
+            binIndex = this->BinCount() / 2;
+        }
+        if (binIndex >= this->BinCount()) binIndex = this->BinCount() - 1;
 
         const float v = this->samples[binIndex];
 
@@ -122,7 +169,7 @@ public:
 
 private:
     /** @brief Smoothing filters (window size 40) for dynamic range tracking. */
-    MaxFilter<40> maxF_;
-    MinFilter<40> minF_;
+    MaxFilter maxF_;
+    MinFilter minF_;
 
 };

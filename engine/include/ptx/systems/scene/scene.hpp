@@ -12,6 +12,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "mesh.hpp"
 #include "../../registry/reflect_macros.hpp"
 
@@ -24,9 +26,8 @@
  */
 class Scene {
 private:
-    
     const int maxMeshes; ///< Maximum number of meshes allowed in the scene.
-    Mesh** meshes; ///< Array of pointers to the `Mesh` instances in the scene.
+    std::vector<Mesh*> meshes; ///< Collection of mesh pointers managed by the scene.
     unsigned int numMeshes = 0; ///< Current number of meshes in the scene.
     bool doesUseEffect = false; ///< Flag indicating whether the effect is enabled.
 
@@ -46,11 +47,6 @@ public:
      * @param maxMeshes Maximum number of meshes the scene can hold.
      */
     Scene(unsigned int maxMeshes);
-
-    /**
-     * @brief Destructor for `Scene`, freeing allocated resources.
-     */
-    ~Scene();
 
     /**
      * @brief Adds a 3D object to the scene.

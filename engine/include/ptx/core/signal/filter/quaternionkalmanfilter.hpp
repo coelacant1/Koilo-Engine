@@ -12,6 +12,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "../../math/quaternion.hpp"
 #include "../../../registry/reflect_macros.hpp"
 
@@ -26,17 +28,14 @@ class QuaternionKalmanFilter {
 private:
     float gain; ///< The filter gain, controls the weight of new data versus the estimated state.
     int memory; ///< The size of the internal buffer to store quaternion history.
-    Quaternion* values; ///< Pointer to an array of quaternion values for the filter's memory.
+    std::vector<Quaternion> values; ///< Circular buffer of quaternion values for the filter's memory.
 
     int currentAmount = 0; ///< Tracks the current number of quaternions stored in memory.
 
     /**
-     * @brief Shifts the array to remove the oldest quaternion and make room for a new one.
-     *
-     * @param arr Array of quaternions to shift.
-     * @return Pointer to the shifted array.
+     * @brief Shifts the stored quaternions to remove the oldest entry.
      */
-    Quaternion* ShiftArray(Quaternion arr[]);
+    void ShiftArray();
 
 public:
     /**
@@ -65,7 +64,7 @@ public:
     /**
      * @brief Destructor for `QuaternionKalmanFilter`.
      *
-     * Releases allocated memory for quaternion storage.
+     * Trivial (uses RAII); present for ABI / reflection completeness.
      */
     ~QuaternionKalmanFilter();
 

@@ -25,6 +25,7 @@
  */
 class IEasyEaseAnimator {
 public:
+    virtual ~IEasyEaseAnimator() = default;
     /**
      * @enum InterpolationMethod
      * @brief Enumeration of interpolation methods for animations.
@@ -53,7 +54,7 @@ public:
      * @param dictionaryValue The parameter's dictionary identifier.
      * @return The current value of the parameter.
      */
-    virtual float GetValue(uint16_t dictionaryValue) = 0;
+    virtual float GetValue(uint16_t dictionaryValue) const = 0;
 
     /**
      * @brief Retrieves the target value of a parameter.
@@ -61,7 +62,7 @@ public:
      * @param dictionaryValue The parameter's dictionary identifier.
      * @return The target value of the parameter.
      */
-    virtual float GetTarget(uint16_t dictionaryValue) = 0;
+    virtual float GetTarget(uint16_t dictionaryValue) const = 0;
 
     /**
      * @brief Adds a new parameter to the animator.

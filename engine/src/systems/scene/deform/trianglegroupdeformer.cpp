@@ -1,16 +1,15 @@
 #include <ptx/systems/scene/deform/trianglegroupdeformer.hpp>
 
 TriangleGroupDeformer::TriangleGroupDeformer(ITriangleGroup* object) {
-    objects = new ITriangleGroup*[1];
-
-    objects[0] = object;
-
+    objects = {object};
     objectCount = 1;
 }
 
 TriangleGroupDeformer::TriangleGroupDeformer(ITriangleGroup** objects, int objectCount) {
-    this->objects = objects;
-    this->objectCount = objectCount;
+    if (objects && objectCount > 0) {
+        this->objects.assign(objects, objects + objectCount);
+        this->objectCount = objectCount;
+    }
 }
 
 bool TriangleGroupDeformer::CheckClipAxis(Vector3D base, bool positive, Axis valueCheckAxis) {

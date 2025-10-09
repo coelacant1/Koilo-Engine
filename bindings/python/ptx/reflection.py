@@ -10,7 +10,7 @@ inspect fields/methods, and invoke functions with plain Python scalars.
 
 The shared library must export the symbols defined in ``reflect.h``. By
 default :func:`load_reflection` looks for the library via the
-``PTX_C_API_LIB`` environment variable, the platform dynamic loader
+``PTX_REFLECT_LIB`` environment variable, the platform dynamic loader
 (``ctypes.util.find_library"), or a few common filenames in the repository.
 """
 
@@ -98,7 +98,7 @@ class _PTXCLibrary:
         self._configure()
 
     # ------------------------------------------------------------------
-    # C function wrappers (mostly signature setup so we get type safety)
+    # C function wrappers
     # ------------------------------------------------------------------
 
     def _configure(self) -> None:
@@ -243,7 +243,7 @@ def _resolve_library_path(
     if path:
         return Path(path)
 
-    env = os.environ.get("PTX_C_API_LIB")
+    env = os.environ.get("PTX_REFLECT_LIB")
     if env:
         return Path(env)
 
@@ -259,8 +259,7 @@ def _resolve_library_path(
     # Upward walk from this file toward root, looking for plausible build dirs.
     this_file = Path(__file__).resolve()
     start_dir = this_file.parent
-    # We expect to be at .../PTXEngine/bindings/python/ptx, so project root likely 3 levels up
-    # but we generalize with a walk.
+    # Project root likely 3 levels up but generalize with a walk.
     filenames = [
         "libptx_reflect.so",  # primary
         "ptx_reflect.so",     # copied Lua-style name (if ever reused)
@@ -297,7 +296,7 @@ def _resolve_library_path(
     hint = " or ".join(_DEFAULT_LIBRARY_NAMES)
     raise FileNotFoundError(
         "Could not locate the PTX reflection shared library. "
-        "Set PTX_C_API_LIB to the built library path or pass it explicitly. "
+        "Set PTX_REFLECT_LIB to the built library path or pass it explicitly. "
         f"Looked for {hint}."
     )
 

@@ -1,24 +1,30 @@
 #include <ptx/core/signal/filter/vectorrunningaveragefilter.hpp>
 
-template<size_t memory>
-VectorRunningAverageFilter<memory>::VectorRunningAverageFilter() {
-    X = RunningAverageFilter<memory>();
-    Y = RunningAverageFilter<memory>();
-    Z = RunningAverageFilter<memory>();
-}
+#include <algorithm>
 
-template<size_t memory>
-VectorRunningAverageFilter<memory>::VectorRunningAverageFilter(float gain) {
-    X = RunningAverageFilter<memory>(gain);
-    Y = RunningAverageFilter<memory>(gain);
-    Z = RunningAverageFilter<memory>(gain);
-}
+VectorRunningAverageFilter::VectorRunningAverageFilter(size_t memory, float gainValue)
+    : X(memory, gainValue),
+      Y(memory, gainValue),
+      Z(memory, gainValue),
+      capacity(std::max<size_t>(1, memory))
+{}
 
-template<size_t memory>
-Vector3D VectorRunningAverageFilter<memory>::Filter(Vector3D input) {
+Vector3D VectorRunningAverageFilter::Filter(Vector3D input) {
     return Vector3D{
         X.Filter(input.X),
         Y.Filter(input.Y),
         Z.Filter(input.Z)
     };
+}
+
+void VectorRunningAverageFilter::SetGain(float gainValue) {
+    X.SetGain(gainValue);
+    Y.SetGain(gainValue);
+    Z.SetGain(gainValue);
+}
+
+void VectorRunningAverageFilter::Reset() {
+    X.Reset();
+    Y.Reset();
+    Z.Reset();
 }

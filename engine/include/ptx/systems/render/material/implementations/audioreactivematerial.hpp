@@ -1,6 +1,11 @@
 #pragma once
 
+#include <algorithm>
 #include <cstddef>
+#include <memory>
+#include <vector>
+
+#include "../../../../registry/reflect_macros.hpp"
 
 #include "../imaterial.hpp"
 #include "../materialt.hpp"
@@ -15,43 +20,19 @@
 
 /**
  * @file audioreactivematerial.hpp
- * @brief Audio-reactive gradient material that blends N spectrum keys and (optionally) applies bounce physics to B samples.
+ * @brief Audio-reactive gradient material with runtime-sized spectrum keys and sample buffers.
  *
  * @details
- * - Owns @ref BouncePhysics instances when bounce is enabled; writes @c bounceData[] in @ref Update().
+ * - Owns @ref BouncePhysics instances when bounce is enabled; writes @c bounceData in @ref Update().
  * - Exposes setters/getters for size, position, rotation, hue, circular flag, radius, bounce, and spectrum keys.
  * - @c samples pointer is external and non-owning; bind via @ref BindSamples().
- *
- * @tparam N Number of spectrum keys (gradient control points).
- * @tparam B Number of audio samples processed per frame.
  */
 
-/**
- * @class AudioReactiveMaterial
- * @brief Stateful material that reacts to an external B-sample buffer and forwards shading to @c AudioReactiveShaderT.
- *
- * Inherits @c MaterialT to mix in the parameter block (@c AudioReactiveParamsT) and bind the shader singleton
- * (@c AudioReactiveShaderT). If bounce is enabled, each sample channel is processed by a @c BouncePhysics instance
- * before being written into @c bounceData[] for the shader to consume.
- */
-template <std::size_t N = 6, std::size_t B = 128>
-class AudioReactiveMaterial
-    : public MaterialT<AudioReactiveParamsT<N, B>, AudioReactiveShaderT<N, B>> {
-
-    using Base = MaterialT<AudioReactiveParamsT<N, B>, AudioReactiveShaderT<N, B>>;
-
+class AudioReactiveMaterial : public MaterialT<AudioReactiveParams, AudioReactiveShader> {
 public:
-    using Base::Base;
-
-    /** @brief Default-construct; bounce physics are lazily allocated if/when enabled. */
-    AudioReactiveMaterial()
-        : Base() {
-        for (std::size_t i = 0; i < B; ++i) bPhy_[i] = nullptr;
-    }
-
-    /** @brief Frees any allocated @ref BouncePhysics instances. */
-    ~AudioReactiveMaterial() override {
-        for (std::size_t i = 0; i < B; ++i) { delete bPhy_[i]; bPhy_[i] = nullptr; }
+    explicit AudioReactiveMaterial(std::size_t spectrumCount = 6, std::size_t sampleCount = 128)
+        : MaterialT<AudioReactiveParams, AudioReactiveShader>(spectrumCount, sampleCount) {
+        bouncePhysics_.resize(this->SampleCount());
     }
 
     /** @brief Set half-size (logical extent from center). */
@@ -83,73 +64,153 @@ public:
 
     /**
      * @brief Toggle per-channel bounce physics.
-     * @details Allocates @ref BouncePhysics when turning on; frees them when turning off to save RAM.
+     * @details Allocates @ref BouncePhysics when turning on; releases instances when turning off.
      */
     void SetBounceEnabled(bool on) {
         if (this->bounce == on) return;
         this->bounce = on;
         if (on) {
-            for (std::size_t i = 0; i < B; ++i) {
-                if (!bPhy_[i]) bPhy_[i] = new BouncePhysics(35.0f, 15.0f);
+            EnsureBounceCapacity();
+            for (auto& phy : bouncePhysics_) {
+                if (!phy) phy = std::make_unique<BouncePhysics>(35.0f, 15.0f);
             }
         } else {
-            for (std::size_t i = 0; i < B; ++i) { delete bPhy_[i]; bPhy_[i] = nullptr; }
+            for (auto& phy : bouncePhysics_) {
+                phy.reset();
+            }
         }
     }
 
     /** @brief Query whether bounce physics are enabled. */
     bool GetBounceEnabled() const { return this->bounce; }
 
-    /** @brief Replace the entire N-key spectrum. */
-    void SetSpectrum(const RGBColor (&colors)[N]) {
-        for (std::size_t i = 0; i < N; ++i) this->spectrum[i] = colors[i];
+    /** @brief Resize the spectrum and optionally seed from an array. */
+    void SetSpectrumCount(std::size_t count) { this->ResizeSpectrum(count); }
+
+    /** @brief Replace the entire spectrum with values from a vector. */
+    void SetSpectrum(const std::vector<RGBColor>& colors) {
+        this->ResizeSpectrum(colors.size());
+        std::copy(colors.begin(), colors.end(), this->spectrum.begin());
     }
 
-    /** @brief Set a single spectrum key (clamped to [0..N-1]). */
-    void SetSpectrumAt(std::size_t i, const RGBColor& c) {
-        if (i >= N) i = N - 1;
-        this->spectrum[i] = c;
-    }
-
-    /** @brief Get a single spectrum key (clamped to [0..N-1]). */
-    RGBColor GetSpectrumAt(std::size_t i) const {
-        if (i >= N) i = N - 1;
-        return this->spectrum[i];
-    }
-
-    /** @brief Mutable pointer to the spectrum array (size N). */
-    RGBColor*       SpectrumData()       { return this->spectrum; }
-
-    /** @brief Const pointer to the spectrum array (size N). */
-    const RGBColor* SpectrumData() const { return this->spectrum; }
-
-    /**
-     * @brief Bind an external, non-owning pointer to B audio samples.
-     * @param samplesPtr Pointer to an array of B floats; must remain valid while used.
-     */
-    void BindSamples(const float* samplesPtr) { this->samples = samplesPtr; }
-
-    /**
-     * @brief Per-frame update; optionally supply fresh sample data.
-     * @param readData Optional pointer to B samples; if nullptr uses previously bound @ref samples.
-     *
-     * If bounce is enabled, each channel runs through @ref BouncePhysics::Calculate with a damping factor
-     * (0.1f) before being written to @c bounceData[]. Otherwise, raw samples are mirrored directly.
-     *
-     * @note The shader reads a single path (@c bounceData) regardless of bounce mode.
-     */
-    void Update(float dT) override {
-        if (this->bounce) {
-            for (std::size_t i = 0; i < B; ++i) {
-                const float in = this->samples[i];
-                this->bounceData[i] = bPhy_[i] ? bPhy_[i]->Calculate(in, 0.1f) : in;
-            }
-        } else {
-            for (std::size_t i = 0; i < B; ++i) this->bounceData[i] = this->samples[i];
+    /** @brief Replace the entire spectrum with values from a fixed array. */
+    template<std::size_t N>
+    void SetSpectrumFromArray(const RGBColor (&colors)[N]) {
+        this->ResizeSpectrum(N);
+        for (std::size_t i = 0; i < N; ++i) {
+            this->spectrum[i] = colors[i];
         }
     }
 
-private:
-    BouncePhysics* bPhy_[B]; ///< Lazily allocated per channel when bounce is enabled.
+    /** @brief Set a single spectrum key (clamped to valid range). */
+    void SetSpectrumAt(std::size_t i, const RGBColor& c) {
+        if (this->spectrum.empty()) return;
+        if (i >= this->spectrum.size()) i = this->spectrum.size() - 1;
+        this->spectrum[i] = c;
+    }
 
+    /** @brief Get a single spectrum key (clamped to valid range). */
+    RGBColor GetSpectrumAt(std::size_t i) const {
+        if (this->spectrum.empty()) return RGBColor();
+        if (i >= this->spectrum.size()) i = this->spectrum.size() - 1;
+        return this->spectrum[i];
+    }
+
+    /** @brief Mutable pointer to the spectrum array (may be null when empty). */
+    RGBColor* SpectrumData() { return this->spectrum.empty() ? nullptr : this->spectrum.data(); }
+
+    /** @brief Const pointer to the spectrum array (may be null when empty). */
+    const RGBColor* SpectrumData() const { return this->spectrum.empty() ? nullptr : this->spectrum.data(); }
+
+    /** @brief Set the expected number of spectrum samples (bins). */
+    void SetSampleCount(std::size_t sampleCount) {
+        this->ResizeSamples(sampleCount);
+        bouncePhysics_.resize(sampleCount);
+        if (this->bounce) {
+            for (auto& phy : bouncePhysics_) {
+                if (!phy) phy = std::make_unique<BouncePhysics>(35.0f, 15.0f);
+            }
+        }
+    }
+
+    /**
+     * @brief Bind an external, non-owning pointer to audio samples.
+     * @param samplesPtr Pointer to @ref SampleCount entries; must remain valid while used.
+     */
+    void BindSamples(const float* samplesPtr) { this->samples = samplesPtr; }
+
+    /** @brief Bind samples and resize storage in a single call. */
+    void BindSamples(const float* samplesPtr, std::size_t sampleCount) {
+        BindSamples(samplesPtr);
+        SetSampleCount(sampleCount);
+    }
+
+    /**
+     * @brief Per-frame update; optionally supply fresh sample data via @ref BindSamples.
+     */
+    void Update(float dT) override {
+        const std::size_t count = this->SampleCount();
+        if (count == 0) return;
+
+        const float* src = this->samples;
+        if (!src) {
+            std::fill(this->bounceData.begin(), this->bounceData.end(), 0.0f);
+            return;
+        }
+
+        if (this->bounce) {
+            EnsureBounceCapacity();
+            const float dt = dT > 0.0f ? dT : 0.1f;
+            for (std::size_t i = 0; i < count; ++i) {
+                auto& phy = bouncePhysics_[i];
+                if (!phy) {
+                    phy = std::make_unique<BouncePhysics>(35.0f, 15.0f);
+                }
+                this->bounceData[i] = phy->Calculate(src[i], dt);
+            }
+        } else {
+            std::copy(src, src + count, this->bounceData.begin());
+        }
+    }
+
+    PTX_BEGIN_FIELDS(AudioReactiveMaterial)
+        /* No reflected fields. */
+    PTX_END_FIELDS
+
+    PTX_BEGIN_METHODS(AudioReactiveMaterial)
+        PTX_METHOD_AUTO(AudioReactiveMaterial, SetSizeHalf, "Set size half"),
+        PTX_METHOD_AUTO(AudioReactiveMaterial, SetSizeFull, "Set size full"),
+        PTX_METHOD_AUTO(AudioReactiveMaterial, SetOffset, "Set offset"),
+        PTX_METHOD_AUTO(AudioReactiveMaterial, SetRotationDeg, "Set rotation deg"),
+        PTX_METHOD_AUTO(AudioReactiveMaterial, SetHueDeg, "Set hue deg"),
+        PTX_METHOD_AUTO(AudioReactiveMaterial, SetCircular, "Set circular"),
+        PTX_METHOD_AUTO(AudioReactiveMaterial, GetCircular, "Get circular"),
+        PTX_METHOD_AUTO(AudioReactiveMaterial, SetRadius, "Set radius"),
+        PTX_METHOD_AUTO(AudioReactiveMaterial, GetRadius, "Get radius"),
+        PTX_METHOD_AUTO(AudioReactiveMaterial, SetBounceEnabled, "Set bounce enabled"),
+        PTX_METHOD_AUTO(AudioReactiveMaterial, GetBounceEnabled, "Get bounce enabled"),
+        PTX_METHOD_AUTO(AudioReactiveMaterial, SetSpectrumCount, "Set spectrum count"),
+        PTX_METHOD_OVLD(AudioReactiveMaterial, SetSpectrum, void, const std::vector<RGBColor> &),
+        PTX_METHOD_AUTO(AudioReactiveMaterial, SetSpectrumAt, "Set spectrum at"),
+        PTX_METHOD_AUTO(AudioReactiveMaterial, GetSpectrumAt, "Get spectrum at"),
+        /* Spectrum data */ PTX_METHOD_OVLD0(AudioReactiveMaterial, SpectrumData, RGBColor *),
+        /* Spectrum data */ PTX_METHOD_OVLD_CONST0(AudioReactiveMaterial, SpectrumData, const RGBColor *),
+        PTX_METHOD_AUTO(AudioReactiveMaterial, SetSampleCount, "Set sample count"),
+        PTX_METHOD_OVLD(AudioReactiveMaterial, BindSamples, void, const float *),
+        PTX_METHOD_OVLD(AudioReactiveMaterial, BindSamples, void, const float *, std::size_t),
+        PTX_METHOD_AUTO(AudioReactiveMaterial, Update, "Update")
+    PTX_END_METHODS
+
+    PTX_BEGIN_DESCRIBE(AudioReactiveMaterial)
+        PTX_CTOR(AudioReactiveMaterial, std::size_t, std::size_t)
+    PTX_END_DESCRIBE(AudioReactiveMaterial)
+
+private:
+    void EnsureBounceCapacity() {
+        if (bouncePhysics_.size() < this->SampleCount()) {
+            bouncePhysics_.resize(this->SampleCount());
+        }
+    }
+
+    std::vector<std::unique_ptr<BouncePhysics>> bouncePhysics_{}; ///< Lazily allocated per channel when bounce is enabled.
 };

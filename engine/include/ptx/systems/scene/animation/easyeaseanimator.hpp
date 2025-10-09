@@ -12,110 +12,103 @@
 
 #pragma once
 
-#include "ieasyeaseanimator.hpp" // Include for base interface class.
+#include <cstddef>
+#include <cstdint>
+#include <vector>
+#include "../../../registry/reflect_macros.hpp"
+
+#include "ieasyeaseanimator.hpp"
 
 /**
  * @class EasyEaseAnimator
- * @brief A template class for implementing advanced animation easing.
+ * @brief Runtime-managed implementation of the IEasyEaseAnimator interface.
  *
- * The EasyEaseAnimator class provides a framework for animating parameters with smooth
- * transitions using a combination of interpolation methods, damped springs, and ramp filters.
- *
- * @tparam maxParameters The maximum number of parameters this animator can handle.
+ * The animator stores parameter slots in contiguous vectors whose capacity is specified at
+ * construction time. Each slot tracks the animated value, interpolation method, ramp filter,
+ * and optional damped spring used for overshoot easing.
  */
-template<size_t maxParameters>
 class EasyEaseAnimator : public IEasyEaseAnimator {
-private:
-    InterpolationMethod interpMethod; ///< The global interpolation method for the animator.
-    DampedSpring dampedSpring[maxParameters]; ///< Array of damped springs for smooth animations.
-    RampFilter rampFilter[maxParameters]; ///< Array of ramp filters for controlling transitions.
-    float* parameters[maxParameters]; ///< Array of pointers to animated parameters.
-    float parameterFrame[maxParameters]; ///< Current frame values for each parameter.
-    float previousSet[maxParameters]; ///< Previous set values for each parameter.
-    float basis[maxParameters]; ///< Basis values for each parameter.
-    float goal[maxParameters]; ///< Target values for each parameter.
-    uint8_t interpolationMethods[maxParameters]; ///< Interpolation methods for each parameter.
-    uint16_t dictionary[maxParameters]; ///< Dictionary mapping for parameter lookup.
-    uint16_t currentParameters = 0; ///< Number of currently active parameters.
-    bool isActive = true; ///< Indicates whether the animator is active.
-
 public:
     /**
-     * @brief Constructs an EasyEaseAnimator object with the specified interpolation method.
-     *
-     * @param interpMethod The default interpolation method.
-     * @param springConstant The default spring constant for damped springs.
-     * @param dampingConstant The default damping constant for damped springs.
+     * @brief Construct an animator with space for @p maxParameters entries.
+     * @param maxParameters Maximum number of animated parameters that can be registered.
+     * @param interpMethod Default interpolation method applied to newly added parameters.
+     * @param springConstant Default spring constant for overshoot easing.
+     * @param dampingConstant Default damping factor for overshoot easing.
      */
-    EasyEaseAnimator(InterpolationMethod interpMethod, float springConstant = 1.0f, float dampingConstant = 0.5f);
+    EasyEaseAnimator(std::size_t maxParameters,
+                     InterpolationMethod interpMethod = IEasyEaseAnimator::Cosine,
+                     float springConstant = 1.0f,
+                     float dampingConstant = 0.5f);
 
-    /**
-     * @brief Sets spring and damping constants for a specific parameter.
-     *
-     * @param dictionaryValue The parameter's dictionary identifier.
-     * @param springConstant The spring constant to set.
-     * @param damping The damping constant to set.
-     */
+    ~EasyEaseAnimator() override = default;
+
     void SetConstants(uint16_t dictionaryValue, float springConstant, float damping) override;
-
-    /**
-     * @brief Gets the current value of a parameter.
-     *
-     * @param dictionaryValue The parameter's dictionary identifier.
-     * @return The current value of the parameter.
-     */
-    float GetValue(uint16_t dictionaryValue) override;
-
-    /**
-     * @brief Gets the target value of a parameter.
-     *
-     * @param dictionaryValue The parameter's dictionary identifier.
-     * @return The target value of the parameter.
-     */
-    float GetTarget(uint16_t dictionaryValue) override;
-
-    /**
-     * @brief Adds a parameter to the animator.
-     *
-     * @param parameter A pointer to the parameter to animate.
-     * @param dictionaryValue The parameter's dictionary identifier.
-     * @param frames The number of frames for the transition.
-     * @param basis The initial basis value.
-     * @param goal The target goal value.
-     */
+    float GetValue(uint16_t dictionaryValue) const override;
+    float GetTarget(uint16_t dictionaryValue) const override;
     void AddParameter(float* parameter, uint16_t dictionaryValue, uint16_t frames, float basis, float goal) override;
-
-    /**
-     * @brief Adds a single frame value for a parameter.
-     *
-     * @param dictionaryValue The parameter's dictionary identifier.
-     * @param value The frame value to add.
-     */
     void AddParameterFrame(uint16_t dictionaryValue, float value) override;
-
-    /**
-     * @brief Sets the interpolation method for a specific parameter.
-     *
-     * @param dictionaryValue The parameter's dictionary identifier.
-     * @param interpMethod The interpolation method to set.
-     */
     void SetInterpolationMethod(uint16_t dictionaryValue, InterpolationMethod interpMethod) override;
-
-    /**
-     * @brief Resets the animator to its initial state.
-     */
     void Reset() override;
-
-    /**
-     * @brief Applies the current animation values to the parameters.
-     */
     void SetParameters() override;
-
-    /**
-     * @brief Updates the animator, advancing all animations.
-     */
     void Update() override;
 
-};
+    /** @return Maximum number of parameters this animator can manage. */
+    std::size_t GetCapacity() const noexcept { return capacity_; }
 
-#include "easyeaseanimator.tpp" // Include the template implementation.
+    /** @return Current number of registered parameters. */
+    std::size_t GetParameterCount() const noexcept { return currentParameters_; }
+
+    /** @return Whether the animator is active (reserved for future use). */
+    bool IsActive() const noexcept { return isActive_; }
+
+    /** @brief Toggle the active state flag. */
+    void SetActive(bool active) noexcept { isActive_ = active; }
+
+private:
+    static constexpr std::size_t kInvalidIndex = static_cast<std::size_t>(-1);
+
+    std::size_t FindIndex(uint16_t dictionaryValue) const;
+
+    std::size_t capacity_;
+    std::size_t currentParameters_ = 0;
+    InterpolationMethod defaultMethod_;
+    float defaultSpringConstant_;
+    float defaultDampingConstant_;
+
+    std::vector<DampedSpring>       dampedSprings_;
+    std::vector<RampFilter>         rampFilters_;
+    std::vector<float*>             parameters_;
+    std::vector<float>              parameterFrame_;
+    std::vector<float>              previousSet_;
+    std::vector<float>              basis_;
+    std::vector<float>              goal_;
+    std::vector<InterpolationMethod> interpolationMethods_;
+    std::vector<uint16_t>           dictionary_;
+    bool                            isActive_ = true;
+
+    PTX_BEGIN_FIELDS(EasyEaseAnimator)
+        /* No reflected fields. */
+    PTX_END_FIELDS
+
+    PTX_BEGIN_METHODS(EasyEaseAnimator)
+        PTX_METHOD_AUTO(EasyEaseAnimator, SetConstants, "Set constants"),
+        PTX_METHOD_AUTO(EasyEaseAnimator, GetValue, "Get value"),
+        PTX_METHOD_AUTO(EasyEaseAnimator, GetTarget, "Get target"),
+        PTX_METHOD_AUTO(EasyEaseAnimator, AddParameter, "Add parameter"),
+        PTX_METHOD_AUTO(EasyEaseAnimator, AddParameterFrame, "Add parameter frame"),
+        PTX_METHOD_AUTO(EasyEaseAnimator, SetInterpolationMethod, "Set interpolation method"),
+        PTX_METHOD_AUTO(EasyEaseAnimator, Reset, "Reset"),
+        PTX_METHOD_AUTO(EasyEaseAnimator, SetParameters, "Set parameters"),
+        PTX_METHOD_AUTO(EasyEaseAnimator, Update, "Update"),
+        PTX_METHOD_AUTO(EasyEaseAnimator, GetCapacity, "Get capacity"),
+        PTX_METHOD_AUTO(EasyEaseAnimator, GetParameterCount, "Get parameter count"),
+        PTX_METHOD_AUTO(EasyEaseAnimator, IsActive, "Is active"),
+        PTX_METHOD_AUTO(EasyEaseAnimator, SetActive, "Set active")
+    PTX_END_METHODS
+
+    PTX_BEGIN_DESCRIBE(EasyEaseAnimator)
+        PTX_CTOR(EasyEaseAnimator, std::size_t, InterpolationMethod, float, float)
+    PTX_END_DESCRIBE(EasyEaseAnimator)
+
+};

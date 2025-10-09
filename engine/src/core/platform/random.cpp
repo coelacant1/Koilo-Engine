@@ -18,7 +18,7 @@ void Seed(std::uint32_t seed) {
 
 int Int(int min, int max) {
 #if defined(ARDUINO)
-    // The Arduino random(min, max) function is exclusive of max, so we add 1.
+    // The Arduino random(min, max) function is exclusive of max, so add 1.
     return static_cast<int>(random(static_cast<long>(min), static_cast<long>(max) + 1));
 #else
     // Using modulo for random number generation can introduce bias,

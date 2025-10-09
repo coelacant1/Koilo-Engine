@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <cmath>
+#include <vector>
 
 #include "../ishader.hpp"
 #include "../../material/materialt.hpp"
@@ -17,29 +18,38 @@
 /**
  * @file proceduralnoiseshader.hpp
  * @brief Simplex noise -> [0,1] -> periodic mapping -> gradient sampling with optional hue shift.
- *
- * @tparam N Number of colors in the gradient spectrum.
  */
-template <size_t N>
-class ProceduralNoiseShaderT final : public IShader {
+
+class ProceduralNoiseShader final : public IShader {
 public:
     /**
      * @brief Shade a surface point using periodic simplex noise and a gradient spectrum.
      * @param sp Surface properties (uses @c sp.position).
-     * @param m  Bound material expected to be @c MaterialT<ProceduralNoiseParamsT<N>, ProceduralNoiseShaderT<N>>.
+     * @param m  Bound material expected to be @c MaterialT<ProceduralNoiseParams, ProceduralNoiseShader>.
      * @return RGB color sampled from the hue-shifted gradient at the periodic noise coordinate.
      */
     RGBColor Shade(const SurfaceProperties& sp, const IMaterial& m) const override {
-        using NoiseMat = MaterialT<ProceduralNoiseParamsT<N>, ProceduralNoiseShaderT<N>>;
+        using NoiseMat = MaterialT<ProceduralNoiseParams, ProceduralNoiseShader>;
         const auto& P = m.As<NoiseMat>();
 
-        // Build a hue-shifted spectrum for this shade call
-        RGBColor shifted[N];
-        for (std::size_t i = 0; i < N; ++i) {
-            shifted[i] = RGBColor(P.spectrum[i]).HueShift(P.hueShiftAngleDeg);
+        const std::size_t count = P.SpectrumCount();
+        if (count == 0) {
+            return RGBColor();
         }
+
+        // Build a hue-shifted spectrum for this shade call
+        std::vector<RGBColor> shifted(count);
+        const RGBColor* spectrumData = P.SpectrumData();
+        if (!spectrumData) {
+            return RGBColor();
+        }
+
+        for (std::size_t i = 0; i < count; ++i) {
+            shifted[i] = RGBColor(spectrumData[i]).HueShift(P.hueShiftAngleDeg);
+        }
+
         // false => linear (non-stepped) gradient
-        GradientColor<N> gradient(shifted, false);
+        GradientColor gradient(shifted, false);
 
         // Scale input position and add slice depth on Z
         Vector3D p = sp.position;

@@ -31,7 +31,7 @@ jobs:
 
       - name: Python reflection smoke
         run: |
-          python3 bindings/python/examples/reflection_demo.py || echo "(non-fatal) python demo returned non-zero"
+          python3 bindings/python/reflection_demo.py || echo "(non-fatal) python demo returned non-zero"
 
       - name: Show reflection cache stats
         if: always()
@@ -54,7 +54,8 @@ jobs:
 
       - name: Umbrella header generation + compile
         run: |
-          python3 scripts/GeneratePTXAll.py
+          mkdir -p build/generated/ptx
+          python3 scripts/GeneratePTXAll.py --root engine/include/ptx --output build/generated/ptx/ptxall.hpp --cache-file build/.ptx_reflect_cache.json
           chmod +x scripts/HeaderCompile.sh
           scripts/HeaderCompile.sh
 

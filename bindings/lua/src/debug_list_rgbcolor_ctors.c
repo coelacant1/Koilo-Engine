@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <string.h>
-#include "../../ptx_c_api/reflect.h"
+#include "../../c_api/reflect.h"
 
 int main(){
     void *cls = ptx_registry_find_class("RGBColor");

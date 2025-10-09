@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <cmath>
+#include <vector>
 
 #include "../ishader.hpp"
 #include "../../material/materialt.hpp"
@@ -16,41 +17,51 @@
 
 /**
  * @file spectrumanalyzeshader.hpp
- * @brief Shader for rendering a spectrum analyzer using N-key gradients over B bins.
+ * @brief Shader for rendering a spectrum analyzer using runtime-sized gradients over dynamic bins.
  *
- * Maps X to a bin index, cosine-interpolates between adjacent bins for height, supports
- * mirror/flip Y shaping, and colors with a hue-shifted gradient built from @ref SpectrumAnalyzerParamsT::spectrum.
- *
- * @tparam N Gradient key count.
- * @tparam B Number of spectrum bins.
+ * Maps X to a bin index, cosine-interpolates between adjacent bins for height, supports mirror/flip Y shaping,
+ * and colors with a hue-shifted gradient built from @ref SpectrumAnalyzerParams::spectrum.
  */
 
-/**
- * @brief Shader that renders a spectrum analyzer bar field.
- * @tparam N Gradient key count.
- * @tparam B Number of spectrum bins.
- */
-template <std::size_t N, std::size_t B>
-class SpectrumAnalyzerShaderT final : public IShader {
+class SpectrumAnalyzerShader final : public IShader {
 public:
     /**
      * @brief Shade a surface point using spectrum analyzer rules.
      * @param sp Surface properties (position in world space expected).
-     * @param m  Material; expected to be a @c MaterialT<SpectrumAnalyzerParamsT<N,B>, SpectrumAnalyzerShaderT<N,B>>.
+     * @param m  Material; expected to be a @c MaterialT<SpectrumAnalyzerParams, SpectrumAnalyzerShader>.
      * @return RGB color at the given point.
      */
     RGBColor Shade(const SurfaceProperties& sp, const IMaterial& m) const override {
-        using MatBase = MaterialT<SpectrumAnalyzerParamsT<N, B>, SpectrumAnalyzerShaderT<N, B>>;
+        using MatBase = MaterialT<SpectrumAnalyzerParams, SpectrumAnalyzerShader>;
         const auto& P = m.As<MatBase>();
 
-        if (!P.samples) return RGBColor(0,0,0);
+        const std::size_t spectrumCount = P.SpectrumCount();
+        const std::size_t binCount      = P.BinCount();
+        if (spectrumCount == 0 || binCount == 0) {
+            return RGBColor(0,0,0);
+        }
+
+        const float* sampleSource = nullptr;
+        if (P.bounce) {
+            sampleSource = P.BounceData();
+            if (!sampleSource) {
+                return RGBColor(0,0,0);
+            }
+        } else {
+            sampleSource = P.samples;
+            if (!sampleSource) {
+                return RGBColor(0,0,0);
+            }
+        }
 
         // Build hue-shifted gradient keys
-        RGBColor keys[N];
-        for (std::size_t i = 0; i < N; ++i) {
-            keys[i] = RGBColor(P.spectrum[i]).HueShift(P.hueDeg);
+        std::vector<RGBColor> keys(spectrumCount);
+        const RGBColor* spectrumData = P.SpectrumData();
+        for (std::size_t i = 0; i < spectrumCount; ++i) {
+            const RGBColor base = spectrumData ? spectrumData[i] : RGBColor();
+            keys[i] = RGBColor(base).HueShift(P.hueDeg);
         }
-        GradientColor<N> grad(keys, /*stepped*/false);
+        GradientColor grad(std::move(keys), /*stepped*/false);
 
         // Transform to local space (rotate about offset)
         Vector2D p(sp.position.X, sp.position.Y);
@@ -66,15 +77,16 @@ public:
         if (rPos.Y < -P.sizeHalf.Y || rPos.Y > P.sizeHalf.Y) return RGBColor();
 
         // Map X -> bin index (left = higher index)
-        const float fx = Mathematics::Map(rPos.X, -P.sizeHalf.X, P.sizeHalf.X, float(B), 0.0f);
-        int x0 = int(std::floor(fx));
-        x0 = Mathematics::Constrain(x0, 0, int(B - 1));
-        int x1 = Mathematics::Constrain(x0 + 1, 0, int(B - 1));
+    const float fx = Mathematics::Map(rPos.X, -P.sizeHalf.X, P.sizeHalf.X, static_cast<float>(binCount), 0.0f);
+    int x0 = static_cast<int>(std::floor(fx));
+    const int maxIndex = static_cast<int>(binCount > 0 ? binCount - 1 : 0);
+    x0 = Mathematics::Constrain(x0, 0, maxIndex);
+    int x1 = Mathematics::Constrain(x0 + 1, 0, maxIndex);
         const float t = fx - float(x0);
 
         // Interpolated height from bounced or raw data
-        const float s0 = P.bounce ? P.bounceData[x0] : P.samples[x0];
-        const float s1 = P.bounce ? P.bounceData[x1] : P.samples[x1];
+    const float s0 = sampleSource[x0];
+    const float s1 = sampleSource[x1];
         float height   = Mathematics::CosineInterpolation(s0, s1, t); // 0..1
         height *= P.heightScale;
 

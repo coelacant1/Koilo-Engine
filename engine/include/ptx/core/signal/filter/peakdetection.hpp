@@ -12,57 +12,92 @@
 
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
-#include "../../math/mathematics.hpp" // Includes mathematical utilities for constraints and operations.
+#include <vector>
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class PeakDetection
  * @brief Detects peaks in time-series data using statistical methods.
  *
- * This class identifies peaks by calculating a moving average and standard deviation
- * of the data and comparing each value against a dynamically adjusted threshold.
- *
- * @tparam sampleSize The size of the data window used for peak detection.
+ * The runtime version of `PeakDetection` retains the original behaviour of the
+ * template implementation while allowing the caller to choose the sample window
+ * size at runtime. Incoming values are compared against a moving average and
+ * standard deviation to determine whether they exceed a configurable threshold.
  */
-template <size_t sampleSize>
+
 class PeakDetection {
 private:
-    uint8_t lag; ///< Number of data points to use for moving average and standard deviation.
-    float threshold; ///< Threshold for peak detection, expressed as a multiple of the standard deviation.
-    float influence; ///< Influence of detected peaks on subsequent calculations.
-    float filData[sampleSize]; ///< Filtered data array for influence adjustment.
-    float avg[sampleSize]; ///< Moving average of the data.
-    float std[sampleSize]; ///< Moving standard deviation of the data.
+    size_t sampleSize;              ///< Size of the sliding window used for peak detection.
+    uint8_t lag;                    ///< Number of samples considered when updating the statistics.
+    float threshold;                ///< Standard deviation multiplier that triggers a peak.
+    float influence;                ///< Influence of a detected peak on subsequent calculations.
+    std::vector<float> filteredData; ///< Filtered data used to blend peak influence.
+    std::vector<float> averages;     ///< Cached moving averages of the window.
+    std::vector<float> deviations;   ///< Cached moving standard deviations of the window.
 
-    /**
-     * @brief Calculates the mean and standard deviation for a range of data.
-     *
-     * @param start The starting index of the range.
-     * @param length The number of elements in the range.
-     * @param data Pointer to the data array.
-     * @param avgRet Output parameter for the calculated mean.
-     * @param stdRet Output parameter for the calculated standard deviation.
-     */
-    void GetStdDev(uint8_t start, uint8_t length, float* data, float& avgRet, float& stdRet);
+    void GetStdDev(size_t start, size_t length, const float* data, float& avgRet, float& stdRet) const;
 
 public:
     /**
-     * @brief Constructs a `PeakDetection` object with the specified parameters.
+     * @brief Constructs a peak detector for a specific sample window size.
      *
-     * @param lag The number of data points for the moving average and standard deviation (default: 12).
-     * @param threshold The threshold for detecting peaks, expressed as a multiple of the standard deviation (default: 0.75).
-     * @param influence The influence of detected peaks on subsequent calculations (default: 0.5).
+     * @param sampleSize   Number of elements considered when evaluating peaks.
+     * @param lag          Number of samples used to compute the moving statistics (default: 12).
+     * @param threshold    Standard deviation multiplier that triggers a peak (default: 0.75).
+     * @param influence    Influence of a detected peak on subsequent statistics (default: 0.5).
      */
-    PeakDetection(uint8_t lag = 12, float threshold = 0.75f, float influence = 0.5f);
+    PeakDetection(size_t sampleSize, uint8_t lag = 12, float threshold = 0.75f, float influence = 0.5f);
 
     /**
-     * @brief Processes the data and identifies peaks.
+     * @brief Identifies peaks within the provided data buffer.
      *
-     * @param data Pointer to the input data array.
-     * @param peaks Output array of boolean values indicating whether each point is a peak.
+     * @param data   Pointer to the input data array with `sampleSize` elements.
+     * @param peaks  Output vector (resized to `sampleSize`) marked `true` for detected peaks.
      */
-    void Calculate(float* data, bool* peaks);
+    void Calculate(const float* data, std::vector<bool>& peaks);
+
+    /**
+     * @brief Clears cached statistics, preparing the detector for a new sequence.
+     */
+    void Reset();
+
+    /**
+     * @brief Retrieves the configured sample window size.
+     */
+    size_t GetSampleSize() const { return sampleSize; }
+
+    /**
+     * @brief Returns the configured lag (statistics window) length.
+     */
+    uint8_t GetLag() const { return lag; }
+
+    /**
+     * @brief Returns the current peak detection threshold multiplier.
+     */
+    float GetThreshold() const { return threshold; }
+
+    /**
+     * @brief Returns the influence factor applied to detected peaks.
+     */
+    float GetInfluence() const { return influence; }
+
+    PTX_BEGIN_FIELDS(PeakDetection)
+        /* No reflected fields. */
+    PTX_END_FIELDS
+
+    PTX_BEGIN_METHODS(PeakDetection)
+        PTX_METHOD_AUTO(PeakDetection, Calculate, "Calculate"),
+        PTX_METHOD_AUTO(PeakDetection, Reset, "Reset"),
+        PTX_METHOD_AUTO(PeakDetection, GetSampleSize, "Get sample size"),
+        PTX_METHOD_AUTO(PeakDetection, GetLag, "Get lag"),
+        PTX_METHOD_AUTO(PeakDetection, GetThreshold, "Get threshold"),
+        PTX_METHOD_AUTO(PeakDetection, GetInfluence, "Get influence")
+    PTX_END_METHODS
+
+    PTX_BEGIN_DESCRIBE(PeakDetection)
+        PTX_CTOR(PeakDetection, int, uint8_t, float, float)
+    PTX_END_DESCRIBE(PeakDetection)
 
 };
-
-#include "peakdetection.tpp" // Includes the implementation of the template class.

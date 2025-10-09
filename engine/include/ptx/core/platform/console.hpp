@@ -2,6 +2,8 @@
 
 #include <cstdint> // For std::uint32_t
 
+#include "../../registry/reflect_macros.hpp"
+
 /**
  * @file Console.hpp
  * @brief Provides a platform-agnostic API for console/serial output.
@@ -13,7 +15,8 @@
  * @namespace ptx::Console
  * @brief Unifies console output between Arduino (Serial) and native C++ (std::cout).
  */
-namespace ptx::Console {
+namespace ptx {
+namespace Console {
 
     /**
      * @brief Initializes the console or serial port.
@@ -60,4 +63,35 @@ namespace ptx::Console {
      */
     void Println(float value, int precision = 2);
 
-} // namespace ptx::Console
+    struct Reflection {
+        static void Begin(uint32_t baud = 9600) { ::ptx::Console::Begin(baud); }
+
+    static void Print(const char* msg) { ::ptx::Console::Print(msg); }
+    static void Print(int value) { ::ptx::Console::Print(value); }
+    static void Print(float value, int precision = 2) { ::ptx::Console::Print(value, precision); }
+
+    static void Println() { ::ptx::Console::Println(); }
+    static void Println(const char* msg) { ::ptx::Console::Println(msg); }
+    static void Println(int value) { ::ptx::Console::Println(value); }
+    static void Println(float value, int precision = 2) { ::ptx::Console::Println(value, precision); }
+
+        PTX_BEGIN_FIELDS(Reflection)
+            /* No reflected fields. */
+        PTX_END_FIELDS
+
+        PTX_BEGIN_METHODS(Reflection)
+            PTX_SMETHOD_OVLD(Reflection, Begin, void, uint32_t),
+            PTX_SMETHOD_OVLD(Reflection, Print, void, const char *),
+            PTX_SMETHOD_OVLD(Reflection, Print, void, int),
+            PTX_SMETHOD_OVLD(Reflection, Print, void, float, int),
+            PTX_SMETHOD_OVLD0(Reflection, Println, void),
+            PTX_SMETHOD_OVLD(Reflection, Println, void, const char *),
+            PTX_SMETHOD_OVLD(Reflection, Println, void, int),
+            PTX_SMETHOD_OVLD(Reflection, Println, void, float, int)
+        PTX_END_METHODS
+
+        PTX_BEGIN_DESCRIBE(Reflection)
+        PTX_END_DESCRIBE(Reflection)
+    };
+} // namespace Console
+} // namespace ptx

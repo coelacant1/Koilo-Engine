@@ -13,22 +13,20 @@
 
 /**
  * @file phonglightshader.hpp
- * @brief Stateless Phong lighting shader with N lights and distance attenuation.
- * @tparam lightCount Number of lights compiled into the material.
+ * @brief Stateless Phong lighting shader with runtime-sized light array and distance attenuation.
  *
  * Uses the Light API (position, intensity, falloff, curveA, curveB).
  */
-template <size_t lightCount>
-class PhongLightShaderT final : public IShader {
+class PhongLightShader final : public IShader {
 public:
     /**
      * @brief Shade a surface using Phong lighting with distance attenuation.
      * @param surf Surface properties (position, normal, etc.).
-     * @param m    Material providing @ref PhongLightParams for @p lightCount lights.
+     * @param m    Material providing @ref PhongLightParams with runtime light count.
      * @return Lit color in RGB.
      */
     RGBColor Shade(const SurfaceProperties& surf, const IMaterial& m) const override {
-        using MatBase = MaterialT<PhongLightParams<lightCount>, PhongLightShaderT<lightCount>>;
+        using MatBase = MaterialT<PhongLightParams, PhongLightShader>;
         const auto& P = m.As<MatBase>();
 
         // Normalize surface normal and compute view direction
@@ -42,8 +40,9 @@ public:
             float(P.ambientColor.B)
         );
 
+        const size_t lightCount = P.LightCount();
         for (size_t i = 0; i < lightCount; ++i) {
-            Light& Lgt = P.lights[i];
+            Light& Lgt = const_cast<Light&>(P.LightData()[i]);
 
             // Light direction and distance
             Vector3D Ldir = Vector3D(Lgt.GetPosition() - surf.position);

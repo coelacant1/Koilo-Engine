@@ -1,5 +1,17 @@
 #include <ptx/systems/render/raster/rasterizer.hpp>
 
+#include <limits>
+#include <vector>
+
+namespace {
+
+bool RasterTriangleOverlaps(const void* item, const Rectangle2D& bounds) {
+    const auto* triangle = static_cast<const RasterTriangle2D*>(item);
+    return triangle != nullptr && triangle->Overlaps(bounds);
+}
+
+}  // namespace
+
 RGBColor Rasterizer::RasterizePixel(RasterTriangle2D** candidate_triangles,
                                     unsigned short count,
                                     const Vector2D& pixel_coord) {
@@ -56,7 +68,7 @@ void Rasterizer::Rasterize(Scene* scene, CameraBase* camera) {
 
     Vector2D minCoord = camera->GetCameraMinCoordinate();
     Vector2D maxCoord = camera->GetCameraMaxCoordinate();
-    QuadTree<RasterTriangle2D> tree(Rectangle2D(minCoord, maxCoord));
+    QuadTree tree(Rectangle2D(minCoord, maxCoord), &RasterTriangleOverlaps);
 
     // 1) Count triangles
     uint32_t totalTriangles = 0;
@@ -69,9 +81,8 @@ void Rasterizer::Rasterize(Scene* scene, CameraBase* camera) {
     if (totalTriangles == 0) return;
 
     // 2) Project all to 2D
-    RasterTriangle2D* projectedTriangles = new RasterTriangle2D[totalTriangles];
-    uint32_t tri_idx = 0;
-
+    std::vector<RasterTriangle2D> projectedTriangles;
+    projectedTriangles.reserve(totalTriangles);
     for (uint8_t i = 0; i < scene->GetMeshCount(); ++i) {
         Mesh* mesh = scene->GetMeshes()[i];
         if (!mesh || !mesh->IsEnabled()) continue;
@@ -89,14 +100,12 @@ void Rasterizer::Rasterize(Scene* scene, CameraBase* camera) {
                                    &mesh->GetUVVertices()[mesh->GetUVIndexGroup()[j].C])
                 : RasterTriangle3D(&src.p1, &src.p2, &src.p3);
 
-            projectedTriangles[tri_idx] =
-                RasterTriangle2D(*camera->GetTransform(), lookDirection, rtri, mesh->GetMaterial());
-            ++tri_idx;
+            projectedTriangles.emplace_back(*camera->GetTransform(), lookDirection, rtri, mesh->GetMaterial());
         }
     }
 
     // 3) Build acceleration
-    for (uint32_t i = 0; i < totalTriangles; ++i) {
+    for (uint32_t i = 0; i < projectedTriangles.size(); ++i) {
         tree.Insert(&projectedTriangles[i]);
     }
 
@@ -108,11 +117,11 @@ void Rasterizer::Rasterize(Scene* scene, CameraBase* camera) {
 
         RGBColor out(0,0,0);
         if (leaf && leaf->GetItemCount() > 0) {
-            out = RasterizePixel(leaf->GetItems(), leaf->GetItemCount(), p);
+            RasterTriangle2D** items = leaf->GetItems<RasterTriangle2D>();
+            out = RasterizePixel(items, leaf->GetItemCount(), p);
         }
         *pixelGroup->GetColor(i) = out;
     }
 
-    // 5) Cleanup
-    delete[] projectedTriangles;
+    // 5) Cleanup handled automatically by std::vector storage
 }

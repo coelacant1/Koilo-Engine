@@ -102,8 +102,32 @@ struct FnSig<R (C::*)(A...) const> { // const member
     static constexpr size_t Arity = sizeof...(A);
 };
 
+template<class C, class R, class... A>
+struct FnSig<R (C::*)(A...) noexcept> { // noexcept member
+    using RetT = R;
+    using ArgsTuple = std::tuple<A...>;
+
+    static constexpr size_t Arity = sizeof...(A);
+};
+
+template<class C, class R, class... A>
+struct FnSig<R (C::*)(A...) const noexcept> { // const noexcept member
+    using RetT = R;
+    using ArgsTuple = std::tuple<A...>;
+
+    static constexpr size_t Arity = sizeof...(A);
+};
+
 template<class R, class... A>
 struct FnSig<R (*)(A...)> { // free/static function pointer
+    using RetT = R;
+    using ArgsTuple = std::tuple<A...>;
+
+    static constexpr size_t Arity = sizeof...(A);
+};
+
+template<class R, class... A>
+struct FnSig<R (*)(A...) noexcept> { // free/static noexcept function pointer
     using RetT = R;
     using ArgsTuple = std::tuple<A...>;
 

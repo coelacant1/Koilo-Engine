@@ -1,36 +1,35 @@
 #pragma once
 
 #include <cstdint>          // uint8_t
+#include <vector>
+#include "../../../registry/reflect_macros.hpp"
+
 #include "effect.hpp"
 #include "../core/ipixelgroup.hpp"
 
 /**
  * @file compositor.hpp
- * @brief Fixed-capacity post-processing chain with enable toggles (no dynamic allocation).
+ * @brief Runtime-configurable post-processing chain with enable toggles.
  *
- * Holds up to @p MaxEffects effect pointers and applies them in insertion order to an
- * @ref IPixelGroup target. Storage is a static array; no std::vector or heap growth.
- *
- * @tparam MaxEffects Compile-time maximum number of effects (e.g., 8, 16).
+ * The compositor stores a fixed maximum number of non-owning @ref Effect pointers and
+ * applies them in insertion order to an @ref IPixelGroup. Capacity is supplied at
+ * construction time instead of being a compile-time template parameter.
  */
 
 /**
  * @class Compositor
  * @brief Fixed-capacity effect chain for IPixelGroup processing.
  *
- * The chain stores non-owning pointers to @ref Effect instances. Each effect can be
- * individually enabled/disabled. Effects are applied in the order they were added.
+ * A compositor maintains an ordered list of @ref Effect instances, each of which can be
+ * toggled on or off. Effects are applied sequentially to the supplied pixel group.
  */
-template <uint8_t MaxEffects>
 class Compositor {
-private:
-    Effect* effects[MaxEffects];  ///< Non-owning effect pointers in insertion order
-    bool    enabled[MaxEffects];  ///< Per-effect enable flags
-    uint8_t count = 0;            ///< Number of effects currently in the chain
-
 public:
-    /** @brief Construct an empty chain (all slots unset/disabled). */
-    Compositor();
+    /**
+     * @brief Construct an empty chain with the requested capacity.
+     * @param maxEffects Maximum number of effects that can be stored.
+     */
+    explicit Compositor(uint8_t maxEffects = 8);
 
     /**
      * @brief Append an effect to the chain.
@@ -60,9 +59,32 @@ public:
     void Apply(IPixelGroup* pixelGroup);
 
     /** @brief Current number of effects in the chain. */
-    uint8_t GetCount() const { return count; }
+    uint8_t GetCount() const { return count_; }
+
+    /** @brief Maximum number of effects that can be stored. */
+    uint8_t GetCapacity() const { return capacity_; }
+
+private:
+    uint8_t capacity_;                  ///< Maximum number of effects allowed.
+    uint8_t count_ = 0;                 ///< Number of active effects in the chain.
+    std::vector<Effect*> effects_;      ///< Stored effect pointers.
+    std::vector<bool>    enabled_;      ///< Enable flags per effect.
+
+    PTX_BEGIN_FIELDS(Compositor)
+        /* No reflected fields. */
+    PTX_END_FIELDS
+
+    PTX_BEGIN_METHODS(Compositor)
+        PTX_METHOD_AUTO(Compositor, AddEffect, "Add effect"),
+        PTX_METHOD_AUTO(Compositor, SetEnabled, "Set enabled"),
+        PTX_METHOD_AUTO(Compositor, Clear, "Clear"),
+        PTX_METHOD_AUTO(Compositor, Apply, "Apply"),
+        PTX_METHOD_AUTO(Compositor, GetCount, "Get count"),
+        PTX_METHOD_AUTO(Compositor, GetCapacity, "Get capacity")
+    PTX_END_METHODS
+
+    PTX_BEGIN_DESCRIBE(Compositor)
+        PTX_CTOR(Compositor, uint8_t)
+    PTX_END_DESCRIBE(Compositor)
 
 };
-
-// Template implementation
-#include "compositor.tpp"

@@ -22,31 +22,24 @@
  * Holds animated state via @ref FunctionGenerator instances and writes animated parameters
  * into the parameter block each frame from @ref Update(float).
  *
- * @tparam NNoise Number of noise spectrum keys.
- * @tparam NScan  Number of scanline spectrum keys.
  */
 
 /**
  * @class TVStaticMaterial
  * @brief Stateful material that animates static/noise, scanlines, and color bars.
  *
- * Inherits @ref MaterialT to mix in the parameter block (@ref TVStaticParamsT) and bind
- * the shader singleton (@ref TVStaticShaderT). Call @ref Update(float) once per frame
+ * Inherits @ref MaterialT to mix in the parameter block (@ref TVStaticParams) and bind
+ * the shader singleton (@ref TVStaticShader). Call @ref Update(float) once per frame
  * with a monotonically increasing ratio in [0..1] (wrapping as desired) to drive animation.
- *
- * @tparam NNoise Number of noise spectrum keys.
- * @tparam NScan  Number of scanline spectrum keys.
  */
-template <std::size_t NNoise = 5, std::size_t NScan = 10>
-class TVStaticMaterial
-  : public MaterialT<TVStaticParamsT<NNoise, NScan>, TVStaticShaderT<NNoise, NScan>> {
+class TVStaticMaterial : public MaterialT<TVStaticParams, TVStaticShader> {
 
-    using Base = MaterialT<TVStaticParamsT<NNoise, NScan>, TVStaticShaderT<NNoise, NScan>>;
+        using Base = MaterialT<TVStaticParams, TVStaticShader>;
 
 public:
     /** @brief Construct with default animated signal parameters and initial scanline rotation. */
-    TVStaticMaterial()
-    : Base(),
+        explicit TVStaticMaterial(std::size_t noiseSpectrumCount = 5, std::size_t scanSpectrumCount = 10)
+        : Base(noiseSpectrumCount, scanSpectrumCount),
       wiggle1_(FunctionGenerator::Sine, -40.0f, 20.0f, 1.95f),
       wiggle2_(FunctionGenerator::Sine, -10.0f, 10.0f, 0.87f),
       fGrad_  (FunctionGenerator::Sine,   0.0f,  0.5f, 6.65f) {
@@ -82,17 +75,29 @@ public:
     /** @brief Set color bars base hue in degrees. */
     void SetBarsHue(float deg)           { this->barsHueDeg = deg; }
 
-    /** @brief Mutable pointer to noise spectrum array (size NNoise). */
-    RGBColor*       NoiseSpectrum()       { return this->noiseSpectrum; }
+    /** @brief Resize noise spectrum array. */
+    void SetNoiseSpectrumCount(std::size_t count) { this->ResizeNoiseSpectrum(count); }
 
-    /** @brief Const pointer to noise spectrum array (size NNoise). */
-    const RGBColor* NoiseSpectrum() const { return this->noiseSpectrum; }
+    /** @brief Resize scan spectrum array. */
+    void SetScanSpectrumCount(std::size_t count)  { this->ResizeScanSpectrum(count); }
 
-    /** @brief Mutable pointer to scanline spectrum array (size NScan). */
-    RGBColor*       ScanSpectrum()        { return this->scanSpectrum; }
+    /** @brief Number of noise spectrum keys currently allocated. */
+    [[nodiscard]] std::size_t NoiseSpectrumSize() const { return TVStaticParams::NoiseSpectrumCount(); }
 
-    /** @brief Const pointer to scanline spectrum array (size NScan). */
-    const RGBColor* ScanSpectrum()  const { return this->scanSpectrum; }
+    /** @brief Number of scan spectrum keys currently allocated. */
+    [[nodiscard]] std::size_t ScanSpectrumSize() const { return TVStaticParams::ScanSpectrumCount(); }
+
+    /** @brief Mutable pointer to noise spectrum array (size determined at runtime). */
+    RGBColor*       NoiseSpectrum()       { return this->NoiseSpectrumData(); }
+
+    /** @brief Const pointer to noise spectrum array (size determined at runtime). */
+    const RGBColor* NoiseSpectrum() const { return this->NoiseSpectrumData(); }
+
+    /** @brief Mutable pointer to scanline spectrum array (size determined at runtime). */
+    RGBColor*       ScanSpectrum()        { return this->ScanSpectrumData(); }
+
+    /** @brief Const pointer to scanline spectrum array (size determined at runtime). */
+    const RGBColor* ScanSpectrum()  const { return this->ScanSpectrumData(); }
 
     // ---------------- Animation update ----------------
 

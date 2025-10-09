@@ -82,6 +82,11 @@ public:
     Transform(const Transform& transform);
 
     /**
+     * @brief Copy assignment operator.
+     */
+    Transform& operator=(const Transform& transform) = default;
+
+    /**
      * @brief Sets the base rotation of the object.
      * @param baseRotation The base rotation as a quaternion.
      */

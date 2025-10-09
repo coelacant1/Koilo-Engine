@@ -1,39 +1,34 @@
 #include <ptx/core/signal/filter/quaternionkalmanfilter.hpp>
 
+#include <algorithm>
+
 QuaternionKalmanFilter::QuaternionKalmanFilter() {
     gain = 0.25f;
     memory = 25;
-
-    values = new Quaternion[25];
+    values.assign(static_cast<size_t>(memory), Quaternion());
 }
 
 QuaternionKalmanFilter::QuaternionKalmanFilter(float gain, int memory) {
     this->gain = gain;
-    this->memory = memory;
-
-    values = new Quaternion[memory];
+    this->memory = std::max(1, memory);
+    values.assign(static_cast<size_t>(this->memory), Quaternion());
 }
 
-QuaternionKalmanFilter::~QuaternionKalmanFilter() {
-    delete[] values;
-}
-
-Quaternion* QuaternionKalmanFilter::ShiftArray(Quaternion arr[]) {
-    for (int i = 0; i < memory; i++) {
-        arr[i] = arr[i + 1];
+void QuaternionKalmanFilter::ShiftArray() {
+    if (values.empty()) {
+        return;
     }
 
-    arr[memory - 1] = Quaternion();
-
-    return arr;
+    std::rotate(values.begin(), values.begin() + 1, values.end());
+    values.back() = Quaternion();
 }
 
 Quaternion QuaternionKalmanFilter::Filter(Quaternion value) {
     if (currentAmount < memory) {
         values[currentAmount++] = value;
     } else {
-        values = ShiftArray(values);  // pop first
-        values[memory - 1] = value;
+        ShiftArray();  // pop first
+        values[static_cast<size_t>(memory) - 1] = value;
     }
 
     Quaternion out = Quaternion(0, 0, 0, 0);
@@ -46,3 +41,6 @@ Quaternion QuaternionKalmanFilter::Filter(Quaternion value) {
 
     return Quaternion::SphericalInterpolation(value, out, 1 - gain);
 }
+
+// Trivial destructor definition to satisfy linker (was previously only declared)
+QuaternionKalmanFilter::~QuaternionKalmanFilter() = default;

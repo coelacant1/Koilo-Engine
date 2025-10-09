@@ -37,6 +37,11 @@ public:
     CameraBase();
 
     /**
+     * @brief Virtual destructor to allow derived cameras to clean up safely.
+     */
+    virtual ~CameraBase() = default;
+
+    /**
      * @brief Retrieves the minimum coordinate of the camera in 2D space.
      *
      * @return The minimum coordinate as a Vector2D.

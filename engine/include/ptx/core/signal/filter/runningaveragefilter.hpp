@@ -14,38 +14,34 @@
 
 #include <cstddef>
 #include <cstdint>
-#include "../../math/mathematics.hpp" // Includes mathematical utilities for constraints and operations.
+#include <vector>
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class RunningAverageFilter
  * @brief Smooths data values using a weighted running average.
  *
- * The `RunningAverageFilter` class calculates a running average based on
- * a fixed memory size, applying a gain to control the influence of new values.
+ * The `RunningAverageFilter` class calculates a running average using a configurable
+ * memory depth, applying a gain to control the influence of new values.
  *
- * @tparam memory The size of the memory buffer for storing recent values.
  */
-template <size_t memory>
 class RunningAverageFilter {
 private:
-    float gain; ///< The gain factor for the filter, controlling smoothing intensity.
-    float values[memory]; ///< Buffer to store the recent values.
-    uint8_t currentAmount; ///< The current number of valid entries in the buffer.
+    float gain;              ///< The gain factor for the filter, controlling smoothing intensity.
+    std::vector<float> data; ///< Circular buffer storing the most recent samples.
+    size_t capacity;         ///< Maximum number of samples remembered by the filter.
+    size_t currentAmount;    ///< The current number of valid entries in the buffer.
+    size_t nextIndex;        ///< Index where the next sample will be written.
+    float runningSum;        ///< Cached sum of values currently in the buffer.
 
 public:
     /**
-     * @brief Default constructor for `RunningAverageFilter`.
+     * @brief Constructs a `RunningAverageFilter` with runtime-configurable memory.
      *
-     * Initializes the filter with default parameters and a memory buffer of zeros.
+     * @param memory The number of samples to retain when computing the average.
+     * @param gainValue The gain factor for the filter (typically between 0.0 and 1.0).
      */
-    RunningAverageFilter();
-
-    /**
-     * @brief Constructs a `RunningAverageFilter` with a specified gain.
-     *
-     * @param gain The gain factor for the filter (typically between 0.0 and 1.0).
-     */
-    RunningAverageFilter(float gain);
+    RunningAverageFilter(size_t memory, float gainValue = 0.1f);
 
     /**
      * @brief Sets the gain for the filter.
@@ -64,6 +60,35 @@ public:
      */
     float Filter(float value);
 
-};
+    /**
+     * @brief Resets the internal state and clears historical samples.
+     */
+    void Reset();
 
-#include "runningaveragefilter.tpp"
+    /**
+     * @brief Returns the configured memory depth of the filter.
+     */
+    size_t GetCapacity() const { return capacity; }
+
+    /**
+     * @brief Retrieves the current gain factor.
+     */
+    float GetGain() const { return gain; }
+
+    PTX_BEGIN_FIELDS(RunningAverageFilter)
+        /* No reflected fields. */
+    PTX_END_FIELDS
+
+    PTX_BEGIN_METHODS(RunningAverageFilter)
+        PTX_METHOD_AUTO(RunningAverageFilter, SetGain, "Set gain"),
+        PTX_METHOD_AUTO(RunningAverageFilter, Filter, "Filter"),
+        PTX_METHOD_AUTO(RunningAverageFilter, Reset, "Reset"),
+        PTX_METHOD_AUTO(RunningAverageFilter, GetCapacity, "Get capacity"),
+        PTX_METHOD_AUTO(RunningAverageFilter, GetGain, "Get gain")
+    PTX_END_METHODS
+
+    PTX_BEGIN_DESCRIBE(RunningAverageFilter)
+        PTX_CTOR(RunningAverageFilter, int, float)
+    PTX_END_DESCRIBE(RunningAverageFilter)
+
+};

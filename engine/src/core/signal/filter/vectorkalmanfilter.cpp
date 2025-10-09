@@ -1,17 +1,20 @@
 #include <ptx/core/signal/filter/vectorkalmanfilter.hpp>
 
-template<typename T>
-VectorKalmanFilter<T>::VectorKalmanFilter(T processNoise, T sensorNoise, T errorCovariance) {
-    X = KalmanFilter<T>(processNoise, sensorNoise, errorCovariance);
-    Y = KalmanFilter<T>(processNoise, sensorNoise, errorCovariance);
-    Z = KalmanFilter<T>(processNoise, sensorNoise, errorCovariance);
-}
+VectorKalmanFilter::VectorKalmanFilter(float processNoise, float sensorNoise, float errorCovariance)
+    : X(processNoise, sensorNoise, errorCovariance),
+      Y(processNoise, sensorNoise, errorCovariance),
+      Z(processNoise, sensorNoise, errorCovariance) {}
 
-template<typename T>
-Vector3D VectorKalmanFilter<T>::Filter(Vector3D input) {
+Vector3D VectorKalmanFilter::Filter(const Vector3D& input) {
     return Vector3D{
         X.Filter(input.X),
         Y.Filter(input.Y),
         Z.Filter(input.Z)
     };
+}
+
+void VectorKalmanFilter::Reset(Vector3D estimation, float errorCovariance) {
+    X.Reset(estimation.X, errorCovariance);
+    Y.Reset(estimation.Y, errorCovariance);
+    Z.Reset(estimation.Z, errorCovariance);
 }

@@ -12,6 +12,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "../../../assets/model/itrianglegroup.hpp"
 #include "../../../registry/reflect_macros.hpp"
 
@@ -36,8 +38,8 @@ public:
     };
 
 private:
-    ITriangleGroup** objects; ///< Array of triangle group objects to deform.
-    int objectCount = 0; ///< Number of triangle group objects.
+    std::vector<ITriangleGroup*> objects; ///< Collection of triangle group objects to deform (non-owning).
+    int objectCount = 0; ///< Number of triangle group objects tracked.
 
     /**
      * @brief Checks if a given base position is clipped along a specific axis.

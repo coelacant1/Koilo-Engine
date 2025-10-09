@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <cmath>
+#include <vector>
 
 #include "../ishader.hpp"
 #include "../../material/materialt.hpp"
@@ -16,38 +17,44 @@
 
 /**
  * @file oscilloscopeshader.hpp
- * @brief Shader that renders a thin oscilloscope trace from B samples using an N-color gradient.
- *
- * @tparam N Number of gradient colors.
- * @tparam B Number of sample bins (FFT or time-domain).
+ * @brief Shader that renders a thin oscilloscope trace from runtime samples using a runtime-sized gradient.
  */
-template <size_t N, size_t B>
-class OscilloscopeShaderT final : public IShader {
+
+class OscilloscopeShader final : public IShader {
 public:
     /**
      * @brief Shade a point against the oscilloscope trace.
      * @param sp Surface properties (position is used).
-     * @param m  Bound material; expected to be @c MaterialT<OscilloscopeParamsT<N,B>, OscilloscopeShaderT<N,B>>.
+     * @param m  Bound material; expected to be @c MaterialT<OscilloscopeParams, OscilloscopeShader>.
      * @return Trace color if the point lies on the line; otherwise transparent/black.
      *
      * @details
-     * - Applies rotation around the parameter @ref OscilloscopeParamsT::offset.
-     * - Maps X to the [0..B-1] bin range with cosine interpolation between adjacent bins.
+     * - Applies rotation around the parameter @ref OscilloscopeParams::offset.
+     * - Maps X to the [0..binCount-1] bin range with cosine interpolation between adjacent bins.
      * - Computes a thin strip at the interpolated height with thickness proportional to @ref sizeHalf.
-     * - Colors the strip via an @c N-key gradient with an additional hue shift.
+     * - Colors the strip via a runtime gradient with an additional hue shift.
      */
     RGBColor Shade(const SurfaceProperties& sp, const IMaterial& m) const override {
-        using MatBase = MaterialT<OscilloscopeParamsT<N, B>, OscilloscopeShaderT<N, B>>;
+        using MatBase = MaterialT<OscilloscopeParams, OscilloscopeShader>;
         const auto& P = m.As<MatBase>();
 
         if (!P.samples) return RGBColor(0,0,0);
 
+        const std::size_t binCount = P.BinCount();
+        if (binCount == 0) return RGBColor(0,0,0);
+
+        const std::size_t spectrumCount = P.SpectrumCount();
+        if (spectrumCount == 0) return RGBColor(0,0,0);
+
         // Build a hue-shifted gradient for this call.
-        RGBColor shifted[N];
-        for (size_t i = 0; i < N; ++i) {
-            shifted[i] = RGBColor(P.spectrum[i]).HueShift(P.hueDeg);
+        std::vector<RGBColor> shifted(spectrumCount);
+        const RGBColor* spectrumData = P.SpectrumData();
+        if (!spectrumData) return RGBColor(0,0,0);
+
+        for (size_t i = 0; i < spectrumCount; ++i) {
+            shifted[i] = RGBColor(spectrumData[i]).HueShift(P.hueDeg);
         }
-        GradientColor<N> gradient(shifted, false);
+        GradientColor gradient(shifted, false);
 
         // Rotate/translate to local oscilloscope space.
         Vector2D p2(sp.position.X, sp.position.Y);
@@ -62,10 +69,10 @@ public:
         if (rPos.X < -P.sizeHalf.X || rPos.X > P.sizeHalf.X) return RGBColor();
         if (rPos.Y < -P.sizeHalf.Y || rPos.Y > P.sizeHalf.Y) return RGBColor();
 
-        // Map X to [0 .. B-1].
-        const float fx = Mathematics::Map(rPos.X, -P.sizeHalf.X, P.sizeHalf.X, 0.0f, float(B - 1));
-        const int   x0 = Mathematics::Constrain(int(Mathematics::FFloor(fx)), 0, int(B - 1));
-        const int   x1 = Mathematics::Constrain(x0 + 1,                         0, int(B - 1));
+        // Map X to [0 .. binCount-1].
+        const float fx = Mathematics::Map(rPos.X, -P.sizeHalf.X, P.sizeHalf.X, 0.0f, float(binCount - 1));
+        const int   x0 = Mathematics::Constrain(int(Mathematics::FFloor(fx)), 0, int(binCount - 1));
+        const int   x1 = Mathematics::Constrain(x0 + 1,                         0, int(binCount - 1));
         const float t  = fx - float(x0);
 
         // Sample two bins and cosine-interpolate.

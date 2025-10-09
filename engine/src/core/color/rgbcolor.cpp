@@ -27,21 +27,23 @@ void RGBColor::SetColor(const uint8_t& R, const uint8_t& G, const uint8_t& B) {
 }
 
 RGBColor RGBColor::Scale(const uint8_t& maxBrightness) {
-    uint8_t sR, sG, sB;
+    const int scaledR = Mathematics::Constrain(
+        static_cast<int>(R) * static_cast<int>(maxBrightness) / 255,
+        0,
+        255);
+    const int scaledG = Mathematics::Constrain(
+        static_cast<int>(G) * static_cast<int>(maxBrightness) / 255,
+        0,
+        255);
+    const int scaledB = Mathematics::Constrain(
+        static_cast<int>(B) * static_cast<int>(maxBrightness) / 255,
+        0,
+        255);
 
-    sR = (uint8_t)R * (uint8_t)maxBrightness / 255;
-    sG = (uint8_t)G * (uint8_t)maxBrightness / 255;
-    sB = (uint8_t)B * (uint8_t)maxBrightness / 255;
-
-    sR = sR > 255 ? 255 : sR;
-    sG = sG > 255 ? 255 : sG;
-    sB = sB > 255 ? 255 : sB;
-
-    sR = sR < 0 ? 0 : sR;
-    sG = sG < 0 ? 0 : sG;
-    sB = sB < 0 ? 0 : sB;
-
-    return RGBColor(sR, sG, sB);
+    return RGBColor(
+        static_cast<uint8_t>(scaledR),
+        static_cast<uint8_t>(scaledG),
+        static_cast<uint8_t>(scaledB));
 }
 
 RGBColor RGBColor::Add(const uint8_t& value) {
@@ -176,8 +178,8 @@ RGBColor RGBColor::operator/(const float& scalar) const {
 }
 
 RGBColor RGBColor::operator/(const RGBColor& other) const {
-    // To "un-modulate" a color, we perform the inverse of the modulation logic.
-    // We check each component for division by zero.
+    // To "un-modulate" a color, perform the inverse of the modulation logic.
+    // Check each component for division by zero.
     int newR = (other.R == 0) ? 255 : (static_cast<int>(this->R) * 255) / other.R;
     int newG = (other.G == 0) ? 255 : (static_cast<int>(this->G) * 255) / other.G;
     int newB = (other.B == 0) ? 255 : (static_cast<int>(this->B) * 255) / other.B;

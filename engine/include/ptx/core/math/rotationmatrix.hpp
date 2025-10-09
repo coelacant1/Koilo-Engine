@@ -96,6 +96,9 @@ public:
      */
     RotationMatrix(Vector3D X, Vector3D Y, Vector3D Z);
 
+    RotationMatrix(const RotationMatrix&) = default;
+    RotationMatrix(RotationMatrix&&) noexcept = default;
+
     /**
      * @brief Multiplies the rotation matrix by a scalar.
      * @param d The scalar value to multiply.

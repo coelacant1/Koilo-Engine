@@ -42,17 +42,17 @@ Key exported Python classes:
 
 From the repository root (no explicit `--lib` needed if build tree is nearby):
 ```bash
-python bindings/python/examples/reflection_demo.py
+python bindings/python/reflection_demo.py
 ```
 
 Force a specific library (e.g. testing alt build):
 ```bash
-PTX_REFLECT_LIB=ptx_reflect python bindings/python/examples/reflection_demo.py
+PTX_REFLECT_LIB=ptx_reflect python bindings/python/reflection_demo.py
 ```
 
 Verbose search trace:
 ```bash
-PTX_REFLECT_DEBUG=1 python bindings/python/examples/reflection_demo.py
+PTX_REFLECT_DEBUG=1 python bindings/python/reflection_demo.py
 ```
 
 ## Troubleshooting

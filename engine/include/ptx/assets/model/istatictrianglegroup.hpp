@@ -29,7 +29,7 @@ public:
      * @brief Checks if the triangle group has UV coordinates.
      * @return True if UV coordinates are present, false otherwise.
      */
-    virtual const bool HasUV() = 0;
+    virtual bool HasUV() = 0;
 
     /**
      * @brief Retrieves the index group for the triangle group.
@@ -41,7 +41,7 @@ public:
      * @brief Retrieves the total number of triangles in the group.
      * @return The number of triangles.
      */
-    virtual const int GetTriangleCount() = 0;
+    virtual int GetTriangleCount() = 0;
 
     /**
      * @brief Retrieves the array of vertices in the triangle group.
@@ -53,7 +53,7 @@ public:
      * @brief Retrieves the total number of vertices in the group.
      * @return The number of vertices.
      */
-    virtual const int GetVertexCount() = 0;
+    virtual int GetVertexCount() = 0;
 
     /**
      * @brief Retrieves the array of Triangle3D objects representing the triangles.

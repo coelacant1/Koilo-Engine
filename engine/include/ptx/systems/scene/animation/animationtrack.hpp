@@ -13,8 +13,9 @@
 
 #pragma once
 
-#include <cstdint>
-#include "keyframetrack.hpp" // Include for KeyFrameTrack dependency.
+#include <cstddef>
+
+#include "keyframetrack.hpp"
 
 /**
  * @class AnimationTrack
@@ -26,16 +27,9 @@
  * @tparam maxParameters The maximum number of parameters this animation track can handle.
  * @tparam maxKeyFrames The maximum number of keyframes this animation track can contain.
  */
-template<size_t maxParameters, size_t maxKeyFrames>
 class AnimationTrack {
 protected:
-    /**
-     * @brief Internal track object for keyframe management.
-     *
-     * This KeyFrameTrack instance handles the underlying keyframe operations
-     * for the AnimationTrack class.
-     */
-    KeyFrameTrack<maxParameters, maxKeyFrames> track;
+    KeyFrameTrack track;
 
 private:
     /**
@@ -47,23 +41,15 @@ private:
     virtual void AddKeyFrames() = 0;
 
 public:
-    /**
-     * @brief Default constructor.
-     *
-     * Constructs an AnimationTrack object with default settings.
-     */
-    AnimationTrack();
+    static constexpr std::size_t kDefaultParameterCapacity = KeyFrameTrack::kDefaultParameterCapacity;
+    static constexpr std::size_t kDefaultKeyFrameCapacity = KeyFrameTrack::kDefaultKeyFrameCapacity;
 
-    /**
-     * @brief Parameterized constructor.
-     *
-     * Initializes an AnimationTrack object with the given range and interpolation method.
-     *
-     * @param min The minimum value of the parameter range.
-     * @param max The maximum value of the parameter range.
-     * @param interpMethod The interpolation method to be used for the track.
-     */
-    AnimationTrack(float min, float max, KeyFrameInterpolation::InterpolationMethod interpMethod);
+    AnimationTrack(float min = 0.0f,
+                   float max = 1.0f,
+                   KeyFrameInterpolation::InterpolationMethod interpMethod = KeyFrameInterpolation::Cosine,
+                   std::size_t parameterCapacity = kDefaultParameterCapacity,
+                   std::size_t keyFrameCapacity = kDefaultKeyFrameCapacity);
+    virtual ~AnimationTrack() = default;
 
     /**
      * @brief Starts or resumes playback of the animation track.
@@ -85,7 +71,7 @@ public:
      *
      * This function outputs the current time of the track for debugging purposes.
      */
-    float GetTime();
+    float GetTime() const;
 
     /**
      * @brief Resets the animation track to its initial state.
@@ -97,7 +83,7 @@ public:
      *
      * @return The current value of the parameter being animated.
      */
-    float GetParameterValue();
+    float GetParameterValue() const;
 
     /**
      * @brief Updates the animation track and returns the current parameter value.
@@ -116,6 +102,23 @@ public:
      */
     void AddParameter(float* parameter);
 
-};
+    void SetTime(float time);
+    std::size_t GetNumKeyFrames() const;
+    std::size_t GetNumParameters() const;
+    void AddKeyFrame(float time, float value);
+    void AddKeyFrame(const KeyFrame& keyFrame);
+    void RemoveKeyFrame(std::size_t index);
 
-#include "animationtrack.tpp" // Include the template implementation.
+    void SetRange(float min, float max);
+    void SetMin(float min);
+    void SetMax(float max);
+    float GetMin() const;
+    float GetMax() const;
+
+    void SetPlaybackSpeed(float playbackSpeed);
+    float GetPlaybackSpeed() const;
+
+    void SetInterpolationMethod(KeyFrameInterpolation::InterpolationMethod interpMethod);
+    KeyFrameInterpolation::InterpolationMethod GetInterpolationMethod() const;
+
+};

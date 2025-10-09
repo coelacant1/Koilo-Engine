@@ -23,6 +23,7 @@ bool Sphere::IsIntersecting(Sphere* bO) {
 }
 
 void Sphere::Collide(float elasticity, Sphere* bO) {
+    (void)elasticity;
     if (IsIntersecting(bO)) {
         // collision
         Vector3D direction = (position - bO->position).Normal();

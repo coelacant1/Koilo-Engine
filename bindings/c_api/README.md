@@ -10,7 +10,7 @@ minimal Python example showing how to load the generated `ptx_reflect.so` and qu
 registry.
 
 ## Contents
-- `reflect_capi.cpp` / `reflect.h` -- C wrapper implementation and header.
+- `reflect_capi.cpp` / `reflect.h` - C wrapper implementation and header.
 
 ## Purpose
 - Export a stable, C ABI friendly surface that exposes the global class registry,
@@ -62,11 +62,11 @@ PTX_REFLECT_DEBUG=1 python bindings/python/reflection_demo.py  # prints search p
 ## Exported symbols
 - See `reflect.h` for the authoritative list of exported functions. Typical functions
 	you may find are:
-	- `ptx_registry_count()` -- number of registered classes.
-	- `ptx_registry_get(i)` -- get descriptor for ith class.
-	- `ptx_class_name(desc)` -- C string class name.
-	- `ptx_class_field_count(desc)` -- number of fields.
-	- `ptx_class_field(desc, i)` -- get field descriptor.
+	- `ptx_registry_count()` - number of registered classes.
+	- `ptx_registry_get(i)` - get descriptor for ith class.
+	- `ptx_class_name(desc)` - C string class name.
+	- `ptx_class_field_count(desc)` - number of fields.
+	- `ptx_class_field(desc, i)` - get field descriptor.
 
 These names are illustrative; please consult `reflect.h` for exact function and type names.
 

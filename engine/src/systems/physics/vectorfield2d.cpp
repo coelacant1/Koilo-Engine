@@ -1,23 +1,14 @@
 #include <ptx/systems/physics/vectorfield2d.hpp>
 
 VectorField2D::VectorField2D(uint16_t x, uint16_t y)
-    : countX(x), countY(y) {
-    this->vecXP = new int8_t[x * y];
-    this->vecYP = new int8_t[x * y];
-    this->vecDP = new int8_t[x * y];
-    this->vecX = new int8_t[x * y];
-    this->vecY = new int8_t[x * y];
-    this->vecD = new int8_t[x * y];
-}
-
-VectorField2D::~VectorField2D() {
-    delete vecXP;
-    delete vecYP;
-    delete vecDP;
-    delete vecX;
-    delete vecY;
-    delete vecD;
-}
+    : vecXP(static_cast<size_t>(x) * y, 0),
+      vecYP(static_cast<size_t>(x) * y, 0),
+      vecDP(static_cast<size_t>(x) * y, 0),
+      vecX(static_cast<size_t>(x) * y, 0),
+      vecY(static_cast<size_t>(x) * y, 0),
+      vecD(static_cast<size_t>(x) * y, 0),
+      countX(x),
+      countY(y) {}
 
 void VectorField2D::Boundary() {
     // Handle edges
@@ -149,6 +140,7 @@ void VectorField2D::MovingSquareField(float ratio, float period, float intensity
 }
 
 void VectorField2D::SpiralField(float ratio, float period, float amplitude){
+    const float phase = ratio * 2.0f * Mathematics::MPI;
     for(int x = 0; x < countX; x++){
         for(int y = 0; y < countY; y++){
             float posX = (((float)x) / ((float)countX) - 0.5f) * 2.0f * size.X;
@@ -158,8 +150,8 @@ void VectorField2D::SpiralField(float ratio, float period, float amplitude){
 
             uint32_t index = x + countX * y;
 
-            vecX[index] = Mathematics::Constrain((posX * cosf(2.0f * magn * period / 40.0f)) * 0.01f * amplitude, -1.0f, 1.0f) * 127.0f;
-            vecY[index] = Mathematics::Constrain((posY * sinf(2.0f * magn * period / 40.0f)) * 0.01f * amplitude, -1.0f, 1.0f) * 127.0f;
+            vecX[index] = Mathematics::Constrain((posX * cosf(2.0f * magn * period / 40.0f + phase)) * 0.01f * amplitude, -1.0f, 1.0f) * 127.0f;
+            vecY[index] = Mathematics::Constrain((posY * sinf(2.0f * magn * period / 40.0f + phase)) * 0.01f * amplitude, -1.0f, 1.0f) * 127.0f;
         }
     }
 }

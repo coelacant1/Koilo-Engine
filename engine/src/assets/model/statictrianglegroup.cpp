@@ -20,7 +20,7 @@ StaticTriangleGroup::StaticTriangleGroup(Vector3D* vertices, const IndexGroup* i
     }
 }
 
-const bool StaticTriangleGroup::HasUV(){
+bool StaticTriangleGroup::HasUV(){
     return hasUV;
 }
 
@@ -28,7 +28,7 @@ const IndexGroup* StaticTriangleGroup::GetIndexGroup() {
     return indexGroup;
 }
 
-const int StaticTriangleGroup::GetTriangleCount() {
+int StaticTriangleGroup::GetTriangleCount() {
     return triangleCount;
 }
 
@@ -36,7 +36,7 @@ Vector3D* StaticTriangleGroup::GetVertices() {
     return vertices;
 }
 
-const int StaticTriangleGroup::GetVertexCount() {
+int StaticTriangleGroup::GetVertexCount() {
     return vertexCount;
 }
 

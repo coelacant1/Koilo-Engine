@@ -12,6 +12,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "../mesh.hpp"
 #include "../../../registry/reflect_macros.hpp"
 
@@ -36,8 +38,8 @@ public:
     };
 
 private:
-    Mesh** objects;   ///< Array of pointers to `Mesh` instances to be deformed.
-    int objectCount = 0;  ///< Number of objects in the `objects` array.
+    std::vector<Mesh*> objects;   ///< Collection of mesh pointers to be deformed (non-owning).
+    int objectCount = 0;  ///< Number of objects tracked.
 
     /**
      * @brief Checks if a given axis value exceeds a clipping threshold.

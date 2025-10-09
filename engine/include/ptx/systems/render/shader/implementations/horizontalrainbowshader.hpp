@@ -1,10 +1,10 @@
 #pragma once
 
-#include <cstddef>
 #include <cmath>
 
 #include "../ishader.hpp"
 #include "../../material/materialt.hpp"
+#include "../../../../registry/reflect_macros.hpp"
 #include "horizontalrainbowparams.hpp"
 
 #include "../../../../core/color/gradientcolor.hpp"
@@ -15,45 +15,50 @@
 
 /**
  * @file horizontalrainbowshader.hpp
- * @brief Shader that generates a horizontal rainbow gradient using N spectrum keys.
+ * @brief Shader that generates a horizontal rainbow gradient using runtime spectrum keys.
  *
  * Workflow:
  * - Builds a linear @ref GradientColor from the material’s @c spectrum.
  * - Transforms the surface position by @c positionOffset and @c rotationDeg (around origin).
  * - Samples the gradient along the X axis with wrap using @c gradientPeriod.
  *
- * @tparam N Number of spectrum keys in the gradient.
  */
 
 /**
- * @class HorizontalRainbowShaderT
+ * @class HorizontalRainbowShader
  * @brief Rainbow shader sampling a periodic horizontal gradient.
  *
  * The shade operation:
  * 1. Reads the owning material via @c IMaterial::As<MaterialT<...>>() to access parameters.
- * 2. Constructs a linear gradient from @c spectrum[0..N-1].
+ * 2. Constructs a linear gradient from @c spectrum entries.
  * 3. Applies offset/rotation to the XY position from @ref SurfaceProperties.
  * 4. Projects X into [0, @c gradientPeriod) and normalizes to [0,1] for gradient lookup.
  *
  * Assumes degrees for rotation and wraps negative X using @c std::fmod rules.
  */
-template <std::size_t N>
-class HorizontalRainbowShaderT final : public IShader {
+class HorizontalRainbowShader final : public IShader {
 public:
     /**
      * @brief Shade a surface point using a periodic horizontal gradient.
      * @param sp Surface properties (position XYZ, normals, etc.).
-     * @param m  Bound material; expected to be @c MaterialT<HorizontalRainbowParamsT<N>, HorizontalRainbowShaderT<N>>.
+     * @param m  Bound material; expected to be @c MaterialT<HorizontalRainbowParams, HorizontalRainbowShader>.
      * @return Interpolated @ref RGBColor at the computed gradient coordinate.
      */
     RGBColor Shade(const SurfaceProperties& sp, const IMaterial& m) const override {
-        using MatBase = MaterialT<HorizontalRainbowParamsT<N>, HorizontalRainbowShaderT<N>>;
+        using MatBase = MaterialT<HorizontalRainbowParams, HorizontalRainbowShader>;
         const auto& P = m.As<MatBase>();
 
+        const std::size_t spectrumCount = P.spectrum.size();
+        if (spectrumCount == 0) {
+            return RGBColor();
+        }
+
         // Build gradient (linear)
-        RGBColor keys[N];
-        for (std::size_t i = 0; i < N; ++i) keys[i] = P.spectrum[i];
-        GradientColor<N> grad(keys, /*stepped*/false);
+        GradientColor grad(
+            P.spectrum.data(),
+            spectrumCount,
+            /*stepped*/false
+        );
 
         // Local 2D position with offset & rotation (about origin)
         Vector2D pos(sp.position.X, sp.position.Y);
@@ -71,4 +76,15 @@ public:
         return grad.GetColorAt(t);
     }
 
+    PTX_BEGIN_FIELDS(HorizontalRainbowShader)
+        /* No reflected fields. */
+    PTX_END_FIELDS
+
+    PTX_BEGIN_METHODS(HorizontalRainbowShader)
+        PTX_METHOD_AUTO(HorizontalRainbowShader, Shade, "Shade")
+    PTX_END_METHODS
+
+    PTX_BEGIN_DESCRIBE(HorizontalRainbowShader)
+        /* No reflected ctors. */
+    PTX_END_DESCRIBE(HorizontalRainbowShader)
 };

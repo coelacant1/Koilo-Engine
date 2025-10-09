@@ -133,18 +133,22 @@ Quaternion Rotation::EulerAnglesToQuaternion(const EulerAngles& eulerAngles) {
 }
 
 Quaternion Rotation::YawPitchRollToQuaternion(const YawPitchRoll& ypr) {
+    (void)ypr;
     //std::cout << "YPR to Quaternion not implemented." << std::endl;
 
     return Quaternion();
 }
 
 EulerAngles Rotation::RotationMatrixToEulerAngles(const RotationMatrix& rM, const EulerOrder& order) {
+    (void)rM;
+    (void)order;
     EulerAngles eulerAngles = EulerAngles(Vector3D(0, 0, 0), order);
 
     return eulerAngles;
 }
 
 RotationMatrix Rotation::EulerAnglesToRotationMatrix(const EulerAngles& eulerAngles) {
+    (void)eulerAngles;
     RotationMatrix rM = RotationMatrix(Vector3D(0, 0, 0));
 
     return rM;

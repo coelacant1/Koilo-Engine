@@ -12,8 +12,10 @@
 
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
-#include "../../math/mathematics.hpp" // Includes mathematical utilities for constraints and operations.
+#include <vector>
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class MinFilter
@@ -22,33 +24,29 @@
  * This class filters input data by maintaining a history of minimum values
  * over a specified memory window. It is particularly useful for detecting
  * and tracking minimum values in data streams.
- *
- * @tparam memory The size of the memory window for tracking minimum values.
  */
-template<size_t memory>
 class MinFilter {
 private:
-    const int minMemory = static_cast<int>(std::ceil(memory / 10.0)); ///< Number of memory blocks for minimum tracking.
-    float values[memory]; ///< Circular buffer of values.
-    float minValues[memory / 10]; ///< Array of minimum values in each block.
-    uint8_t currentAmount = 0; ///< Number of values currently stored in the buffer.
-    bool ignoreSame; ///< Whether to ignore consecutive identical values.
+    size_t capacity;                   ///< Size of the sliding window.
+    size_t blockCount;                 ///< Number of blocks used for minimum tracking.
+    std::vector<float> values;         ///< Circular buffer of values.
+    std::vector<float> minValues;      ///< Minimum values per block.
+    size_t currentAmount = 0;          ///< Number of values currently stored in the buffer.
+    bool ignoreSame;                   ///< Whether to ignore consecutive identical values.
 
     /**
-     * @brief Shifts the values in the specified array to make room for a new value.
-     *
-     * @param mem The size of the array.
-     * @param arr The array to shift.
+     * @brief Shifts the values in the provided array to make room for a new value.
      */
-    void ShiftArray(uint8_t mem, float* arr);
+    static void ShiftArray(std::vector<float>& arr);
 
 public:
     /**
      * @brief Constructs a `MinFilter` with the specified memory size and behavior.
      *
+     * @param memory The number of samples to preserve in the sliding window (defaults to 40).
      * @param ignoreSame Whether to ignore consecutive identical values (default: true).
      */
-    MinFilter(bool ignoreSame = true);
+    explicit MinFilter(size_t memory = 40, bool ignoreSame = true);
 
     /**
      * @brief Filters the given value, updating the minimum value within the memory window.
@@ -58,6 +56,28 @@ public:
      */
     float Filter(float value);
 
-};
+    /**
+     * @brief Resets the filter to an initial state filled with zeros.
+     */
+    void Reset();
 
-#include "minfilter.tpp" // Includes the implementation of the template class.
+    /**
+     * @brief Returns the configured capacity of the filter.
+     */
+    size_t GetCapacity() const { return capacity; }
+
+    PTX_BEGIN_FIELDS(MinFilter)
+        /* No reflected fields. */
+    PTX_END_FIELDS
+
+    PTX_BEGIN_METHODS(MinFilter)
+        PTX_METHOD_AUTO(MinFilter, Filter, "Filter"),
+        PTX_METHOD_AUTO(MinFilter, Reset, "Reset"),
+        PTX_METHOD_AUTO(MinFilter, GetCapacity, "Get capacity")
+    PTX_END_METHODS
+
+    PTX_BEGIN_DESCRIBE(MinFilter)
+        PTX_CTOR(MinFilter, int, bool)
+    PTX_END_DESCRIBE(MinFilter)
+
+};

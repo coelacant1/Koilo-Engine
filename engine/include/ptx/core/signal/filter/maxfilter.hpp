@@ -12,8 +12,9 @@
 
 #pragma once
 
-#include <cstdint>
-#include "../../math/mathematics.hpp" // Includes mathematical utilities for constraints and operations.
+#include <cstddef>
+#include <vector>
+#include "../../../registry/reflect_macros.hpp"
 
 /**
  * @class MaxFilter
@@ -22,30 +23,27 @@
  * This class filters input data by maintaining a history of maximum values
  * over a specified memory window. It is particularly useful for detecting
  * and tracking peak values in data streams.
- *
- * @tparam memory The size of the memory window for tracking maximum values.
  */
-template<size_t memory>
 class MaxFilter {
 private:
-    const int maxMemory = static_cast<int>(std::ceil(memory / 10.0)); ///< Number of memory blocks for peak tracking.
-    float values[memory]; ///< Circular buffer of values.
-    float maxValues[memory / 10]; ///< Array of maximum values in each block.
-    uint8_t currentAmount = 0; ///< Number of values currently stored in the buffer.
+    size_t capacity;              ///< Size of the sliding window.
+    size_t blockCount;            ///< Number of blocks used for peak tracking.
+    std::vector<float> values;    ///< Circular buffer of values.
+    std::vector<float> maxValues; ///< Maximum values per block.
+    size_t currentAmount = 0;     ///< Number of values currently stored in the buffer.
 
     /**
-     * @brief Shifts the values in the specified array to make room for a new value.
-     *
-     * @param mem The size of the array.
-     * @param arr The array to shift.
+     * @brief Shifts the values in the provided array to make room for a new value.
      */
-    void ShiftArray(uint8_t mem, float* arr);
+    static void ShiftArray(std::vector<float>& arr);
 
 public:
     /**
      * @brief Constructs a `MaxFilter` with the specified memory size.
+     *
+     * @param memory The number of samples to preserve in the sliding window (defaults to 40).
      */
-    MaxFilter();
+    explicit MaxFilter(size_t memory = 40);
 
     /**
      * @brief Filters the given value, updating the maximum value within the memory window.
@@ -55,6 +53,28 @@ public:
      */
     float Filter(float value);
 
-};
+    /**
+     * @brief Resets the filter to an initial state filled with zeros.
+     */
+    void Reset();
 
-#include "maxfilter.tpp" // Includes the implementation of the template class.
+    /**
+     * @brief Returns the configured capacity of the filter.
+     */
+    size_t GetCapacity() const { return capacity; }
+
+    PTX_BEGIN_FIELDS(MaxFilter)
+        /* No reflected fields. */
+    PTX_END_FIELDS
+
+    PTX_BEGIN_METHODS(MaxFilter)
+        PTX_METHOD_AUTO(MaxFilter, Filter, "Filter"),
+        PTX_METHOD_AUTO(MaxFilter, Reset, "Reset"),
+        PTX_METHOD_AUTO(MaxFilter, GetCapacity, "Get capacity")
+    PTX_END_METHODS
+
+    PTX_BEGIN_DESCRIBE(MaxFilter)
+        PTX_CTOR(MaxFilter, int)
+    PTX_END_DESCRIBE(MaxFilter)
+
+};

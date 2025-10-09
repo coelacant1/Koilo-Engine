@@ -4,11 +4,57 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [0.1.6] - 2025-09-27
-Build & tooling modernization: migration off PlatformIO for workflows, addition of signature-oriented Lua helpers, hardened Python auto-discovery, 
-reflection parse caching, and documentation updates.
+## [0.1.7] - 2025-10-03
+Runtime filter migrations, container clean-up across scene/physics systems, and updated tooling defaults for the new engine layout.
 
-v
+### Added
+- `VectorKalmanFilter::Reset` to reinitialise all component filters with a shared covariance.
+
+### Changed
+- Converted Kalman- and running-average-based filters to runtime implementations (`KalmanFilter`, `VectorKalmanFilter`, `QuaternionKalmanFilter`, `VectorRunningAverageFilter`) using STL containers and safer parameter handling.
+- Reworked scene and deformation utilities (`Scene`, `MeshDeformer`, `TriangleGroupDeformer`, `MeshAlign`, `BoundaryMotionSimulator`, `VectorField2D`) to use `std::vector` or `std::array` instead of raw allocations, reducing manual memory management.
+- Updated rasterizer acceleration structure setup to match the runtime `QuadTree` API and leverage `std::vector` storage for projected triangles.
+- Adjusted physics helpers (`BouncePhysics`) for the new velocity filter signature.
+- Enhanced build scripts (`BuildSharedReflectLib.py`, `GeneratePTXAll.py`, `UpdatePTXRegistry.py`) to default to `engine/include/ptx`, add defensive include-path discovery, and handle relocated bindings directories.
+
+### Fixed
+- Eliminated numerous raw `new`/`delete` paths in filters, physics, and scene helpers that could leak or double-free under error conditions.
+
+### Removed
+- Legacy `scripts/migrate_layout.py` helper now that the new engine layout is the default.
+
+## [0.1.6] - 2025-09-27
+Build & tooling modernization: migration off PlatformIO for workflows, addition of signature-oriented Lua helpers, hardened Python auto-discovery, reflection parse caching, and documentation updates.
+
+### Added
+- CMake-based targets: `ptx_core` (static), `ptx_reflect` (shared), `ptx_lua` (module), `ptx_tests` (unit tests executable)
+- Reflection generation custom command producing umbrella header (`ptxall.hpp`) and registry translation unit in build `generated/` directory.
+- JSON reflection parse cache (size, mtime, partial hash) with flags to force reparse.
+- Lua binding signature helpers (`call_sig`/constructor helpers), embedded RPATH `$ORIGIN`, and post-build copy of `libptx_reflect.so` beside `ptx.so`.
+- Python loader upward directory search, extended candidate library names, and `PTX_REFLECT_DEBUG` verbose tracing.
+- New documentation: `engine/include/README.md`, `test/README.md`
+- Reflection generation now skips heavy/templated or excluded headers and leverages fingerprint cache to avoid redundant clang parses
+
+### Changed
+- All public includes now referenced via `<ptx/...>` angle form; relative includes replaced to stabilize modular layout.
+- Restructured repository layout (engine/include, engine/src, bindings/{c_api,lua,python}, tests, scripts, generated, external)
+- Updated C API README to reflect CMake build, removed PlatformIO assumptions.
+- Lua & Python READMEs refactored for new build/discovery model
+- Overhauled C API, Lua, Python READMEs
+
+### Fixed
+- Lua runtime loading issues by setting module OUTPUT_NAME to `ptx` and copying reflection shared library for co-location discovery.
+- Python reflection failures when run outside original build dir via robust upward search and multiple filename candidates.
+- Header include failures after restructuring by normalizing include paths.
+
+### Removed
+- Reliance on PlatformIO build output for desktop reflection workflows (still will be available for MCU targets where needed)
+
+### Next Tasks
+- Finalize descriptor caching layer for Lua & Python hot paths.
+- Add string/UString bridging & unified overload signature dispatch.
+- Package Python module (wheel / optional pip distribution) and provide install targets.
+- Introduce feature toggles for MCU footprint trimming
 
 ## [0.1.5] - 2025-09-22
 Integration and hardening of the reflection build pipeline, a ctypes-based

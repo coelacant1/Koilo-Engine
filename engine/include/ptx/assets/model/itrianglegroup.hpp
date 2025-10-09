@@ -22,6 +22,7 @@
  */
 class ITriangleGroup {
 public:
+    virtual ~ITriangleGroup() = default;
     /**
      * @brief Retrieves the index group for the triangle group.
      * @return A pointer to the IndexGroup array.

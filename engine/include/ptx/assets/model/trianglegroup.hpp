@@ -12,65 +12,75 @@
 
 #pragma once
 
+#include <vector>
 #include "../../core/geometry/3d/triangle.hpp"
 #include "itrianglegroup.hpp"
 #include "indexgroup.hpp"
 #include "istatictrianglegroup.hpp"
+#include "../../registry/reflect_macros.hpp"
 
 /**
  * @class TriangleGroup
- * @brief Represents a dynamic group of 3D triangles.
- * 
- * This class allows manipulation of a group of triangles based on a static triangle group.
- * It supports optional UV mapping and provides methods to retrieve triangle and vertex data.
+ * @brief Represents a dynamic (runtime-sized) group of 3D triangles.
  *
- * @tparam vertexCount Number of vertices in the group.
- * @tparam triangleCount Number of triangles in the group.
+ * This runtime variant replaces an earlier compile‑time templated version. All
+ * triangles own vertex-pointer wiring into the internally owned vertex array.
+ *
+ * Invariants:
+ *  - `vertices` owns exactly `GetVertexCount()` elements.
+ *  - `triangles` owns exactly `GetTriangleCount()` elements.
+ *  - Each Triangle3D's `a`, `b`, `c` pointers either point into `vertices` or are nullptr during construction only.
+ *  - `indexGroup` is non-owning; lifetime must exceed this group or remain valid externally.
  */
-template<int vertexCount, int triangleCount>
 class TriangleGroup : public ITriangleGroup {
 private:
-    Triangle3D triangles[triangleCount]; ///< Array of triangles in the group.
-    Vector3D vertices[vertexCount]; ///< Array of vertices in the group.
-    const IndexGroup* indexGroup; ///< Pointer to the index group defining triangle vertices.
+    std::vector<Triangle3D> triangles;   ///< Owning storage of triangles.
+    std::vector<Vector3D>  vertices;    ///< Owning storage of vertex positions.
+    const IndexGroup* indexGroup = nullptr; ///< Non-owning pointer to source index group (indices into `vertices`).
 
 public:
     /**
-     * @brief Constructs a TriangleGroup from a static triangle group.
-     * @param triangleGroup Pointer to a static triangle group to initialize this group.
+     * @brief Construct from a static triangle group.
+     * @details Copies vertex data from the supplied static group, stores a pointer to
+     *          its IndexGroup (non-owning), allocates Triangle3D objects and rewires
+     *          their vertex pointers according to the indices. The static group must
+     *          outlive this instance if the index group is reused elsewhere.
+     * @param staticTriangleGroup Source static group (must not be null).
      */
-    TriangleGroup(IStaticTriangleGroup* triangleGroup);
+    explicit TriangleGroup(IStaticTriangleGroup* staticTriangleGroup);
 
-    /**
-     * @brief Gets the index group defining triangle vertices.
-     * @return Pointer to the index group.
-     */
+    ~TriangleGroup() override = default;
+
+    /** @brief Access the underlying (non-owning) index group. */
     const IndexGroup* GetIndexGroup() override;
 
-    /**
-     * @brief Gets the number of triangles in the group.
-     * @return Number of triangles.
-     */
+    /** @brief Number of triangles stored. */
     int GetTriangleCount() override;
 
-    /**
-     * @brief Gets the array of vertices in the group.
-     * @return Pointer to the array of vertices.
-     */
+    /** @brief Mutable pointer to contiguous vertex storage (size == GetVertexCount()). */
     Vector3D* GetVertices() override;
 
-    /**
-     * @brief Gets the number of vertices in the group.
-     * @return Number of vertices.
-     */
+    /** @brief Number of vertices stored. */
     int GetVertexCount() override;
 
-    /**
-     * @brief Gets the array of triangles in the group.
-     * @return Pointer to the array of triangles.
-     */
+    /** @brief Mutable pointer to first Triangle3D (size == GetTriangleCount()). */
     Triangle3D* GetTriangles() override;
+
+    PTX_BEGIN_FIELDS(TriangleGroup)
+        /* No reflected fields. */
+    PTX_END_FIELDS
+
+    PTX_BEGIN_METHODS(TriangleGroup)
+        PTX_METHOD_AUTO(TriangleGroup, GetIndexGroup, "Get index group"),
+        PTX_METHOD_AUTO(TriangleGroup, GetTriangleCount, "Get triangle count"),
+        PTX_METHOD_AUTO(TriangleGroup, GetVertices, "Get vertices"),
+        PTX_METHOD_AUTO(TriangleGroup, GetVertexCount, "Get vertex count"),
+        PTX_METHOD_AUTO(TriangleGroup, GetTriangles, "Get triangles")
+    PTX_END_METHODS
+
+    PTX_BEGIN_DESCRIBE(TriangleGroup)
+        PTX_CTOR(TriangleGroup, IStaticTriangleGroup *)
+    PTX_END_DESCRIBE(TriangleGroup)
 
 };
 
-#include "trianglegroup.tpp"

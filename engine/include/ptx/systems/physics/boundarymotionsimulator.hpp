@@ -12,6 +12,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "../../core/math/rotation.hpp"
 #include "../../core/math/vector3d.hpp"
 #include "../../core/math/rotation.hpp"
@@ -28,7 +30,7 @@
 class BoundaryMotionSimulator {
 private:
     Cube* bC; ///< Pointer to the boundary cube.
-    Sphere** bS; ///< Array of pointers to the boundary spheres.
+    std::vector<Sphere*> spheres; ///< Collection of boundary spheres (non-owning pointers).
     int sphereCount; ///< Number of boundary spheres.
     float elasticity = 0.8f; ///< Elasticity coefficient for collisions.
 

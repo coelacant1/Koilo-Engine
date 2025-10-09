@@ -6,6 +6,7 @@ import sys
 import re
 
 Import("env")
+env = env  # type: ignore[name-defined]
 
 project_dir = Path(env["PROJECT_DIR"])
 
@@ -13,21 +14,36 @@ env.Replace(PROGNAME="ptx_reflect", PROGSUFFIX=".so")
 env.AppendUnique(CCFLAGS=["-fPIC"])
 env.AppendUnique(LINKFLAGS=["-shared"])
 
-env.AppendUnique(CPPPATH=[project_dir.joinpath("lib").as_posix()])
+include_roots = [
+    project_dir / "engine" / "include",
+    project_dir / "engine" / "include" / "ptx",
+    project_dir / "bindings" / "c_api",
+    project_dir / "lib",
+]
+for inc in include_roots:
+    if inc.exists():
+        env.AppendUnique(CPPPATH=[inc.as_posix()])
 
 sources = []
 
-gen_script = project_dir.joinpath('.scripts', 'GeneratePTXAll.py')
-if gen_script.exists():
+gen_script = None
+for candidate in [project_dir / 'scripts' / 'GeneratePTXAll.py', project_dir / '.scripts' / 'GeneratePTXAll.py']:
+    if candidate.exists():
+        gen_script = candidate
+        break
+
+if gen_script is not None:
     try:
         print(f"[reflect-lib] INFO: running {gen_script}")
         subprocess.run([sys.executable, str(gen_script)], check=True)
     except Exception as e:
         print(f"[reflect-lib] WARN: GeneratePTXAll.py failed: {e}")
 else:
-    print(f"[reflect-lib] INFO: no generator found at {gen_script}; proceeding")
+    print("[reflect-lib] INFO: no generator script located; proceeding")
 
-ptx_include = project_dir.joinpath('lib', 'ptx')
+ptx_include = project_dir / 'engine' / 'include' / 'ptx'
+if not ptx_include.exists():
+    ptx_include = project_dir.joinpath('lib', 'ptx')
 gen_cpp = project_dir.joinpath('src', 'reflection_entry_gen.cpp')
 try:
     class_names = set()
@@ -116,7 +132,11 @@ try:
         except Exception:
             pass
         with gen_cpp.open('w', encoding='utf-8') as fp:
-            fp.write('#include "../lib/ptx/ptxall.hpp"\n\n')
+            if (project_dir / 'engine' / 'include' / 'ptx').exists():
+                umbrella_include = '../engine/include/ptx/ptxall.hpp'
+            else:
+                umbrella_include = '../lib/ptx/ptxall.hpp'
+            fp.write(f'#include "{umbrella_include}"\n\n')
             fp.write('namespace { struct _AutoDescribe { _AutoDescribe() {\n')
             for cls in sorted(class_names):
                 fp.write(f'    (void){cls}::Describe();\n')
@@ -150,7 +170,9 @@ def safe_build_sources(build_subdir: str, src_dir: Path, include_filename: str):
     
     return list(built) if built else []
 
-capi_dir = project_dir / "lib" / "ptx_c_api"
+capi_dir = project_dir / "bindings" / "c_api"
+if not capi_dir.exists():
+    capi_dir = project_dir / "lib" / "ptx_c_api"
 sources += safe_build_sources("ptx_c_api", capi_dir, "reflect_capi.cpp")
 
 bootstrap = project_dir / "src" / "reflection_entry.cpp"
@@ -167,7 +189,9 @@ if sources:
 else:
     print("[reflect-lib] ERROR: no sources were added; shared library will be empty.")
 
-ptx_src_dir = project_dir.joinpath('lib', 'ptx')
+ptx_src_dir = project_dir.joinpath('engine', 'src')
+if not ptx_src_dir.exists():
+    ptx_src_dir = project_dir.joinpath('lib', 'ptx')
 if ptx_src_dir.exists():
     print(f"[reflect-lib] INFO: building static archive from {ptx_src_dir}")
     lib_build = env.BuildLibrary(join('$BUILD_DIR', 'libptx'), ptx_src_dir.as_posix())

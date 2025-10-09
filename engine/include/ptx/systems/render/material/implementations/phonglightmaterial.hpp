@@ -15,23 +15,22 @@
 
 /**
  * @file phonglightmaterial.hpp
- * @brief Phong lighting material with a fixed-size light array and configurable camera/material terms.
- *
- * @tparam lightCount Number of lights stored in the parameter block.
+ * @brief Phong lighting material with runtime-sized light array and configurable camera/material terms.
  */
-template <size_t lightCount>
-class PhongLightMaterial : public MaterialT<PhongLightParams<lightCount>, PhongLightShaderT<lightCount>> {
-    using Base = MaterialT<PhongLightParams<lightCount>, PhongLightShaderT<lightCount>>;
+class PhongLightMaterial : public MaterialT<PhongLightParams, PhongLightShader> {
+    using Base = MaterialT<PhongLightParams, PhongLightShader>;
 
 public:
     using Base::Base;
 
     /**
      * @brief Construct with default light setup.
+     * @param lightCount Number of lights to initialize (default 1).
      *
      * Initializes each light with a position offset along +X, white intensity, and default falloff/curve.
      */
-    PhongLightMaterial() {
+    explicit PhongLightMaterial(std::size_t lightCount = 1) {
+        this->ResizeLights(lightCount);
         for (size_t i = 0; i < lightCount; ++i) {
             // Light::Set(position, intensityRGB, falloff, curveA, curveB)
             this->lights[i].Set(
@@ -70,6 +69,6 @@ public:
     const Light& LightAt(size_t i) const { return this->lights[i]; }
 
     /** @brief Number of lights stored by this material. */
-    constexpr size_t LightCount() const  { return lightCount; }
+    size_t LightCount() const  { return this->lights.size(); }
 
 };

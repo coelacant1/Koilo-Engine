@@ -1,6 +1,6 @@
 /**
  * @file FFTVoiceDetection.h
- * @brief Declares the FFTVoiceDetection template class for real-time viseme detection based on FFT data.
+ * @brief Declares the FFTVoiceDetection class for real-time viseme detection based on FFT data.
  *
  * This file defines the FFTVoiceDetection class, which extends the Viseme class to provide functionality
  * for detecting mouth shapes (visemes) based on formant frequencies extracted from FFT analysis of voice signals.
@@ -11,10 +11,13 @@
 
 #pragma once
 
+#include <array>
 #include <cstddef>
-#include "filter/runningaveragefilter.hpp" // Include for smoothing peaks.
-#include "filter/peakdetection.hpp" // Include for peak detection in FFT data.
-#include "../math/vector2d.hpp" // Include for 2D vector utilities.
+#include <vector>
+
+#include "filter/peakdetection.hpp"
+#include "filter/runningaveragefilter.hpp"
+#include "../math/vector2d.hpp"
 #include "../platform/ustring.hpp"
 #include "../../registry/reflect_macros.hpp"
 
@@ -61,12 +64,10 @@ public:
  * to detect and assign probabilities to various mouth shapes (visemes). It employs peak detection,
  * smoothing filters, and threshold-based calculations to determine the most probable viseme.
  *
- * @tparam peakCount The number of peaks to analyze in the FFT data.
  */
-template <size_t peakCount>
 class FFTVoiceDetection : public Viseme {
 private:
-    static const uint8_t visemeCount = 7; ///< Number of supported visemes.
+    static constexpr uint8_t kVisemeCount = 7; ///< Number of supported visemes.
 
     // Formant frequency coordinates for each viseme.
     Vector2D visEE = Vector2D(350.0f, 3200.0f); ///< Coordinates for "EE".
@@ -77,7 +78,7 @@ private:
     Vector2D visAH = Vector2D(900.0f, 2400.0f); ///< Coordinates for "AH".
     Vector2D visOO = Vector2D(600.0f, 600.0f); ///< Coordinates for "OO".
 
-    Vector2D* coordinates[visemeCount] = { &visEE, &visAE, &visUH, &visAR, &visER, &visAH, &visOO }; ///< Array of viseme coordinates.
+    std::array<Vector2D*, kVisemeCount> coordinates { &visEE, &visAE, &visUH, &visAR, &visER, &visAH, &visOO }; ///< Array of viseme coordinates.
 
     // Viseme probabilities.
     float visRatioEE = 0.0f; ///< Probability for "EE".
@@ -88,26 +89,28 @@ private:
     float visRatioAH = 0.0f; ///< Probability for "AH".
     float visRatioOO = 0.0f; ///< Probability for "OO".
 
-    float* visRatios[visemeCount] = { &visRatioEE, &visRatioAE, &visRatioUH, &visRatioAR, &visRatioER, &visRatioAH, &visRatioOO }; ///< Array of viseme probabilities.
+    std::array<float*, kVisemeCount> visRatios { &visRatioEE, &visRatioAE, &visRatioUH, &visRatioAR, &visRatioER, &visRatioAH, &visRatioOO }; ///< Array of viseme probabilities.
 
-    PeakDetection<peakCount> peakDetection = PeakDetection<peakCount>(8, 2.0f, 0.5f); ///< Peak detection instance.
-    RunningAverageFilter<10> peakSmoothing = RunningAverageFilter<10>(0.1f); ///< Smoothing filter for peak data.
+    size_t peakCount; ///< Number of FFT peaks analysed per update.
+    uint8_t bandwidth; ///< Bandwidth used for formant smoothing.
 
-    bool peaksBinary[peakCount]; ///< Binary array indicating peak presence.
-    float peakDensity[peakCount]; ///< Array of peak densities.
+    PeakDetection peakDetection; ///< Peak detection instance.
+    RunningAverageFilter peakSmoothing; ///< Smoothing filter for peak data.
 
-    float f1; ///< Formant frequency F1.
-    float f2; ///< Formant frequency F2.
+    std::vector<bool> peaksBinary; ///< Binary array indicating peak presence.
+    std::vector<float> peakDensity; ///< Array of peak densities.
+
+    float f1 = 0.0f; ///< Formant frequency F1.
+    float f2 = 0.0f; ///< Formant frequency F2.
 
     float threshold = 400.0f; ///< Threshold for formant calculations.
 
     /**
      * @brief Calculates formant frequencies (F1 and F2) from FFT peaks.
      *
-     * @param peaks Array of FFT peak values.
-     * @param bandwidth Bandwidth of the FFT data.
+     * @param peaks Pointer to the FFT peak magnitudes used for analysis.
      */
-    void CalculateFormants(float* peaks, uint8_t bandwidth);
+    void CalculateFormants(const float* peaks);
 
     /**
      * @brief Calculates the viseme group probabilities based on formants.
@@ -118,7 +121,7 @@ public:
     /**
      * @brief Constructs a new FFTVoiceDetection instance.
      */
-    FFTVoiceDetection() {}
+    explicit FFTVoiceDetection(size_t peakCount = 64, uint8_t bandwidth = 5);
 
     /**
      * @brief Sets the threshold for formant calculations.
@@ -133,12 +136,12 @@ public:
      * @param viseme The viseme to query.
      * @return The probability of the specified viseme (0.0 - 1.0).
      */
-    float GetViseme(MouthShape viseme);
+    float GetViseme(MouthShape viseme) const;
 
     /**
      * @brief Prints the probabilities of all visemes to the serial console.
      */
-    ptx::UString ToString();
+    ptx::UString ToString() const;
 
     /**
      * @brief Resets all viseme probabilities to zero.
@@ -151,8 +154,28 @@ public:
      * @param peaks Array of FFT peak values.
      * @param maxFrequency Maximum frequency represented in the FFT data.
      */
-    void Update(float* peaks, float maxFrequency);
+    void Update(const float* peaks, float maxFrequency);
+
+    /**
+     * @brief Returns the configured number of peaks evaluated each frame.
+     */
+    size_t GetPeakCount() const { return peakCount; }
+
+    PTX_BEGIN_FIELDS(FFTVoiceDetection)
+        /* No reflected fields. */
+    PTX_END_FIELDS
+
+    PTX_BEGIN_METHODS(FFTVoiceDetection)
+        PTX_METHOD_AUTO(FFTVoiceDetection, SetThreshold, "Set threshold"),
+        PTX_METHOD_AUTO(FFTVoiceDetection, GetViseme, "Get viseme"),
+        PTX_METHOD_AUTO(FFTVoiceDetection, ToString, "To string"),
+        PTX_METHOD_AUTO(FFTVoiceDetection, ResetVisemes, "Reset visemes"),
+        PTX_METHOD_AUTO(FFTVoiceDetection, Update, "Update"),
+        PTX_METHOD_AUTO(FFTVoiceDetection, GetPeakCount, "Get peak count")
+    PTX_END_METHODS
+
+    PTX_BEGIN_DESCRIBE(FFTVoiceDetection)
+        PTX_CTOR(FFTVoiceDetection, int, uint8_t)
+    PTX_END_DESCRIBE(FFTVoiceDetection)
 
 };
-
-#include "fftvoicedetection.tpp" // Include the template implementation.

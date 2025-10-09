@@ -58,7 +58,7 @@ public:
      * @brief Checks if the group has UV data.
      * @return True if UV data is present, otherwise false.
      */
-    const bool HasUV() override;
+    bool HasUV() override;
 
     /**
      * @brief Retrieves the triangle index group.
@@ -70,7 +70,7 @@ public:
      * @brief Gets the total number of triangles in the group.
      * @return The number of triangles.
      */
-    const int GetTriangleCount() override;
+    int GetTriangleCount() override;
 
     /**
      * @brief Retrieves the array of vertex positions.
@@ -82,7 +82,7 @@ public:
      * @brief Gets the total number of vertices in the group.
      * @return The number of vertices.
      */
-    const int GetVertexCount() override;
+    int GetVertexCount() override;
 
     /**
      * @brief Retrieves the array of triangles in the group.

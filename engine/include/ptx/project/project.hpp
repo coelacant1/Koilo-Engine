@@ -33,7 +33,7 @@ protected:
     Controller* controller; ///< Pointer to the Controller for controlling the display.
     Scene scene; ///< The Scene object representing the rendered environment.
 
-    RunningAverageFilter<50> avgFPS = RunningAverageFilter<50>(0.05f); ///< Running average filter for frame rate calculation.
+    RunningAverageFilter avgFPS{50, 0.05f}; ///< Running average filter for frame rate calculation.
 
     long previousAnimationTime = 0; ///< Time of the previous animation frame in microseconds.
     long previousRenderTime = 0; ///< Time of the previous render frame in microseconds.

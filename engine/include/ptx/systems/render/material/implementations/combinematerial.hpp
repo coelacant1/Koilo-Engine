@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <vector>
 
 #include "../imaterial.hpp"
 #include "../materialt.hpp"
@@ -9,20 +10,18 @@
 
 #include "../../shader/implementations/combineparams.hpp"
 #include "../../shader/implementations/combineshader.hpp"
+#include "../../../../registry/reflect_macros.hpp"
 
 /**
  * @file combinematerial.hpp
- * @brief Material wrapper over CombineParams/CombineShader using MaterialT glue.
- * @tparam N Maximum number of layers.
+ * @brief Runtime material wrapper over CombineParams/CombineShader using MaterialT glue.
  */
-template <size_t N>
-class CombineMaterial : public MaterialT<CombineParams<N>, CombineShaderT<N>> {
-    using Base = MaterialT<CombineParams<N>, CombineShaderT<N>>;
-
+class CombineMaterial : public MaterialT<CombineParams, CombineShader> {
 public:
-    using Method = typename CombineParams<N>::Method;
-    using Base::Base;
-    CombineMaterial() = default;
+    using Method = CombineParams::Method;
+
+    explicit CombineMaterial(std::size_t reserveCount = 4)
+        : MaterialT<CombineParams, CombineShader>(reserveCount) {}
 
     /**
      * @brief Append a new material layer.
@@ -31,7 +30,7 @@ public:
      * @param opacity  Initial opacity [0..1].
      */
     void AddMaterial(Method method, const IMaterial* material, float opacity) {
-        this->template CombineParams<N>::Add(method, material, opacity);
+        CombineParams::AddLayer(method, material, opacity);
     }
 
     /**
@@ -40,7 +39,7 @@ public:
      * @param method New method.
      */
     void SetMethod(uint8_t index, Method method) {
-        this->template CombineParams<N>::SetMethod(index, method);
+        CombineParams::SetMethod(index, method);
     }
 
     /**
@@ -49,7 +48,7 @@ public:
      * @param opacity Opacity [0..1].
      */
     void SetOpacity(uint8_t index, float opacity) {
-        this->template CombineParams<N>::SetOpacity(index, opacity);
+        CombineParams::SetOpacity(index, opacity);
     }
 
     /**
@@ -58,7 +57,33 @@ public:
      * @param material New non-owning material pointer.
      */
     void SetMaterial(uint8_t index, const IMaterial* material) {
-        this->template CombineParams<N>::SetMaterial(index, material);
+        CombineParams::SetMaterial(index, material);
     }
 
+    /** @brief Remove all layers. */
+    void ClearLayers() { CombineParams::Clear(); }
+
+    /** @brief Reserve backing storage for future layers. */
+    void ReserveLayers(std::size_t count) { CombineParams::Reserve(count); }
+
+    /** @brief Query number of active layers. */
+    [[nodiscard]] std::size_t LayerCount() const { return CombineParams::LayerCount(); }
+
+    PTX_BEGIN_FIELDS(CombineMaterial)
+        /* No reflected fields. */
+    PTX_END_FIELDS
+
+    PTX_BEGIN_METHODS(CombineMaterial)
+        PTX_METHOD_AUTO(CombineMaterial, AddMaterial, "Add material"),
+        PTX_METHOD_AUTO(CombineMaterial, SetMethod, "Set method"),
+        PTX_METHOD_AUTO(CombineMaterial, SetOpacity, "Set opacity"),
+        PTX_METHOD_AUTO(CombineMaterial, SetMaterial, "Set material"),
+        PTX_METHOD_AUTO(CombineMaterial, ClearLayers, "Clear layers"),
+        PTX_METHOD_AUTO(CombineMaterial, ReserveLayers, "Reserve layers"),
+        PTX_METHOD_AUTO(CombineMaterial, LayerCount, "Layer count")
+    PTX_END_METHODS
+
+    PTX_BEGIN_DESCRIBE(CombineMaterial)
+        PTX_CTOR(CombineMaterial, std::size_t)
+    PTX_END_DESCRIBE(CombineMaterial)
 };

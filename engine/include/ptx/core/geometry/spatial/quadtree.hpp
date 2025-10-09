@@ -1,126 +1,104 @@
 /**
  * @file quadtree.hpp
- * @brief A templated, 2-D quadtree for lightweight spatial partitioning.
+ * @brief Runtime quadtree for lightweight spatial partitioning.
  * @date  18/06/2025
- * @author moepforfreedom, Coela Can't
  */
 #pragma once
 
+#include <array>
 #include <cstddef>
+#include <memory>
+#include <vector>
+
 #include "../../math/vector2d.hpp"
 #include "../2d/rectangle.hpp"
 
 /**
  * @class QuadTree
- * @brief A templated, 2-D quadtree for spatial partitioning.
+ * @brief A runtime 2-D quadtree for spatial partitioning with type-erased items.
  *
- * This quadtree stores pointers to objects of type T.
- * The template type T must provide the following public method:
- * bool Overlaps(const Rectangle2D& bounds) const;
- *
- * This implementation is memory-conscious, using raw dynamically-sized
- * arrays instead of std::vector. The maximum depth and item capacity
- * per node are compile-time constants for performance.
- *
- * @tparam T The type of object pointers to store in the tree.
+ * Items are stored as opaque pointers and validated through a caller-provided
+ * overlap callback. This keeps the implementation in a translation unit while
+ * allowing callers to use strongly-typed wrappers at the interface level.
  */
-template<typename T>
 class QuadTree {
 public:
-    class Node; // Forward-declare nested class
+    using ItemPtr = void*;                                                ///< Opaque pointer to stored items.
+    using OverlapsCallback = bool (*)(const void*, const Rectangle2D&);    ///< Callback used to test bounds overlap.
 
-private:
-    Node* root;       ///< The root node of the quadtree.
-    unsigned long   totalItems; ///< Total number of items stored in the entire tree.
-
-public:
     /**
      * @class Node
-     * @brief An internal node of the QuadTree.
-     *
-     * Each node represents a rectangular area and either contains items
-     * directly (if it's a leaf) or is subdivided into four child nodes.
+     * @brief Internal quadtree node that stores items residing in a region.
      */
     class Node {
-    private:
-        /* --- Compile-time constants --- */
-        static constexpr unsigned short kMaxItems = 8; ///< Max items before a node subdivides.
-        static constexpr unsigned char  kMaxDepth = 8; ///< Max depth of the tree.
-
-        /* --- Node state --- */
-        Rectangle2D bounds;   ///< The axis-aligned bounding box of this node.
-        unsigned short itemCount; ///< Current number of items in this node.
-        unsigned short capacity;  ///< Allocated size of the items array.
-        T** items;     ///< Pointer to a dynamic array of item pointers.
-        Node* children;  ///< Pointer to an array of 4 child nodes, or nullptr if a leaf.
-
-        /** @brief Expands the capacity of the items array. */
-        void Expand(unsigned short newCap);
-
-        /** @brief Creates four child nodes, partitioning the current node's area. */
-        void CreateChildren();
-
-        /** @brief Distributes the node's items among its children. Returns count of moved items. */
-        unsigned short Distribute();
-
     public:
-        /** @brief Constructs a node with the given rectangular bounds. */
-        explicit Node(const Rectangle2D& r);
-
-        /** @brief Destructor that recursively deletes children and frees item storage. */
+        Node(const Rectangle2D& bounds, OverlapsCallback overlaps, unsigned char depth = 0);
         ~Node();
 
-        /** @brief Attempts to insert an item into this node or its children. */
-        bool Insert(T* item);
+        bool Insert(ItemPtr item);
+        Node* FindLeaf(const Vector2D& point);
+        void Subdivide();
 
-        /** @brief Finds the leaf node containing a specific point. */
-        Node* FindLeaf(const Vector2D& p);
+        bool IsLeaf() const;
+        unsigned short GetItemCount() const;
+        unsigned short GetCapacity() const;
+        const Rectangle2D& GetBounds() const;
 
-        /** @brief Subdivides the node if it exceeds item capacity and is not at max depth. */
-        void Subdivide(unsigned char depth = 0);
+        ItemPtr* GetItemsRaw();
+        ItemPtr const* GetItemsRaw() const;
 
-        /** @brief Checks if this node is a leaf (has no children). */
-        bool IsLeaf() const { return children == nullptr; }
+        template <typename T>
+        T** GetItems() {
+            return reinterpret_cast<T**>(GetItemsRaw());
+        }
 
-        /* --- Getters for node properties --- */
-        unsigned short GetItemCount() const { return itemCount; }
-        unsigned short GetCapacity() const { return capacity; }
-        const Rectangle2D& GetBounds() const { return bounds; }
-        T** GetItems() const { return items; }
-        Node* GetChildren() const { return children; }
+        template <typename T>
+        T* const* GetItems() const {
+            return reinterpret_cast<T* const*>(GetItemsRaw());
+        }
 
-};
+    private:
+        static constexpr unsigned short kMaxItems = 8; ///< Max items before subdivision.
+        static constexpr unsigned char  kMaxDepth = 8; ///< Maximum tree depth.
 
-    /** @brief Constructs a QuadTree covering the specified rectangular area. */
-    explicit QuadTree(const Rectangle2D& r);
+        Rectangle2D bounds;
+        unsigned short itemCount;
+        std::vector<ItemPtr> items;
+        std::array<std::unique_ptr<Node>, 4> children;
+        OverlapsCallback overlaps;
+        unsigned char depth;
 
-    /** @brief Destroys the QuadTree, freeing all nodes and associated memory. */
+        void EnsureCapacity(unsigned short newCap);
+        void CreateChildren();
+        unsigned short Distribute();
+    };
+
+    QuadTree(const Rectangle2D& bounds, OverlapsCallback overlaps);
     ~QuadTree();
 
-    /** @brief Inserts an item into the tree. */
-    bool Insert(T* item);
+    bool Insert(ItemPtr item);
 
-    /**
-     * @brief Queries the tree to find items at a specific point.
-     * @param p The point to query.
-     * @param countOut [out] The number of items found.
-     * @return A pointer to an array of item pointers, or nullptr if the point is outside the tree.
-     */
-    T** QueryPoint(const Vector2D& p, unsigned short& countOut);
+    template <typename T>
+    bool Insert(T* item) {
+        return Insert(static_cast<ItemPtr>(item));
+    }
 
-    /**
-     * @brief Clears the entire tree and rebuilds the root.
-     * @note This version resets the tree to an empty state. The caller
-     * is responsible for re-inserting all items from an external source.
-     */
+    ItemPtr* QueryPointRaw(const Vector2D& point, unsigned short& countOut);
+
+    template <typename T>
+    T** QueryPoint(const Vector2D& point, unsigned short& countOut) {
+        return reinterpret_cast<T**>(QueryPointRaw(point, countOut));
+    }
+
     void Rebuild();
 
-    /* --- Getters for tree properties --- */
-    Node* GetRoot() { return root; }
+    Node* GetRoot();
+    const Node* GetRoot() const;
+
     unsigned long GetItemCount() const { return totalItems; }
 
+private:
+    std::unique_ptr<Node> root;
+    unsigned long totalItems;
+    OverlapsCallback overlaps;
 };
-
-// Include the implementation file for the templated class.
-// This is a common pattern for C++ templates.
-#include "quadtree.tpp"

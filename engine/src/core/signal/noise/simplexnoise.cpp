@@ -1,6 +1,7 @@
 #include <ptx/core/signal/noise/simplexnoise.hpp>
 
 SimplexNoise::SimplexNoise(int seed) {
+    (void)seed;
     //the seed determines the swaps that occur between the default order and the order we're actually going to use
     for(int i = 0; i < 400; i++){
         uint8_t swapFrom = static_cast<uint8_t>(ptx::Random::Int(0, 255));
@@ -32,7 +33,6 @@ float SimplexNoise::Noise(float xin, float yin) const {
     float y0 = yin-Y0;
     
     // For the 2D case, the simplex shape is an equilateral triangle.
-    // Determine which simplex we are in.
     int i1, j1; // Offsets for second (middle) corner of simplex in (i,j) coords
     if(x0>y0) {i1=1; j1=0;} // lower triangle, XY order: (0,0)->(1,0)->(1,1)
     else {i1=0; j1=1;}      // upper triangle, YX order: (0,0)->(0,1)->(1,1)
@@ -94,7 +94,6 @@ float SimplexNoise::Noise(float xin, float yin, float zin) const {
     float z0 = zin-Z0;
     
     // For the 3D case, the simplex shape is a slightly irregular tetrahedron.
-    // Determine which simplex we are in.
     int i1, j1, k1; // Offsets for second corner of simplex in (i,j,k) coords
     int i2, j2, k2; // Offsets for third corner of simplex in (i,j,k) coords
     
