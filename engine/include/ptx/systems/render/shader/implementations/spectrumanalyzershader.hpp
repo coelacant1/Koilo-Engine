@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cmath>
 #include <vector>
+#include "../../../../registry/reflect_macros.hpp"
 
 #include "../ishader.hpp"
 #include "../../material/materialt.hpp"
@@ -107,5 +108,17 @@ public:
         }
         return RGBColor(0,0,0);
     }
+
+    PTX_BEGIN_FIELDS(SpectrumAnalyzerShader)
+        /* No reflected fields. */
+    PTX_END_FIELDS
+
+    PTX_BEGIN_METHODS(SpectrumAnalyzerShader)
+        PTX_METHOD_AUTO(SpectrumAnalyzerShader, Shade, "Shade")
+    PTX_END_METHODS
+
+    PTX_BEGIN_DESCRIBE(SpectrumAnalyzerShader)
+        /* No reflected ctors. */
+    PTX_END_DESCRIBE(SpectrumAnalyzerShader)
 
 };

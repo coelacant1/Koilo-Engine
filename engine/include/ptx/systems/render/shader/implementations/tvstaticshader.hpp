@@ -4,6 +4,7 @@
 #include <cmath>
 #include <utility>
 #include <vector>
+#include "../../../../registry/reflect_macros.hpp"
 
 #include "../ishader.hpp"
 #include "../../material/materialt.hpp"
@@ -172,5 +173,17 @@ private:
                           (1.0f - SmoothStep(1.0f - softness, 1.0f, u)));
         return Mathematics::Constrain(e, 0.0f, 1.0f);
     }
+
+    PTX_BEGIN_FIELDS(TVStaticShader)
+        /* No reflected fields. */
+    PTX_END_FIELDS
+
+    PTX_BEGIN_METHODS(TVStaticShader)
+        PTX_METHOD_AUTO(TVStaticShader, Shade, "Shade")
+    PTX_END_METHODS
+
+    PTX_BEGIN_DESCRIBE(TVStaticShader)
+        PTX_CTOR0(TVStaticShader)
+    PTX_END_DESCRIBE(TVStaticShader)
 
 };

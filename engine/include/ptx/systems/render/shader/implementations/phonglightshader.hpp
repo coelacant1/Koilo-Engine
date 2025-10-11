@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <cmath>
+#include "../../../../registry/reflect_macros.hpp"
 
 #include "../ishader.hpp"
 #include "../../material/materialt.hpp"
@@ -81,5 +82,17 @@ public:
         accum = accum.Constrain(0.0f, 255.0f);
         return RGBColor(uint8_t(accum.X), uint8_t(accum.Y), uint8_t(accum.Z));
     }
+
+    PTX_BEGIN_FIELDS(PhongLightShader)
+        /* No reflected fields. */
+    PTX_END_FIELDS
+
+    PTX_BEGIN_METHODS(PhongLightShader)
+        PTX_METHOD_AUTO(PhongLightShader, Shade, "Shade")
+    PTX_END_METHODS
+
+    PTX_BEGIN_DESCRIBE(PhongLightShader)
+        /* No reflected ctors. */
+    PTX_END_DESCRIBE(PhongLightShader)
 
 };

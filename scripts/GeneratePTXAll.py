@@ -19,6 +19,12 @@ import os
 import sys
 import argparse
 
+# Add scripts directory to path for consoleoutput module
+SCRIPT_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(SCRIPT_DIR))
+
+from consoleoutput import print_progress, print_status, print_section, print_warning, print_error, print_success, Colors
+
 try:  # When invoked via PlatformIO extra_scripts
     Import("env")  # type: ignore  # noqa: F821
     DEFAULT_REPO_ROOT = Path(env["PROJECT_DIR"]).resolve()  # type: ignore  # noqa: F821
@@ -34,6 +40,7 @@ def parse_args() -> argparse.Namespace:
     return ap.parse_args()
 
 def gather_headers(include_root: Path, output_name: str) -> list[str]:
+    import re
     headers: list[str] = []
     for path, _, files in os.walk(include_root):
         for f in files:
@@ -41,7 +48,19 @@ def gather_headers(include_root: Path, output_name: str) -> list[str]:
                 continue
             if f == output_name:
                 continue
-            rel = Path(path, f).relative_to(include_root)
+
+            # Filter out template and virtual files (same as UpdatePTXRegistry.py)
+            file_path = Path(path, f)
+            try:
+                text = file_path.read_text(encoding="utf-8", errors="ignore")
+                if re.search(r'\btemplate\s*<', text):
+                    continue
+                if re.search(r'\bvirtual\b', text):
+                    continue
+            except Exception:
+                pass  # Include file if we can't read it
+
+            rel = file_path.relative_to(include_root)
             headers.append(str(rel).replace(os.sep, "/"))
     return sorted(headers)
 
@@ -60,7 +79,8 @@ def generate(include_root: Path, output_file: Path) -> int:
         for h in hdrs:
             fp.write(f'#include "{h}"\n')
 
-    print(f"Regenerated {output_file} with {len(hdrs)} headers (root={include_root}, count={len(hdrs)})")
+    print_success(f"Regenerated {output_file} with {len(hdrs)} headers")
+    print_status(f"   Root: {include_root}", Colors.GREEN)
     return 0
 
 def main_cli() -> int:
@@ -70,7 +90,7 @@ def main_cli() -> int:
     if not root_path.is_absolute():
         root_path = (repo_root / root_path).resolve()
     if not root_path.exists():
-        print(f"[ptxall] ERROR: root path does not exist: {root_path}", file=sys.stderr)
+        print_error(f"Root path does not exist: {root_path}")
         return 2
     if ns.output:
         out_path = Path(ns.output)
@@ -78,6 +98,8 @@ def main_cli() -> int:
             out_path = (repo_root / out_path).resolve()
     else:
         out_path = root_path / "ptxall.hpp"
+
+    print_section("Generating PTX umbrella header")
     return generate(root_path, out_path)
 
 if __name__ == "__main__":

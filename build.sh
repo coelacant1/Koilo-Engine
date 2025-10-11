@@ -13,10 +13,11 @@ Usage: $0 [command]
 Commands:
   configure         Run CMake configure step
   registry          Regenerate reflection umbrella and registry cache
+  test-skeletons    Generate test skeletons for all untested classes
   core              Build ptx_core
   reflect           Build ptx_reflect (implies generation)
   lua               Build Lua module (ptx_lua)
-  tests             Build and run C++ tests
+  tests             Build and run C++ tests (auto-generates skeletons)
   all               Build all default targets
   clean             Remove build directory
   ctest             Run ctest in build directory
@@ -43,6 +44,8 @@ case "$cmd" in
     cmake_configure "$@" ;;
   registry)
     cmake_configure ; cmake_build ptx_update_registry ;;
+  test-skeletons)
+    cmake_configure ; cmake_build ptx_generate_test_skeletons ;;
   core)
     cmake_configure ; cmake_build ptx_core ;;
   reflect)

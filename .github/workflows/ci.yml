@@ -1,4 +1,4 @@
-name: compilecheck
+name: PTXEngine CI
 
 on:
   push:
@@ -13,63 +13,121 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install build deps
-        run: sudo apt-get update && sudo apt-get install -y ninja-build lua5.3 liblua5.3-dev
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y ninja-build lua5.3 liblua5.3-dev python3
 
-      - name: Configure (CMake)
-        run: cmake -S . -B build -G Ninja -DPTX_BUILD_LUA=ON -DPTX_BUILD_TESTS=ON
+      # Step 1: Configure
+      - name: "Step 1: CMake Configure"
+        run: ./build.sh configure
 
-      - name: Build all targets
-        run: cmake --build build -j
+      # Step 2: Generate reflection registry
+      - name: "Step 2: Generate Reflection Registry"
+        run: ./build.sh registry
 
-      - name: Run C++ tests
-        run: ctest --test-dir build --output-on-failure
-
-      - name: Lua smoke test
+      - name: Show reflection cache
         run: |
-          lua -e "package.cpath='build/?.so;'..package.cpath; local p=assert(require('ptx')); local classes= p.list_classes and p.list_classes() or {}; print('Lua classes:', #classes)"
+          if [ -f build/generated/.ptx_reflect_cache.json ]; then
+            echo "=== Reflection Cache ==="
+            cat build/generated/.ptx_reflect_cache.json | head -n 50
+          fi
 
-      - name: Python reflection smoke
+      # Step 3: Build core library
+      - name: "Step 3: Build ptx_core"
+        run: ./build.sh core
+
+      - name: Verify ptx_core exists
+        run: test -f build/libptx_core.a && echo "ptx_core built successfully"
+
+      # Step 4: Build reflection library
+      - name: "Step 4: Build ptx_reflect"
+        run: ./build.sh reflect
+
+      - name: Verify ptx_reflect exists
+        run: test -f build/libptx_reflect.so && echo "ptx_reflect built successfully"
+
+      # Step 5: Generate test skeletons
+      - name: "Step 5: Generate Test Skeletons"
+        run: ./build.sh test-skeletons
+
+      - name: Show test skeleton cache
         run: |
-          python3 bindings/python/reflection_demo.py || echo "(non-fatal) python demo returned non-zero"
+          if [ -f build/generated/.test_skeleton_cache.json ]; then
+            echo "=== Test Skeleton Cache ==="
+            cat build/generated/.test_skeleton_cache.json | head -n 50
+          fi
 
-      - name: Show reflection cache stats
+      # Step 6: Build and run tests
+      - name: "Step 6: Build and Run Tests"
+        run: ./build.sh tests
+
+      - name: Show test results
         if: always()
         run: |
-          if [ -f build/.ptx_reflect_cache.json ]; then echo '--- Cache File ---'; cat build/.ptx_reflect_cache.json | head -n 100; fi
+          if [ -f build/Testing/Temporary/LastTest.log ]; then
+            echo "=== Test Log ==="
+            cat build/Testing/Temporary/LastTest.log
+          fi
 
-      - name: Upload reflection cache artifact
+      # Step 7: Build Lua module
+      - name: "Step 7: Build Lua Module"
+        run: ./build.sh lua
+
+      - name: Verify Lua module exists
+        run: test -f build/ptx.so && echo "Lua module built successfully"
+
+      - name: "Step 8: Lua Smoke Test"
+        run: |
+          lua -e "package.cpath='build/?.so;'..package.cpath; local p=assert(require('ptx')); print('Lua module loaded'); local classes=p.list_classes and p.list_classes() or {}; print('Classes available:', #classes)"
+
+      # Step 9: Header compilation check
+      - name: "Step 9: Header Compilation Check"
+        run: |
+          cd build
+          cmake --build . --target ptx_headercheck
+
+      - name: Report header check success
+        run: echo "All headers compile individually"
+
+      # Step 10: Python reflection test
+      - name: "Step 10: Python Reflection Test"
+        run: |
+          python3 bindings/python/reflection_demo.py || echo "Python demo returned non-zero (non-fatal)"
+
+      # Upload artifacts
+      - name: Upload reflection cache
         if: always()
         uses: actions/upload-artifact@v4
         with:
-            name: reflect-cache
-            path: build/.ptx_reflect_cache.json
-            if-no-files-found: ignore
+          name: reflection-cache
+          path: build/generated/.ptx_reflect_cache.json
+          if-no-files-found: ignore
 
-  headers-only:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Upload test skeleton cache
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-skeleton-cache
+          path: build/generated/.test_skeleton_cache.json
+          if-no-files-found: ignore
 
-      - name: Umbrella header generation + compile
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: build/Testing/
+          if-no-files-found: ignore
+
+      # Final summary
+      - name: "Build Summary"
         run: |
-          mkdir -p build/generated/ptx
-          python3 scripts/GeneratePTXAll.py --root engine/include/ptx --output build/generated/ptx/ptxall.hpp --cache-file build/.ptx_reflect_cache.json
-          chmod +x scripts/HeaderCompile.sh
-          scripts/HeaderCompile.sh
-
-  lint-cmake:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: CMake configure (syntax check)
-        run: cmake -S . -B build -Wdev -Werror=dev || true
-
-  summary:
-    runs-on: ubuntu-latest
-    needs: [build-and-test, headers-only]
-    steps:
-      - name: Report
-        run: echo "Build matrix complete. Tests + headers succeeded." 
+          echo "================================"
+          echo "PTXEngine CI Complete"
+          echo "================================"
+          echo "Core library built"
+          echo "Reflection library built"
+          echo "Tests passed"
+          echo "Lua module built"
+          echo "Headers validated"
+          echo "Python bindings tested"
+          echo "================================"

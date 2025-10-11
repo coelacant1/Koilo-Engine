@@ -10,6 +10,12 @@ from pathlib import Path
 import re
 import sys
 
+# Add scripts directory to path for consoleoutput module
+SCRIPT_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(SCRIPT_DIR))
+
+from consoleoutput import print_progress, print_status, print_section, print_warning, print_error, print_success, Colors
+
 repo = Path(__file__).resolve().parents[1]
 
 def find_candidates(root: Path):
@@ -20,6 +26,13 @@ def find_candidates(root: Path):
             txt = p.read_text(encoding='utf-8')
         except Exception:
             continue
+
+        # Filter out template and virtual files (same as GeneratePTXAll.py)
+        if re.search(r'\btemplate\s*<', txt):
+            continue
+        if re.search(r'\bvirtual\b', txt):
+            continue
+
         for m in pattern.finditer(txt):
             raw = m.group(1)
             if raw.upper() in ('CLASS', 'INTERFACE', 'STRUCT', 'ENUM'):
@@ -110,7 +123,7 @@ def write_output(out: Path, classes):
         for c in classes:
             fp.write(f'    (void){c}::Describe();\n')
         fp.write('} }; static _AutoDescribe _auto_describe_instance; }\n')
-    print(f'Wrote {out} with {len(classes)} Describe() calls')
+    print_success(f'   Wrote {out} with {len(classes)} Describe() calls')
 
 
 def main():
@@ -121,10 +134,15 @@ def main():
     ns = ap.parse_args()
     root = Path(ns.root)
     out = Path(ns.output)
+
+    print_section("Generating reflection entry file...")
+    print_status(f"   Scanning: {root}", Colors.GREEN)
+
     classes = build_class_list(root)
     if not classes:
-        print('No classes found (no PTX_BEGIN_DESCRIBE)')
+        print_warning('No classes found (no PTX_BEGIN_DESCRIBE)')
         sys.exit(0)
+
     write_output(out, classes)
 
 

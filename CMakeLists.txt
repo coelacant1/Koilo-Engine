@@ -40,11 +40,26 @@ add_custom_command(
   OUTPUT ${PTX_GEN_DIR}/ptx/ptxall.hpp
   BYPRODUCTS ${PTX_GEN_DIR}/.ptx_reflect_cache.json
   COMMAND ${CMAKE_COMMAND} -E make_directory ${PTX_GEN_DIR}/ptx
-  COMMAND Python3::Interpreter ${PTX_SCRIPTS_DIR}/GeneratePTXAll.py --root ${CMAKE_SOURCE_DIR}/engine/include/ptx --output ${PTX_GEN_DIR}/ptx/ptxall.hpp
-  COMMAND Python3::Interpreter ${PTX_SCRIPTS_DIR}/UpdatePTXRegistry.py --root ${CMAKE_SOURCE_DIR}/engine/include/ptx --write --cache-file ${PTX_GEN_DIR}/.ptx_reflect_cache.json
-  DEPENDS ${PTX_SCRIPTS_DIR}/GeneratePTXAll.py ${PTX_SCRIPTS_DIR}/UpdatePTXRegistry.py
+  COMMAND Python3::Interpreter ${PTX_SCRIPTS_DIR}/generateptxall.py --root ${CMAKE_SOURCE_DIR}/engine/include/ptx --output ${PTX_GEN_DIR}/ptx/ptxall.hpp
+  COMMAND Python3::Interpreter ${PTX_SCRIPTS_DIR}/updateptxregistry.py --root ${CMAKE_SOURCE_DIR}/engine/include/ptx --write --cache-file ${PTX_GEN_DIR}/.ptx_reflect_cache.json
+  DEPENDS ${PTX_SCRIPTS_DIR}/generateptxall.py ${PTX_SCRIPTS_DIR}/updateptxregistry.py ${PTX_SCRIPTS_DIR}/consoleoutput.py
   WORKING_DIRECTORY ${PTX_SCRIPTS_DIR}
   COMMENT "Generating reflection umbrella header and PTX registry cache"
+  VERBATIM
+)
+
+# Test skeleton generation (runs after reflection generation)
+add_custom_command(
+  OUTPUT ${PTX_GEN_DIR}/.test_skeleton_cache.json
+  COMMAND Python3::Interpreter ${PTX_SCRIPTS_DIR}/generatetestskeletons.py
+          --all
+          --cache-file ${PTX_GEN_DIR}/.test_skeleton_cache.json
+  DEPENDS
+    ${PTX_SCRIPTS_DIR}/generatetestskeletons.py
+    ${PTX_SCRIPTS_DIR}/consoleoutput.py
+    ${PTX_GEN_DIR}/reflection_entry_gen.cpp
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  COMMENT "Generating test skeletons for untested classes"
   VERBATIM
 )
 
@@ -59,8 +74,8 @@ add_custom_command(
   # reflected class so their static registration objects are emitted at link/run
   # time. The helper script scans headers for PTX_BEGIN_DESCRIBE and writes a TU
   # containing (void)Class::Describe(); lines.
-  COMMAND Python3::Interpreter ${PTX_SCRIPTS_DIR}/GenerateReflectionEntry.py --root ${CMAKE_SOURCE_DIR}/engine/include/ptx --output ${PTX_GEN_DIR}/reflection_entry_gen.cpp
-  DEPENDS ${PTX_SCRIPTS_DIR}/GenerateReflectionEntry.py ${PTX_GEN_DIR}/ptx/ptxall.hpp
+  COMMAND Python3::Interpreter ${PTX_SCRIPTS_DIR}/generatereflectionentry.py --root ${CMAKE_SOURCE_DIR}/engine/include/ptx --output ${PTX_GEN_DIR}/reflection_entry_gen.cpp
+  DEPENDS ${PTX_SCRIPTS_DIR}/generatereflectionentry.py ${PTX_SCRIPTS_DIR}/consoleoutput.py ${PTX_GEN_DIR}/ptx/ptxall.hpp
   WORKING_DIRECTORY ${PTX_SCRIPTS_DIR}
   COMMENT "Generating minimal registry translation unit"
   VERBATIM
@@ -68,6 +83,12 @@ add_custom_command(
 
 add_custom_target(ptx_generate ALL DEPENDS ${PTX_GEN_DIR}/reflection_entry_gen.cpp)
 add_dependencies(ptx_generate ptx_update_registry)
+
+# Test skeleton generation target
+add_custom_target(ptx_generate_test_skeletons
+  DEPENDS ${PTX_GEN_DIR}/.test_skeleton_cache.json
+)
+add_dependencies(ptx_generate_test_skeletons ptx_generate)
 
 add_library(ptx_headers INTERFACE)
 target_include_directories(ptx_headers INTERFACE
@@ -147,7 +168,11 @@ endif()
 # Tests
 if(PTX_BUILD_TESTS)
   enable_testing()
-  file(GLOB PTX_TEST_SOURCES CONFIGURE_DEPENDS tests/engine/*.cpp)
+  # Recursively gather all test sources (including test.cpp in root and subdirectories)
+  file(GLOB_RECURSE PTX_TEST_SOURCES CONFIGURE_DEPENDS
+    tests/engine/*.cpp
+    tests/engine/**/*.cpp
+  )
   set(PTX_UNITY_SOURCES)
   set(PTX_UNITY_INCLUDE)
 
@@ -170,20 +195,19 @@ if(PTX_BUILD_TESTS)
       GIT_TAG v2.6.0 # update as needed
       GIT_SHALLOW TRUE
     )
-    FetchContent_GetProperties(unity)
-    if(NOT unity_POPULATED)
-      message(STATUS "Fetching Unity test framework...")
-      FetchContent_Populate(unity)
-    endif()
+    FetchContent_MakeAvailable(unity)
     set(PTX_UNITY_SOURCES ${unity_SOURCE_DIR}/src/unity.c)
     set(PTX_UNITY_INCLUDE ${unity_SOURCE_DIR}/src)
   endif()
 
   add_executable(ptx_tests ${PTX_TEST_SOURCES} ${PTX_UNITY_SOURCES})
+  # Ensure test skeletons are generated before building tests
+  add_dependencies(ptx_tests ptx_generate_test_skeletons)
   # ptx_reflect already propagates ptx_core publicly; but list explicitly for clarity
   target_link_libraries(ptx_tests PRIVATE ptx_reflect ptx_core)
   target_include_directories(ptx_tests PRIVATE
     ${PTX_UNITY_INCLUDE}
+    ${CMAKE_SOURCE_DIR}/tests/engine
   )
   target_compile_features(ptx_tests PRIVATE cxx_std_17)
   if(PTX_WARNING_FLAGS)
@@ -200,6 +224,14 @@ file(GLOB_RECURSE PTX_HEADERCHECK_HEADERS
 
 set(PTX_HEADERCHECK_STUBS)
 foreach(header IN LISTS PTX_HEADERCHECK_HEADERS)
+  # Filter out template and virtual headers (same as GeneratePTXAll.py)
+  file(READ ${header} header_content)
+  string(REGEX MATCH "template[ \t\n]*<" has_template "${header_content}")
+  string(REGEX MATCH "virtual" has_virtual "${header_content}")
+  if(has_template OR has_virtual)
+    continue()
+  endif()
+
   file(RELATIVE_PATH rel_path ${CMAKE_SOURCE_DIR}/engine/include ${header})
   set(stub "${CMAKE_BINARY_DIR}/headercheck/${rel_path}.cpp")
   cmake_path(GET stub PARENT_PATH stub_dir)

@@ -115,19 +115,19 @@ struct SpiralParams {
     }
 
     PTX_BEGIN_FIELDS(SpiralParams)
-        PTX_FIELD(SpiralParams, colors, "Colors"),
-        PTX_FIELD(SpiralParams, positionOffset, "Position offset"),
-        PTX_FIELD(SpiralParams, rotationOffset, "Rotation offset"),
-        PTX_FIELD(SpiralParams, width, "Width"),
-        PTX_FIELD(SpiralParams, bend, "Bend"),
-        PTX_FIELD(SpiralParams, rotationAngle, "Rotation angle")
+        PTX_FIELD(SpiralParams, colors, "Colors", 0, 0),
+        PTX_FIELD(SpiralParams, positionOffset, "Position offset", 0, 0),
+        PTX_FIELD(SpiralParams, rotationOffset, "Rotation offset", 0, 0),
+        PTX_FIELD(SpiralParams, width, "Width", __FLT_MIN__, __FLT_MAX__),
+        PTX_FIELD(SpiralParams, bend, "Bend", __FLT_MIN__, __FLT_MAX__),
+        PTX_FIELD(SpiralParams, rotationAngle, "Rotation angle", __FLT_MIN__, __FLT_MAX__)
     PTX_END_FIELDS
 
     PTX_BEGIN_METHODS(SpiralParams)
         PTX_METHOD_AUTO(SpiralParams, ResizeColors, "Resize colors"),
         PTX_METHOD_AUTO(SpiralParams, ColorCount, "Color count"),
-        PTX_METHOD_OVLD(SpiralParams, ColorData, RGBColor*, "Color data"),
-        PTX_METHOD_OVLD(SpiralParams, ColorData, const RGBColor*, "Color data const")
+        PTX_METHOD_OVLD0(SpiralParams, ColorData, RGBColor*),
+        PTX_METHOD_OVLD_CONST0(SpiralParams, ColorData, const RGBColor*)
     PTX_END_METHODS
 
     PTX_BEGIN_DESCRIBE(SpiralParams)

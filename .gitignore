@@ -42,6 +42,8 @@
 .piolibdeps/
 .clang_complete
 .gcc-flags.json
+.c*/
+.d*/
 .ptx_reflect_cache.json
 *__pycache__/
 build/

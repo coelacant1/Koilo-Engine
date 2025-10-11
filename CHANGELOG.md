@@ -1,8 +1,57 @@
 # Change Log
 All notable changes to this project will be documented in this file.
- 
+
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
+
+## [0.2.0] - 2025-10-11
+Core gameplay systems (ECS, Particles, AI, World Management, Profiling)
+
+### Added
+- **Entity Component System (ECS)** (`engine/include/ptx/systems/ecs/`)
+  - Entity handles with generation counters for stale handle detection
+  - Dense component storage for cache-friendly iteration
+  - Template-based type-safe component API
+  - Component masks and query system for efficient entity filtering
+  - Core components: `TransformComponent` (wraps existing Transform), `VelocityComponent`, `TagComponent`
+- **Particle System** (`engine/include/ptx/systems/particles/`)
+  - Particle pooling (pre-allocated, zero runtime allocations)
+  - Multiple emission shapes: Point, Sphere, Box, Cone, Circle
+  - Lifetime-based interpolation for size, color, and alpha
+  - Physics simulation (gravity, velocity, acceleration)
+  - Burst emission and custom update callbacks
+- **AI System** (`engine/include/ptx/systems/ai/`)
+  - **Behavior Trees**: Composites (Sequence, Selector, Parallel), Decorators (Inverter, Repeater, Succeeder), Leaves (Action, Condition, Wait)
+  - **State Machines**: State callbacks (Enter/Update/Exit), automatic transition checking with conditions
+  - **Pathfinding**: A* algorithm on grid, multiple heuristics (Manhattan, Euclidean, Diagonal), terrain costs, diagonal movement support
+- **World Management** (`engine/include/ptx/systems/world/`)
+  - Level loading/unloading with state machine (Unloaded/Loading/Loaded/Active/Unloading)
+  - Level streaming based on viewer position with configurable radius
+  - Level metadata and callbacks (OnLoad/OnUnload)
+  - `LevelSerializer` for JSON/Binary/XML serialization formats
+  - Level/Scene integration (Level can reference Scene for rendering)
+- **Profiling Tools** (`engine/include/ptx/systems/profiling/`)
+  - **PerformanceProfiler**: Frame timing, FPS tracking, code section profiling with RAII helpers (`PTX_PROFILE_SCOPE`, `PTX_PROFILE_FUNCTION`)
+  - **MemoryProfiler**: Allocation tracking by tag, leak detection, peak usage tracking, formatted output (`PTX_TRACK_ALLOC`, `PTX_TRACK_FREE`)
+  - Historical statistics (min/max/avg over configurable frame history)
+  - Performance and memory reports with percentage breakdowns
+
+### Changed
+- Renamed `SceneSerializer` to `LevelSerializer` for architectural clarity (distinguishes Level serialization from Scene rendering)
+- `TransformComponent` now wraps existing `Transform` class instead of duplicating fields (maintains single source of truth)
+- New files include PTX reflection support (`PTX_BEGIN_FIELDS`, `PTX_BEGIN_METHODS`, `PTX_BEGIN_DESCRIBE`)
+- Updated ci.yml to run using build.sh script with individual execution 
+
+### Testing
+- Test skeleton generation script available in `scripts/generatetestskeletons.py`
+- All systems designed with testable APIs and clear interfaces
+
+### Next Tasks
+- Update CMakeLists.txt with new source files in mind
+- Fix include path in `level.hpp:16` for `entity.hpp`
+- Write unit tests for new systems
+- Integration testing: ECS + Particles + AI + World Management
+- Performance profiling of existing systems using new profiling tools
 
 ## [0.1.7] - 2025-10-03
 Runtime filter migrations, container clean-up across scene/physics systems, and updated tooling defaults for the new engine layout.

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include "../../../../registry/reflect_macros.hpp"
 
 #include "../imaterial.hpp"
 #include "../materialt.hpp"
@@ -70,5 +71,24 @@ public:
 
     /** @brief Number of lights stored by this material. */
     size_t LightCount() const  { return this->lights.size(); }
+
+    PTX_BEGIN_FIELDS(PhongLightMaterial)
+        /* No reflected fields. */
+    PTX_END_FIELDS
+
+    PTX_BEGIN_METHODS(PhongLightMaterial)
+        PTX_METHOD_AUTO(PhongLightMaterial, SetCameraPosition, "Set camera position"),
+        PTX_METHOD_AUTO(PhongLightMaterial, SetAmbient, "Set ambient"),
+        PTX_METHOD_AUTO(PhongLightMaterial, SetDiffuse, "Set diffuse"),
+        PTX_METHOD_AUTO(PhongLightMaterial, SetSpecular, "Set specular"),
+        PTX_METHOD_AUTO(PhongLightMaterial, SetShininess, "Set shininess"),
+        /* Light at */ PTX_METHOD_OVLD(PhongLightMaterial, LightAt, Light &, size_t),
+        /* Light at */ PTX_METHOD_OVLD_CONST(PhongLightMaterial, LightAt, const Light &, size_t),
+        PTX_METHOD_AUTO(PhongLightMaterial, LightCount, "Light count")
+    PTX_END_METHODS
+
+    PTX_BEGIN_DESCRIBE(PhongLightMaterial)
+        PTX_CTOR(PhongLightMaterial, std::size_t)
+    PTX_END_DESCRIBE(PhongLightMaterial)
 
 };

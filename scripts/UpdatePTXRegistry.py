@@ -30,6 +30,12 @@ from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import List, Optional, Tuple, Dict, Any
 
+# Add scripts directory to path for console_output module
+SCRIPT_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(SCRIPT_DIR))
+
+from consoleoutput import print_progress, print_status, print_section, print_warning, print_error, print_success, Colors
+
 DEFAULT_HEADER_ROOT = Path("engine") / "include" / "ptx"
 DEFAULT_HEADER_ROOT_STR = DEFAULT_HEADER_ROOT.as_posix()
 LEGACY_HEADER_ROOT = Path("lib") / "ptx"
@@ -327,7 +333,7 @@ def try_clang_parse(paths: List[Path], clang_args: List[str]) -> Dict[Path, List
     try:
         from clang import cindex
     except Exception:
-        print("[clang] WARNING: libclang not available; falling back to regex parser.")
+        print_warning("libclang not available; falling back to regex parser.")
         return {}
 
     index = cindex.Index.create()
@@ -460,10 +466,9 @@ def try_clang_parse(paths: List[Path], clang_args: List[str]) -> Dict[Path, List
         visit(tu.cursor)
         if out_list:
             results[p] = out_list
-
-            print(f"{pcount} of {len(paths)} - Parsing clang of {p}")
+            print_progress(pcount, len(paths), f"Parsed {p.name}", Colors.GREEN)
         else:
-            print(f"{pcount} of {len(paths)} - Skipping {p} does not contain a class")
+            print_progress(pcount, len(paths), f"Skipped {p.name} (no class)", Colors.YELLOW)
         
         pcount += 1
 
@@ -547,7 +552,7 @@ def save_cache(cache_path: Path, cache: Dict[str, Any]) -> None:
         tmp.write_text(json.dumps(cache, indent=2, sort_keys=True), encoding="utf-8")
         tmp.replace(cache_path)
     except Exception as exc:
-        print(f"[cache] WARNING: failed to write cache {cache_path}: {exc}")
+        print_warning(f"Failed to write cache {cache_path}: {exc}")
 
 CLASS_RE = re.compile(
     r"""
@@ -559,6 +564,9 @@ CLASS_RE = re.compile(
     """,
     re.VERBOSE | re.DOTALL,
 )
+
+# Regex to detect enum class/struct declarations (to exclude them from CLASS_RE matches)
+ENUM_CLASS_RE = re.compile(r'\benum\s+(class|struct)\s+', re.DOTALL)
 
 ACCESS_RE = re.compile(r"^\s*(public|protected|private)\s*:\s*$", re.MULTILINE)
 
@@ -810,6 +818,14 @@ def regex_parse_file(path: Path, text: str) -> List[ClassInfo]:
     for m in CLASS_RE.finditer(text):
         if in_comment(m.start(), comment_starts, comment_spans):
             continue
+
+        # Check if this is an enum class/struct declaration by looking backwards
+        # from the match position to see if it's preceded by 'enum'
+        prefix_start = max(0, m.start() - 10)  # Look back up to 10 chars
+        prefix = text[prefix_start:m.start()]
+        if ENUM_CLASS_RE.search(prefix + m.group("kw")):
+            continue
+
         is_templ = bool(m.group("templ"))
         name = m.group("name").strip()
         open_brace = m.end() - 1
@@ -1036,7 +1052,7 @@ def ensure_blocks_in_file(src: str, ci: ClassInfo, force: bool = False) -> Tuple
             src = src[:span_start] + cleaned_segment + src[span_end:]
         if original != src:
             kind = "template" if ci.is_template else "template-scope"
-            print(f"Skipped {kind} class {ci.name}.")
+            print_status(f"Skipped {kind} class {ci.name}", Colors.YELLOW)
             return src, True
         return src, False
 
@@ -1044,7 +1060,7 @@ def ensure_blocks_in_file(src: str, ci: ClassInfo, force: bool = False) -> Tuple
         original = src
         src = _remove_existing_blocks(src)
         if original != src:
-            print(f"Skipped abstract class {ci.name} (pure virtual).")
+            print_status(f"Skipped abstract class {ci.name} (pure virtual)", Colors.YELLOW)
             return src, True
         return src, False
 
@@ -1066,7 +1082,7 @@ def ensure_blocks_in_file(src: str, ci: ClassInfo, force: bool = False) -> Tuple
             if not has_fields: missing.append("FIELDS")
             if not has_methods: missing.append("METHODS")
             if not has_desc: missing.append("DESCRIBE")
-            print(f"Inserted {', '.join(missing)} for {ci.name}.")
+            print_success(f"Inserted {', '.join(missing)} for {ci.name}")
         return src, inserted
 
     m_fields = find_existing_block(src, "PTX_BEGIN_FIELDS", cls, False)
@@ -1080,7 +1096,7 @@ def ensure_blocks_in_file(src: str, ci: ClassInfo, force: bool = False) -> Tuple
         src = _remove_existing_blocks(src)
         src, inserted = _render_block(src)
         if inserted:
-            print(f"Reordered PTX blocks for {ci.name}.")
+            print_success(f"Reordered PTX blocks for {ci.name}")
         return src, inserted
 
     return src, changed
@@ -1160,17 +1176,18 @@ def main():
             continue
         headers.append(p)
     # Report skipped counts
-    print(f"[filter] skipped {len(skipped_templated)} templated files, {len(skipped_virtual)} virtual files")
+    if skipped_templated or skipped_virtual:
+        print_section(f"Filtered {len(skipped_templated)} templated files, {len(skipped_virtual)} virtual files")
     if args.list_skipped and skipped_templated:
-        print("[filter] templated headers:")
+        print("   Templated headers:")
         for path, reason in skipped_templated:
             rel = path.relative_to(root)
-            print(f"  - {rel.as_posix()} ({reason})")
+            print(f"     - {rel.as_posix()} ({reason})")
     if args.list_skipped and skipped_virtual:
-        print("[filter] virtual headers:")
+        print("   Virtual headers:")
         for path, reason in skipped_virtual:
             rel = path.relative_to(root)
-            print(f"  - {rel.as_posix()} ({reason})")
+            print(f"     - {rel.as_posix()} ({reason})")
 
     cache_path = (project_root / args.cache_file) if not Path(args.cache_file).is_absolute() else Path(args.cache_file)
     cache: Dict[str, Any] = {}
@@ -1185,7 +1202,7 @@ def main():
     cached_macros_mtime = cache.get("meta", {}).get("macros_mtime")
     macros_changed = cached_macros_mtime != macros_mtime
     if macros_changed and args.use_cache:
-        print("[cache] reflect_macros.hpp changed -> invalidating all cached headers")
+        print_warning("reflect_macros.hpp changed -> invalidating all cached headers")
 
     parse_headers: List[Path] = []
     reused_headers: List[Path] = []
@@ -1238,7 +1255,8 @@ def main():
     if args.use_cache:
         cache.setdefault("meta", {})["macros_mtime"] = macros_mtime
         save_cache(cache_path, cache)
-        print(f"[cache] reused {len(reused_headers) - reused_count_missing} headers, reparsed {len(parse_headers)} headers")
+        if reused_headers or parse_headers:
+            print_status(f"Cache: reused {len(reused_headers) - reused_count_missing} headers, reparsed {len(parse_headers)} headers", Colors.GREEN)
 
     total_changed = 0
     total_files = 0
@@ -1270,7 +1288,7 @@ def main():
             src, inc_changed, rel = ensure_reflect_include(src, header_path=p, root_path=root)
             if inc_changed:
                 changed_any = True
-                print(f"{p}: inserted #include \"{rel}\"")
+                print_status(f"{p}: inserted #include \"{rel}\"", Colors.GREEN)
         else:
             src, removed = remove_reflect_include(src)
             if removed:
@@ -1287,9 +1305,10 @@ def main():
             total_changed += 1
         total_files += 1
 
-    print(f"Processed {total_files} headers under {root} - modified {total_changed}.")
+    print_section(f"Processed {total_files} headers under {root}")
+    print(f"   Modified: {total_changed}")
     if not clang_results and parse_headers:
-        print("(libclang not available or failed for reparsed headers - used regex fallback)", file=sys.stderr)
+        print_warning("(libclang not available or failed - used regex fallback)")
 
 if __name__ == "__main__":
     main()

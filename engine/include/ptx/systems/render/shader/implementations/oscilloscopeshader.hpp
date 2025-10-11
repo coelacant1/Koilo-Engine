@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cmath>
 #include <vector>
+#include "../../../../registry/reflect_macros.hpp"
 
 #include "../ishader.hpp"
 #include "../../material/materialt.hpp"
@@ -97,5 +98,17 @@ public:
 
         return gradient.GetColorAt(g);
     }
+
+    PTX_BEGIN_FIELDS(OscilloscopeShader)
+        /* No reflected fields. */
+    PTX_END_FIELDS
+
+    PTX_BEGIN_METHODS(OscilloscopeShader)
+        PTX_METHOD_AUTO(OscilloscopeShader, Shade, "Shade")
+    PTX_END_METHODS
+
+    PTX_BEGIN_DESCRIBE(OscilloscopeShader)
+        /* No reflected ctors. */
+    PTX_END_DESCRIBE(OscilloscopeShader)
 
 };

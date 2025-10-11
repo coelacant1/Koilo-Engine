@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cmath>
+#include "../../../../registry/reflect_macros.hpp"
 
 #include "../imaterial.hpp"
 #include "../materialt.hpp"
@@ -140,5 +141,32 @@ private:
     FunctionGenerator wiggle1_;
     FunctionGenerator wiggle2_;
     FunctionGenerator fGrad_;
+
+    PTX_BEGIN_FIELDS(TVStaticMaterial)
+        /* No reflected fields. */
+    PTX_END_FIELDS
+
+    PTX_BEGIN_METHODS(TVStaticMaterial)
+        PTX_METHOD_AUTO(TVStaticMaterial, SetNoiseGradientPeriod, "Set noise gradient period"),
+        PTX_METHOD_AUTO(TVStaticMaterial, SetNoiseHue, "Set noise hue"),
+        PTX_METHOD_AUTO(TVStaticMaterial, SetNoiseScale, "Set noise scale"),
+        PTX_METHOD_AUTO(TVStaticMaterial, SetScanGradientPeriod, "Set scan gradient period"),
+        PTX_METHOD_AUTO(TVStaticMaterial, SetScanMultiplyOpacity, "Set scan multiply opacity"),
+        PTX_METHOD_AUTO(TVStaticMaterial, SetScanShift, "Set scan shift"),
+        PTX_METHOD_AUTO(TVStaticMaterial, SetBarsCenter, "Set bars center"),
+        PTX_METHOD_AUTO(TVStaticMaterial, SetBarsSize, "Set bars size"),
+        PTX_METHOD_AUTO(TVStaticMaterial, SetBarsHue, "Set bars hue"),
+        PTX_METHOD_AUTO(TVStaticMaterial, SetNoiseSpectrumCount, "Set noise spectrum count"),
+        PTX_METHOD_AUTO(TVStaticMaterial, SetScanSpectrumCount, "Set scan spectrum count"),
+        PTX_METHOD_AUTO(TVStaticMaterial, NoiseSpectrumSize, "Noise spectrum size"),
+        PTX_METHOD_AUTO(TVStaticMaterial, ScanSpectrumSize, "Scan spectrum size"),
+        /* Overloaded: NoiseSpectrum() - use manual wrapper if needed */
+        /* Overloaded: ScanSpectrum() - use manual wrapper if needed */
+        PTX_METHOD_AUTO(TVStaticMaterial, Update, "Update")
+    PTX_END_METHODS
+
+    PTX_BEGIN_DESCRIBE(TVStaticMaterial)
+        PTX_CTOR(TVStaticMaterial, std::size_t, std::size_t)
+    PTX_END_DESCRIBE(TVStaticMaterial)
 
 };

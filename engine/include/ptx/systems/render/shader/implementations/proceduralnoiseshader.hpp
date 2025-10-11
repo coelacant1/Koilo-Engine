@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cmath>
 #include <vector>
+#include "../../../../registry/reflect_macros.hpp"
 
 #include "../ishader.hpp"
 #include "../../material/materialt.hpp"
@@ -68,5 +69,17 @@ public:
 
         return gradient.GetColorAt(t);
     }
+
+    PTX_BEGIN_FIELDS(ProceduralNoiseShader)
+        /* No reflected fields. */
+    PTX_END_FIELDS
+
+    PTX_BEGIN_METHODS(ProceduralNoiseShader)
+        PTX_METHOD_AUTO(ProceduralNoiseShader, Shade, "Shade")
+    PTX_END_METHODS
+
+    PTX_BEGIN_DESCRIBE(ProceduralNoiseShader)
+        /* No reflected ctors. */
+    PTX_END_DESCRIBE(ProceduralNoiseShader)
 
 };

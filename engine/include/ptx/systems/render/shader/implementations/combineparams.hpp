@@ -40,7 +40,6 @@ struct CombineParams {
         Replace,        ///< Replace destination with source
         EfficientMask,  ///< Masking optimized for performance
         Bypass          ///< Skip layer (no-op)
-
     };
 
     std::vector<Method>           methods{};    ///< Blend method per layer

@@ -1,0 +1,40 @@
+/**
+ * @file testimagesequenceshader.hpp
+ * @brief Unit tests for the ImageSequenceShader class.
+ *
+ * TODO: Add detailed description of what this test suite covers.
+ *
+ * @date 10/10/2025
+ * @version 1.0
+ * @author Coela
+ */
+
+#pragma once
+
+#include <unity.h>
+#include <ptx/systems/render/shader/implementations/imagesequenceshader.hpp>
+#include <utils/testhelpers.hpp>
+
+/**
+ * @class TestImageSequenceShader
+ * @brief Contains static test methods for the ImageSequenceShader class.
+ */
+class TestImageSequenceShader {
+public:
+    // Constructor & lifecycle tests
+    static void TestDefaultConstructor();
+    static void TestParameterizedConstructor();
+
+    // Method tests
+    static void TestShade();
+
+    // Functionality tests
+
+    // Edge case & integration tests
+    static void TestEdgeCases();
+
+    /**
+     * @brief Runs all test methods.
+     */
+    static void RunAllTests();
+};
