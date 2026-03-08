@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file entitymanager.hpp
  * @brief Entity and component manager for ECS.
@@ -13,12 +14,22 @@
 #include <memory>
 #include <bitset>
 #include <queue>
-#include <typeindex>
+#include <stdexcept>
 #include "entity.hpp"
 #include "component.hpp"
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
 
-namespace ptx {
+// Hash must be visible before ComponentArray (uses unordered_map<Entity, ...>)
+namespace std {
+    template<>
+    struct hash<koilo::Entity> {
+        size_t operator()(const koilo::Entity& entity) const {
+            return hash<koilo::EntityID>()(entity.GetID());
+        }
+    };
+} // namespace std
+
+namespace koilo {
 
 /**
  * @typedef ComponentMask
@@ -293,20 +304,20 @@ private:
     template<typename T>
     std::shared_ptr<ComponentArray<T>> GetComponentArray();
 
-    PTX_BEGIN_FIELDS(EntityManager)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(EntityManager)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(EntityManager)
-        PTX_METHOD_AUTO(EntityManager, CreateEntity, "Create entity"),
-        PTX_METHOD_AUTO(EntityManager, DestroyEntity, "Destroy entity"),
-        PTX_METHOD_AUTO(EntityManager, IsEntityValid, "Is entity valid"),
-        PTX_METHOD_AUTO(EntityManager, GetEntityCount, "Get entity count"),
-        PTX_METHOD_AUTO(EntityManager, Clear, "Clear")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(EntityManager)
+        KL_METHOD_AUTO(EntityManager, CreateEntity, "Create entity"),
+        KL_METHOD_AUTO(EntityManager, DestroyEntity, "Destroy entity"),
+        KL_METHOD_AUTO(EntityManager, IsEntityValid, "Is entity valid"),
+        KL_METHOD_AUTO(EntityManager, GetEntityCount, "Get entity count"),
+        KL_METHOD_AUTO(EntityManager, Clear, "Clear")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(EntityManager)
-        PTX_CTOR0(EntityManager)
-    PTX_END_DESCRIBE(EntityManager)
+    KL_BEGIN_DESCRIBE(EntityManager)
+        KL_CTOR0(EntityManager)
+    KL_END_DESCRIBE(EntityManager)
 };
 
 // === Template Implementations ===
@@ -459,4 +470,4 @@ std::shared_ptr<ComponentArray<T>> EntityManager::GetComponentArray() {
     return newArray;
 }
 
-} // namespace ptx
+} // namespace koilo

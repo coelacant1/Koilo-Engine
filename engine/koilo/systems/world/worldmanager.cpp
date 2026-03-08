@@ -1,17 +1,20 @@
-#include <ptx/systems/world/worldmanager.hpp>
-#include <ptx/systems/ecs/entitymanager.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/systems/world/worldmanager.hpp>
+#include <koilo/systems/world/levelserializer.hpp>
+#include <koilo/ecs/entitymanager.hpp>
+#include <koilo/core/time/timemanager.hpp>
 #include <algorithm>
 #include <iostream>
 
-namespace ptx {
+namespace koilo {
 
-WorldManager::WorldManager(EntityManager* entityManager)
+koilo::WorldManager::WorldManager(EntityManager* entityManager)
     : entityManager(entityManager), activeLevel(nullptr),
       streamingEnabled(false), streamingViewerPosition(0, 0, 0),
       streamingCheckInterval(1.0f), timeSinceLastStreamingCheck(0.0f) {
 }
 
-WorldManager::~WorldManager() {
+koilo::WorldManager::~WorldManager() {
     // Unload all levels
     for (auto& level : levels) {
         if (level->GetState() != LevelState::Unloaded) {
@@ -22,7 +25,7 @@ WorldManager::~WorldManager() {
 
 // === Level Management ===
 
-std::shared_ptr<Level> WorldManager::CreateLevel(const std::string& name) {
+std::shared_ptr<Level> koilo::WorldManager::CreateLevel(const std::string& name) {
     // Check if level already exists
     if (levelsByName.find(name) != levelsByName.end()) {
         std::cerr << "Level '" << name << "' already exists" << std::endl;
@@ -35,7 +38,7 @@ std::shared_ptr<Level> WorldManager::CreateLevel(const std::string& name) {
     return level;
 }
 
-void WorldManager::AddLevel(std::shared_ptr<Level> level) {
+void koilo::WorldManager::AddLevel(std::shared_ptr<Level> level) {
     if (!level) {
         return;
     }
@@ -45,7 +48,7 @@ void WorldManager::AddLevel(std::shared_ptr<Level> level) {
     levelsByName[level->GetName()] = level;
 }
 
-void WorldManager::RemoveLevel(const std::string& name) {
+void koilo::WorldManager::RemoveLevel(const std::string& name) {
     // Unload if loaded
     auto level = GetLevel(name);
     if (level && level->GetState() != LevelState::Unloaded) {
@@ -65,7 +68,7 @@ void WorldManager::RemoveLevel(const std::string& name) {
     levels.erase(it, levels.end());
 }
 
-std::shared_ptr<Level> WorldManager::GetLevel(const std::string& name) const {
+std::shared_ptr<Level> koilo::WorldManager::GetLevel(const std::string& name) const {
     auto it = levelsByName.find(name);
     if (it != levelsByName.end()) {
         return it->second;
@@ -75,7 +78,7 @@ std::shared_ptr<Level> WorldManager::GetLevel(const std::string& name) const {
 
 // === Active Level ===
 
-void WorldManager::SetActiveLevel(const std::string& name) {
+void koilo::WorldManager::SetActiveLevel(const std::string& name) {
     auto level = GetLevel(name);
     if (!level) {
         std::cerr << "Cannot set active level: '" << name << "' not found" << std::endl;
@@ -98,7 +101,7 @@ void WorldManager::SetActiveLevel(const std::string& name) {
     activeLevel->Activate();
 }
 
-std::string WorldManager::GetActiveLevelName() const {
+std::string koilo::WorldManager::GetActiveLevelName() const {
     if (activeLevel) {
         return activeLevel->GetName();
     }
@@ -107,7 +110,7 @@ std::string WorldManager::GetActiveLevelName() const {
 
 // === Level Loading ===
 
-bool WorldManager::LoadLevel(const std::string& name) {
+bool koilo::WorldManager::LoadLevel(const std::string& name) {
     auto level = GetLevel(name);
     if (!level) {
         std::cerr << "Cannot load level: '" << name << "' not found" << std::endl;
@@ -130,7 +133,7 @@ bool WorldManager::LoadLevel(const std::string& name) {
     return true;
 }
 
-bool WorldManager::UnloadLevel(const std::string& name) {
+bool koilo::WorldManager::UnloadLevel(const std::string& name) {
     auto level = GetLevel(name);
     if (!level) {
         std::cerr << "Cannot unload level: '" << name << "' not found" << std::endl;
@@ -159,30 +162,30 @@ bool WorldManager::UnloadLevel(const std::string& name) {
     return true;
 }
 
-std::shared_ptr<Level> WorldManager::LoadLevelFromFile(const std::string& filePath) {
-    // TODO: Implement file loading (JSON, binary, etc.)
-    // For now, create a placeholder level
-    auto level = std::make_shared<Level>("LoadedLevel");
-    level->SetFilePath(filePath);
-    level->SetEntityManager(entityManager);
-    AddLevel(level);
-    level->Load();
+std::shared_ptr<Level> koilo::WorldManager::LoadLevelFromFile(const std::string& filePath) {
+    LevelSerializer serializer(entityManager, SerializationFormat::JSON);
+    auto level = serializer.DeserializeLevelFromFile(filePath);
+    if (level) {
+        AddLevel(level);
+        level->Load();
+    }
     return level;
 }
 
-bool WorldManager::SaveLevelToFile(const std::string& name, const std::string& filePath) {
+bool koilo::WorldManager::SaveLevelToFile(const std::string& name, const std::string& filePath) {
     auto level = GetLevel(name);
     if (!level) {
         std::cerr << "Cannot save level: '" << name << "' not found" << std::endl;
         return false;
     }
 
-    // TODO: Implement file saving (JSON, binary, etc.)
-    level->SetFilePath(filePath);
-    return true;
+    LevelSerializer serializer(entityManager, SerializationFormat::JSON);
+    bool ok = serializer.SerializeLevelToFile(level, filePath);
+    if (ok) level->SetFilePath(filePath);
+    return ok;
 }
 
-void WorldManager::UnloadAllInactiveLevels() {
+void koilo::WorldManager::UnloadAllInactiveLevels() {
     for (auto& level : levels) {
         if (level != activeLevel && level->GetState() != LevelState::Unloaded) {
             level->Unload();
@@ -199,7 +202,7 @@ void WorldManager::UnloadAllInactiveLevels() {
 
 // === Streaming ===
 
-void WorldManager::CheckStreaming() {
+void koilo::WorldManager::CheckStreaming() {
     if (!streamingEnabled) {
         return;
     }
@@ -241,17 +244,18 @@ void WorldManager::CheckStreaming() {
 
 // === Callbacks ===
 
-void WorldManager::AddOnLevelLoadCallback(LevelLoadCallback callback) {
+void koilo::WorldManager::AddOnLevelLoadCallback(LevelLoadCallback callback) {
     onLevelLoadCallbacks.push_back(callback);
 }
 
-void WorldManager::AddOnLevelUnloadCallback(LevelUnloadCallback callback) {
+void koilo::WorldManager::AddOnLevelUnloadCallback(LevelUnloadCallback callback) {
     onLevelUnloadCallbacks.push_back(callback);
 }
 
 // === Update ===
 
-void WorldManager::Update(float deltaTime) {
+void koilo::WorldManager::Update() {
+    float deltaTime = TimeManager::GetInstance().GetDeltaTime();
     // Streaming checks
     if (streamingEnabled) {
         timeSinceLastStreamingCheck += deltaTime;
@@ -262,4 +266,4 @@ void WorldManager::Update(float deltaTime) {
     }
 }
 
-} // namespace ptx
+} // namespace koilo

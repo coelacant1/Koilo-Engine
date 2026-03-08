@@ -1,8 +1,10 @@
-#include <ptx/systems/ui/canvas.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/systems/ui/canvas.hpp>
 #include <algorithm>
 #include <cmath>
 
-namespace ptx {
+namespace koilo {
+
 
 Canvas::Canvas()
     : renderMode(RenderMode::ScreenSpaceOverlay), sortOrder(0),
@@ -39,8 +41,8 @@ void Canvas::UpdateScaleFactor() {
     if (scaleMode == ScaleMode::ConstantPixelSize) {
         scaleFactor = 1.0f;
     } else if (scaleMode == ScaleMode::ScaleWithScreenSize) {
-        float widthScale = screenSize.x / referenceResolution.x;
-        float heightScale = screenSize.y / referenceResolution.y;
+        float widthScale = screenSize.X / referenceResolution.X;
+        float heightScale = screenSize.Y / referenceResolution.Y;
 
         // Interpolate between width and height scale based on matchWidthOrHeight
         scaleFactor = widthScale * (1.0f - matchWidthOrHeight) + heightScale * matchWidthOrHeight;
@@ -196,4 +198,5 @@ void Canvas::SortByZIndex(std::vector<std::shared_ptr<UIElement>>& elements) {
         });
 }
 
-} // namespace ptx
+
+} // namespace koilo

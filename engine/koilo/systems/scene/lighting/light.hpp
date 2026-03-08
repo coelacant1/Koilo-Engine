@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file Light.hpp
  * @brief Defines the Light class for managing light sources in a 3D scene.
@@ -13,8 +14,11 @@
 
 #pragma once
 
-#include "../../../core/math/vector3d.hpp"
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/core/math/vector3d.hpp>
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class Light
@@ -123,28 +127,30 @@ private:
     float a; ///< Attenuation curve parameter A.
     float b; ///< Attenuation curve parameter B.
 
-    PTX_BEGIN_FIELDS(Light)
+    KL_BEGIN_FIELDS(Light)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(Light)
-        PTX_METHOD_AUTO(Light, Set, "Set"),
-        PTX_METHOD_AUTO(Light, SetIntensity, "Set intensity"),
-        /* Set falloff */ PTX_METHOD_OVLD(Light, SetFalloff, void, float, float, float),
-        PTX_METHOD_AUTO(Light, MoveTo, "Move to"),
-        PTX_METHOD_AUTO(Light, Translate, "Translate"),
-        /* Set falloff */ PTX_METHOD_OVLD(Light, SetFalloff, void, float),
-        PTX_METHOD_AUTO(Light, SetCurve, "Set curve"),
-        PTX_METHOD_AUTO(Light, GetPosition, "Get position"),
-        PTX_METHOD_AUTO(Light, GetFalloff, "Get falloff"),
-        PTX_METHOD_AUTO(Light, GetCurveA, "Get curve a"),
-        PTX_METHOD_AUTO(Light, GetCurveB, "Get curve b"),
-        PTX_METHOD_AUTO(Light, GetIntensity, "Get intensity")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(Light)
+        KL_METHOD_AUTO(Light, Set, "Set"),
+        KL_METHOD_AUTO(Light, SetIntensity, "Set intensity"),
+        /* Set falloff */ KL_METHOD_OVLD(Light, SetFalloff, void, float, float, float),
+        KL_METHOD_AUTO(Light, MoveTo, "Move to"),
+        KL_METHOD_AUTO(Light, Translate, "Translate"),
+        /* Set falloff */ KL_METHOD_OVLD(Light, SetFalloff, void, float),
+        KL_METHOD_AUTO(Light, SetCurve, "Set curve"),
+        KL_METHOD_AUTO(Light, GetPosition, "Get position"),
+        KL_METHOD_AUTO(Light, GetFalloff, "Get falloff"),
+        KL_METHOD_AUTO(Light, GetCurveA, "Get curve a"),
+        KL_METHOD_AUTO(Light, GetCurveB, "Get curve b"),
+        KL_METHOD_AUTO(Light, GetIntensity, "Get intensity")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(Light)
-        PTX_CTOR0(Light),
-        PTX_CTOR(Light, Vector3D, Vector3D, float, float, float)
-    PTX_END_DESCRIBE(Light)
+    KL_BEGIN_DESCRIBE(Light)
+        KL_CTOR0(Light),
+        KL_CTOR(Light, Vector3D, Vector3D, float, float, float)
+    KL_END_DESCRIBE(Light)
 
 };
+
+} // namespace koilo

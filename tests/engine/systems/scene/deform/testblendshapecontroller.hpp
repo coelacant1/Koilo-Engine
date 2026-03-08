@@ -1,10 +1,9 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testblendshapecontroller.hpp
  * @brief Unit tests for the BlendshapeController class.
  *
- * TODO: Add detailed description of what this test suite covers.
- *
- * @date 10/10/2025
+ * @date 11/10/2025
  * @version 1.0
  * @author Coela
  */
@@ -12,7 +11,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/systems/scene/deform/blendshapecontroller.hpp>
+#include <koilo/systems/scene/deform/blendshapecontroller.hpp>
 #include <utils/testhelpers.hpp>
 
 /**
@@ -26,17 +25,16 @@ public:
     static void TestParameterizedConstructor();
 
     // Method tests
+    static void TestSetAnimator();
+    static void TestAddBlendshape();
+    static void TestRemoveBlendshape();
     static void TestGetBlendshapeCount();
     static void TestGetCapacity();
-    static void TestAddBlendshape();
-    static void TestSetBlendshapePositionOffset();
-    static void TestSetBlendshapeScaleOffset();
-    static void TestSetBlendshapeRotationOffset();
-    static void TestGetPositionOffset();
-    static void TestGetScaleOffset();
-    static void TestGetRotationOffset();
-
-    // Functionality tests
+    static void TestSetWeight();
+    static void TestGetWeight();
+    static void TestResetWeights();
+    static void TestUpdate();
+    static void TestApplyTo();
 
     // Edge case & integration tests
     static void TestEdgeCases();

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file performanceprofiler.hpp
  * @brief Performance profiling and timing measurements.
@@ -12,10 +13,9 @@
 #include <chrono>
 #include <unordered_map>
 #include <vector>
-#include <memory>
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
 
-namespace ptx {
+namespace koilo {
 
 /**
  * @struct ProfileSample
@@ -34,18 +34,18 @@ struct ProfileSample {
           minDuration(std::numeric_limits<double>::max()),
           maxDuration(0.0) {}
 
-    PTX_BEGIN_FIELDS(ProfileSample)
-        PTX_FIELD(ProfileSample, name, "Name", 0, 0),
-        PTX_FIELD(ProfileSample, duration, "Duration", 0, 0),
-        PTX_FIELD(ProfileSample, callCount, "Call count", 0, 0)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(ProfileSample)
+        KL_FIELD(ProfileSample, name, "Name", 0, 0),
+        KL_FIELD(ProfileSample, duration, "Duration", 0, 0),
+        KL_FIELD(ProfileSample, callCount, "Call count", 0, 0)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(ProfileSample)
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(ProfileSample)
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(ProfileSample)
-        PTX_CTOR(ProfileSample, std::string)
-    PTX_END_DESCRIBE(ProfileSample)
+    KL_BEGIN_DESCRIBE(ProfileSample)
+        KL_CTOR(ProfileSample, std::string)
+    KL_END_DESCRIBE(ProfileSample)
 };
 
 /**
@@ -58,6 +58,19 @@ struct ProfileFrame {
     std::unordered_map<std::string, ProfileSample> samples;
 
     ProfileFrame() : frameNumber(0), totalTime(0.0) {}
+
+    KL_BEGIN_FIELDS(ProfileFrame)
+        KL_FIELD(ProfileFrame, frameNumber, "Frame number", -2147483648, 2147483647)
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(ProfileFrame)
+        /* No reflected methods. */
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(ProfileFrame)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(ProfileFrame)
+
 };
 
 /**
@@ -135,12 +148,6 @@ public:
      * @brief Ends timing a section.
      */
     void EndSample(const std::string& name);
-
-    /**
-     * @brief Times a function call.
-     */
-    template<typename Func>
-    double TimeFunction(const std::string& name, Func func);
 
     // === Frame Management ===
 
@@ -227,35 +234,35 @@ public:
      */
     double GetMaxDuration(const std::string& name) const;
 
-    PTX_BEGIN_FIELDS(PerformanceProfiler)
-        PTX_FIELD(PerformanceProfiler, enabled, "Enabled", 0, 1),
-        PTX_FIELD(PerformanceProfiler, currentFrame, "Current frame", 0, 0),
-        PTX_FIELD(PerformanceProfiler, historySize, "History size", 0, 0)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(PerformanceProfiler)
+        KL_FIELD(PerformanceProfiler, enabled, "Enabled", 0, 1),
+        KL_FIELD(PerformanceProfiler, currentFrame, "Current frame", 0, 0),
+        KL_FIELD(PerformanceProfiler, historySize, "History size", 0, 0)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(PerformanceProfiler)
-        PTX_METHOD_AUTO(PerformanceProfiler, SetEnabled, "Set enabled"),
-        PTX_METHOD_AUTO(PerformanceProfiler, IsEnabled, "Is enabled"),
-        PTX_METHOD_AUTO(PerformanceProfiler, BeginFrame, "Begin frame"),
-        PTX_METHOD_AUTO(PerformanceProfiler, EndFrame, "End frame"),
-        PTX_METHOD_AUTO(PerformanceProfiler, GetFPS, "Get FPS"),
-        PTX_METHOD_AUTO(PerformanceProfiler, PrintReport, "Print report"),
-        PTX_METHOD_AUTO(PerformanceProfiler, Clear, "Clear")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(PerformanceProfiler)
+        KL_METHOD_AUTO(PerformanceProfiler, SetEnabled, "Set enabled"),
+        KL_METHOD_AUTO(PerformanceProfiler, IsEnabled, "Is enabled"),
+        KL_METHOD_AUTO(PerformanceProfiler, BeginFrame, "Begin frame"),
+        KL_METHOD_AUTO(PerformanceProfiler, EndFrame, "End frame"),
+        KL_METHOD_AUTO(PerformanceProfiler, GetFPS, "Get FPS"),
+        KL_METHOD_AUTO(PerformanceProfiler, PrintReport, "Print report"),
+        KL_METHOD_AUTO(PerformanceProfiler, Clear, "Clear")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(PerformanceProfiler)
-        PTX_CTOR0(PerformanceProfiler)
-    PTX_END_DESCRIBE(PerformanceProfiler)
+    KL_BEGIN_DESCRIBE(PerformanceProfiler)
+        KL_CTOR0(PerformanceProfiler)
+    KL_END_DESCRIBE(PerformanceProfiler)
 };
 
 /**
- * @class ProfileScope
+ * @class PerfProfileScope
  * @brief RAII helper for automatic timing.
  *
- * Create a ProfileScope at the beginning of a function to automatically
+ * Create a PerfProfileScope at the beginning of a function to automatically
  * time its execution.
  */
-class ProfileScope {
+class PerfProfileScope {
 private:
     std::string name;
     bool active;
@@ -264,7 +271,7 @@ public:
     /**
      * @brief Constructor - starts timing.
      */
-    ProfileScope(const std::string& name)
+    PerfProfileScope(const std::string& name)
         : name(name), active(PerformanceProfiler::GetInstance().IsEnabled()) {
         if (active) {
             PerformanceProfiler::GetInstance().BeginSample(name);
@@ -274,32 +281,28 @@ public:
     /**
      * @brief Destructor - ends timing.
      */
-    ~ProfileScope() {
+    ~PerfProfileScope() {
         if (active) {
             PerformanceProfiler::GetInstance().EndSample(name);
         }
     }
+
+    KL_BEGIN_FIELDS(PerfProfileScope)
+        /* No reflected fields. */
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(PerfProfileScope)
+        /* No reflected methods. */
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(PerfProfileScope)
+        /* No reflected ctors - PerfProfileScope is engine-internal */
+    KL_END_DESCRIBE(PerfProfileScope)
+
 };
 
-// === Template Implementations ===
-
-template<typename Func>
-double PerformanceProfiler::TimeFunction(const std::string& name, Func func) {
-    if (!enabled) {
-        func();
-        return 0.0;
-    }
-
-    auto start = std::chrono::high_resolution_clock::now();
-    func();
-    auto end = std::chrono::high_resolution_clock::now();
-
-    std::chrono::duration<double, std::milli> duration = end - start;
-    return duration.count();
-}
-
-} // namespace ptx
+} // namespace koilo
 
 // Convenience macro for profiling
-#define PTX_PROFILE_SCOPE(name) ptx::ProfileScope __profileScope##__LINE__(name)
-#define PTX_PROFILE_FUNCTION() PTX_PROFILE_SCOPE(__FUNCTION__)
+#define KL_PERF_SCOPE(name) koilo::PerfProfileScope __perfProfileScope##__LINE__(name)
+#define KL_PERF_FUNCTION() KL_PERF_SCOPE(__FUNCTION__)

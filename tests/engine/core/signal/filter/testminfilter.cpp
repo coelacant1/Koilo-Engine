@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testminfilter.cpp
  * @brief Implementation of MinFilter unit tests.
@@ -6,6 +7,7 @@
 #include "testminfilter.hpp"
 #include <cmath>
 
+using namespace koilo;
 // ========== Constructor Tests ==========
 
 void TestMinFilter::TestDefaultConstructor() {

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testfftfilter.cpp
  * @brief Implementation of FFTFilter unit tests.
@@ -5,6 +6,7 @@
 
 #include "testfftfilter.hpp"
 
+using namespace koilo;
 // ========== Constructor Tests ==========
 
 void TestFFTFilter::TestDefaultConstructor() {

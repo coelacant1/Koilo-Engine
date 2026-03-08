@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """
 @file quaternion_rotation_example.py
 @brief Converts Euler angles to quaternions and applies the rotation to a 3D vector.

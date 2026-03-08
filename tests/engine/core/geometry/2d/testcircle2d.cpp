@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testcircle2d.cpp
  * @brief Implementation of Circle2D unit tests.
@@ -6,6 +7,7 @@
 #include "testcircle2d.hpp"
 #include <utils/testhelpers.hpp>
 
+using namespace koilo;
 // ========== Constructor Tests ==========
 
 void TestCircle2D::TestDefaultConstructor() {
@@ -58,17 +60,17 @@ void TestCircle2D::TestIsInShape() {
     Vector2D pointInside(3.0f, 0.0f);
     TEST_ASSERT_TRUE(circle.IsInShape(pointInside));
 
-    // Test point on the boundary (distance = 5, radius = 5)
+    // Test point on the boundary (distance = 5, radius = 5) - boundary is exclusive
     Vector2D pointOnBoundary(5.0f, 0.0f);
-    TEST_ASSERT_TRUE(circle.IsInShape(pointOnBoundary));
+    TEST_ASSERT_FALSE(circle.IsInShape(pointOnBoundary));
 
     // Test point clearly outside (distance = 7, radius = 5)
     Vector2D pointOutside(7.0f, 0.0f);
     TEST_ASSERT_FALSE(circle.IsInShape(pointOutside));
 
-    // Test point at diagonal inside (distance = sqrt(3^2 + 4^2) = 5)
+    // Test point at diagonal on boundary (distance = sqrt(3^2 + 4^2) = 5) - boundary exclusive
     Vector2D pointDiagonal(3.0f, 4.0f);
-    TEST_ASSERT_TRUE(circle.IsInShape(pointDiagonal));
+    TEST_ASSERT_FALSE(circle.IsInShape(pointDiagonal));
 
     // Test point at diagonal outside
     Vector2D pointDiagonalOut(4.0f, 4.0f);  // distance = sqrt(32) ≈ 5.66
@@ -110,9 +112,18 @@ void TestCircle2D::TestEdgeCases() {
 
 // ========== Test Runner ==========
 
+void TestCircle2D::TestOverlapsCircle() {
+    Circle2D a(Vector2D(0, 0), 5.0f);
+    Circle2D b(Vector2D(3, 0), 5.0f);
+    TEST_ASSERT_TRUE(a.OverlapsCircle(b));  // overlapping
+    Circle2D c(Vector2D(20, 0), 5.0f);
+    TEST_ASSERT_FALSE(a.OverlapsCircle(c)); // not overlapping
+}
+
 void TestCircle2D::RunAllTests() {
     RUN_TEST(TestDefaultConstructor);
     RUN_TEST(TestParameterizedConstructor);
     RUN_TEST(TestIsInShape);
     RUN_TEST(TestEdgeCases);
+    RUN_TEST(TestOverlapsCircle);
 }

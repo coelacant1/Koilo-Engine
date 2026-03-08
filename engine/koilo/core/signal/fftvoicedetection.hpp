@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file FFTVoiceDetection.h
  * @brief Declares the FFTVoiceDetection class for real-time viseme detection based on FFT data.
@@ -17,9 +18,12 @@
 
 #include "filter/peakdetection.hpp"
 #include "filter/runningaveragefilter.hpp"
-#include "../math/vector2d.hpp"
-#include "../platform/ustring.hpp"
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/core/math/vector2d.hpp>
+#include <koilo/core/platform/ustring.hpp>
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class Viseme
@@ -42,17 +46,17 @@ public:
         SS  ///< Mouth shape corresponding to the "SS" sound (optional).
     };
 
-    PTX_BEGIN_FIELDS(Viseme)
+    KL_BEGIN_FIELDS(Viseme)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(Viseme)
+    KL_BEGIN_METHODS(Viseme)
         /* No reflected methods. */
-    PTX_END_METHODS
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(Viseme)
+    KL_BEGIN_DESCRIBE(Viseme)
         /* No reflected ctors. */
-    PTX_END_DESCRIBE(Viseme)
+    KL_END_DESCRIBE(Viseme)
 
 };
 
@@ -141,7 +145,7 @@ public:
     /**
      * @brief Prints the probabilities of all visemes to the serial console.
      */
-    ptx::UString ToString() const;
+    koilo::UString ToString() const;
 
     /**
      * @brief Resets all viseme probabilities to zero.
@@ -161,21 +165,23 @@ public:
      */
     size_t GetPeakCount() const { return peakCount; }
 
-    PTX_BEGIN_FIELDS(FFTVoiceDetection)
+    KL_BEGIN_FIELDS(FFTVoiceDetection)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(FFTVoiceDetection)
-        PTX_METHOD_AUTO(FFTVoiceDetection, SetThreshold, "Set threshold"),
-        PTX_METHOD_AUTO(FFTVoiceDetection, GetViseme, "Get viseme"),
-        PTX_METHOD_AUTO(FFTVoiceDetection, ToString, "To string"),
-        PTX_METHOD_AUTO(FFTVoiceDetection, ResetVisemes, "Reset visemes"),
-        PTX_METHOD_AUTO(FFTVoiceDetection, Update, "Update"),
-        PTX_METHOD_AUTO(FFTVoiceDetection, GetPeakCount, "Get peak count")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(FFTVoiceDetection)
+        KL_METHOD_AUTO(FFTVoiceDetection, SetThreshold, "Set threshold"),
+        KL_METHOD_AUTO(FFTVoiceDetection, GetViseme, "Get viseme"),
+        KL_METHOD_AUTO(FFTVoiceDetection, ToString, "To string"),
+        KL_METHOD_AUTO(FFTVoiceDetection, ResetVisemes, "Reset visemes"),
+        KL_METHOD_AUTO(FFTVoiceDetection, Update, "Update"),
+        KL_METHOD_AUTO(FFTVoiceDetection, GetPeakCount, "Get peak count")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(FFTVoiceDetection)
-        PTX_CTOR(FFTVoiceDetection, int, uint8_t)
-    PTX_END_DESCRIBE(FFTVoiceDetection)
+    KL_BEGIN_DESCRIBE(FFTVoiceDetection)
+        KL_CTOR(FFTVoiceDetection, int, uint8_t)
+    KL_END_DESCRIBE(FFTVoiceDetection)
 
 };
+
+} // namespace koilo

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testimagesequence.hpp
  * @brief Unit tests for the ImageSequence class.
@@ -12,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/assets/image/imagesequence.hpp>
+#include <koilo/assets/image/imagesequence.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

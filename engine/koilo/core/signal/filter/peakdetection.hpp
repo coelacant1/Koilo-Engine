@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file PeakDetection.h
  * @brief Implements peak detection for time-series data using a sliding window approach.
@@ -15,16 +16,14 @@
 #include <cstddef>
 #include <cstdint>
 #include <vector>
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class PeakDetection
  * @brief Detects peaks in time-series data using statistical methods.
- *
- * The runtime version of `PeakDetection` retains the original behaviour of the
- * template implementation while allowing the caller to choose the sample window
- * size at runtime. Incoming values are compared against a moving average and
- * standard deviation to determine whether they exceed a configurable threshold.
  */
 
 class PeakDetection {
@@ -83,21 +82,23 @@ public:
      */
     float GetInfluence() const { return influence; }
 
-    PTX_BEGIN_FIELDS(PeakDetection)
+    KL_BEGIN_FIELDS(PeakDetection)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(PeakDetection)
-        PTX_METHOD_AUTO(PeakDetection, Calculate, "Calculate"),
-        PTX_METHOD_AUTO(PeakDetection, Reset, "Reset"),
-        PTX_METHOD_AUTO(PeakDetection, GetSampleSize, "Get sample size"),
-        PTX_METHOD_AUTO(PeakDetection, GetLag, "Get lag"),
-        PTX_METHOD_AUTO(PeakDetection, GetThreshold, "Get threshold"),
-        PTX_METHOD_AUTO(PeakDetection, GetInfluence, "Get influence")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(PeakDetection)
+        KL_METHOD_AUTO(PeakDetection, Calculate, "Calculate"),
+        KL_METHOD_AUTO(PeakDetection, Reset, "Reset"),
+        KL_METHOD_AUTO(PeakDetection, GetSampleSize, "Get sample size"),
+        KL_METHOD_AUTO(PeakDetection, GetLag, "Get lag"),
+        KL_METHOD_AUTO(PeakDetection, GetThreshold, "Get threshold"),
+        KL_METHOD_AUTO(PeakDetection, GetInfluence, "Get influence")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(PeakDetection)
-        PTX_CTOR(PeakDetection, int, uint8_t, float, float)
-    PTX_END_DESCRIBE(PeakDetection)
+    KL_BEGIN_DESCRIBE(PeakDetection)
+        KL_CTOR(PeakDetection, int, uint8_t, float, float)
+    KL_END_DESCRIBE(PeakDetection)
 
 };
+
+} // namespace koilo

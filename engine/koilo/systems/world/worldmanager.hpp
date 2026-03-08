@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file worldmanager.hpp
  * @brief Manages multiple levels, streaming, and world state.
@@ -14,10 +15,10 @@
 #include <string>
 #include <functional>
 #include "level.hpp"
-#include "../../core/math/vector3d.hpp"
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/core/math/vector3d.hpp>
+#include <koilo/registry/reflect_macros.hpp>
 
-namespace ptx {
+namespace koilo {
 
 // Forward declarations
 class EntityManager;
@@ -214,26 +215,26 @@ public:
     /**
      * @brief Updates the world manager (streaming checks, etc.).
      */
-    void Update(float deltaTime);
+    void Update();
 
-    PTX_BEGIN_FIELDS(WorldManager)
-        PTX_FIELD(WorldManager, streamingEnabled, "Streaming enabled", 0, 1),
-        PTX_FIELD(WorldManager, streamingCheckInterval, "Streaming check interval", 0, 0)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(WorldManager)
+        KL_FIELD(WorldManager, streamingEnabled, "Streaming enabled", 0, 1),
+        KL_FIELD(WorldManager, streamingCheckInterval, "Streaming check interval", 0, 0)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(WorldManager)
-        PTX_METHOD_AUTO(WorldManager, SetStreamingEnabled, "Set streaming enabled"),
-        PTX_METHOD_AUTO(WorldManager, IsStreamingEnabled, "Is streaming enabled"),
-        PTX_METHOD_AUTO(WorldManager, GetLevelCount, "Get level count"),
-        PTX_METHOD_AUTO(WorldManager, GetActiveLevelName, "Get active level name"),
-        PTX_METHOD_AUTO(WorldManager, LoadLevel, "Load level"),
-        PTX_METHOD_AUTO(WorldManager, UnloadLevel, "Unload level"),
-        PTX_METHOD_AUTO(WorldManager, Update, "Update")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(WorldManager)
+        KL_METHOD_AUTO(WorldManager, SetStreamingEnabled, "Set streaming enabled"),
+        KL_METHOD_AUTO(WorldManager, IsStreamingEnabled, "Is streaming enabled"),
+        KL_METHOD_AUTO(WorldManager, GetLevelCount, "Get level count"),
+        KL_METHOD_AUTO(WorldManager, GetActiveLevelName, "Get active level name"),
+        KL_METHOD_AUTO(WorldManager, LoadLevel, "Load level"),
+        KL_METHOD_AUTO(WorldManager, UnloadLevel, "Unload level"),
+        KL_METHOD_AUTO(WorldManager, Update, "Update")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(WorldManager)
-        PTX_CTOR(WorldManager, EntityManager*)
-    PTX_END_DESCRIBE(WorldManager)
+    KL_BEGIN_DESCRIBE(WorldManager)
+        KL_CTOR(WorldManager, EntityManager*)
+    KL_END_DESCRIBE(WorldManager)
 };
 
-} // namespace ptx
+} // namespace koilo

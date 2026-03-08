@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file raycasthit.hpp
  * @brief Raycast hit result information.
@@ -8,10 +9,10 @@
 
 #pragma once
 
-#include "../../core/math/vector3d.hpp"
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/core/math/vector3d.hpp>
+#include <koilo/registry/reflect_macros.hpp>
 
-namespace ptx {
+namespace koilo {
 
 // Forward declaration
 class Collider;
@@ -32,18 +33,18 @@ struct RaycastHit {
     RaycastHit()
         : point(0, 0, 0), normal(0, 1, 0), distance(0.0f), collider(nullptr) {}
 
-    PTX_BEGIN_FIELDS(RaycastHit)
-        PTX_FIELD(RaycastHit, point, "Point", 0, 0),
-        PTX_FIELD(RaycastHit, normal, "Normal", 0, 0),
-        PTX_FIELD(RaycastHit, distance, "Distance", 0, 0)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(RaycastHit)
+        KL_FIELD(RaycastHit, point, "Point", 0, 0),
+        KL_FIELD(RaycastHit, normal, "Normal", 0, 0),
+        KL_FIELD(RaycastHit, distance, "Distance", 0, 0)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(RaycastHit)
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(RaycastHit)
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(RaycastHit)
-        PTX_CTOR0(RaycastHit)
-    PTX_END_DESCRIBE(RaycastHit)
+    KL_BEGIN_DESCRIBE(RaycastHit)
+        KL_CTOR0(RaycastHit)
+    KL_END_DESCRIBE(RaycastHit)
 };
 
-} // namespace ptx
+} // namespace koilo

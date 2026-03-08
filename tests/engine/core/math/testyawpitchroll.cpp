@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testyawpitchroll.cpp
  * @brief Implementation of YawPitchRoll unit tests.
@@ -5,6 +6,7 @@
 
 #include "testyawpitchroll.hpp"
 
+using namespace koilo;
 // ========== Constructor Tests ==========
 
 void TestYawPitchRoll::TestDefaultConstructor() {
@@ -30,7 +32,7 @@ void TestYawPitchRoll::TestParameterizedConstructor() {
 void TestYawPitchRoll::TestToString() {
     YawPitchRoll ypr(45.0f, 30.0f, 60.0f);
 
-    ptx::UString str = ypr.ToString();
+    koilo::UString str = ypr.ToString();
     TEST_ASSERT_TRUE(str.Length() > 0);
 }
 
@@ -39,8 +41,18 @@ void TestYawPitchRoll::TestToString() {
 // ========== Test Runner ==========
 
 void TestYawPitchRoll::TestEdgeCases() {
-    // TODO: Test edge cases (null, boundaries, extreme values)
-    TEST_ASSERT_TRUE(false);  // Not implemented
+    YawPitchRoll zero;
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, 0.0f, zero.Yaw);
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, 0.0f, zero.Pitch);
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, 0.0f, zero.Roll);
+    
+    YawPitchRoll full(360.0f, 90.0f, 180.0f);
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, 360.0f, full.Yaw);
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, 90.0f, full.Pitch);
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, 180.0f, full.Roll);
+    
+    YawPitchRoll negative(-45.0f, -30.0f, -60.0f);
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, -45.0f, negative.Yaw);
 }
 
 void TestYawPitchRoll::RunAllTests() {

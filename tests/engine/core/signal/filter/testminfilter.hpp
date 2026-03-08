@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testminfilter.hpp
  * @brief Unit tests for the MinFilter class.
@@ -12,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/core/signal/filter/minfilter.hpp>
+#include <koilo/core/signal/filter/minfilter.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

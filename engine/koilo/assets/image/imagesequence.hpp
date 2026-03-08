@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 // imagesequence.hpp
 /**
  * @file ImageSequence.h
@@ -13,12 +14,15 @@
 #pragma once
 
 #include <stdint.h>
-#include "../../core/math/vector2d.hpp"     // Vector2D
-#include "../../core/math/mathematics.hpp"  // Mathematics::Map
-#include "../../core/platform/time.hpp"     // ptx::Time::Millis
-#include "../../core/color/rgbcolor.hpp"    // RGBColor
+#include <koilo/core/math/vector2d.hpp>     // Vector2D
+#include <koilo/core/math/mathematics.hpp>  // Mathematics::Map
+#include <koilo/core/platform/time.hpp>     // koilo::Time::Millis
+#include <koilo/core/color/color888.hpp>
 #include "image.hpp"
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class ImageSequence
@@ -58,14 +62,14 @@ public:
 
     /**
      * @brief Advance frame based on elapsed time; updates the Image’s data pointer.
-     * @note Call once per tick; uses ptx::Time::Millis() for scheduling.
+     * @note Call once per tick; uses koilo::Time::Millis() for scheduling.
      */
     void Update();
 
     /**
      * @brief Sample the current frame’s color at a coordinate (delegates to Image).
      */
-    RGBColor GetColorAtCoordinate(Vector2D point);
+    Color888 GetColorAtCoordinate(Vector2D point);
 
 private:
     Image* image = nullptr;             ///< Target image (not owned)
@@ -77,22 +81,24 @@ private:
     unsigned int currentFrame = 0;      ///< Current frame index
     uint64_t startTime = 0;             ///< Start timestamp (ms)
 
-    PTX_BEGIN_FIELDS(ImageSequence)
+    KL_BEGIN_FIELDS(ImageSequence)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(ImageSequence)
-        PTX_METHOD_AUTO(ImageSequence, SetFPS, "Set fps"),
-        PTX_METHOD_AUTO(ImageSequence, SetSize, "Set size"),
-        PTX_METHOD_AUTO(ImageSequence, SetPosition, "Set position"),
-        PTX_METHOD_AUTO(ImageSequence, SetRotation, "Set rotation"),
-        PTX_METHOD_AUTO(ImageSequence, Reset, "Reset"),
-        PTX_METHOD_AUTO(ImageSequence, Update, "Update"),
-        PTX_METHOD_AUTO(ImageSequence, GetColorAtCoordinate, "Get color at coordinate")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(ImageSequence)
+        KL_METHOD_AUTO(ImageSequence, SetFPS, "Set fps"),
+        KL_METHOD_AUTO(ImageSequence, SetSize, "Set size"),
+        KL_METHOD_AUTO(ImageSequence, SetPosition, "Set position"),
+        KL_METHOD_AUTO(ImageSequence, SetRotation, "Set rotation"),
+        KL_METHOD_AUTO(ImageSequence, Reset, "Reset"),
+        KL_METHOD_AUTO(ImageSequence, Update, "Update"),
+        KL_METHOD_AUTO(ImageSequence, GetColorAtCoordinate, "Get color at coordinate")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(ImageSequence)
-        PTX_CTOR(ImageSequence, Image *, const uint8_t **, unsigned int, float)
-    PTX_END_DESCRIBE(ImageSequence)
+    KL_BEGIN_DESCRIBE(ImageSequence)
+        KL_CTOR(ImageSequence, Image *, const uint8_t **, unsigned int, float)
+    KL_END_DESCRIBE(ImageSequence)
 
 };
+
+} // namespace koilo

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file audioclip.hpp
  * @brief Audio clip/buffer for loaded audio data.
@@ -11,9 +12,9 @@
 #include <string>
 #include <vector>
 #include <cstdint>
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
 
-namespace ptx {
+namespace koilo {
 
 /**
  * @enum AudioFormat
@@ -113,26 +114,26 @@ public:
      */
     size_t GetDataSize() const { return data.size(); }
 
-    PTX_BEGIN_FIELDS(AudioClip)
-        PTX_FIELD(AudioClip, name, "Name", 0, 0),
-        PTX_FIELD(AudioClip, sampleRate, "Sample rate", 0, 192000),
-        PTX_FIELD(AudioClip, duration, "Duration", 0.0f, 3600.0f),
-        PTX_FIELD(AudioClip, loaded, "Loaded", 0, 1)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(AudioClip)
+        KL_FIELD(AudioClip, name, "Name", 0, 0),
+        KL_FIELD(AudioClip, sampleRate, "Sample rate", 0, 192000),
+        KL_FIELD(AudioClip, duration, "Duration", 0.0f, 3600.0f),
+        KL_FIELD(AudioClip, loaded, "Loaded", 0, 1)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(AudioClip)
-        PTX_METHOD_AUTO(AudioClip, LoadFromFile, "Load from file"),
-        PTX_METHOD_AUTO(AudioClip, Unload, "Unload"),
-        PTX_METHOD_AUTO(AudioClip, GetName, "Get name"),
-        PTX_METHOD_AUTO(AudioClip, GetSampleRate, "Get sample rate"),
-        PTX_METHOD_AUTO(AudioClip, GetDuration, "Get duration"),
-        PTX_METHOD_AUTO(AudioClip, IsLoaded, "Is loaded")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(AudioClip)
+        KL_METHOD_AUTO(AudioClip, LoadFromFile, "Load from file"),
+        KL_METHOD_AUTO(AudioClip, Unload, "Unload"),
+        KL_METHOD_AUTO(AudioClip, GetName, "Get name"),
+        KL_METHOD_AUTO(AudioClip, GetSampleRate, "Get sample rate"),
+        KL_METHOD_AUTO(AudioClip, GetDuration, "Get duration"),
+        KL_METHOD_AUTO(AudioClip, IsLoaded, "Is loaded")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(AudioClip)
-        PTX_CTOR0(AudioClip),
-        PTX_CTOR(AudioClip, const std::string&)
-    PTX_END_DESCRIBE(AudioClip)
+    KL_BEGIN_DESCRIBE(AudioClip)
+        KL_CTOR0(AudioClip),
+        KL_CTOR(AudioClip, const std::string&)
+    KL_END_DESCRIBE(AudioClip)
 };
 
-} // namespace ptx
+} // namespace koilo

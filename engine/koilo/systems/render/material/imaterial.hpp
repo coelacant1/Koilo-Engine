@@ -1,8 +1,12 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 #pragma once
 
 #include <type_traits>
-#include "../shader/ishader.hpp"
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/systems/render/shader/ishader.hpp>
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @file imaterial.hpp
@@ -30,9 +34,13 @@ public:
 
     /**
      * @brief Per-frame update hook (override in animated/time-varying materials).
-     * @param DeltaTime Time step in seconds since last update.
      */
-    virtual void Update(float /*DeltaTime*/) {}
+    virtual void Update() {}
+
+    /**
+     * @brief Returns true for KSLMaterial instances (avoids RTTI dynamic_cast).
+     */
+    virtual bool IsKSL() const { return false; }
 
     /**
      * @brief Typed access helper using an UpperCamelCase name.
@@ -50,17 +58,19 @@ public:
 private:
     const IShader* ShaderPtr_;  ///< Non-owning shader pointer; lifetime managed externally.
 
-    PTX_BEGIN_FIELDS(IMaterial)
+    KL_BEGIN_FIELDS(IMaterial)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(IMaterial)
-        PTX_METHOD_AUTO(IMaterial, GetShader, "Get shader"),
-        PTX_METHOD_AUTO(IMaterial, Update, "Update")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(IMaterial)
+        KL_METHOD_AUTO(IMaterial, GetShader, "Get shader"),
+        KL_METHOD_AUTO(IMaterial, Update, "Update")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(IMaterial)
-        PTX_CTOR(IMaterial, const IShader *)
-    PTX_END_DESCRIBE(IMaterial)
+    KL_BEGIN_DESCRIBE(IMaterial)
+        KL_CTOR(IMaterial, const IShader *)
+    KL_END_DESCRIBE(IMaterial)
 
 };
+
+} // namespace koilo

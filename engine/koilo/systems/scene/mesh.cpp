@@ -1,54 +1,60 @@
-#include <ptx/systems/scene/mesh.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/systems/scene/mesh.hpp>
+#include <koilo/systems/scene/deform/blendshapecontroller.hpp>
+#include <koilo/systems/scene/animation/skeleton.hpp>
 
-Mesh::Mesh(IStaticTriangleGroup* originalTriangles, ITriangleGroup* modifiedTriangles, IMaterial* material) : originalTriangles(originalTriangles), modifiedTriangles(modifiedTriangles) {
+
+namespace koilo {
+
+koilo::Mesh::Mesh(IStaticTriangleGroup* originalTriangles, ITriangleGroup* modifiedTriangles, IMaterial* material) : originalTriangles(originalTriangles), modifiedTriangles(modifiedTriangles) {
     this->material = material;
 }
 
-Mesh::~Mesh() {}
+koilo::Mesh::~Mesh() {}
 
-void Mesh::Enable() {
+void koilo::Mesh::Enable() {
     enabled = true;
 }
 
-void Mesh::Disable() {
+void koilo::Mesh::Disable() {
     enabled = false;
 }
 
-bool Mesh::IsEnabled() {
+bool koilo::Mesh::IsEnabled() {
     return enabled;
 }
 
-bool Mesh::HasUV(){
+bool koilo::Mesh::HasUV(){
     return originalTriangles->HasUV();
 }
 
 
-const Vector2D* Mesh::GetUVVertices(){
+const Vector2D* koilo::Mesh::GetUVVertices(){
     return originalTriangles->GetUVVertices();
 }
 
-const IndexGroup* Mesh::GetUVIndexGroup(){
+const IndexGroup* koilo::Mesh::GetUVIndexGroup(){
     return originalTriangles->GetUVIndexGroup();
 }
 
-Vector3D Mesh::GetCenterOffset() {
+Vector3D koilo::Mesh::GetCenterOffset() {
     Vector3D center;
 
-    for (int i = 0; i < modifiedTriangles->GetVertexCount(); i++) {
+    for (uint32_t i = 0; i < modifiedTriangles->GetVertexCount(); i++) {
         center = center + modifiedTriangles->GetVertices()[i];
     }
 
     return center.Divide(modifiedTriangles->GetVertexCount());
 }
 
-void Mesh::GetMinMaxDimensions(Vector3D& minimum, Vector3D& maximum) {
-    for (int i = 0; i < modifiedTriangles->GetVertexCount(); i++) {
+void koilo::Mesh::GetMinMaxDimensions(Vector3D& minimum, Vector3D& maximum) {
+    for (uint32_t i = 0; i < modifiedTriangles->GetVertexCount(); i++) {
         minimum = Vector3D::Min(minimum, modifiedTriangles->GetVertices()[i]);
         maximum = Vector3D::Max(maximum, modifiedTriangles->GetVertices()[i]);
     }
 }
 
-Vector3D Mesh::GetSize() {
+Vector3D koilo::Mesh::GetSize() {
     Vector3D min, max;
 
     GetMinMaxDimensions(min, max);
@@ -56,23 +62,28 @@ Vector3D Mesh::GetSize() {
     return max - min;
 }
 
-Transform* Mesh::GetTransform() {
+Transform* koilo::Mesh::GetTransform() {
     return &transform;
 }
 
-void Mesh::SetTransform(Transform& t) {
+void koilo::Mesh::SetTransform(Transform& t) {
     transform = t;
+    transformDirty_ = true;
 }
 
-void Mesh::ResetVertices() {
-    for (int i = 0; i < modifiedTriangles->GetVertexCount(); i++) {
+void koilo::Mesh::ResetVertices() {
+    for (uint32_t i = 0; i < modifiedTriangles->GetVertexCount(); i++) {
         modifiedTriangles->GetVertices()[i] = originalTriangles->GetVertices()[i];
     }
+    transformDirty_ = true;
 }
 
-void Mesh::UpdateTransform() {
-    for (int i = 0; i < modifiedTriangles->GetVertexCount(); i++) {
-        Vector3D modifiedVector = modifiedTriangles->GetVertices()[i];
+void koilo::Mesh::UpdateTransform() {
+    if (!transformDirty_) return;
+
+    for (uint32_t i = 0; i < modifiedTriangles->GetVertexCount(); i++) {
+        Vector3D original = modifiedTriangles->GetVertices()[i];
+        Vector3D modifiedVector = original;
 
         modifiedVector = (modifiedVector - transform.GetScaleOffset()) * transform.GetScale() + transform.GetScaleOffset();
         modifiedVector = transform.GetRotation().RotateVector(modifiedVector - transform.GetRotationOffset()) + transform.GetRotationOffset();
@@ -80,16 +91,81 @@ void Mesh::UpdateTransform() {
 
         modifiedTriangles->GetVertices()[i] = modifiedVector;
     }
+
+    transformDirty_ = false;
+    ++gpuVersion_;
 }
 
-ITriangleGroup* Mesh::GetTriangleGroup() {
+void koilo::Mesh::MarkTransformDirty() {
+    transformDirty_ = true;
+}
+
+ITriangleGroup* koilo::Mesh::GetTriangleGroup() {
     return modifiedTriangles;
 }
 
-IMaterial* Mesh::GetMaterial() {
+IMaterial* koilo::Mesh::GetMaterial() {
     return material;
 }
 
-void Mesh::SetMaterial(IMaterial* material) {
+void koilo::Mesh::SetMaterial(IMaterial* material) {
     this->material = material;
 }
+
+void koilo::Mesh::SetBlendshapeController(BlendshapeController* controller) {
+    blendshapeController = controller;
+}
+
+BlendshapeController* koilo::Mesh::GetBlendshapeController() {
+    return blendshapeController;
+}
+
+void koilo::Mesh::UpdateBlendshapes() {
+    if (blendshapeController) {
+        blendshapeController->Update(this);
+    }
+}
+
+void koilo::Mesh::SetSkeleton(Skeleton* skeleton) {
+    skeleton_ = skeleton;
+}
+
+Skeleton* koilo::Mesh::GetSkeleton() {
+    return skeleton_;
+}
+
+void koilo::Mesh::SetSkinData(SkinData* skinData) {
+    skinData_ = skinData;
+}
+
+SkinData* koilo::Mesh::GetSkinData() {
+    return skinData_;
+}
+
+void koilo::Mesh::UpdateSkinning() {
+    if (!skeleton_ || !skinData_) return;
+    if (!originalTriangles || !modifiedTriangles) return;
+
+    uint32_t vertexCount = modifiedTriangles->GetVertexCount();
+    if (vertexCount == 0) return;
+
+    // Reset to bind pose
+    ResetVertices();
+
+    // Apply blendshapes first (if any)
+    if (blendshapeController) {
+        blendshapeController->Update(this);
+    }
+
+    // Compute bone matrices for this frame
+    skeleton_->ComputeWorldMatrices();
+
+    // Apply skinning: read from current (possibly blendshape-modified) vertices,
+    // write skinned positions back in place
+    const Vector3D* srcVerts = originalTriangles->GetVertices();
+    Vector3D* dstVerts = modifiedTriangles->GetVertices();
+    skeleton_->SkinVertices(*skinData_, srcVerts, dstVerts, vertexCount);
+    ++gpuVersion_;
+}
+
+} // namespace koilo

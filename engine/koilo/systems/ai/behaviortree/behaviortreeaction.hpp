@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file behaviortreeaction.hpp
  * @brief Action and condition leaf nodes for behavior trees.
@@ -11,7 +12,7 @@
 #include <functional>
 #include "behaviortreenode.hpp"
 
-namespace ptx {
+namespace koilo {
 
 /**
  * @typedef ActionFunction
@@ -41,15 +42,15 @@ public:
 
     virtual NodeStatus Execute() override;
 
-    PTX_BEGIN_FIELDS(ActionNode)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(ActionNode)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(ActionNode)
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(ActionNode)
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(ActionNode)
+    KL_BEGIN_DESCRIBE(ActionNode)
         // Cannot describe function pointers
-    PTX_END_DESCRIBE(ActionNode)
+    KL_END_DESCRIBE(ActionNode)
 };
 
 /**
@@ -68,15 +69,15 @@ public:
 
     virtual NodeStatus Execute() override;
 
-    PTX_BEGIN_FIELDS(ConditionNode)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(ConditionNode)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(ConditionNode)
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(ConditionNode)
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(ConditionNode)
+    KL_BEGIN_DESCRIBE(ConditionNode)
         // Cannot describe function pointers
-    PTX_END_DESCRIBE(ConditionNode)
+    KL_END_DESCRIBE(ConditionNode)
 };
 
 /**
@@ -99,22 +100,21 @@ public:
 
     /**
      * @brief Updates the wait timer.
-     * @param deltaTime Time since last update.
      */
-    void Update(float deltaTime);
+    void Update();
 
-    PTX_BEGIN_FIELDS(WaitNode)
-        PTX_FIELD(WaitNode, duration, "Duration", 0, 0),
-        PTX_FIELD(WaitNode, elapsed, "Elapsed", 0, 0)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(WaitNode)
+        KL_FIELD(WaitNode, duration, "Duration", 0, 0),
+        KL_FIELD(WaitNode, elapsed, "Elapsed", 0, 0)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(WaitNode)
-        PTX_METHOD_AUTO(WaitNode, Update, "Update")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(WaitNode)
+        KL_METHOD_AUTO(WaitNode, Update, "Update")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(WaitNode)
-        PTX_CTOR(WaitNode, float, std::string)
-    PTX_END_DESCRIBE(WaitNode)
+    KL_BEGIN_DESCRIBE(WaitNode)
+        KL_CTOR(WaitNode, float, std::string)
+    KL_END_DESCRIBE(WaitNode)
 };
 
-} // namespace ptx
+} // namespace koilo

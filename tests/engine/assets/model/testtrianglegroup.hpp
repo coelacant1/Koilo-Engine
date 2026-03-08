@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testtrianglegroup.hpp
  * @brief Unit tests for the TriangleGroup class.
@@ -12,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/assets/model/trianglegroup.hpp>
+#include <koilo/assets/model/trianglegroup.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

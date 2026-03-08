@@ -1,10 +1,15 @@
-#include <ptx/core/geometry/2d/ellipse.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/core/geometry/2d/ellipse.hpp>
+#include <cmath>
 
-Ellipse2D::Ellipse2D(Vector2D center, Vector2D size, float rotation) : Shape(center, size / 2.0f, rotation) {}
 
-Ellipse2D::Ellipse2D(Bounds bounds, float rotation) : Shape(bounds, rotation) {}
+namespace koilo {
 
-bool Ellipse2D::IsInShape(Vector2D point) {
+koilo::Ellipse2D::Ellipse2D(Vector2D center, Vector2D size, float rotation) : Shape(center, size / 2.0f, rotation) {}
+
+koilo::Ellipse2D::Ellipse2D(Bounds bounds, float rotation) : Shape(bounds, rotation) {}
+
+bool koilo::Ellipse2D::IsInShape(Vector2D point) {
     Vector2D center = GetCenter();
     Vector2D size = GetSize();
 
@@ -22,3 +27,5 @@ bool Ellipse2D::IsInShape(Vector2D point) {
 
     return xQuot + yQuot < 1.0f;
 }
+
+} // namespace koilo

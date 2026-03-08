@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file Wait.h
  * @brief Utility class for handling non-blocking wait operations.
@@ -10,8 +11,11 @@
 #pragma once
 
 #include <stdint.h>
-#include "../platform/time.hpp"
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/core/platform/time.hpp>
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class Wait
@@ -40,17 +44,19 @@ public:
      */
     bool IsFinished();
 
-    PTX_BEGIN_FIELDS(Wait)
+    KL_BEGIN_FIELDS(Wait)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(Wait)
-        PTX_METHOD_AUTO(Wait, Reset, "Reset"),
-        PTX_METHOD_AUTO(Wait, IsFinished, "Is finished")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(Wait)
+        KL_METHOD_AUTO(Wait, Reset, "Reset"),
+        KL_METHOD_AUTO(Wait, IsFinished, "Is finished")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(Wait)
-        PTX_CTOR(Wait, uint32_t)
-    PTX_END_DESCRIBE(Wait)
+    KL_BEGIN_DESCRIBE(Wait)
+        KL_CTOR(Wait, uint32_t)
+    KL_END_DESCRIBE(Wait)
 
 };
+
+} // namespace koilo

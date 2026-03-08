@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file audiosource.hpp
  * @brief Individual audio source for 3D spatial audio.
@@ -10,10 +11,10 @@
 
 #include <memory>
 #include "audioclip.hpp"
-#include "../../core/mathematics/vector3d.hpp"
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/core/math/vector3d.hpp>
+#include <koilo/registry/reflect_macros.hpp>
 
-namespace ptx {
+namespace koilo {
 
 /**
  * @enum AudioSourceState
@@ -243,45 +244,44 @@ public:
 
     /**
      * @brief Updates the audio source (called by AudioManager).
-     * @param deltaTime Time since last update in seconds.
      */
-    void Update(float deltaTime);
+    void Update();
 
-    PTX_BEGIN_FIELDS(AudioSource)
-        PTX_FIELD(AudioSource, position, "Position", 0, 0),
-        PTX_FIELD(AudioSource, velocity, "Velocity", 0, 0),
-        PTX_FIELD(AudioSource, minDistance, "Min distance", 0.0f, 1000.0f),
-        PTX_FIELD(AudioSource, maxDistance, "Max distance", 0.0f, 10000.0f),
-        PTX_FIELD(AudioSource, rolloffFactor, "Rolloff factor", 0.0f, 10.0f),
-        PTX_FIELD(AudioSource, volume, "Volume", 0.0f, 1.0f),
-        PTX_FIELD(AudioSource, pitch, "Pitch", 0.1f, 3.0f),
-        PTX_FIELD(AudioSource, pan, "Pan", -1.0f, 1.0f),
-        PTX_FIELD(AudioSource, loop, "Loop", 0, 1),
-        PTX_FIELD(AudioSource, spatial, "Spatial", 0, 1),
-        PTX_FIELD(AudioSource, priority, "Priority", 0, 255)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(AudioSource)
+        KL_FIELD(AudioSource, position, "Position", 0, 0),
+        KL_FIELD(AudioSource, velocity, "Velocity", 0, 0),
+        KL_FIELD(AudioSource, minDistance, "Min distance", 0.0f, 1000.0f),
+        KL_FIELD(AudioSource, maxDistance, "Max distance", 0.0f, 10000.0f),
+        KL_FIELD(AudioSource, rolloffFactor, "Rolloff factor", 0.0f, 10.0f),
+        KL_FIELD(AudioSource, volume, "Volume", 0.0f, 1.0f),
+        KL_FIELD(AudioSource, pitch, "Pitch", 0.1f, 3.0f),
+        KL_FIELD(AudioSource, pan, "Pan", -1.0f, 1.0f),
+        KL_FIELD(AudioSource, loop, "Loop", 0, 1),
+        KL_FIELD(AudioSource, spatial, "Spatial", 0, 1),
+        KL_FIELD(AudioSource, priority, "Priority", 0, 255)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(AudioSource)
-        PTX_METHOD_AUTO(AudioSource, Play, "Play"),
-        PTX_METHOD_AUTO(AudioSource, Pause, "Pause"),
-        PTX_METHOD_AUTO(AudioSource, Stop, "Stop"),
-        PTX_METHOD_AUTO(AudioSource, IsPlaying, "Is playing"),
-        PTX_METHOD_AUTO(AudioSource, IsPaused, "Is paused"),
-        PTX_METHOD_AUTO(AudioSource, IsStopped, "Is stopped"),
-        PTX_METHOD_AUTO(AudioSource, SetPosition, "Set position"),
-        PTX_METHOD_AUTO(AudioSource, GetPosition, "Get position"),
-        PTX_METHOD_AUTO(AudioSource, SetVolume, "Set volume"),
-        PTX_METHOD_AUTO(AudioSource, GetVolume, "Get volume"),
-        PTX_METHOD_AUTO(AudioSource, SetPitch, "Set pitch"),
-        PTX_METHOD_AUTO(AudioSource, GetPitch, "Get pitch"),
-        PTX_METHOD_AUTO(AudioSource, SetLoop, "Set loop"),
-        PTX_METHOD_AUTO(AudioSource, IsLooping, "Is looping")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(AudioSource)
+        KL_METHOD_AUTO(AudioSource, Play, "Play"),
+        KL_METHOD_AUTO(AudioSource, Pause, "Pause"),
+        KL_METHOD_AUTO(AudioSource, Stop, "Stop"),
+        KL_METHOD_AUTO(AudioSource, IsPlaying, "Is playing"),
+        KL_METHOD_AUTO(AudioSource, IsPaused, "Is paused"),
+        KL_METHOD_AUTO(AudioSource, IsStopped, "Is stopped"),
+        KL_METHOD_AUTO(AudioSource, SetPosition, "Set position"),
+        KL_METHOD_AUTO(AudioSource, GetPosition, "Get position"),
+        KL_METHOD_AUTO(AudioSource, SetVolume, "Set volume"),
+        KL_METHOD_AUTO(AudioSource, GetVolume, "Get volume"),
+        KL_METHOD_AUTO(AudioSource, SetPitch, "Set pitch"),
+        KL_METHOD_AUTO(AudioSource, GetPitch, "Get pitch"),
+        KL_METHOD_AUTO(AudioSource, SetLoop, "Set loop"),
+        KL_METHOD_AUTO(AudioSource, IsLooping, "Is looping")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(AudioSource)
-        PTX_CTOR0(AudioSource),
-        PTX_CTOR(AudioSource, std::shared_ptr<AudioClip>)
-    PTX_END_DESCRIBE(AudioSource)
+    KL_BEGIN_DESCRIBE(AudioSource)
+        KL_CTOR0(AudioSource),
+        KL_CTOR(AudioSource, std::shared_ptr<AudioClip>)
+    KL_END_DESCRIBE(AudioSource)
 };
 
-} // namespace ptx
+} // namespace koilo

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file Rectangle.h
  * @brief Defines the Rectangle class for representing rectangular shapes in 2D space.
@@ -13,9 +14,14 @@
 #pragma once
 
 #include "shape.hpp"
-#include "../../math/vector2d.hpp"
-#include "../../math/mathematics.hpp"
-#include "../../../registry/reflect_macros.hpp"
+#include "aabb2d.hpp"
+#include <koilo/core/math/vector2d.hpp>
+#include <koilo/core/math/mathematics.hpp>
+#include <koilo/registry/reflect_macros.hpp>
+
+namespace koilo {
+
+class Circle2D; // forward declaration
 
 /**
  * @class Rectangle
@@ -30,20 +36,21 @@ private:
 public:
     struct Corners {
         Vector2D corners[4];
+        // Note: Nested structs are excluded from reflection to avoid code generation issues
 
-    PTX_BEGIN_FIELDS(Corners)
-        PTX_FIELD(Corners, corners, "Corners", 0, 0)
-    PTX_END_FIELDS
+        KL_BEGIN_FIELDS(Corners)
+            /* No reflected fields. */
+        KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(Corners)
-        /* No reflected methods. */
-    PTX_END_METHODS
+        KL_BEGIN_METHODS(Corners)
+            /* No reflected methods. */
+        KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(Corners)
-        /* No reflected ctors. */
-    PTX_END_DESCRIBE(Corners)
+        KL_BEGIN_DESCRIBE(Corners)
+            /* No reflected ctors. */
+        KL_END_DESCRIBE(Corners)
 
-};
+    };
 
     /**
      * @brief Constructs a Rectangle object with specified center, size, and rotation.
@@ -79,25 +86,30 @@ public:
     bool Overlaps(const Vector2D& minI, const Vector2D& maxI) const;
     bool Contains(const Vector2D& v) const;
 
-    PTX_BEGIN_FIELDS(Rectangle2D)
+    /** @brief Circle-rectangle overlap via closest-point test. */
+    bool OverlapsCircle(const Circle2D& c) const;
+
+    KL_BEGIN_FIELDS(Rectangle2D)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(Rectangle2D)
-        PTX_METHOD_AUTO(Rectangle2D, IsInShape, "Is in shape"),
-        PTX_METHOD_AUTO(Rectangle2D, GetCorners, "Get corners"),
-        PTX_METHOD_AUTO(Rectangle2D, UpdateBounds, "Update bounds"),
-        PTX_METHOD_AUTO(Rectangle2D, GetMinimum, "Get minimum"),
-        PTX_METHOD_AUTO(Rectangle2D, GetMaximum, "Get maximum"),
-        PTX_METHOD_AUTO(Rectangle2D, GetCenter, "Get center"),
-        /* Overlaps */ PTX_METHOD_OVLD_CONST(Rectangle2D, Overlaps, bool, const Rectangle2D &),
-        /* Overlaps */ PTX_METHOD_OVLD_CONST(Rectangle2D, Overlaps, bool, const Vector2D &, const Vector2D &),
-        PTX_METHOD_AUTO(Rectangle2D, Contains, "Contains")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(Rectangle2D)
+        KL_METHOD_AUTO(Rectangle2D, IsInShape, "Is in shape"),
+        KL_METHOD_AUTO(Rectangle2D, GetCorners, "Get corners"),
+        KL_METHOD_AUTO(Rectangle2D, UpdateBounds, "Update bounds"),
+        KL_METHOD_AUTO(Rectangle2D, GetMinimum, "Get minimum"),
+        KL_METHOD_AUTO(Rectangle2D, GetMaximum, "Get maximum"),
+        KL_METHOD_AUTO(Rectangle2D, GetCenter, "Get center"),
+        /* Overlaps */ KL_METHOD_OVLD_CONST(Rectangle2D, Overlaps, bool, const Rectangle2D &),
+        /* Overlaps */ KL_METHOD_OVLD_CONST(Rectangle2D, Overlaps, bool, const Vector2D &, const Vector2D &),
+        KL_METHOD_AUTO(Rectangle2D, Contains, "Contains")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(Rectangle2D)
-        PTX_CTOR(Rectangle2D, Vector2D, Vector2D, float),
-        PTX_CTOR(Rectangle2D, Bounds, float)
-    PTX_END_DESCRIBE(Rectangle2D)
+    KL_BEGIN_DESCRIBE(Rectangle2D)
+        KL_CTOR(Rectangle2D, Vector2D, Vector2D, float),
+        KL_CTOR(Rectangle2D, Bounds, float)
+    KL_END_DESCRIBE(Rectangle2D)
 
 };
+
+} // namespace koilo

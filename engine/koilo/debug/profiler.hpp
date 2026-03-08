@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file profiler.hpp
  * @brief Performance profiling system for measuring CPU and GPU time.
@@ -12,12 +13,11 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
-#include <memory>
 #include <thread>
 #include <mutex>
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
 
-namespace ptx {
+namespace koilo {
 
 /**
  * @struct ProfileResult
@@ -30,21 +30,21 @@ struct ProfileResult {
     double duration;    // Microseconds
     int depth;          // Nesting depth
 
-    PTX_BEGIN_FIELDS(ProfileResult)
-        PTX_FIELD(ProfileResult, name, "Name", 0, 0),
-        PTX_FIELD(ProfileResult, threadId, "Thread id", 0, 0),
-        PTX_FIELD(ProfileResult, startTime, "Start time", __DBL_MIN__, __DBL_MAX__),
-        PTX_FIELD(ProfileResult, duration, "Duration", __DBL_MIN__, __DBL_MAX__),
-        PTX_FIELD(ProfileResult, depth, "Depth", -2147483648, 2147483647)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(ProfileResult)
+        KL_FIELD(ProfileResult, name, "Name", 0, 0),
+        KL_FIELD(ProfileResult, threadId, "Thread id", 0, 0),
+        KL_FIELD(ProfileResult, startTime, "Start time", __DBL_MIN__, __DBL_MAX__),
+        KL_FIELD(ProfileResult, duration, "Duration", __DBL_MIN__, __DBL_MAX__),
+        KL_FIELD(ProfileResult, depth, "Depth", -2147483648, 2147483647)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(ProfileResult)
+    KL_BEGIN_METHODS(ProfileResult)
         /* No reflected methods. */
-    PTX_END_METHODS
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(ProfileResult)
+    KL_BEGIN_DESCRIBE(ProfileResult)
         /* No reflected ctors. */
-    PTX_END_DESCRIBE(ProfileResult)
+    KL_END_DESCRIBE(ProfileResult)
 
 };
 
@@ -63,22 +63,22 @@ struct ProfileStats {
     ProfileStats()
         : name(""), callCount(0), totalTime(0.0), minTime(1e9), maxTime(0.0), avgTime(0.0) {}
 
-    PTX_BEGIN_FIELDS(ProfileStats)
-        PTX_FIELD(ProfileStats, name, "Name", 0, 0),
-        PTX_FIELD(ProfileStats, callCount, "Call count", -2147483648, 2147483647),
-        PTX_FIELD(ProfileStats, totalTime, "Total time", __DBL_MIN__, __DBL_MAX__),
-        PTX_FIELD(ProfileStats, minTime, "Min time", __DBL_MIN__, __DBL_MAX__),
-        PTX_FIELD(ProfileStats, maxTime, "Max time", __DBL_MIN__, __DBL_MAX__),
-        PTX_FIELD(ProfileStats, avgTime, "Avg time", __DBL_MIN__, __DBL_MAX__)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(ProfileStats)
+        KL_FIELD(ProfileStats, name, "Name", 0, 0),
+        KL_FIELD(ProfileStats, callCount, "Call count", -2147483648, 2147483647),
+        KL_FIELD(ProfileStats, totalTime, "Total time", __DBL_MIN__, __DBL_MAX__),
+        KL_FIELD(ProfileStats, minTime, "Min time", __DBL_MIN__, __DBL_MAX__),
+        KL_FIELD(ProfileStats, maxTime, "Max time", __DBL_MIN__, __DBL_MAX__),
+        KL_FIELD(ProfileStats, avgTime, "Avg time", __DBL_MIN__, __DBL_MAX__)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(ProfileStats)
+    KL_BEGIN_METHODS(ProfileStats)
         /* No reflected methods. */
-    PTX_END_METHODS
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(ProfileStats)
-        PTX_CTOR0(ProfileStats)
-    PTX_END_DESCRIBE(ProfileStats)
+    KL_BEGIN_DESCRIBE(ProfileStats)
+        KL_CTOR0(ProfileStats)
+    KL_END_DESCRIBE(ProfileStats)
 
 };
 
@@ -227,27 +227,27 @@ private:
      */
     double GetCurrentTime() const;
 
-    PTX_BEGIN_FIELDS(Profiler)
-        PTX_FIELD(Profiler, enabled, "Enabled", 0, 1),
-        PTX_FIELD(Profiler, fps, "FPS", 0.0, 1000.0),
-        PTX_FIELD(Profiler, frameCount, "Frame count", 0, 1000000)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(Profiler)
+        KL_FIELD(Profiler, enabled, "Enabled", 0, 1),
+        KL_FIELD(Profiler, fps, "FPS", 0.0, 1000.0),
+        KL_FIELD(Profiler, frameCount, "Frame count", 0, 1000000)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(Profiler)
-        PTX_METHOD_AUTO(Profiler, Enable, "Enable"),
-        PTX_METHOD_AUTO(Profiler, Disable, "Disable"),
-        PTX_METHOD_AUTO(Profiler, IsEnabled, "Is enabled"),
-        PTX_METHOD_AUTO(Profiler, BeginFrame, "Begin frame"),
-        PTX_METHOD_AUTO(Profiler, EndFrame, "End frame"),
-        PTX_METHOD_AUTO(Profiler, GetLastFrameTime, "Get last frame time"),
-        PTX_METHOD_AUTO(Profiler, GetFPS, "Get FPS"),
-        PTX_METHOD_AUTO(Profiler, ClearStats, "Clear stats"),
-        PTX_METHOD_AUTO(Profiler, PrintStats, "Print stats")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(Profiler)
+        KL_METHOD_AUTO(Profiler, Enable, "Enable"),
+        KL_METHOD_AUTO(Profiler, Disable, "Disable"),
+        KL_METHOD_AUTO(Profiler, IsEnabled, "Is enabled"),
+        KL_METHOD_AUTO(Profiler, BeginFrame, "Begin frame"),
+        KL_METHOD_AUTO(Profiler, EndFrame, "End frame"),
+        KL_METHOD_AUTO(Profiler, GetLastFrameTime, "Get last frame time"),
+        KL_METHOD_AUTO(Profiler, GetFPS, "Get FPS"),
+        KL_METHOD_AUTO(Profiler, ClearStats, "Clear stats"),
+        KL_METHOD_AUTO(Profiler, PrintStats, "Print stats")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(Profiler)
+    KL_BEGIN_DESCRIBE(Profiler)
         // Singleton, no constructors exposed
-    PTX_END_DESCRIBE(Profiler)
+    KL_END_DESCRIBE(Profiler)
 };
 
 /**
@@ -275,32 +275,31 @@ public:
     ProfileScope(const ProfileScope&) = delete;
     ProfileScope& operator=(const ProfileScope&) = delete;
 
-    PTX_BEGIN_FIELDS(ProfileScope)
+    KL_BEGIN_FIELDS(ProfileScope)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(ProfileScope)
+    KL_BEGIN_METHODS(ProfileScope)
         /* No reflected methods. */
-    PTX_END_METHODS
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(ProfileScope)
-        PTX_CTOR(ProfileScope, const std::string &),
-        PTX_CTOR(ProfileScope, const ProfileScope &)
-    PTX_END_DESCRIBE(ProfileScope)
+    KL_BEGIN_DESCRIBE(ProfileScope)
+        KL_CTOR(ProfileScope, const std::string &)
+    KL_END_DESCRIBE(ProfileScope)
 
 };
 
-} // namespace ptx
+} // namespace koilo
 
 // Profiling macros
-#ifdef PTX_ENABLE_PROFILING
-    #define PTX_PROFILE_SCOPE(name) ptx::ProfileScope __profile_scope##__LINE__(name)
-    #define PTX_PROFILE_FUNCTION() PTX_PROFILE_SCOPE(__FUNCTION__)
-    #define PTX_PROFILE_BEGIN_FRAME() ptx::Profiler::GetInstance().BeginFrame()
-    #define PTX_PROFILE_END_FRAME() ptx::Profiler::GetInstance().EndFrame()
+#ifdef KL_ENABLE_PROFILING
+    #define KL_PROFILE_SCOPE(name) koilo::ProfileScope __profile_scope##__LINE__(name)
+    #define KL_PROFILE_FUNCTION() KL_PROFILE_SCOPE(__FUNCTION__)
+    #define KL_PROFILE_BEGIN_FRAME() koilo::Profiler::GetInstance().BeginFrame()
+    #define KL_PROFILE_END_FRAME() koilo::Profiler::GetInstance().EndFrame()
 #else
-    #define PTX_PROFILE_SCOPE(name)
-    #define PTX_PROFILE_FUNCTION()
-    #define PTX_PROFILE_BEGIN_FRAME()
-    #define PTX_PROFILE_END_FRAME()
+    #define KL_PROFILE_SCOPE(name)
+    #define KL_PROFILE_FUNCTION()
+    #define KL_PROFILE_BEGIN_FRAME()
+    #define KL_PROFILE_END_FRAME()
 #endif

@@ -1,26 +1,20 @@
-#include <ptx/systems/audio/audioclip.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/systems/audio/audioclip.hpp>
 #include <fstream>
 #include <cstring>
 
-namespace ptx {
+namespace koilo {
 
-AudioClip::AudioClip()
+koilo::AudioClip::AudioClip()
     : name(""), format(AudioFormat::Mono16), sampleRate(44100), duration(0.0f), loaded(false) {
 }
 
-AudioClip::AudioClip(const std::string& name)
+koilo::AudioClip::AudioClip(const std::string& name)
     : name(name), format(AudioFormat::Mono16), sampleRate(44100), duration(0.0f), loaded(false) {
 }
 
-bool AudioClip::LoadFromFile(const std::string& filepath) {
-    // TODO: Implement actual audio file loading
-    // - libsndfile for WAV/FLAC/OGG
-    // - stb_vorbis for OGG
-    // - dr_wav, dr_mp3 for WAV/MP3
-    // - SDL_mixer
-    // - OpenAL utilities
-
-    // For now, just mark as loaded with default parameters
+bool koilo::AudioClip::LoadFromFile(const std::string& filepath) {
+    // Currently supports PCM WAV files only
     name = filepath;
     loaded = false;
 
@@ -100,7 +94,7 @@ bool AudioClip::LoadFromFile(const std::string& filepath) {
     return true;
 }
 
-bool AudioClip::LoadFromMemory(const void* dataPtr, size_t dataSize, AudioFormat fmt, int rate) {
+bool koilo::AudioClip::LoadFromMemory(const void* dataPtr, size_t dataSize, AudioFormat fmt, int rate) {
     if (dataPtr == nullptr || dataSize == 0) {
         return false;
     }
@@ -122,11 +116,11 @@ bool AudioClip::LoadFromMemory(const void* dataPtr, size_t dataSize, AudioFormat
     return true;
 }
 
-void AudioClip::Unload() {
+void koilo::AudioClip::Unload() {
     data.clear();
     data.shrink_to_fit();
     duration = 0.0f;
     loaded = false;
 }
 
-} // namespace ptx
+} // namespace koilo

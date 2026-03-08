@@ -1,16 +1,17 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testcircle2d.hpp
  * @brief Unit tests for the Circle2D class.
  *
  * @date 10/10/2025
  * @version 1.0
- * @author Coela (Auto-Generated)
+ * @author Coela
  */
 
 #pragma once
 
 #include <unity.h>
-#include <ptx/core/geometry/2d/circle.hpp>
+#include <koilo/core/geometry/2d/circle.hpp>
 #include <utils/testhelpers.hpp>
 
 /**
@@ -32,5 +33,6 @@ public:
     /**
      * @brief Runs all test methods.
      */
+    static void TestOverlapsCircle();
     static void RunAllTests();
 };

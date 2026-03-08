@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file physicsmaterial.hpp
  * @brief Physics material properties for collision response.
@@ -8,9 +9,9 @@
 
 #pragma once
 
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
 
-namespace ptx {
+namespace koilo {
 
 /**
  * @struct PhysicsMaterial
@@ -36,19 +37,19 @@ struct PhysicsMaterial {
     PhysicsMaterial(float friction, float bounciness, float density)
         : friction(friction), bounciness(bounciness), density(density) {}
 
-    PTX_BEGIN_FIELDS(PhysicsMaterial)
-        PTX_FIELD(PhysicsMaterial, friction, "Friction", 0, 0),
-        PTX_FIELD(PhysicsMaterial, bounciness, "Bounciness", 0, 0),
-        PTX_FIELD(PhysicsMaterial, density, "Density", 0, 0)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(PhysicsMaterial)
+        KL_FIELD(PhysicsMaterial, friction, "Friction", 0, 0),
+        KL_FIELD(PhysicsMaterial, bounciness, "Bounciness", 0, 0),
+        KL_FIELD(PhysicsMaterial, density, "Density", 0, 0)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(PhysicsMaterial)
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(PhysicsMaterial)
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(PhysicsMaterial)
-        PTX_CTOR0(PhysicsMaterial),
-        PTX_CTOR(PhysicsMaterial, float, float, float)
-    PTX_END_DESCRIBE(PhysicsMaterial)
+    KL_BEGIN_DESCRIBE(PhysicsMaterial)
+        KL_CTOR0(PhysicsMaterial),
+        KL_CTOR(PhysicsMaterial, float, float, float)
+    KL_END_DESCRIBE(PhysicsMaterial)
 };
 
-} // namespace ptx
+} // namespace koilo

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file TriangleGroupDeformer.h
  * @brief Provides functionality to deform groups of 3D triangles in various ways.
@@ -14,8 +15,11 @@
 
 #include <vector>
 
-#include "../../../assets/model/itrianglegroup.hpp"
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/assets/model/itrianglegroup.hpp>
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class TriangleGroupDeformer
@@ -115,21 +119,23 @@ public:
      */
     void AxisZeroClipping(bool positive, Axis clipAxis, Axis valueCheckAxis);
 
-    PTX_BEGIN_FIELDS(TriangleGroupDeformer)
+    KL_BEGIN_FIELDS(TriangleGroupDeformer)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(TriangleGroupDeformer)
-        PTX_METHOD_AUTO(TriangleGroupDeformer, SinusoidalDeform, "Sinusoidal deform"),
-        PTX_METHOD_AUTO(TriangleGroupDeformer, DropwaveDeform, "Dropwave deform"),
-        PTX_METHOD_AUTO(TriangleGroupDeformer, SineWaveSurfaceDeform, "Sine wave surface deform"),
-        PTX_METHOD_AUTO(TriangleGroupDeformer, CosineInterpolationDeformer, "Cosine interpolation deformer"),
-        PTX_METHOD_AUTO(TriangleGroupDeformer, AxisZeroClipping, "Axis zero clipping")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(TriangleGroupDeformer)
+        KL_METHOD_AUTO(TriangleGroupDeformer, SinusoidalDeform, "Sinusoidal deform"),
+        KL_METHOD_AUTO(TriangleGroupDeformer, DropwaveDeform, "Dropwave deform"),
+        KL_METHOD_AUTO(TriangleGroupDeformer, SineWaveSurfaceDeform, "Sine wave surface deform"),
+        KL_METHOD_AUTO(TriangleGroupDeformer, CosineInterpolationDeformer, "Cosine interpolation deformer"),
+        KL_METHOD_AUTO(TriangleGroupDeformer, AxisZeroClipping, "Axis zero clipping")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(TriangleGroupDeformer)
-        PTX_CTOR(TriangleGroupDeformer, ITriangleGroup *),
-        PTX_CTOR(TriangleGroupDeformer, ITriangleGroup **, int)
-    PTX_END_DESCRIBE(TriangleGroupDeformer)
+    KL_BEGIN_DESCRIBE(TriangleGroupDeformer)
+        KL_CTOR(TriangleGroupDeformer, ITriangleGroup *),
+        KL_CTOR(TriangleGroupDeformer, ITriangleGroup **, int)
+    KL_END_DESCRIBE(TriangleGroupDeformer)
 
 };
+
+} // namespace koilo

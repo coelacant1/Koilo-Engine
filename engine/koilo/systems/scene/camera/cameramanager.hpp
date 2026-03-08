@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file CameraManager.h
  * @brief Declares the CameraManager class for managing multiple camera instances.
@@ -12,7 +13,10 @@
 #pragma once
 
 #include "camerabase.hpp" // Include for base camera functionality.
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class CameraManager
@@ -43,23 +47,31 @@ public:
     CameraBase** GetCameras();
 
     /**
+     * @brief Retrieves a camera by index (nullptr on out-of-bounds).
+     */
+    CameraBase* GetCamera(uint8_t index);
+
+    /**
      * @brief Retrieves the count of cameras managed by the CameraManager.
      *
      * @return The number of CameraBase objects.
      */
     uint8_t GetCameraCount();
 
-    PTX_BEGIN_FIELDS(CameraManager)
+    KL_BEGIN_FIELDS(CameraManager)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(CameraManager)
-        PTX_METHOD_AUTO(CameraManager, GetCameras, "Get cameras"),
-        PTX_METHOD_AUTO(CameraManager, GetCameraCount, "Get camera count")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(CameraManager)
+        KL_METHOD_AUTO(CameraManager, GetCameras, "Get cameras"),
+        KL_METHOD_AUTO(CameraManager, GetCamera, "Get camera by index"),
+        KL_METHOD_AUTO(CameraManager, GetCameraCount, "Get camera count")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(CameraManager)
-        PTX_CTOR(CameraManager, CameraBase **, uint8_t)
-    PTX_END_DESCRIBE(CameraManager)
+    KL_BEGIN_DESCRIBE(CameraManager)
+        KL_CTOR(CameraManager, CameraBase **, uint8_t)
+    KL_END_DESCRIBE(CameraManager)
 
 };
+
+} // namespace koilo

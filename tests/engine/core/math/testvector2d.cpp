@@ -1,5 +1,7 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 #include "testvector2d.hpp"
 
+using namespace koilo;
 void TestVector2D::TestAbsolute() {
     Vector2D v(-3.0, -4.0);
     Vector2D absV = v.Absolute();
@@ -107,48 +109,83 @@ void TestVector2D::TestIsEqual() {
 
 void TestVector2D::TestToString() {
     Vector2D v(1.0, 2.0);
-    ptx::UString str = v.ToString();
+    koilo::UString str = v.ToString();
     TEST_ASSERT_EQUAL_STRING("[1.000, 2.000]", str.CStr());
 }
 
 void TestVector2D::TestDefaultConstructor() {
-    // TODO: Implement test for default constructor
-    // Vector2D obj; // Requires constructor parameters
-    TEST_ASSERT_TRUE(false);  // Not implemented
+    Vector2D v;
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 0.0, v.X);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 0.0, v.Y);
 }
 
 void TestVector2D::TestDivide() {
-    // TODO: Implement test for Divide()
-    // Vector2D obj; // Requires constructor parameters
-    TEST_ASSERT_TRUE(false);  // Not implemented
+    Vector2D v1(8.0, 15.0);
+    Vector2D v2(2.0, 3.0);
+    Vector2D result = v1.Divide(v2);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 4.0, result.X);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 5.0, result.Y);
+    
+    Vector2D scalar_result = v1.Divide(2.0f);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 4.0, scalar_result.X);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 7.5, scalar_result.Y);
 }
 
 void TestVector2D::TestEdgeCases() {
-    // TODO: Test edge cases (null, boundaries, extreme values)
-    TEST_ASSERT_TRUE(false);  // Not implemented
+    Vector2D zero(0.0, 0.0);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 0.0, zero.Magnitude());
+    
+    Vector2D normalized_zero = zero.UnitCircle();
+    TEST_ASSERT_FALSE(isnan(normalized_zero.X) && isnan(normalized_zero.Y));
+    
+    Vector2D large(1e6, 1e6);
+    Vector2D large_add = large.Add(Vector2D(1.0, 1.0));
+    TEST_ASSERT_FLOAT_WITHIN(1.0, 1e6 + 1.0, large_add.X);
+    
+    Vector2D negative(-5.0, -10.0);
+    Vector2D abs_neg = negative.Absolute();
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 5.0, abs_neg.X);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 10.0, abs_neg.Y);
 }
 
 void TestVector2D::TestMultiply() {
-    // TODO: Implement test for Multiply()
-    // Vector2D obj; // Requires constructor parameters
-    TEST_ASSERT_TRUE(false);  // Not implemented
+    Vector2D v1(2.0, 3.0);
+    Vector2D v2(4.0, 5.0);
+    Vector2D result = v1.Multiply(v2);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 8.0, result.X);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 15.0, result.Y);
+    
+    Vector2D scalar_result = v1.Multiply(2.5f);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 5.0, scalar_result.X);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 7.5, scalar_result.Y);
 }
 
 void TestVector2D::TestParameterizedConstructor() {
-    // TODO: Implement test for parameterized constructor
-    TEST_ASSERT_TRUE(false);  // Not implemented
+    Vector2D v(3.5, 7.2);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 3.5, v.X);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 7.2, v.Y);
+    
+    Vector2D copy(v);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 3.5, copy.X);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 7.2, copy.Y);
 }
 
 void TestVector2D::TestPerpendicular() {
-    // TODO: Implement test for Perpendicular()
-    // Vector2D obj; // Requires constructor parameters
-    TEST_ASSERT_TRUE(false);  // Not implemented
+    Vector2D v(1.0, 0.0);
+    Vector2D perp = v.Perpendicular();
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 0.0, perp.X);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 1.0, perp.Y);
+    
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 0.0, v.DotProduct(perp));
 }
 
 void TestVector2D::TestRightPerpendicular() {
-    // TODO: Implement test for RightPerpendicular()
-    // Vector2D obj; // Requires constructor parameters
-    TEST_ASSERT_TRUE(false);  // Not implemented
+    Vector2D v(1.0, 0.0);
+    Vector2D perp = v.RightPerpendicular();
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 0.0, perp.X);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, -1.0, perp.Y);
+    
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 0.0, v.DotProduct(perp));
 }
 
 void TestVector2D::RunAllTests() {

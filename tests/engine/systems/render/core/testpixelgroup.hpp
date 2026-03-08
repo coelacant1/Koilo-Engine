@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testpixelgroup.hpp
  * @brief Unit tests for the PixelGroup class.
@@ -12,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/systems/render/core/pixelgroup.hpp>
+#include <koilo/systems/render/core/pixelgroup.hpp>
 #include <utils/testhelpers.hpp>
 
 /**
@@ -57,5 +58,11 @@ public:
     static void TestGetRightIndex();
     static void TestGetUpIndex();
     static void TestGridSort();
+    static void TestClearPixels();
+    static void TestFillColor();
+    static void TestFillColorRGB();
+    static void TestGetColorAt();
+    static void TestSetColorAt();
+    static void TestSetColorRGB();
     static void RunAllTests();
 };

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file casthelper.hpp
  * @brief Explicit, zero-overhead helpers for common numeric casts.
@@ -13,7 +14,10 @@
 
 #include <stdint.h>
 #include <math.h>
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class CastHelper
@@ -71,22 +75,24 @@ public:
         return static_cast<float>(v);
     }
 
-    PTX_BEGIN_FIELDS(CastHelper)
+    KL_BEGIN_FIELDS(CastHelper)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(CastHelper)
-        PTX_SMETHOD_AUTO(CastHelper::ToU8, "To u8"),
-        /* To u16 */ PTX_SMETHOD_OVLD(CastHelper, ToU16, uint16_t, uint32_t),
-        PTX_SMETHOD_AUTO(CastHelper::ToU32, "To u32"),
-        /* To i32 */ PTX_SMETHOD_OVLD(CastHelper, ToI32, int32_t, uint16_t),
-        /* To i32 */ PTX_SMETHOD_OVLD(CastHelper, ToI32, int32_t, float),
-        /* To u16 */ PTX_SMETHOD_OVLD(CastHelper, ToU16, uint16_t, float),
-        PTX_SMETHOD_AUTO(CastHelper::ToFloat, "To float")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(CastHelper)
+        KL_SMETHOD_AUTO(CastHelper::ToU8, "To u8"),
+        /* To u16 */ KL_SMETHOD_OVLD(CastHelper, ToU16, uint16_t, uint32_t),
+        KL_SMETHOD_AUTO(CastHelper::ToU32, "To u32"),
+        /* To i32 */ KL_SMETHOD_OVLD(CastHelper, ToI32, int32_t, uint16_t),
+        /* To i32 */ KL_SMETHOD_OVLD(CastHelper, ToI32, int32_t, float),
+        /* To u16 */ KL_SMETHOD_OVLD(CastHelper, ToU16, uint16_t, float),
+        KL_SMETHOD_AUTO(CastHelper::ToFloat, "To float")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(CastHelper)
+    KL_BEGIN_DESCRIBE(CastHelper)
         /* No reflected ctors. */
-    PTX_END_DESCRIBE(CastHelper)
+    KL_END_DESCRIBE(CastHelper)
 
 };
+
+} // namespace koilo

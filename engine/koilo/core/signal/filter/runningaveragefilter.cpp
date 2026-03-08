@@ -1,8 +1,12 @@
-#include <ptx/core/signal/filter/runningaveragefilter.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/core/signal/filter/runningaveragefilter.hpp>
 
 #include <algorithm>
 
-RunningAverageFilter::RunningAverageFilter(size_t memory, float gainValue)
+
+namespace koilo {
+
+koilo::RunningAverageFilter::RunningAverageFilter(size_t memory, float gainValue)
         : gain(gainValue),
             data(std::max<size_t>(1, memory), 0.0f),
             capacity(std::max<size_t>(1, memory)),
@@ -11,11 +15,11 @@ RunningAverageFilter::RunningAverageFilter(size_t memory, float gainValue)
       runningSum(0.0f) {
 }
 
-void RunningAverageFilter::SetGain(float gainValue) {
+void koilo::RunningAverageFilter::SetGain(float gainValue) {
     gain = gainValue;
 }
 
-float RunningAverageFilter::Filter(float value) {
+float koilo::RunningAverageFilter::Filter(float value) {
     if (capacity == 0) {
         return value;
     }
@@ -36,9 +40,11 @@ float RunningAverageFilter::Filter(float value) {
     return (gain * value) + ((1.0f - gain) * average);
 }
 
-void RunningAverageFilter::Reset() {
+void koilo::RunningAverageFilter::Reset() {
     std::fill(data.begin(), data.end(), 0.0f);
     currentAmount = 0;
     nextIndex = 0;
     runningSum = 0.0f;
 }
+
+} // namespace koilo

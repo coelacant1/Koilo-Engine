@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testmaxfilter.cpp
  * @brief Implementation of MaxFilter unit tests.
@@ -5,6 +6,7 @@
 
 #include "testmaxfilter.hpp"
 
+using namespace koilo;
 // ========== Constructor Tests ==========
 
 void TestMaxFilter::TestDefaultConstructor() {

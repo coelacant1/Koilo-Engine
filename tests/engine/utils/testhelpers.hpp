@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testhelpers.hpp
- * @brief Common test utilities and macros for PTX Engine unit tests.
+ * @brief Common test utilities and macros for Koilo Engine unit tests.
  *
  * Provides helper macros, constants, and utilities to simplify writing
  * unit tests with the Unity test framework.
@@ -13,9 +14,9 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/core/math/vector2d.hpp>
-#include <ptx/core/math/vector3d.hpp>
-#include <ptx/core/color/rgbcolor.hpp>
+#include <koilo/core/math/vector2d.hpp>
+#include <koilo/core/math/vector3d.hpp>
+#include <koilo/core/color/color888.hpp>
 
 /**
  * @brief Assert that two Vector2D objects are equal within tolerance.
@@ -66,9 +67,9 @@
     } while(0)
 
 /**
- * @brief Assert that two RGBColor objects are equal.
- * @param expected The expected RGBColor value
- * @param actual The actual RGBColor value
+ * @brief Assert that two Color888 objects are equal.
+ * @param expected The expected Color888 value
+ * @param actual The actual Color888 value
  */
 #define TEST_ASSERT_RGB_EQUAL(expected, actual) \
     do { \

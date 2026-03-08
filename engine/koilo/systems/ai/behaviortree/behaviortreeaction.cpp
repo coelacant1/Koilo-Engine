@@ -1,14 +1,16 @@
-#include <ptx/systems/ai/behaviortree/behaviortreeaction.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/systems/ai/behaviortree/behaviortreeaction.hpp>
+#include <koilo/core/time/timemanager.hpp>
 
-namespace ptx {
+namespace koilo {
 
 // === ActionNode ===
 
-ActionNode::ActionNode(ActionFunction action, const std::string& name)
+koilo::ActionNode::ActionNode(ActionFunction action, const std::string& name)
     : BehaviorTreeNode(name), action(action) {
 }
 
-NodeStatus ActionNode::Execute() {
+NodeStatus koilo::ActionNode::Execute() {
     if (action) {
         return action();
     }
@@ -17,11 +19,11 @@ NodeStatus ActionNode::Execute() {
 
 // === ConditionNode ===
 
-ConditionNode::ConditionNode(ConditionFunction condition, const std::string& name)
+koilo::ConditionNode::ConditionNode(ConditionFunction condition, const std::string& name)
     : BehaviorTreeNode(name), condition(condition) {
 }
 
-NodeStatus ConditionNode::Execute() {
+NodeStatus koilo::ConditionNode::Execute() {
     if (condition) {
         return condition() ? NodeStatus::Success : NodeStatus::Failure;
     }
@@ -30,23 +32,24 @@ NodeStatus ConditionNode::Execute() {
 
 // === WaitNode ===
 
-WaitNode::WaitNode(float duration, const std::string& name)
+koilo::WaitNode::WaitNode(float duration, const std::string& name)
     : BehaviorTreeNode(name), duration(duration), elapsed(0.0f) {
 }
 
-NodeStatus WaitNode::Execute() {
+NodeStatus koilo::WaitNode::Execute() {
     if (elapsed >= duration) {
         return NodeStatus::Success;
     }
     return NodeStatus::Running;
 }
 
-void WaitNode::Reset() {
+void koilo::WaitNode::Reset() {
     elapsed = 0.0f;
 }
 
-void WaitNode::Update(float deltaTime) {
+void koilo::WaitNode::Update() {
+    float deltaTime = TimeManager::GetInstance().GetDeltaTime();
     elapsed += deltaTime;
 }
 
-} // namespace ptx
+} // namespace koilo

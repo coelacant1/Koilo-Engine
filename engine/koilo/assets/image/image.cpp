@@ -1,5 +1,9 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 // image.cpp
-#include <ptx/assets/image/image.hpp>
+#include <koilo/assets/image/image.hpp>
+
+
+namespace koilo {
 
 /**
  * @file image.cpp
@@ -8,7 +12,7 @@
  * @author Coela Can't
  */
 
-Image::Image(const uint8_t* data,
+koilo::Image::Image(const uint8_t* data,
              const uint8_t* rgbColors,
              unsigned int xPixels,
              unsigned int yPixels,
@@ -20,15 +24,15 @@ Image::Image(const uint8_t* data,
     this->colors = colors;
 }
 
-void Image::SetData(const uint8_t* data) {
+void koilo::Image::SetData(const uint8_t* data) {
     this->data = data;
 }
 
-void Image::SetColorPalette(const uint8_t* rgbColors) {
+void koilo::Image::SetColorPalette(const uint8_t* rgbColors) {
     this->rgbColors = rgbColors;
 }
 
-RGBColor Image::GetColorAtCoordinate(Vector2D point) {
+koilo::Color888 koilo::Image::GetColorAtCoordinate(Vector2D point) {
     // Apply inverse rotation about 'offset' to do axis-aligned mapping.
     Vector2D rPos = angle != 0.0f ? point.Rotate(angle, offset) - offset : point - offset;
 
@@ -37,13 +41,15 @@ RGBColor Image::GetColorAtCoordinate(Vector2D point) {
     unsigned int y = (unsigned int)Mathematics::Map(rPos.Y, size.Y / -2.0f, size.Y / 2.0f, float(yPixels), 0.0f);
 
     // Outside? Return default color (0,0,0).
-    if (x <= 1 || x >= xPixels || y <= 1 || y >= yPixels) return RGBColor();
+    if (x <= 1 || x >= xPixels || y <= 1 || y >= yPixels) return koilo::Color888();
 
     // Palette lookup: index -> triplet position
     unsigned int pos = data[x + y * xPixels] * 3;
 
     // Guard against invalid palette indices.
-    if (pos > colors - (unsigned int)1) return RGBColor();
+    if (pos > colors - (unsigned int)1) return koilo::Color888();
 
-    return RGBColor(rgbColors[pos], rgbColors[pos + 1], rgbColors[pos + 2]);
+    return koilo::Color888(rgbColors[pos], rgbColors[pos + 1], rgbColors[pos + 2]);
 }
+
+} // namespace koilo

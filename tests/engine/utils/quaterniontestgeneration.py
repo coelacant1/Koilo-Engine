@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """
 @file quaternion_rotation.py
 @brief Demonstrates quaternion-based rotations of 3D base vectors using NumPy and SciPy.

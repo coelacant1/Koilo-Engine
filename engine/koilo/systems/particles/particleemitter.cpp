@@ -1,42 +1,45 @@
-#include <ptx/systems/particles/particleemitter.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/systems/particles/particleemitter.hpp>
+#include <koilo/core/math/mathematics.hpp>
+#include <koilo/core/time/timemanager.hpp>
 #include <cmath>
 #include <cstdlib>
-#include <algorithm>
 
-namespace ptx {
+namespace koilo {
 
-ParticleEmitter::ParticleEmitter()
-    : transform(), config(), emissionTimer(0.0f), durationTimer(0.0f), isPlaying(false) {
+koilo::ParticleEmitter::ParticleEmitter()
+    : transform(), config(), emissionTimer(0.0f), durationTimer(0.0f), isPlaying(false), renderSize_(1) {
     particles.resize(config.maxParticles);
 }
 
-ParticleEmitter::ParticleEmitter(const ParticleEmitterConfig& cfg)
-    : transform(), config(cfg), emissionTimer(0.0f), durationTimer(0.0f), isPlaying(false) {
+koilo::ParticleEmitter::ParticleEmitter(const ParticleEmitterConfig& cfg)
+    : transform(), config(cfg), emissionTimer(0.0f), durationTimer(0.0f), isPlaying(false), renderSize_(1) {
     particles.resize(config.maxParticles);
 }
 
-ParticleEmitter::~ParticleEmitter() {
+koilo::ParticleEmitter::~ParticleEmitter() {
 }
 
 // === Playback Control ===
 
-void ParticleEmitter::Play() {
+void koilo::ParticleEmitter::Play() {
     isPlaying = true;
     durationTimer = 0.0f;
 }
 
-void ParticleEmitter::Stop() {
+void koilo::ParticleEmitter::Stop() {
     isPlaying = false;
     Clear();
 }
 
-void ParticleEmitter::Pause() {
+void koilo::ParticleEmitter::Pause() {
     isPlaying = false;
 }
 
 // === Update ===
 
-void ParticleEmitter::Update(float deltaTime) {
+void koilo::ParticleEmitter::Update() {
+    float deltaTime = TimeManager::GetInstance().GetDeltaTime();
     if (deltaTime <= 0.0f) return;
 
     // Update duration timer
@@ -85,9 +88,9 @@ void ParticleEmitter::Update(float deltaTime) {
 
         particle.size = particle.sizeStart + (particle.sizeEnd - particle.sizeStart) * t;
 
-        particle.color.x = particle.colorStart.x + (particle.colorEnd.x - particle.colorStart.x) * t;
-        particle.color.y = particle.colorStart.y + (particle.colorEnd.y - particle.colorStart.y) * t;
-        particle.color.z = particle.colorStart.z + (particle.colorEnd.z - particle.colorStart.z) * t;
+        particle.color.X = particle.colorStart.X + (particle.colorEnd.X - particle.colorStart.X) * t;
+        particle.color.Y = particle.colorStart.Y + (particle.colorEnd.Y - particle.colorStart.Y) * t;
+        particle.color.Z = particle.colorStart.Z + (particle.colorEnd.Z - particle.colorStart.Z) * t;
 
         particle.alpha = particle.alphaStart + (particle.alphaEnd - particle.alphaStart) * t;
 
@@ -100,7 +103,7 @@ void ParticleEmitter::Update(float deltaTime) {
 
 // === Configuration ===
 
-void ParticleEmitter::SetConfig(const ParticleEmitterConfig& cfg) {
+void koilo::ParticleEmitter::SetConfig(const ParticleEmitterConfig& cfg) {
     config = cfg;
 
     // Resize particle pool if necessary
@@ -109,7 +112,7 @@ void ParticleEmitter::SetConfig(const ParticleEmitterConfig& cfg) {
     }
 }
 
-int ParticleEmitter::GetActiveParticleCount() const {
+int koilo::ParticleEmitter::GetActiveParticleCount() const {
     int count = 0;
     for (const Particle& particle : particles) {
         if (particle.active) {
@@ -119,7 +122,7 @@ int ParticleEmitter::GetActiveParticleCount() const {
     return count;
 }
 
-void ParticleEmitter::Clear() {
+void koilo::ParticleEmitter::Clear() {
     for (Particle& particle : particles) {
         particle.active = false;
     }
@@ -129,17 +132,17 @@ void ParticleEmitter::Clear() {
 
 // === Custom Updates ===
 
-void ParticleEmitter::AddUpdateCallback(ParticleUpdateCallback callback) {
+void koilo::ParticleEmitter::AddUpdateCallback(ParticleUpdateCallback callback) {
     updateCallbacks.push_back(callback);
 }
 
-void ParticleEmitter::ClearUpdateCallbacks() {
+void koilo::ParticleEmitter::ClearUpdateCallbacks() {
     updateCallbacks.clear();
 }
 
 // === Emission ===
 
-void ParticleEmitter::Emit() {
+void koilo::ParticleEmitter::Emit() {
     Particle* particle = GetInactiveParticle();
     if (particle == nullptr) {
         return;  // No free particles
@@ -148,7 +151,7 @@ void ParticleEmitter::Emit() {
     InitializeParticle(*particle);
 }
 
-void ParticleEmitter::EmitBurst(int count) {
+void koilo::ParticleEmitter::EmitBurst(int count) {
     for (int i = 0; i < count; ++i) {
         Emit();
     }
@@ -156,7 +159,7 @@ void ParticleEmitter::EmitBurst(int count) {
 
 // === Private Methods ===
 
-void ParticleEmitter::InitializeParticle(Particle& particle) {
+void koilo::ParticleEmitter::InitializeParticle(Particle& particle) {
     // Position based on emitter shape
     Vector3D emitterPos = transform.GetPosition();
 
@@ -169,7 +172,7 @@ void ParticleEmitter::InitializeParticle(Particle& particle) {
         // Random point on sphere surface
         float theta = RandomRange(0.0f, 2.0f * 3.14159f);
         float phi = RandomRange(0.0f, 3.14159f);
-        float radius = config.shapeSize.x;
+        float radius = config.shapeSize.X;
 
         Vector3D offset(
             radius * std::sin(phi) * std::cos(theta),
@@ -190,7 +193,7 @@ void ParticleEmitter::InitializeParticle(Particle& particle) {
 
     case EmitterShape::Cone: {
         // Random direction in cone
-        float angle = config.shapeSize.x;  // Cone angle
+        float angle = config.shapeSize.X;  // Cone angle
         float randomAngle = RandomRange(-angle, angle);
         float randomRotation = RandomRange(0.0f, 2.0f * 3.14159f);
 
@@ -201,14 +204,14 @@ void ParticleEmitter::InitializeParticle(Particle& particle) {
         );
 
         particle.position = emitterPos;
-        particle.velocity = direction * RandomRange(config.velocityMin.length(), config.velocityMax.length());
+        particle.velocity = direction * RandomRange(config.velocityMin.Magnitude(), config.velocityMax.Magnitude());
         break;
     }
 
     case EmitterShape::Circle: {
         // Random point on circle
         float angle = RandomRange(0.0f, 2.0f * 3.14159f);
-        float radius = config.shapeSize.x;
+        float radius = config.shapeSize.X;
 
         Vector3D offset(
             radius * std::cos(angle),
@@ -246,20 +249,20 @@ void ParticleEmitter::InitializeParticle(Particle& particle) {
     particle.active = true;
 }
 
-float ParticleEmitter::RandomRange(float min, float max) {
+float koilo::ParticleEmitter::RandomRange(float min, float max) {
     float random = static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
     return min + random * (max - min);
 }
 
-Vector3D ParticleEmitter::RandomRange(const Vector3D& min, const Vector3D& max) {
+Vector3D koilo::ParticleEmitter::RandomRange(const Vector3D& min, const Vector3D& max) {
     return Vector3D(
-        RandomRange(min.x, max.x),
-        RandomRange(min.y, max.y),
-        RandomRange(min.z, max.z)
+        RandomRange(min.X, max.X),
+        RandomRange(min.Y, max.Y),
+        RandomRange(min.Z, max.Z)
     );
 }
 
-Particle* ParticleEmitter::GetInactiveParticle() {
+Particle* koilo::ParticleEmitter::GetInactiveParticle() {
     for (Particle& particle : particles) {
         if (!particle.active) {
             return &particle;
@@ -268,4 +271,92 @@ Particle* ParticleEmitter::GetInactiveParticle() {
     return nullptr;
 }
 
-} // namespace ptx
+// === Rendering ===
+
+void koilo::ParticleEmitter::Render(Color888* buffer, int width, int height) {
+    if (!buffer || width <= 0 || height <= 0) return;
+
+    for (const Particle& p : particles) {
+        if (!p.active) continue;
+
+        uint8_t cr = static_cast<uint8_t>(Mathematics::Constrain(p.color.X * 255.0f, 0.0f, 255.0f));
+        uint8_t cg = static_cast<uint8_t>(Mathematics::Constrain(p.color.Y * 255.0f, 0.0f, 255.0f));
+        uint8_t cb = static_cast<uint8_t>(Mathematics::Constrain(p.color.Z * 255.0f, 0.0f, 255.0f));
+
+        int px = static_cast<int>(p.position.X);
+        int py = static_cast<int>(p.position.Y);
+
+        if (renderSize_ <= 1) {
+            if (px >= 0 && px < width && py >= 0 && py < height) {
+                Color888& dst = buffer[py * width + px];
+                // Alpha blend
+                float a = p.alpha;
+                dst.R = static_cast<uint8_t>(dst.R + (cr - dst.R) * a);
+                dst.G = static_cast<uint8_t>(dst.G + (cg - dst.G) * a);
+                dst.B = static_cast<uint8_t>(dst.B + (cb - dst.B) * a);
+            }
+        } else {
+            int half = renderSize_ / 2;
+            for (int dy = -half; dy <= half; dy++) {
+                for (int dx = -half; dx <= half; dx++) {
+                    int sx = px + dx, sy = py + dy;
+                    if (sx >= 0 && sx < width && sy >= 0 && sy < height) {
+                        Color888& dst = buffer[sy * width + sx];
+                        float a = p.alpha;
+                        dst.R = static_cast<uint8_t>(dst.R + (cr - dst.R) * a);
+                        dst.G = static_cast<uint8_t>(dst.G + (cg - dst.G) * a);
+                        dst.B = static_cast<uint8_t>(dst.B + (cb - dst.B) * a);
+                    }
+                }
+            }
+        }
+    }
+}
+
+// === Script-friendly setters ===
+
+void koilo::ParticleEmitter::SetPosition(float x, float y, float z) {
+    transform.SetPosition(Vector3D(x, y, z));
+}
+
+void koilo::ParticleEmitter::SetEmissionRate(float rate) {
+    config.emissionRate = rate > 0 ? rate : 0;
+}
+
+void koilo::ParticleEmitter::SetLifetime(float minL, float maxL) {
+    config.lifetimeMin = minL > 0 ? minL : 0.01f;
+    config.lifetimeMax = maxL > minL ? maxL : minL;
+}
+
+void koilo::ParticleEmitter::SetVelocityRange(float vxMin, float vyMin, float vzMin,
+                                              float vxMax, float vyMax, float vzMax) {
+    config.velocityMin = Vector3D(vxMin, vyMin, vzMin);
+    config.velocityMax = Vector3D(vxMax, vyMax, vzMax);
+}
+
+void koilo::ParticleEmitter::SetGravity(float gx, float gy, float gz) {
+    config.gravity = Vector3D(gx, gy, gz);
+}
+
+void koilo::ParticleEmitter::SetStartColor(float r, float g, float b) {
+    config.colorStart = Vector3D(r, g, b);
+}
+
+void koilo::ParticleEmitter::SetEndColor(float r, float g, float b) {
+    config.colorEnd = Vector3D(r, g, b);
+}
+
+void koilo::ParticleEmitter::SetSizeRange(float start, float end) {
+    config.sizeStart = start;
+    config.sizeEnd = end;
+}
+
+void koilo::ParticleEmitter::SetParticleSize(int pixels) {
+    renderSize_ = pixels > 0 ? pixels : 1;
+}
+
+int koilo::ParticleEmitter::GetParticleSize() const {
+    return renderSize_;
+}
+
+} // namespace koilo

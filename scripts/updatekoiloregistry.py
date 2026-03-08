@@ -1,11 +1,12 @@
-# UpdatePTXRegistry.py - auto-generate PTX reflection blocks from C++ headers
+# SPDX-License-Identifier: GPL-3.0-or-later
+# UpdateKoiloRegistry.py - auto-generate Koilo reflection blocks from C++ headers
 #
 # Process:
-# - Walk all .hpp under a root directory (default: engine/include/ptx)
+# - Walk all .hpp under a root directory (default: engine/koilo)
 # - Parse classes (normal + templates) and their public API:
-#     * public non-static fields  -> PTX_FIELD
-#     * public methods            -> PTX_METHOD_AUTO / PTX_SMETHOD_AUTO
-#     * constructors              -> PTX_CTOR / PTX_CTOR0
+#     * public non-static fields  -> KL_FIELD
+#     * public methods            -> KL_METHOD_AUTO / KL_SMETHOD_AUTO
+#     * constructors              -> KL_CTOR / KL_CTOR0
 # - Insert blocks after each class definition (or reorder/fix if present)
 # - Creates .bak backups when writing
 #
@@ -14,9 +15,9 @@
 # - Fallback: regex parser that understands 'template<...> class/struct ... { ... };'
 #
 # Usage examples:
-#   python UpdatePTXRegistry.py --root ./engine/include/ptx
-#   python UpdatePTXRegistry.py --root ./engine/include/ptx --write
-#   python UpdatePTXRegistry.py --root ./engine/include/ptx --write --force
+#   python UpdateKoiloRegistry.py --root ./engine/koilo
+#   python UpdateKoiloRegistry.py --root ./engine/koilo --write
+#   python UpdateKoiloRegistry.py --root ./engine/koilo --write --force
 #
 
 import argparse
@@ -36,9 +37,9 @@ sys.path.insert(0, str(SCRIPT_DIR))
 
 from consoleoutput import print_progress, print_status, print_section, print_warning, print_error, print_success, Colors
 
-DEFAULT_HEADER_ROOT = Path("engine") / "include" / "ptx"
+DEFAULT_HEADER_ROOT = Path("engine") / "koilo"
 DEFAULT_HEADER_ROOT_STR = DEFAULT_HEADER_ROOT.as_posix()
-LEGACY_HEADER_ROOT = Path("lib") / "ptx"
+LEGACY_HEADER_ROOT = Path("lib") / "koiloscript"
 
 # Static helper names injected by the reflection macros
 REFLECTION_HELPER_NAMES = {"Fields", "Methods", "Describe"}
@@ -68,20 +69,20 @@ TYPE_RANGES: Dict[str, Tuple[str, str]] = {
 
 INCLUDE_RE = re.compile(r'^\s*#\s*include\s*[<"]([^">]+reflect_macros\.hpp)[">]', re.MULTILINE)
 
-PTX_BLOCK_ANY_RE = re.compile(
-    r'[\t ]*PTX_BEGIN_(?:FIELDS|METHODS|DESCRIBE)\s*\([^\n]*?\)'  # begin macro line
+KL_BLOCK_ANY_RE = re.compile(
+    r'[\t ]*KL_BEGIN_(?:FIELDS|METHODS|DESCRIBE)\s*\([^\n]*?\)'  # begin macro line
     r'(?:\r?\n(?:.|\r?\n)*?)?'                                    # body up to
-    r'PTX_END_(?:FIELDS|METHODS|DESCRIBE)(?:\s*\([^\n]*?\))?'     # matching end macro
+    r'KL_END_(?:FIELDS|METHODS|DESCRIBE)(?:\s*\([^\n]*?\))?'     # matching end macro
     r'[\t ]*(?:\r?\n|)',
     re.DOTALL,
 )
 
-def strip_ptx_blocks(text: str) -> str:
+def strip_koilo_blocks(text: str) -> str:
     prev = None
     cur = text
     while prev != cur:
         prev = cur
-        cur = PTX_BLOCK_ANY_RE.sub("\n", cur, count=1)
+        cur = KL_BLOCK_ANY_RE.sub("\n", cur, count=1)
     cur = re.sub(r'(?:\r?\n){3,}', '\n\n', cur)
     return cur
 
@@ -266,7 +267,7 @@ def _strip_leading_attributes(expr: str) -> str:
     return out
 
 
-KEYWORDS_TO_DROP = re.compile(r"\b(?:inline|constexpr|virtual|explicit|friend|static|noexcept|override|final|PTX_API|PTX_EXPORT|PTX_PUBLIC)\b")
+KEYWORDS_TO_DROP = re.compile(r"\b(?:inline|constexpr|virtual|explicit|friend|static|noexcept|override|final|KL_API|KL_EXPORT|KL_PUBLIC)\b")
 
 
 def _clean_return_type(prefix: str) -> str:
@@ -379,6 +380,11 @@ def try_clang_parse(paths: List[Path], clang_args: List[str]) -> Dict[Path, List
 
         def visit(cursor):
             for c in cursor.get_children():
+                # Skip enum declarations entirely (libclang may report them as CLASS_DECL in some cases)
+                if c.kind == cindex.CursorKind.ENUM_DECL:
+                    visit(c)
+                    continue
+
                 if c.kind not in (
                     cindex.CursorKind.CLASS_DECL,
                     cindex.CursorKind.STRUCT_DECL,
@@ -446,6 +452,12 @@ def try_clang_parse(paths: List[Path], clang_args: List[str]) -> Dict[Path, List
                 templ_scope = in_template_scope(c)
                 name_text = c.spelling
                 name_token = c.spelling
+
+                # Skip anonymous structs/classes
+                # libclang returns names like "(anonymous struct at file.hpp:31:9)" for anonymous types
+                if not name_text or not name_text.strip() or "(anonymous" in name_text.lower():
+                    visit(c)
+                    continue
 
                 out_list.append(ClassInfo(
                     name=name_text,
@@ -769,14 +781,14 @@ def validate_macro_blocks(src: str) -> None:
     starts, spans = find_comment_spans(src)
 
     begin_patterns: Dict[str, re.Pattern] = {
-        'FIELDS': re.compile(r'PTX_BEGIN_FIELDS\(\s*([^\)]+?)\s*\)'),
-        'METHODS': re.compile(r'PTX_BEGIN_METHODS\(\s*([^\)]+?)\s*\)'),
-        'DESCRIBE': re.compile(r'PTX_BEGIN_DESCRIBE\(\s*([^\)]+?)\s*\)'),
+        'FIELDS': re.compile(r'KL_BEGIN_FIELDS\(\s*([^\)]+?)\s*\)'),
+        'METHODS': re.compile(r'KL_BEGIN_METHODS\(\s*([^\)]+?)\s*\)'),
+        'DESCRIBE': re.compile(r'KL_BEGIN_DESCRIBE\(\s*([^\)]+?)\s*\)'),
     }
     end_patterns: Dict[str, re.Pattern] = {
-        'FIELDS': re.compile(r'PTX_END_FIELDS'),
-        'METHODS': re.compile(r'PTX_END_METHODS'),
-        'DESCRIBE': re.compile(r'PTX_END_DESCRIBE'),
+        'FIELDS': re.compile(r'KL_END_FIELDS'),
+        'METHODS': re.compile(r'KL_END_METHODS'),
+        'DESCRIBE': re.compile(r'KL_END_DESCRIBE'),
     }
 
     begin_counts: Dict[Tuple[str, str], int] = {}
@@ -805,11 +817,11 @@ def validate_macro_blocks(src: str) -> None:
         messages = []
         if duplicates:
             for cls, kind, count in duplicates:
-                messages.append(f"Duplicate PTX_{kind} block for {cls} ({count} occurrences)")
+                messages.append(f"Duplicate KL_{kind} block for {cls} ({count} occurrences)")
         if mismatched:
             for kind in mismatched:
-                messages.append(f"Mismatched PTX_{kind} blocks: begins={total_begin[kind]}, ends={total_end[kind]}")
-        raise RuntimeError("Invalid PTX macro blocks detected:\n" + "\n".join(messages))
+                messages.append(f"Mismatched KL_{kind} blocks: begins={total_begin[kind]}, ends={total_end[kind]}")
+        raise RuntimeError("Invalid Koilo macro blocks detected:\n" + "\n".join(messages))
 
 
 def regex_parse_file(path: Path, text: str) -> List[ClassInfo]:
@@ -821,13 +833,19 @@ def regex_parse_file(path: Path, text: str) -> List[ClassInfo]:
 
         # Check if this is an enum class/struct declaration by looking backwards
         # from the match position to see if it's preceded by 'enum'
-        prefix_start = max(0, m.start() - 10)  # Look back up to 10 chars
+        prefix_start = max(0, m.start() - 50)  # Look back up to 50 chars to catch 'enum'
         prefix = text[prefix_start:m.start()]
-        if ENUM_CLASS_RE.search(prefix + m.group("kw")):
+        # Check if 'enum' keyword appears before 'class' or 'struct'
+        if re.search(r'\benum\s+(class|struct)?\s*$', prefix, re.DOTALL):
             continue
 
         is_templ = bool(m.group("templ"))
         name = m.group("name").strip()
+
+        # Skip anonymous structs/classes (empty name or just whitespace)
+        if not name:
+            continue
+
         open_brace = m.end() - 1
         close_brace = find_matching_brace(text, open_brace)
         after = close_brace + 1
@@ -855,9 +873,9 @@ def regex_parse_file(path: Path, text: str) -> List[ClassInfo]:
 
 # ------------------------ Block generation & insertion ------------------------
 BEGIN_END = [
-    ("PTX_BEGIN_FIELDS", "PTX_END_FIELDS"),
-    ("PTX_BEGIN_METHODS", "PTX_END_METHODS"),
-    ("PTX_BEGIN_DESCRIBE", "PTX_END_DESCRIBE"),
+    ("KL_BEGIN_FIELDS", "KL_END_FIELDS"),
+    ("KL_BEGIN_METHODS", "KL_END_METHODS"),
+    ("KL_BEGIN_DESCRIBE", "KL_END_DESCRIBE"),
 ]
 
 def gen_blocks(ci: ClassInfo) -> str:
@@ -868,7 +886,7 @@ def gen_blocks(ci: ClassInfo) -> str:
     for f in ci.fields:
         mn, mx = guess_range(f.type)
         doc = nice_doc_from_name(f.name)
-        field_lines.append(f'PTX_FIELD({cls}, {f.name}, "{doc}", {mn}, {mx}),')
+        field_lines.append(f'KL_FIELD({cls}, {f.name}, "{doc}", {mn}, {mx}),')
     if field_lines:
         field_lines[-1] = field_lines[-1].rstrip(',')
 
@@ -884,17 +902,17 @@ def gen_blocks(ci: ClassInfo) -> str:
 
     def format_member_overload(m: MethodInfo) -> str:
         if not m.args:
-            macro = 'PTX_METHOD_OVLD_CONST0' if m.is_const else 'PTX_METHOD_OVLD0'
+            macro = 'KL_METHOD_OVLD_CONST0' if m.is_const else 'KL_METHOD_OVLD0'
             return f'{macro}({cls}, {m.name}, {m.return_type})'
-        macro = 'PTX_METHOD_OVLD_CONST' if m.is_const else 'PTX_METHOD_OVLD'
+        macro = 'KL_METHOD_OVLD_CONST' if m.is_const else 'KL_METHOD_OVLD'
         arg_list = ', '.join(m.args)
         return f'{macro}({cls}, {m.name}, {m.return_type}, {arg_list})'
 
     def format_static_overload(m: MethodInfo) -> str:
         if not m.args:
-            return f'PTX_SMETHOD_OVLD0({cls}, {m.name}, {m.return_type})'
+            return f'KL_SMETHOD_OVLD0({cls}, {m.name}, {m.return_type})'
         arg_list = ', '.join(m.args)
-        return f'PTX_SMETHOD_OVLD({cls}, {m.name}, {m.return_type}, {arg_list})'
+        return f'KL_SMETHOD_OVLD({cls}, {m.name}, {m.return_type}, {arg_list})'
 
     for m in ci.methods:
         doc = nice_doc_from_name(m.name)
@@ -909,7 +927,7 @@ def gen_blocks(ci: ClassInfo) -> str:
                 else:
                     method_lines.append(f'/* Unsupported static overload: {cls}::{m.name} */')
             else:
-                method_lines.append(f'PTX_SMETHOD_AUTO({cls}::{m.name}, "{doc}"),')
+                method_lines.append(f'KL_SMETHOD_AUTO({cls}::{m.name}, "{doc}"),')
             continue
 
         if overloaded or conflict_with_static:
@@ -918,7 +936,7 @@ def gen_blocks(ci: ClassInfo) -> str:
             else:
                 method_lines.append(f'/* Unsupported overload: {cls}::{m.name} */')
         else:
-            method_lines.append(f'PTX_METHOD_AUTO({cls}, {m.name}, "{doc}"),')
+            method_lines.append(f'KL_METHOD_AUTO({cls}, {m.name}, "{doc}"),')
 
     if method_lines:
         method_lines[-1] = method_lines[-1].rstrip(',')
@@ -929,11 +947,11 @@ def gen_blocks(ci: ClassInfo) -> str:
     for c in ci.ctors:
         if len(c.args) == 0:
             if not ctor0_done:
-                ctor_lines.append(f'PTX_CTOR0({cls}),')
+                ctor_lines.append(f'KL_CTOR0({cls}),')
                 ctor0_done = True
         else:
             args = ", ".join(c.args)
-            ctor_lines.append(f'PTX_CTOR({cls}, {args}),')
+            ctor_lines.append(f'KL_CTOR({cls}, {args}),')
     if ctor_lines:
         ctor_lines[-1] = ctor_lines[-1].rstrip(',')
 
@@ -945,22 +963,22 @@ def gen_blocks(ci: ClassInfo) -> str:
         ctor_lines = ['/* No reflected ctors. */']
 
     parts = []
-    parts.append(f'PTX_BEGIN_FIELDS({cls})')
+    parts.append(f'KL_BEGIN_FIELDS({cls})')
     for ln in field_lines:
         parts.append(f'    {ln}')
-    parts.append('PTX_END_FIELDS')
+    parts.append('KL_END_FIELDS')
     parts.append('')
 
-    parts.append(f'PTX_BEGIN_METHODS({cls})')
+    parts.append(f'KL_BEGIN_METHODS({cls})')
     for ln in method_lines:
         parts.append(f'    {ln}')
-    parts.append('PTX_END_METHODS')
+    parts.append('KL_END_METHODS')
     parts.append('')
     
-    parts.append(f'PTX_BEGIN_DESCRIBE({cls})')
+    parts.append(f'KL_BEGIN_DESCRIBE({cls})')
     for ln in ctor_lines:
         parts.append(f'    {ln}')
-    parts.append(f'PTX_END_DESCRIBE({cls})')
+    parts.append(f'KL_END_DESCRIBE({cls})')
     parts.append('')
     
     return "\n".join(parts)
@@ -981,9 +999,9 @@ def ensure_blocks_in_file(src: str, ci: ClassInfo, force: bool = False) -> Tuple
 
     def _remove_existing_blocks(text: str) -> str:
         for macro, with_end in (
-            ("PTX_BEGIN_FIELDS", False),
-            ("PTX_BEGIN_METHODS", False),
-            ("PTX_BEGIN_DESCRIBE", True),
+            ("KL_BEGIN_FIELDS", False),
+            ("KL_BEGIN_METHODS", False),
+            ("KL_BEGIN_DESCRIBE", True),
         ):
             while True:
                 match = find_existing_block(text, macro, cls, with_class_in_end=with_end)
@@ -1047,7 +1065,7 @@ def ensure_blocks_in_file(src: str, ci: ClassInfo, force: bool = False) -> Tuple
         span_start = ci.start
         span_end = ci.after_semicolon
         segment = src[span_start:span_end]
-        cleaned_segment = strip_ptx_blocks(segment)
+        cleaned_segment = strip_koilo_blocks(segment)
         if cleaned_segment != segment:
             src = src[:span_start] + cleaned_segment + src[span_end:]
         if original != src:
@@ -1070,9 +1088,9 @@ def ensure_blocks_in_file(src: str, ci: ClassInfo, force: bool = False) -> Tuple
 
     changed = False
 
-    has_fields = find_existing_block(src, "PTX_BEGIN_FIELDS", cls, with_class_in_end=False) is not None
-    has_methods = find_existing_block(src, "PTX_BEGIN_METHODS", cls, with_class_in_end=False) is not None
-    has_desc = find_existing_block(src, "PTX_BEGIN_DESCRIBE", cls, with_class_in_end=True) is not None
+    has_fields = find_existing_block(src, "KL_BEGIN_FIELDS", cls, with_class_in_end=False) is not None
+    has_methods = find_existing_block(src, "KL_BEGIN_METHODS", cls, with_class_in_end=False) is not None
+    has_desc = find_existing_block(src, "KL_BEGIN_DESCRIBE", cls, with_class_in_end=True) is not None
 
     if not (has_fields and has_methods and has_desc):
         src = _remove_existing_blocks(src)
@@ -1085,9 +1103,9 @@ def ensure_blocks_in_file(src: str, ci: ClassInfo, force: bool = False) -> Tuple
             print_success(f"Inserted {', '.join(missing)} for {ci.name}")
         return src, inserted
 
-    m_fields = find_existing_block(src, "PTX_BEGIN_FIELDS", cls, False)
-    m_methods = find_existing_block(src, "PTX_BEGIN_METHODS", cls, False)
-    m_desc = find_existing_block(src, "PTX_BEGIN_DESCRIBE", cls, True)
+    m_fields = find_existing_block(src, "KL_BEGIN_FIELDS", cls, False)
+    m_methods = find_existing_block(src, "KL_BEGIN_METHODS", cls, False)
+    m_desc = find_existing_block(src, "KL_BEGIN_DESCRIBE", cls, True)
     spans = sorted([(m_fields.start(), "FIELDS", m_fields.group(0)),
                     (m_methods.start(), "METHODS", m_methods.group(0)),
                     (m_desc.start(), "DESCRIBE", m_desc.group(0))], key=lambda x: x[0])
@@ -1096,7 +1114,7 @@ def ensure_blocks_in_file(src: str, ci: ClassInfo, force: bool = False) -> Tuple
         src = _remove_existing_blocks(src)
         src, inserted = _render_block(src)
         if inserted:
-            print_success(f"Reordered PTX blocks for {ci.name}")
+            print_success(f"Reordered Koilo blocks for {ci.name}")
         return src, inserted
 
     return src, changed
@@ -1114,17 +1132,18 @@ def remove_reflect_include(src: str) -> Tuple[str, bool]:
     return removed, removed != src
 
 EXCLUDED_SUBTREES = {"registry", "platform"}
+EXCLUDED_FILES = {"reflection_bridge.hpp"}
 
 def main():
-    ap = argparse.ArgumentParser(description="Generate/repair PTX reflection blocks from headers")
-    ap.add_argument("--root", default=DEFAULT_HEADER_ROOT_STR, help="Root dir to scan (default: engine/include/ptx)")
+    ap = argparse.ArgumentParser(description="Generate/repair Koilo reflection blocks from headers")
+    ap.add_argument("--root", default=DEFAULT_HEADER_ROOT_STR, help="Root dir to scan (default: engine/koilo)")
     ap.add_argument("--write", action="store_true", help="Write changes back in-place")
     ap.add_argument("--force", action="store_true", help="Regenerate macros even when they already exist")
     ap.add_argument("--list-skipped", action="store_true", help="Print the headers filtered out due to templates or virtuals")
     ap.add_argument("--cache", dest="use_cache", action="store_true", help="Enable parse result cache (default)")
     ap.add_argument("--no-cache", dest="use_cache", action="store_false", help="Disable parse result cache")
     ap.set_defaults(use_cache=True)
-    ap.add_argument("--cache-file", default=".ptx_reflect_cache.json", help="Path to cache file (default: .ptx_reflect_cache.json in project root)")
+    ap.add_argument("--cache-file", default=".koilo_reflect_cache.json", help="Path to cache file (default: .koilo_reflect_cache.json in project root)")
     ap.add_argument("--reparse-all", action="store_true", help="Ignore cache entries and reparse all headers (still updates cache)")
 
     args = ap.parse_args()
@@ -1147,7 +1166,9 @@ def main():
                 root = root_arg.resolve()
     def is_excluded(path: Path) -> bool:
         parts = Path(path).relative_to(root).parts
-        return parts and parts[0] in EXCLUDED_SUBTREES
+        if parts and parts[0] in EXCLUDED_SUBTREES:
+            return True
+        return path.name in EXCLUDED_FILES
 
     # Gather all headers, then filter out templated and virtual-only files
     all_headers = [p for p in root.rglob('*.hpp') if not is_excluded(p)]
@@ -1283,7 +1304,7 @@ def main():
             src, changed = ensure_blocks_in_file(src, ci, force=force)
             changed_any = changed_any or changed
 
-        has_macros = re.search(r'\bPTX_BEGIN_(FIELDS|METHODS|DESCRIBE)\s*\(', src) is not None
+        has_macros = re.search(r'\bKL_BEGIN_(FIELDS|METHODS|DESCRIBE)\s*\(', src) is not None
         if has_macros:
             src, inc_changed, rel = ensure_reflect_include(src, header_path=p, root_path=root)
             if inc_changed:

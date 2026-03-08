@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file VectorField2D.h
  * @brief Represents a 2D vector field with various dynamic field effects and rendering capabilities.
@@ -17,6 +18,8 @@
 
 #include "../../core/math/mathematics.hpp"
 #include "../../core/math/vector2d.hpp"
+
+namespace koilo {
 
 /**
  * @class VectorField2D
@@ -162,30 +165,21 @@ public:
      */
     uint32_t GetVectorAtPosition(float x, float y, bool& inBounds);
 
-    PTX_BEGIN_FIELDS(VectorField2D)
+
+
+
+    KL_BEGIN_FIELDS(VectorField2D)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(VectorField2D)
-        PTX_METHOD_AUTO(VectorField2D, Boundary, "Boundary"),
-        PTX_METHOD_AUTO(VectorField2D, Diffuse, "Diffuse"),
-        PTX_METHOD_AUTO(VectorField2D, Advect, "Advect"),
-        PTX_METHOD_AUTO(VectorField2D, SineField, "Sine field"),
-        PTX_METHOD_AUTO(VectorField2D, StepField, "Step field"),
-        PTX_METHOD_AUTO(VectorField2D, MovingSquareField, "Moving square field"),
-        PTX_METHOD_AUTO(VectorField2D, SpiralField, "Spiral field"),
-        PTX_METHOD_AUTO(VectorField2D, GetCountX, "Get count x"),
-        PTX_METHOD_AUTO(VectorField2D, GetCountY, "Get count y"),
-        PTX_METHOD_AUTO(VectorField2D, RenderDensity, "Render density"),
-        PTX_METHOD_AUTO(VectorField2D, RenderVector, "Render vector"),
-        PTX_METHOD_AUTO(VectorField2D, SetSize, "Set size"),
-        PTX_METHOD_AUTO(VectorField2D, SetPosition, "Set position"),
-        PTX_METHOD_AUTO(VectorField2D, SetRotation, "Set rotation"),
-        PTX_METHOD_AUTO(VectorField2D, GetVectorAtPosition, "Get vector at position")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(VectorField2D)
+        /* No reflected methods. */
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(VectorField2D)
-        PTX_CTOR(VectorField2D, uint16_t, uint16_t)
-    PTX_END_DESCRIBE(VectorField2D)
+    KL_BEGIN_DESCRIBE(VectorField2D)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(VectorField2D)
 
 };
+
+} // namespace koilo

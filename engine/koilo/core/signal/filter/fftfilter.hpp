@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file FFTFilter.h
  * @brief Provides the `FFTFilter` class for processing and normalizing FFT data.
@@ -13,8 +14,11 @@
 #pragma once
 
 #include "runningaveragefilter.hpp" // Includes the running average filter utility.
-#include "../../math/mathematics.hpp" // Includes mathematical utilities for constraints and operations.
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/core/math/mathematics.hpp> // Includes mathematical utilities for constraints and operations.
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class FFTFilter
@@ -50,17 +54,19 @@ public:
      */
     float Filter(float value);
 
-    PTX_BEGIN_FIELDS(FFTFilter)
+    KL_BEGIN_FIELDS(FFTFilter)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(FFTFilter)
-        PTX_METHOD_AUTO(FFTFilter, GetOutput, "Get output"),
-        PTX_METHOD_AUTO(FFTFilter, Filter, "Filter")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(FFTFilter)
+        KL_METHOD_AUTO(FFTFilter, GetOutput, "Get output"),
+        KL_METHOD_AUTO(FFTFilter, Filter, "Filter")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(FFTFilter)
-        PTX_CTOR0(FFTFilter)
-    PTX_END_DESCRIBE(FFTFilter)
+    KL_BEGIN_DESCRIBE(FFTFilter)
+        KL_CTOR0(FFTFilter)
+    KL_END_DESCRIBE(FFTFilter)
 
 };
+
+} // namespace koilo

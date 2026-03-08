@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file DampedSpring.h
  * @brief Defines the DampedSpring class for simulating damped spring motion.
@@ -14,8 +15,11 @@
 #pragma once
 
 #include <cstdint>
-#include "../math/mathematics.hpp"
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/core/math/mathematics.hpp>
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class DampedSpring
@@ -74,20 +78,22 @@ public:
      */
     float Calculate(float target, float dT);
 
-    PTX_BEGIN_FIELDS(DampedSpring)
+    KL_BEGIN_FIELDS(DampedSpring)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(DampedSpring)
-        PTX_METHOD_AUTO(DampedSpring, GetCurrentPosition, "Get current position"),
-        PTX_METHOD_AUTO(DampedSpring, SetConstants, "Set constants"),
-        /* Calculate */ PTX_METHOD_OVLD(DampedSpring, Calculate, float, float, uint32_t),
-        /* Calculate */ PTX_METHOD_OVLD(DampedSpring, Calculate, float, float, float)
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(DampedSpring)
+        KL_METHOD_AUTO(DampedSpring, GetCurrentPosition, "Get current position"),
+        KL_METHOD_AUTO(DampedSpring, SetConstants, "Set constants"),
+        /* Calculate */ KL_METHOD_OVLD(DampedSpring, Calculate, float, float, uint32_t),
+        /* Calculate */ KL_METHOD_OVLD(DampedSpring, Calculate, float, float, float)
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(DampedSpring)
-        PTX_CTOR0(DampedSpring),
-        PTX_CTOR(DampedSpring, float, float)
-    PTX_END_DESCRIBE(DampedSpring)
+    KL_BEGIN_DESCRIBE(DampedSpring)
+        KL_CTOR0(DampedSpring),
+        KL_CTOR(DampedSpring, float, float)
+    KL_END_DESCRIBE(DampedSpring)
 
 };
+
+} // namespace koilo

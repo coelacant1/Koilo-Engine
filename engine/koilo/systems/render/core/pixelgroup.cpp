@@ -1,12 +1,16 @@
-#include <ptx/systems/render/core/pixelgroup.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/systems/render/core/pixelgroup.hpp>
 
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
 
-#include <ptx/core/math/mathematics.hpp>
+#include <koilo/core/math/mathematics.hpp>
 
-PixelGroup::PixelGroup(uint16_t pixelCount, Vector2D size, Vector2D position, uint16_t rowCount)
+
+namespace koilo {
+
+koilo::PixelGroup::PixelGroup(uint32_t pixelCount, Vector2D size, Vector2D position, uint32_t rowCount)
     : bounds(position, size, 0.0f),
       pixelColors(pixelCount),
       pixelBuffer(pixelCount),
@@ -18,7 +22,7 @@ PixelGroup::PixelGroup(uint16_t pixelCount, Vector2D size, Vector2D position, ui
     this->size = size;
     this->position = position;
     this->rowCount = rowCount;
-    this->colCount = (rowCount > 0) ? static_cast<uint16_t>(pixelCount / rowCount) : 0;
+    this->colCount = (rowCount > 0) ? static_cast<uint32_t>(pixelCount / rowCount) : 0;
     this->direction = IPixelGroup::Direction::ZEROTOMAX;
     this->isRectangular = true;
 
@@ -28,7 +32,7 @@ PixelGroup::PixelGroup(uint16_t pixelCount, Vector2D size, Vector2D position, ui
     GridSort();
 }
 
-PixelGroup::PixelGroup(const Vector2D* pixelLocations, uint16_t pixelCount, Direction direction)
+koilo::PixelGroup::PixelGroup(const Vector2D* pixelLocations, uint32_t pixelCount, Direction direction)
     : direction(direction),
       bounds(position, size, 0.0f),
       pixelColors(pixelCount),
@@ -42,7 +46,7 @@ PixelGroup::PixelGroup(const Vector2D* pixelLocations, uint16_t pixelCount, Dire
     this->isRectangular = false;
 
     if (pixelLocations) {
-        for (uint16_t i = 0; i < pixelCount; ++i) {
+        for (uint32_t i = 0; i < pixelCount; ++i) {
             bounds.UpdateBounds(pixelLocations[i]);
         }
     }
@@ -50,17 +54,17 @@ PixelGroup::PixelGroup(const Vector2D* pixelLocations, uint16_t pixelCount, Dire
     GridSort();
 }
 
-PixelGroup::~PixelGroup() = default;
+koilo::PixelGroup::~PixelGroup() = default;
 
-Vector2D PixelGroup::GetCenterCoordinate() {
+Vector2D koilo::PixelGroup::GetCenterCoordinate() {
     return (bounds.GetMaximum() + bounds.GetMinimum()) / 2.0f;
 }
 
-Vector2D PixelGroup::GetSize() {
+Vector2D koilo::PixelGroup::GetSize() {
     return bounds.GetMaximum() - bounds.GetMinimum();
 }
 
-Vector2D PixelGroup::GetCoordinate(uint16_t count) {
+Vector2D koilo::PixelGroup::GetCoordinate(uint32_t count) {
     if (pixelCount == 0) {
         return {};
     }
@@ -72,11 +76,16 @@ Vector2D PixelGroup::GetCoordinate(uint16_t count) {
             return {};
         }
 
-        float row = static_cast<float>(count % rowCount);
-        float col = static_cast<float>((count - static_cast<uint16_t>(row)) / rowCount);
+        // rowCount is the number of pixels per row (i.e., width)
+        // colCount is the number of rows (i.e., height)
+        // For index-to-coordinate mapping:
+        //   col (X) = index % rowCount (which column in the row?)
+        //   row (Y) = index / rowCount (which row?)
+        float col = static_cast<float>(count % rowCount);
+        float row = static_cast<float>(count / rowCount);
 
-        tempLocation.X = Mathematics::Map(row, 0.0f, static_cast<float>(rowCount), position.X, position.X + size.X);
-        tempLocation.Y = Mathematics::Map(col, 0.0f, static_cast<float>(colCount), position.Y, position.Y + size.Y);
+        tempLocation.X = Mathematics::Map(col, 0.0f, static_cast<float>(rowCount), position.X, position.X + size.X);
+        tempLocation.Y = Mathematics::Map(row, 0.0f, static_cast<float>(colCount), position.Y, position.Y + size.Y);
 
         return tempLocation;
     }
@@ -92,7 +101,7 @@ Vector2D PixelGroup::GetCoordinate(uint16_t count) {
     return pixelPositions[pixelCount - count - 1];
 }
 
-int PixelGroup::GetPixelIndex(Vector2D location) {
+int koilo::PixelGroup::GetPixelIndex(Vector2D location) {
     if (!isRectangular || rowCount == 0 || colCount == 0) {
         return -1;
     }
@@ -100,7 +109,7 @@ int PixelGroup::GetPixelIndex(Vector2D location) {
     float row = Mathematics::Map(location.X, position.X, position.X + size.X, 0.0f, static_cast<float>(rowCount));
     float col = Mathematics::Map(location.Y, position.Y, position.Y + size.Y, 0.0f, static_cast<float>(colCount));
 
-    uint16_t count = static_cast<uint16_t>(row + col * rowCount);
+    uint32_t count = static_cast<uint32_t>(row + col * rowCount);
 
     if (count < pixelCount && count > 0 && row > 0 && row < rowCount && col > 0 && col < colCount) {
         return count;
@@ -109,7 +118,7 @@ int PixelGroup::GetPixelIndex(Vector2D location) {
     return -1;
 }
 
-RGBColor* PixelGroup::GetColor(uint16_t count) {
+Color888* koilo::PixelGroup::GetColor(uint32_t count) {
     if (count >= pixelColors.size()) {
         return nullptr;
     }
@@ -117,31 +126,31 @@ RGBColor* PixelGroup::GetColor(uint16_t count) {
     return &pixelColors[count];
 }
 
-RGBColor* PixelGroup::GetColors() {
+Color888* koilo::PixelGroup::GetColors() {
     return pixelColors.empty() ? nullptr : pixelColors.data();
 }
 
-RGBColor* PixelGroup::GetColorBuffer() {
+Color888* koilo::PixelGroup::GetColorBuffer() {
     return pixelBuffer.empty() ? nullptr : pixelBuffer.data();
 }
 
-uint16_t PixelGroup::GetPixelCount() {
+uint32_t koilo::PixelGroup::GetPixelCount() {
     return pixelCount;
 }
 
-bool PixelGroup::Overlaps(Rectangle2D* box) {
+bool koilo::PixelGroup::Overlaps(Rectangle2D* box) {
     if (!box) {
         return false;
     }
 
-    return Overlap2D::Overlaps(bounds, *box);
+    return bounds.Overlaps(*box);
 }
 
-bool PixelGroup::ContainsVector2D(Vector2D v) {
+bool koilo::PixelGroup::ContainsVector2D(Vector2D v) {
     return v.CheckBounds(bounds.GetMinimum(), bounds.GetMaximum());
 }
 
-bool PixelGroup::GetUpIndex(uint16_t count, uint16_t* upIndex) {
+bool koilo::PixelGroup::GetUpIndex(uint32_t count, uint32_t* upIndex) {
     if (!upIndex || count >= up.size()) {
         return false;
     }
@@ -150,7 +159,7 @@ bool PixelGroup::GetUpIndex(uint16_t count, uint16_t* upIndex) {
     return up[count] < kInvalidIndex;
 }
 
-bool PixelGroup::GetDownIndex(uint16_t count, uint16_t* downIndex) {
+bool koilo::PixelGroup::GetDownIndex(uint32_t count, uint32_t* downIndex) {
     if (!downIndex || count >= down.size()) {
         return false;
     }
@@ -159,7 +168,7 @@ bool PixelGroup::GetDownIndex(uint16_t count, uint16_t* downIndex) {
     return down[count] < kInvalidIndex;
 }
 
-bool PixelGroup::GetLeftIndex(uint16_t count, uint16_t* leftIndex) {
+bool koilo::PixelGroup::GetLeftIndex(uint32_t count, uint32_t* leftIndex) {
     if (!leftIndex || count >= left.size()) {
         return false;
     }
@@ -168,7 +177,7 @@ bool PixelGroup::GetLeftIndex(uint16_t count, uint16_t* leftIndex) {
     return left[count] < kInvalidIndex;
 }
 
-bool PixelGroup::GetRightIndex(uint16_t count, uint16_t* rightIndex) {
+bool koilo::PixelGroup::GetRightIndex(uint32_t count, uint32_t* rightIndex) {
     if (!rightIndex || count >= right.size()) {
         return false;
     }
@@ -177,17 +186,17 @@ bool PixelGroup::GetRightIndex(uint16_t count, uint16_t* rightIndex) {
     return right[count] < kInvalidIndex;
 }
 
-bool PixelGroup::GetAlternateXIndex(uint16_t count, uint16_t* index) {
+bool koilo::PixelGroup::GetAlternateXIndex(uint32_t count, uint32_t* index) {
     if (!index) {
         return false;
     }
 
-    uint16_t tempIndex = count;
+    uint32_t tempIndex = count;
     bool isEven = (count % 2) != 0;
     bool valid = true;
 
-    const uint16_t iterations = count / 2;
-    for (uint16_t i = 0; i < iterations; ++i) {
+    const uint32_t iterations = count / 2;
+    for (uint32_t i = 0; i < iterations; ++i) {
         if (isEven) {
             valid = GetRightIndex(tempIndex, &tempIndex);
         } else {
@@ -203,17 +212,17 @@ bool PixelGroup::GetAlternateXIndex(uint16_t count, uint16_t* index) {
     return valid;
 }
 
-bool PixelGroup::GetAlternateYIndex(uint16_t count, uint16_t* index) {
+bool koilo::PixelGroup::GetAlternateYIndex(uint32_t count, uint32_t* index) {
     if (!index) {
         return false;
     }
 
-    uint16_t tempIndex = count;
+    uint32_t tempIndex = count;
     bool isEven = (count % 2) != 0;
     bool valid = true;
 
-    const uint16_t iterations = count / 2;
-    for (uint16_t i = 0; i < iterations; ++i) {
+    const uint32_t iterations = count / 2;
+    for (uint32_t i = 0; i < iterations; ++i) {
         if (isEven) {
             valid = GetUpIndex(tempIndex, &tempIndex);
         } else {
@@ -229,12 +238,12 @@ bool PixelGroup::GetAlternateYIndex(uint16_t count, uint16_t* index) {
     return valid;
 }
 
-bool PixelGroup::GetOffsetXIndex(uint16_t count, uint16_t* index, int x1) {
+bool koilo::PixelGroup::GetOffsetXIndex(uint32_t count, uint32_t* index, int x1) {
     if (!index) {
         return false;
     }
 
-    uint16_t tempIndex = count;
+    uint32_t tempIndex = count;
     bool valid = true;
 
     if (x1 != 0) {
@@ -256,12 +265,12 @@ bool PixelGroup::GetOffsetXIndex(uint16_t count, uint16_t* index, int x1) {
     return valid;
 }
 
-bool PixelGroup::GetOffsetYIndex(uint16_t count, uint16_t* index, int y1) {
+bool koilo::PixelGroup::GetOffsetYIndex(uint32_t count, uint32_t* index, int y1) {
     if (!index) {
         return false;
     }
 
-    uint16_t tempIndex = count;
+    uint32_t tempIndex = count;
     bool valid = true;
 
     if (y1 != 0) {
@@ -283,12 +292,12 @@ bool PixelGroup::GetOffsetYIndex(uint16_t count, uint16_t* index, int y1) {
     return valid;
 }
 
-bool PixelGroup::GetOffsetXYIndex(uint16_t count, uint16_t* index, int x1, int y1) {
+bool koilo::PixelGroup::GetOffsetXYIndex(uint32_t count, uint32_t* index, int x1, int y1) {
     if (!index) {
         return false;
     }
 
-    uint16_t tempIndex = count;
+    uint32_t tempIndex = count;
     bool valid = true;
 
     if (x1 != 0) {
@@ -325,7 +334,7 @@ bool PixelGroup::GetOffsetXYIndex(uint16_t count, uint16_t* index, int x1, int y
     return valid;
 }
 
-bool PixelGroup::GetRadialIndex(uint16_t count, uint16_t* index, int pixels, float angle) {
+bool koilo::PixelGroup::GetRadialIndex(uint32_t count, uint32_t* index, int pixels, float angle) {
     if (!index) {
         return false;
     }
@@ -333,7 +342,7 @@ bool PixelGroup::GetRadialIndex(uint16_t count, uint16_t* index, int pixels, flo
     int x1 = static_cast<int>(static_cast<float>(pixels) * std::cos(angle * Mathematics::MPID180));
     int y1 = static_cast<int>(static_cast<float>(pixels) * std::sin(angle * Mathematics::MPID180));
 
-    uint16_t tempIndex = count;
+    uint32_t tempIndex = count;
     bool valid = true;
 
     int previousX = 0;
@@ -384,7 +393,7 @@ bool PixelGroup::GetRadialIndex(uint16_t count, uint16_t* index, int pixels, flo
     return valid;
 }
 
-void PixelGroup::GridSort() {
+void koilo::PixelGroup::GridSort() {
     if (pixelCount == 0) {
         return;
     }
@@ -394,7 +403,7 @@ void PixelGroup::GridSort() {
             return;
         }
 
-        for (uint16_t i = 0; i < pixelCount; ++i) {
+        for (uint32_t i = 0; i < pixelCount; ++i) {
             const Vector2D currentPos = direction == ZEROTOMAX ? pixelPositions[i] : pixelPositions[pixelCount - i - 1];
 
             float minUp = Mathematics::FLTMAX;
@@ -407,7 +416,7 @@ void PixelGroup::GridSort() {
             int minLeftIndex = -1;
             int minRightIndex = -1;
 
-            for (uint16_t j = 0; j < pixelCount; ++j) {
+            for (uint32_t j = 0; j < pixelCount; ++j) {
                 if (i == j) {
                     continue;
                 }
@@ -437,34 +446,71 @@ void PixelGroup::GridSort() {
             }
 
             if (minUpIndex != -1) {
-                up[i] = static_cast<uint16_t>(minUpIndex);
+                up[i] = static_cast<uint32_t>(minUpIndex);
             }
             if (minDownIndex != -1) {
-                down[i] = static_cast<uint16_t>(minDownIndex);
+                down[i] = static_cast<uint32_t>(minDownIndex);
             }
             if (minLeftIndex != -1) {
-                left[i] = static_cast<uint16_t>(minLeftIndex);
+                left[i] = static_cast<uint32_t>(minLeftIndex);
             }
             if (minRightIndex != -1) {
-                right[i] = static_cast<uint16_t>(minRightIndex);
+                right[i] = static_cast<uint32_t>(minRightIndex);
             }
         }
 
         return;
     }
 
-    for (uint16_t i = 0; i < pixelCount; ++i) {
+    for (uint32_t i = 0; i < pixelCount; ++i) {
         if (i + rowCount < pixelCount - 1) {
-            up[i] = static_cast<uint16_t>(i + rowCount);
+            up[i] = static_cast<uint32_t>(i + rowCount);
         }
         if (i >= rowCount + 1) {
-            down[i] = static_cast<uint16_t>(i - rowCount);
+            down[i] = static_cast<uint32_t>(i - rowCount);
         }
         if (!(i % rowCount == 0) && i > 1) {
-            left[i] = static_cast<uint16_t>(i - 1);
+            left[i] = static_cast<uint32_t>(i - 1);
         }
         if (!(i % rowCount + 1 == 0) && i < pixelCount - 1) {
-            right[i] = static_cast<uint16_t>(i + 1);
+            right[i] = static_cast<uint32_t>(i + 1);
         }
     }
 }
+
+// Lua-friendly helper methods (return by value instead of pointer)
+Color888 koilo::PixelGroup::GetColorAt(uint32_t index) const {
+    if (index >= pixelColors.size()) {
+        return Color888(0, 0, 0);  // Return black for out-of-bounds
+    }
+    return pixelColors[index];
+}
+
+void koilo::PixelGroup::SetColorAt(uint32_t index, const Color888& color) {
+    if (index < pixelColors.size()) {
+        pixelColors[index] = color;
+    }
+}
+
+void koilo::PixelGroup::SetColorRGB(uint32_t index, uint8_t r, uint8_t g, uint8_t b) {
+    if (index < pixelColors.size()) {
+        pixelColors[index].r = r;
+        pixelColors[index].g = g;
+        pixelColors[index].b = b;
+    }
+}
+
+void koilo::PixelGroup::FillColor(const Color888& color) {
+    std::fill(pixelColors.begin(), pixelColors.end(), color);
+}
+
+void koilo::PixelGroup::FillColorRGB(uint8_t r, uint8_t g, uint8_t b) {
+    Color888 color(r, g, b);
+    std::fill(pixelColors.begin(), pixelColors.end(), color);
+}
+
+void koilo::PixelGroup::ClearPixels() {
+    std::fill(pixelColors.begin(), pixelColors.end(), Color888(0, 0, 0));
+}
+
+} // namespace koilo

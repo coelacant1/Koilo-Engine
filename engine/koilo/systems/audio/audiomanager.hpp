@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file audiomanager.hpp
  * @brief Central audio management system for sound effects and music.
@@ -14,10 +15,11 @@
 #include <string>
 #include "audiosource.hpp"
 #include "audioclip.hpp"
-#include "../../core/mathematics/vector3d.hpp"
-#include "../../../registry/reflect_macros.hpp"
+#include "audiobackend.hpp"
+#include <koilo/core/math/vector3d.hpp>
+#include <koilo/registry/reflect_macros.hpp>
 
-namespace ptx {
+namespace koilo {
 
 /**
  * @class AudioListener
@@ -73,23 +75,23 @@ public:
      */
     Vector3D GetUp() const { return up; }
 
-    PTX_BEGIN_FIELDS(AudioListener)
+    KL_BEGIN_FIELDS(AudioListener)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(AudioListener)
-        PTX_METHOD_AUTO(AudioListener, SetPosition, "Set position"),
-        PTX_METHOD_AUTO(AudioListener, GetPosition, "Get position"),
-        PTX_METHOD_AUTO(AudioListener, SetVelocity, "Set velocity"),
-        PTX_METHOD_AUTO(AudioListener, GetVelocity, "Get velocity"),
-        PTX_METHOD_AUTO(AudioListener, SetOrientation, "Set orientation"),
-        PTX_METHOD_AUTO(AudioListener, GetForward, "Get forward"),
-        PTX_METHOD_AUTO(AudioListener, GetUp, "Get up")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(AudioListener)
+        KL_METHOD_AUTO(AudioListener, SetPosition, "Set position"),
+        KL_METHOD_AUTO(AudioListener, GetPosition, "Get position"),
+        KL_METHOD_AUTO(AudioListener, SetVelocity, "Set velocity"),
+        KL_METHOD_AUTO(AudioListener, GetVelocity, "Get velocity"),
+        KL_METHOD_AUTO(AudioListener, SetOrientation, "Set orientation"),
+        KL_METHOD_AUTO(AudioListener, GetForward, "Get forward"),
+        KL_METHOD_AUTO(AudioListener, GetUp, "Get up")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(AudioListener)
-        PTX_CTOR0(AudioListener)
-    PTX_END_DESCRIBE(AudioListener)
+    KL_BEGIN_DESCRIBE(AudioListener)
+        KL_CTOR0(AudioListener)
+    KL_END_DESCRIBE(AudioListener)
 
 };
 
@@ -123,6 +125,9 @@ private:
     // Doppler factor (0.0 = no Doppler, 1.0 = full Doppler)
     float dopplerFactor;
 
+    // Audio backend (SDL2 device)
+    AudioBackend backend;
+
 public:
     /**
      * @brief Default constructor.
@@ -148,9 +153,8 @@ public:
 
     /**
      * @brief Updates all audio sources. Call once per frame.
-     * @param deltaTime Time since last update in seconds.
      */
-    void Update(float deltaTime);
+    void Update();
 
     // === Audio Clip Management ===
 
@@ -339,35 +343,35 @@ public:
      */
     int GetActiveSourceCount() const;
 
-    PTX_BEGIN_FIELDS(AudioManager)
-        PTX_FIELD(AudioManager, masterVolume, "Master volume", 0.0f, 1.0f),
-        PTX_FIELD(AudioManager, musicVolume, "Music volume", 0.0f, 1.0f),
-        PTX_FIELD(AudioManager, sfxVolume, "SFX volume", 0.0f, 1.0f),
-        PTX_FIELD(AudioManager, voiceVolume, "Voice volume", 0.0f, 1.0f),
-        PTX_FIELD(AudioManager, maxSources, "Max sources", 1, 128),
-        PTX_FIELD(AudioManager, speedOfSound, "Speed of sound", 0.0f, 1000.0f),
-        PTX_FIELD(AudioManager, dopplerFactor, "Doppler factor", 0.0f, 2.0f)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(AudioManager)
+        KL_FIELD(AudioManager, masterVolume, "Master volume", 0.0f, 1.0f),
+        KL_FIELD(AudioManager, musicVolume, "Music volume", 0.0f, 1.0f),
+        KL_FIELD(AudioManager, sfxVolume, "SFX volume", 0.0f, 1.0f),
+        KL_FIELD(AudioManager, voiceVolume, "Voice volume", 0.0f, 1.0f),
+        KL_FIELD(AudioManager, maxSources, "Max sources", 1, 128),
+        KL_FIELD(AudioManager, speedOfSound, "Speed of sound", 0.0f, 1000.0f),
+        KL_FIELD(AudioManager, dopplerFactor, "Doppler factor", 0.0f, 2.0f)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(AudioManager)
-        PTX_METHOD_AUTO(AudioManager, Initialize, "Initialize"),
-        PTX_METHOD_AUTO(AudioManager, Shutdown, "Shutdown"),
-        PTX_METHOD_AUTO(AudioManager, Update, "Update"),
-        PTX_METHOD_AUTO(AudioManager, LoadClip, "Load clip"),
-        PTX_METHOD_AUTO(AudioManager, GetClip, "Get clip"),
-        PTX_METHOD_AUTO(AudioManager, UnloadClip, "Unload clip"),
-        PTX_METHOD_AUTO(AudioManager, PlaySound, "Play sound"),
-        PTX_METHOD_AUTO(AudioManager, PlaySound3D, "Play sound 3D"),
-        PTX_METHOD_AUTO(AudioManager, StopAll, "Stop all"),
-        PTX_METHOD_AUTO(AudioManager, PauseAll, "Pause all"),
-        PTX_METHOD_AUTO(AudioManager, ResumeAll, "Resume all"),
-        PTX_METHOD_AUTO(AudioManager, SetMasterVolume, "Set master volume"),
-        PTX_METHOD_AUTO(AudioManager, GetMasterVolume, "Get master volume")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(AudioManager)
+        KL_METHOD_AUTO(AudioManager, Initialize, "Initialize"),
+        KL_METHOD_AUTO(AudioManager, Shutdown, "Shutdown"),
+        KL_METHOD_AUTO(AudioManager, Update, "Update"),
+        KL_METHOD_AUTO(AudioManager, LoadClip, "Load clip"),
+        KL_METHOD_AUTO(AudioManager, GetClip, "Get clip"),
+        KL_METHOD_AUTO(AudioManager, UnloadClip, "Unload clip"),
+        KL_METHOD_AUTO(AudioManager, PlaySound, "Play sound"),
+        KL_METHOD_AUTO(AudioManager, PlaySound3D, "Play sound 3D"),
+        KL_METHOD_AUTO(AudioManager, StopAll, "Stop all"),
+        KL_METHOD_AUTO(AudioManager, PauseAll, "Pause all"),
+        KL_METHOD_AUTO(AudioManager, ResumeAll, "Resume all"),
+        KL_METHOD_AUTO(AudioManager, SetMasterVolume, "Set master volume"),
+        KL_METHOD_AUTO(AudioManager, GetMasterVolume, "Get master volume")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(AudioManager)
-        PTX_CTOR0(AudioManager)
-    PTX_END_DESCRIBE(AudioManager)
+    KL_BEGIN_DESCRIBE(AudioManager)
+        KL_CTOR0(AudioManager)
+    KL_END_DESCRIBE(AudioManager)
 };
 
-} // namespace ptx
+} // namespace koilo

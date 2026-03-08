@@ -1,10 +1,14 @@
-#include <ptx/systems/ai/pathfinding/pathfinder.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/systems/ai/pathfinding/pathfinder.hpp>
 #include <cmath>
 #include <algorithm>
+#include <queue>
+#include <unordered_map>
+#include <unordered_set>
 
-namespace ptx {
+namespace koilo {
 
-PathfinderGrid::PathfinderGrid(int width, int height, bool allowDiagonal)
+koilo::PathfinderGrid::PathfinderGrid(int width, int height, bool allowDiagonal)
     : width(width), height(height), allowDiagonal(allowDiagonal) {
 
     // Initialize grid
@@ -19,44 +23,44 @@ PathfinderGrid::PathfinderGrid(int width, int height, bool allowDiagonal)
     heuristic = allowDiagonal ? DiagonalDistance : ManhattanDistance;
 }
 
-PathfinderGrid::~PathfinderGrid() {
+koilo::PathfinderGrid::~PathfinderGrid() {
 }
 
 // === Grid Setup ===
 
-void PathfinderGrid::SetWalkable(int x, int y, bool walkable) {
+void koilo::PathfinderGrid::SetWalkable(int x, int y, bool walkable) {
     if (GridNode* node = GetNode(x, y)) {
         node->walkable = walkable;
     }
 }
 
-void PathfinderGrid::SetCost(int x, int y, float cost) {
+void koilo::PathfinderGrid::SetCost(int x, int y, float cost) {
     if (GridNode* node = GetNode(x, y)) {
         node->cost = cost;
     }
 }
 
-GridNode* PathfinderGrid::GetNode(int x, int y) {
+GridNode* koilo::PathfinderGrid::GetNode(int x, int y) {
     if (!IsInBounds(x, y)) {
         return nullptr;
     }
     return &nodes[y * width + x];
 }
 
-const GridNode* PathfinderGrid::GetNode(int x, int y) const {
+const GridNode* koilo::PathfinderGrid::GetNode(int x, int y) const {
     if (!IsInBounds(x, y)) {
         return nullptr;
     }
     return &nodes[y * width + x];
 }
 
-bool PathfinderGrid::IsInBounds(int x, int y) const {
+bool koilo::PathfinderGrid::IsInBounds(int x, int y) const {
     return x >= 0 && x < width && y >= 0 && y < height;
 }
 
 // === Pathfinding ===
 
-bool PathfinderGrid::FindPath(int startX, int startY, int goalX, int goalY, std::vector<GridNode>& outPath) {
+bool koilo::PathfinderGrid::FindPath(int startX, int startY, int goalX, int goalY, std::vector<GridNode>& outPath) {
     outPath.clear();
 
     GridNode* startNode = GetNode(startX, startY);
@@ -148,7 +152,7 @@ bool PathfinderGrid::FindPath(int startX, int startY, int goalX, int goalY, std:
     return false;  // No path found
 }
 
-std::vector<GridNode*> PathfinderGrid::GetNeighbors(const GridNode* node) {
+std::vector<GridNode*> koilo::PathfinderGrid::GetNeighbors(const GridNode* node) {
     std::vector<GridNode*> neighbors;
 
     // 4-directional
@@ -177,20 +181,20 @@ std::vector<GridNode*> PathfinderGrid::GetNeighbors(const GridNode* node) {
 
 // === Heuristics ===
 
-float PathfinderGrid::ManhattanDistance(const GridNode& a, const GridNode& b) {
+float koilo::PathfinderGrid::ManhattanDistance(const GridNode& a, const GridNode& b) {
     return static_cast<float>(std::abs(a.x - b.x) + std::abs(a.y - b.y));
 }
 
-float PathfinderGrid::EuclideanDistance(const GridNode& a, const GridNode& b) {
+float koilo::PathfinderGrid::EuclideanDistance(const GridNode& a, const GridNode& b) {
     float dx = static_cast<float>(a.x - b.x);
     float dy = static_cast<float>(a.y - b.y);
     return std::sqrt(dx * dx + dy * dy);
 }
 
-float PathfinderGrid::DiagonalDistance(const GridNode& a, const GridNode& b) {
+float koilo::PathfinderGrid::DiagonalDistance(const GridNode& a, const GridNode& b) {
     float dx = static_cast<float>(std::abs(a.x - b.x));
     float dy = static_cast<float>(std::abs(a.y - b.y));
     return std::max(dx, dy);
 }
 
-} // namespace ptx
+} // namespace koilo

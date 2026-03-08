@@ -1,9 +1,11 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testoverlap2d.cpp
  * @brief Implementation of Overlap2D unit tests.
  */
 
 #include "testoverlap2d.hpp"
+using namespace koilo;
 
 // ========== Constructor Tests ==========
 

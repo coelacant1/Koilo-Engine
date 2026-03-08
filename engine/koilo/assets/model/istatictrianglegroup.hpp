@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file IStaticTriangleGroup.h
  * @brief Defines the IStaticTriangleGroup interface for managing a collection of static 3D triangles.
@@ -12,11 +13,14 @@
 
 #pragma once
 
-#include "../../core/math/vector2d.hpp"
-#include "../../core/math/vector3d.hpp"
-#include "../../core/geometry/3d/triangle.hpp"
-#include "../../core/geometry/3d/triangle.hpp"
+#include <koilo/core/math/vector2d.hpp>
+#include <koilo/core/math/vector3d.hpp>
+#include <koilo/core/geometry/3d/triangle.hpp>
+#include <koilo/core/geometry/3d/triangle.hpp>
 #include "indexgroup.hpp"
+
+
+namespace koilo {
 
 /**
  * @class IStaticTriangleGroup
@@ -41,7 +45,7 @@ public:
      * @brief Retrieves the total number of triangles in the group.
      * @return The number of triangles.
      */
-    virtual int GetTriangleCount() = 0;
+    virtual uint32_t GetTriangleCount() = 0;
 
     /**
      * @brief Retrieves the array of vertices in the triangle group.
@@ -53,7 +57,7 @@ public:
      * @brief Retrieves the total number of vertices in the group.
      * @return The number of vertices.
      */
-    virtual int GetVertexCount() = 0;
+    virtual uint32_t GetVertexCount() = 0;
 
     /**
      * @brief Retrieves the array of Triangle3D objects representing the triangles.
@@ -74,3 +78,5 @@ public:
     virtual const IndexGroup* GetUVIndexGroup() = 0;
 
 };
+
+} // namespace koilo

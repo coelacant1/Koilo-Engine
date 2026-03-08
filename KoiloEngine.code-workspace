@@ -55,7 +55,19 @@
 			"iostream": "cpp",
 			"istream": "cpp",
 			"sstream": "cpp",
-			"iomanip": "cpp"
+			"iomanip": "cpp",
+			"bitset": "cpp",
+			"condition_variable": "cpp",
+			"csignal": "cpp",
+			"cstring": "cpp",
+			"unordered_set": "cpp",
+			"fstream": "cpp",
+			"mutex": "cpp",
+			"semaphore": "cpp",
+			"stop_token": "cpp",
+			"thread": "cpp",
+			"typeindex": "cpp",
+			"*.ks": "koiloscript"
 		}
 	}
 }

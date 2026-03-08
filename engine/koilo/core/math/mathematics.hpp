@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file Mathematics.h
  * @brief Provides a collection of mathematical utility functions and constants.
@@ -13,10 +14,11 @@
 
 #pragma once
 
-#include "../platform/ustring.hpp"
-#include <cmath>
-#include <math.h>
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/core/platform/ustring.hpp>
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class Mathematics
@@ -65,9 +67,9 @@ public:
     /**
      * @brief Converts a floating-point value to a String, removing trailing decimals if not needed.
      * @param value The float to convert.
-     * @return A \c ptx::UString without unnecessary trailing zeros.
+     * @return A \c koilo::UString without unnecessary trailing zeros.
      */
-    static ptx::UString DoubleToCleanString(float value);
+    static koilo::UString DoubleToCleanString(float value);
 
     /**
      * @brief Checks if a floating-point value is NaN (Not a Number).
@@ -205,6 +207,22 @@ public:
      * @return (1 - t)*a + t*b
      */
 	static float Lerp(float a, float b, float t);
+
+    /**
+     * @brief Hermite smooth-step interpolation.
+     * Maps t from [edge0, edge1] to [0,1] with smooth ease-in/ease-out.
+     * @param edge0 Lower edge of the transition.
+     * @param edge1 Upper edge of the transition.
+     * @param t Input value.
+     * @return Clamped and smoothed result in [0,1].
+     */
+    static float SmoothStep(float edge0, float edge1, float t);
+
+    /**
+     * @brief Ken Perlin's improved smooth-step (quintic, C2 continuous).
+     * Smoother than SmoothStep with zero first AND second derivatives at edges.
+     */
+    static float SmootherStep(float edge0, float edge1, float t);
 
     /**
      * @brief Cubic interpolation across four points (a, b, c, d).
@@ -353,38 +371,79 @@ public:
 	template<typename T>
 	static T ConstrainMap(T value, T inLow, T inMax, T outMin, T outMax);
 
-    PTX_BEGIN_FIELDS(Mathematics)
+    /**
+     * @brief Sine of an angle in radians.
+     */
+    static float Sin(float radians);
+
+    /**
+     * @brief Cosine of an angle in radians.
+     */
+    static float Cos(float radians);
+
+    /**
+     * @brief Tangent of an angle in radians.
+     */
+    static float Tan(float radians);
+
+    /**
+     * @brief Two-argument arctangent: angle of vector (x, y) in radians.
+     * Equivalent to std::atan2(y, x).
+     */
+    static float ATan2(float y, float x);
+
+    /**
+     * @brief Floating-point remainder: equivalent to std::fmod(x, y).
+     * Result has the same sign as x.
+     */
+    static float FMod(float x, float y);
+
+    /**
+     * @brief Rounds to nearest integer, half away from zero.
+     * Equivalent to std::round(x).
+     */
+    static float FRound(float x);
+
+    KL_BEGIN_FIELDS(Mathematics)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(Mathematics)
-        PTX_SMETHOD_AUTO(Mathematics::DoubleToCleanString, "Double to clean string"),
-        PTX_SMETHOD_AUTO(Mathematics::IsNaN, "Is na n"),
-        PTX_SMETHOD_AUTO(Mathematics::IsInfinite, "Is infinite"),
-        PTX_SMETHOD_AUTO(Mathematics::IsFinite, "Is finite"),
-        PTX_SMETHOD_AUTO(Mathematics::IsClose, "Is close"),
-        PTX_SMETHOD_AUTO(Mathematics::Sign, "Sign"),
-        PTX_SMETHOD_AUTO(Mathematics::Pow, "Pow"),
-        PTX_SMETHOD_AUTO(Mathematics::Sqrt, "Sqrt"),
-        PTX_SMETHOD_AUTO(Mathematics::Fract, "Fract"),
-        PTX_SMETHOD_AUTO(Mathematics::CosineInterpolation, "Cosine interpolation"),
-        PTX_SMETHOD_AUTO(Mathematics::CosineTransition, "Cosine transition"),
-        PTX_SMETHOD_AUTO(Mathematics::BounceInterpolation, "Bounce interpolation"),
-        PTX_SMETHOD_AUTO(Mathematics::FFloor, "Ffloor"),
-        PTX_SMETHOD_AUTO(Mathematics::FAbs, "Fabs"),
-        PTX_SMETHOD_AUTO(Mathematics::FSqrt, "Fsqrt"),
-        PTX_SMETHOD_AUTO(Mathematics::HermiteInterpolation, "Hermite interpolation"),
-        PTX_SMETHOD_AUTO(Mathematics::QuinticInterpolation, "Quintic interpolation"),
-        PTX_SMETHOD_AUTO(Mathematics::Lerp, "Lerp"),
-        PTX_SMETHOD_AUTO(Mathematics::CubicLerp, "Cubic lerp"),
-        PTX_SMETHOD_AUTO(Mathematics::BilinearInterpolation, "Bilinear interpolation"),
-        PTX_SMETHOD_AUTO(Mathematics::PingPong, "Ping pong"),
-        PTX_SMETHOD_AUTO(Mathematics::RoundUpWindow, "Round up window")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(Mathematics)
+        KL_SMETHOD_AUTO(Mathematics::DoubleToCleanString, "Double to clean string"),
+        KL_SMETHOD_AUTO(Mathematics::IsNaN, "Is na n"),
+        KL_SMETHOD_AUTO(Mathematics::IsInfinite, "Is infinite"),
+        KL_SMETHOD_AUTO(Mathematics::IsFinite, "Is finite"),
+        KL_SMETHOD_AUTO(Mathematics::IsClose, "Is close"),
+        KL_SMETHOD_AUTO(Mathematics::Sign, "Sign"),
+        KL_SMETHOD_AUTO(Mathematics::Pow, "Pow"),
+        KL_SMETHOD_AUTO(Mathematics::Sqrt, "Sqrt"),
+        KL_SMETHOD_AUTO(Mathematics::Fract, "Fract"),
+        KL_SMETHOD_AUTO(Mathematics::CosineInterpolation, "Cosine interpolation"),
+        KL_SMETHOD_AUTO(Mathematics::CosineTransition, "Cosine transition"),
+        KL_SMETHOD_AUTO(Mathematics::BounceInterpolation, "Bounce interpolation"),
+        KL_SMETHOD_AUTO(Mathematics::FFloor, "Ffloor"),
+        KL_SMETHOD_AUTO(Mathematics::FAbs, "Fabs"),
+        KL_SMETHOD_AUTO(Mathematics::FSqrt, "Fsqrt"),
+        KL_SMETHOD_AUTO(Mathematics::HermiteInterpolation, "Hermite interpolation"),
+        KL_SMETHOD_AUTO(Mathematics::QuinticInterpolation, "Quintic interpolation"),
+        KL_SMETHOD_AUTO(Mathematics::Lerp, "Lerp"),
+        KL_SMETHOD_AUTO(Mathematics::SmoothStep, "Smooth step"),
+        KL_SMETHOD_AUTO(Mathematics::SmootherStep, "Smoother step"),
+        KL_SMETHOD_AUTO(Mathematics::CubicLerp, "Cubic lerp"),
+        KL_SMETHOD_AUTO(Mathematics::BilinearInterpolation, "Bilinear interpolation"),
+        KL_SMETHOD_AUTO(Mathematics::PingPong, "Ping pong"),
+        KL_SMETHOD_AUTO(Mathematics::RoundUpWindow, "Round up window"),
+        KL_SMETHOD_AUTO(Mathematics::Sin, "Sin"),
+        KL_SMETHOD_AUTO(Mathematics::Cos, "Cos"),
+        KL_SMETHOD_AUTO(Mathematics::Tan, "Tan"),
+        KL_SMETHOD_AUTO(Mathematics::ATan2, "Atan2"),
+        KL_SMETHOD_AUTO(Mathematics::FMod, "Fmod"),
+        KL_SMETHOD_AUTO(Mathematics::FRound, "Fround")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(Mathematics)
+    KL_BEGIN_DESCRIBE(Mathematics)
         /* No reflected ctors. */
-    PTX_END_DESCRIBE(Mathematics)
+    KL_END_DESCRIBE(Mathematics)
 
 };
 
@@ -441,3 +500,5 @@ inline T Mathematics::ConstrainMap(T value, T inLow, T inMax, T outMin, T outMax
     const T mappedValue = (value - inLow) * (outMax - outMin) / (inMax - inLow) + outMin;
     return Constrain(mappedValue, outMin, outMax);
 }
+
+} // namespace koilo

@@ -1,12 +1,17 @@
-#include <ptx/core/signal/filter/derivativefilter.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/core/signal/filter/derivativefilter.hpp>
+#include <cmath>
 
-DerivativeFilter::DerivativeFilter() {}
 
-float DerivativeFilter::GetOutput() {
+namespace koilo {
+
+koilo::DerivativeFilter::DerivativeFilter() {}
+
+float koilo::DerivativeFilter::GetOutput() {
     return outputValue;
 }
 
-float DerivativeFilter::Filter(float value) {
+float koilo::DerivativeFilter::Filter(float value) {
     float amplitude = fabs(value - previousReading);
     float normalized = output.Filter(amplitude);
     float minimum = minFilter.Filter(normalized);
@@ -16,3 +21,5 @@ float DerivativeFilter::Filter(float value) {
 
     return outputValue;
 }
+
+} // namespace koilo

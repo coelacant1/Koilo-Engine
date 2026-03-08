@@ -1,19 +1,20 @@
-#include <ptx/systems/physics/collider.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/systems/physics/collider.hpp>
 
-namespace ptx {
+namespace koilo {
 
-Collider::Collider(ColliderType type)
+koilo::Collider::Collider(ColliderType type)
     : type(type), isTrigger(false), isEnabled(true), layer(0),
       tag(""), material(), owner(nullptr) {
 }
 
-Collider::~Collider() {
+koilo::Collider::~Collider() {
 }
 
-void Collider::SetLayer(int l) {
+void koilo::Collider::SetLayer(int l) {
     if (l >= 0 && l < 32) {
         layer = l;
     }
 }
 
-} // namespace ptx
+} // namespace koilo

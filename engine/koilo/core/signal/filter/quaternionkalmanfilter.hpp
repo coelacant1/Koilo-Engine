@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file QuaternionKalmanFilter.h
  * @brief Implements a Kalman filter for smoothing quaternion data.
@@ -14,8 +15,11 @@
 
 #include <vector>
 
-#include "../../math/quaternion.hpp"
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/core/math/quaternion.hpp>
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class QuaternionKalmanFilter
@@ -68,17 +72,19 @@ public:
      */
     ~QuaternionKalmanFilter();
 
-    PTX_BEGIN_FIELDS(QuaternionKalmanFilter)
+    KL_BEGIN_FIELDS(QuaternionKalmanFilter)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(QuaternionKalmanFilter)
-        PTX_METHOD_AUTO(QuaternionKalmanFilter, Filter, "Filter")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(QuaternionKalmanFilter)
+        KL_METHOD_AUTO(QuaternionKalmanFilter, Filter, "Filter")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(QuaternionKalmanFilter)
-        PTX_CTOR0(QuaternionKalmanFilter),
-        PTX_CTOR(QuaternionKalmanFilter, float, int)
-    PTX_END_DESCRIBE(QuaternionKalmanFilter)
+    KL_BEGIN_DESCRIBE(QuaternionKalmanFilter)
+        KL_CTOR0(QuaternionKalmanFilter),
+        KL_CTOR(QuaternionKalmanFilter, float, int)
+    KL_END_DESCRIBE(QuaternionKalmanFilter)
 
 };
+
+} // namespace koilo

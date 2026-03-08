@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file particlesystem.hpp
  * @brief Particle system manager for multiple emitters.
@@ -11,9 +12,10 @@
 #include <vector>
 #include <memory>
 #include "particleemitter.hpp"
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/core/color/color888.hpp>
+#include <koilo/registry/reflect_macros.hpp>
 
-namespace ptx {
+namespace koilo {
 
 /**
  * @class ParticleSystem
@@ -74,9 +76,8 @@ public:
 
     /**
      * @brief Updates all emitters.
-     * @param deltaTime Time since last update (seconds).
      */
-    void Update(float deltaTime);
+    void Update();
 
     // === Statistics ===
 
@@ -85,19 +86,39 @@ public:
      */
     int GetTotalActiveParticles() const;
 
-    PTX_BEGIN_FIELDS(ParticleSystem)
-    PTX_END_FIELDS
+    /**
+     * @brief Render all emitters into a Color888 buffer.
+     */
+    void Render(Color888* buffer, int width, int height);
 
-    PTX_BEGIN_METHODS(ParticleSystem)
-        PTX_METHOD_AUTO(ParticleSystem, ClearEmitters, "Clear emitters"),
-        PTX_METHOD_AUTO(ParticleSystem, GetEmitterCount, "Get emitter count"),
-        PTX_METHOD_AUTO(ParticleSystem, Update, "Update"),
-        PTX_METHOD_AUTO(ParticleSystem, GetTotalActiveParticles, "Get total active particles")
-    PTX_END_METHODS
+    /**
+     * @brief Create an emitter and return a raw pointer (script-friendly).
+     * @param maxParticles Pool capacity.
+     * @return Pointer to created emitter (owned by this system).
+     */
+    ParticleEmitter* AddEmitter(int maxParticles);
 
-    PTX_BEGIN_DESCRIBE(ParticleSystem)
-        PTX_CTOR0(ParticleSystem)
-    PTX_END_DESCRIBE(ParticleSystem)
+    /**
+     * @brief Get an emitter by index (script-friendly).
+     */
+    ParticleEmitter* GetEmitter(int index);
+
+    KL_BEGIN_FIELDS(ParticleSystem)
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(ParticleSystem)
+        KL_METHOD_AUTO(ParticleSystem, ClearEmitters, "Clear emitters"),
+        KL_METHOD_AUTO(ParticleSystem, GetEmitterCount, "Get emitter count"),
+        KL_METHOD_AUTO(ParticleSystem, Update, "Update"),
+        KL_METHOD_AUTO(ParticleSystem, GetTotalActiveParticles, "Get total active particles"),
+        KL_METHOD_AUTO(ParticleSystem, AddEmitter, "Add emitter"),
+        KL_METHOD_AUTO(ParticleSystem, GetEmitter, "Get emitter by index"),
+        KL_METHOD_AUTO(ParticleSystem, Render, "Render to buffer")
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(ParticleSystem)
+        KL_CTOR0(ParticleSystem)
+    KL_END_DESCRIBE(ParticleSystem)
 };
 
-} // namespace ptx
+} // namespace koilo

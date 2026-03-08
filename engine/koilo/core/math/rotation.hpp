@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file Rotation.h
  * @brief Defines the Rotation class for handling 3D rotations using various representations.
@@ -22,7 +23,10 @@
 #include "rotationmatrix.hpp"
 #include "vector3d.hpp"
 #include "yawpitchroll.hpp"
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class Rotation
@@ -221,29 +225,31 @@ public:
      */
     YawPitchRoll GetYawPitchRoll();
 
-    PTX_BEGIN_FIELDS(Rotation)
+    KL_BEGIN_FIELDS(Rotation)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(Rotation)
-        PTX_METHOD_AUTO(Rotation, GetQuaternion, "Get quaternion"),
-        PTX_METHOD_AUTO(Rotation, GetAxisAngle, "Get axis angle"),
-        PTX_METHOD_AUTO(Rotation, GetDirectionAngle, "Get direction angle"),
-        PTX_METHOD_AUTO(Rotation, GetRotationMatrix, "Get rotation matrix"),
-        PTX_METHOD_AUTO(Rotation, GetEulerAngles, "Get euler angles"),
-        PTX_METHOD_AUTO(Rotation, GetYawPitchRoll, "Get yaw pitch roll")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(Rotation)
+        KL_METHOD_AUTO(Rotation, GetQuaternion, "Get quaternion"),
+        KL_METHOD_AUTO(Rotation, GetAxisAngle, "Get axis angle"),
+        KL_METHOD_AUTO(Rotation, GetDirectionAngle, "Get direction angle"),
+        KL_METHOD_AUTO(Rotation, GetRotationMatrix, "Get rotation matrix"),
+        KL_METHOD_AUTO(Rotation, GetEulerAngles, "Get euler angles"),
+        KL_METHOD_AUTO(Rotation, GetYawPitchRoll, "Get yaw pitch roll")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(Rotation)
-        PTX_CTOR0(Rotation),
-        PTX_CTOR(Rotation, const Quaternion &),
-        PTX_CTOR(Rotation, const AxisAngle &),
-        PTX_CTOR(Rotation, const DirectionAngle &),
-        PTX_CTOR(Rotation, const RotationMatrix &),
-        PTX_CTOR(Rotation, const Vector3D &, const Vector3D &, const Vector3D &),
-        PTX_CTOR(Rotation, const EulerAngles &),
-        PTX_CTOR(Rotation, const Vector3D &, const Vector3D &),
-        PTX_CTOR(Rotation, const YawPitchRoll &)
-    PTX_END_DESCRIBE(Rotation)
+    KL_BEGIN_DESCRIBE(Rotation)
+        KL_CTOR0(Rotation),
+        KL_CTOR(Rotation, const Quaternion &),
+        KL_CTOR(Rotation, const AxisAngle &),
+        KL_CTOR(Rotation, const DirectionAngle &),
+        KL_CTOR(Rotation, const RotationMatrix &),
+        KL_CTOR(Rotation, const Vector3D &, const Vector3D &, const Vector3D &),
+        KL_CTOR(Rotation, const EulerAngles &),
+        KL_CTOR(Rotation, const Vector3D &, const Vector3D &),
+        KL_CTOR(Rotation, const YawPitchRoll &)
+    KL_END_DESCRIBE(Rotation)
 
 };
+
+} // namespace koilo

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file blendshape.h
  * @brief Declares the Morph class for applying vertex-based transformations to 3D objects.
@@ -11,9 +12,12 @@
 
 #pragma once
 
-#include "../../../core/math/mathematics.hpp" // Include for mathematical operations.
-#include "../../../assets/model/itrianglegroup.hpp" // Include for rendering triangle groups.
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/core/math/mathematics.hpp> // Include for mathematical operations.
+#include <koilo/assets/model/itrianglegroup.hpp> // Include for rendering triangle groups.
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class Morph
@@ -56,17 +60,19 @@ public:
      */
     void BlendObject3D(ITriangleGroup* obj);
 
-    PTX_BEGIN_FIELDS(Blendshape)
-        PTX_FIELD(Blendshape, Weight, "Weight", __FLT_MIN__, __FLT_MAX__)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(Blendshape)
+        KL_FIELD(Blendshape, Weight, "Weight", __FLT_MIN__, __FLT_MAX__)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(Blendshape)
-        PTX_METHOD_AUTO(Blendshape, BlendObject3D, "Blend object3 d")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(Blendshape)
+        KL_METHOD_AUTO(Blendshape, BlendObject3D, "Blend object3 d")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(Blendshape)
-        PTX_CTOR(Blendshape, int, int *, Vector3D *),
-        PTX_CTOR(Blendshape, int, const int *, const Vector3D *)
-    PTX_END_DESCRIBE(Blendshape)
+    KL_BEGIN_DESCRIBE(Blendshape)
+        KL_CTOR(Blendshape, int, int *, Vector3D *),
+        KL_CTOR(Blendshape, int, const int *, const Vector3D *)
+    KL_END_DESCRIBE(Blendshape)
 
 };
+
+} // namespace koilo

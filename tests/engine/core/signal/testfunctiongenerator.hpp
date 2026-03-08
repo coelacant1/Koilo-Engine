@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testfunctiongenerator.hpp
  * @brief Unit tests for the FunctionGenerator class.
@@ -12,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/core/signal/functiongenerator.hpp>
+#include <koilo/core/signal/functiongenerator.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

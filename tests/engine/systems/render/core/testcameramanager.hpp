@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testcameramanager.hpp
  * @brief Unit tests for the CameraManager class.
@@ -12,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/systems/render/core/cameramanager.hpp>
+#include <koilo/systems/scene/camera/cameramanager.hpp>
 #include <utils/testhelpers.hpp>
 
 /**
@@ -37,5 +38,6 @@ public:
     /**
      * @brief Runs all test methods.
      */
+    static void TestGetCamera();
     static void RunAllTests();
 };

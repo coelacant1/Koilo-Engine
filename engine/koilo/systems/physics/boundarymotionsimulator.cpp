@@ -1,4 +1,7 @@
-#include <ptx/systems/physics/boundarymotionsimulator.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/systems/physics/boundarymotionsimulator.hpp>
+
+namespace koilo {
 
 BoundaryMotionSimulator::BoundaryMotionSimulator(Mesh** objects, int objectCount, Cube* bC, float radius, float elasticity) {
     (void)objects;
@@ -20,17 +23,17 @@ void BoundaryMotionSimulator::Randomize(float range) {
             continue;
         }
 
-        spheres[i]->velocity.X = ptx::Random::Float(0.0f, 1.0f) * range - range / 2.0f;
-        spheres[i]->velocity.Y = ptx::Random::Float(0.0f, 1.0f) * range - range / 2.0f;
-        spheres[i]->velocity.Z = ptx::Random::Float(0.0f, 1.0f) * range - range / 2.0f;
+        spheres[i]->velocity.X = koilo::Random::Float(0.0f, 1.0f) * range - range / 2.0f;
+        spheres[i]->velocity.Y = koilo::Random::Float(0.0f, 1.0f) * range - range / 2.0f;
+        spheres[i]->velocity.Z = koilo::Random::Float(0.0f, 1.0f) * range - range / 2.0f;
     }
 }
 
 Vector3D BoundaryMotionSimulator::RandomRatio(float range) {
     Vector3D vRand;
-    vRand.X = 1.0f + ptx::Random::Float(0.0f, 1.0f) * range;
-    vRand.Y = 1.0f + ptx::Random::Float(0.0f, 1.0f) * range;
-    vRand.Z = 1.0f + ptx::Random::Float(0.0f, 1.0f) * range;
+    vRand.X = 1.0f + koilo::Random::Float(0.0f, 1.0f) * range;
+    vRand.Y = 1.0f + koilo::Random::Float(0.0f, 1.0f) * range;
+    vRand.Z = 1.0f + koilo::Random::Float(0.0f, 1.0f) * range;
     return vRand;
 }
 
@@ -55,3 +58,5 @@ void BoundaryMotionSimulator::Update(float dT, Vector3D acceleration, Quaternion
         //spheres[i]->GetObject3D()->GetTransform()->SetPosition(spheres[i]->position);
     }
 }
+
+} // namespace koilo

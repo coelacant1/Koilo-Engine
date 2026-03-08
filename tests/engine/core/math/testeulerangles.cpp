@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testeulerangles.cpp
  * @brief Implementation of EulerAngles unit tests.
@@ -5,6 +6,7 @@
 
 #include "testeulerangles.hpp"
 
+using namespace koilo;
 // ========== Constructor Tests ==========
 
 void TestEulerAngles::TestDefaultConstructor() {
@@ -33,7 +35,7 @@ void TestEulerAngles::TestToString() {
     EulerOrder order(EulerOrder::XYZ, EulerOrder::Static, Vector3D(0, 1, 2));
     EulerAngles euler(angles, order);
 
-    ptx::UString str = euler.ToString();
+    koilo::UString str = euler.ToString();
     TEST_ASSERT_TRUE(str.Length() > 0);
 }
 
@@ -44,8 +46,15 @@ void TestEulerAngles::TestToString() {
 // ========== Test Runner ==========
 
 void TestEulerAngles::TestEdgeCases() {
-    // TODO: Test edge cases (null, boundaries, extreme values)
-    TEST_ASSERT_TRUE(false);  // Not implemented
+    EulerAngles zero;
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, 0.0f, zero.Angles.X);
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, 0.0f, zero.Angles.Y);
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, 0.0f, zero.Angles.Z);
+    
+    Vector3D large(360.0f, 360.0f, 360.0f);
+    EulerOrder order(EulerOrder::XYZ, EulerOrder::Static, Vector3D(0, 1, 2));
+    EulerAngles euler(large, order);
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, 360.0f, euler.Angles.X);
 }
 
 void TestEulerAngles::RunAllTests() {

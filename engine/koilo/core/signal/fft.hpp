@@ -1,11 +1,14 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 #pragma once
 
-#include <cstddef>
 #include <cstdint>
 #include <vector>
-#include "../../registry/reflect_macros.hpp"
-
+#include <koilo/registry/reflect_macros.hpp>
 #include <mutex>
+
+
+
+namespace koilo {
 
 // Interleaved complex buffer layout: data[2*i] = Re, data[2*i+1] = Im.
 // The FFT size must be a power of two and at least two.
@@ -67,21 +70,23 @@ private:
 
     static int ComputeBitCount(int size);
 
-    PTX_BEGIN_FIELDS(FFT)
+    KL_BEGIN_FIELDS(FFT)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(FFT)
-        PTX_SMETHOD_AUTO(FFT::Instance, "Instance"),
-        PTX_METHOD_AUTO(FFT, Size, "Size"),
-        PTX_METHOD_AUTO(FFT, Forward, "Forward"),
-        PTX_METHOD_AUTO(FFT, Inverse, "Inverse"),
-        PTX_METHOD_AUTO(FFT, ComplexMagnitude, "Complex magnitude"),
-        PTX_SMETHOD_AUTO(FFT::IsValidSize, "Is valid size")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(FFT)
+        KL_SMETHOD_AUTO(FFT::Instance, "Instance"),
+        KL_METHOD_AUTO(FFT, Size, "Size"),
+        KL_METHOD_AUTO(FFT, Forward, "Forward"),
+        KL_METHOD_AUTO(FFT, Inverse, "Inverse"),
+        KL_METHOD_AUTO(FFT, ComplexMagnitude, "Complex magnitude"),
+        KL_SMETHOD_AUTO(FFT::IsValidSize, "Is valid size")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(FFT)
-        PTX_CTOR(FFT, int)
-    PTX_END_DESCRIBE(FFT)
+    KL_BEGIN_DESCRIBE(FFT)
+        KL_CTOR(FFT, int)
+    KL_END_DESCRIBE(FFT)
 
 };
+
+} // namespace koilo

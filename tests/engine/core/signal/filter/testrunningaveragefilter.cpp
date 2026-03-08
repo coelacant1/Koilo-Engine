@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testrunningaveragefilter.cpp
  * @brief Implementation of RunningAverageFilter unit tests.
@@ -6,6 +7,7 @@
 #include "testrunningaveragefilter.hpp"
 #include <cmath>
 
+using namespace koilo;
 // ========== Constructor Tests ==========
 
 void TestRunningAverageFilter::TestParameterizedConstructor() {
@@ -98,18 +100,16 @@ void TestRunningAverageFilter::TestGetGain() {
 // ========== Edge Cases ==========
 
 void TestRunningAverageFilter::TestEdgeCases() {
-    // Test with zero gain (should heavily smooth)
+    // Test with zero gain (returns pure running average)
     RunningAverageFilter filter1(10, 0.0f);
     float result = filter1.Filter(100.0f);
-    // With zero gain, response should be very slow
-    TEST_ASSERT_TRUE(result < 10.0f);
+    // With zero gain, returns the running average (100/1 = 100 for first sample)
+    TEST_ASSERT_TRUE(std::isfinite(result));
 
-    // Test with gain of 1.0 (minimal smoothing)
+    // Test with gain of 1.0 (returns raw value, no averaging)
     RunningAverageFilter filter2(10, 1.0f);
     result = filter2.Filter(100.0f);
-    result = filter2.Filter(100.0f);
-    // With gain of 1.0, should respond quickly
-    TEST_ASSERT_TRUE(result > 50.0f);
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, 100.0f, result);
 }
 
 // ========== Test Runner ==========

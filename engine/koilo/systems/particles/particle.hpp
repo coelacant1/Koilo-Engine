@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file particle.hpp
  * @brief Individual particle data structure.
@@ -8,11 +9,11 @@
 
 #pragma once
 
-#include "../../core/math/vector3d.hpp"
-#include "../../core/math/vector2d.hpp"
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/core/math/vector3d.hpp>
+#include <koilo/core/math/vector2d.hpp>
+#include <koilo/registry/reflect_macros.hpp>
 
-namespace ptx {
+namespace koilo {
 
 /**
  * @struct Particle
@@ -70,25 +71,25 @@ struct Particle {
         return age / lifetime;
     }
 
-    PTX_BEGIN_FIELDS(Particle)
-        PTX_FIELD(Particle, position, "Position", 0, 0),
-        PTX_FIELD(Particle, velocity, "Velocity", 0, 0),
-        PTX_FIELD(Particle, lifetime, "Lifetime", 0, 0),
-        PTX_FIELD(Particle, age, "Age", 0, 0),
-        PTX_FIELD(Particle, size, "Size", 0, 0),
-        PTX_FIELD(Particle, color, "Color", 0, 0),
-        PTX_FIELD(Particle, alpha, "Alpha", 0, 0),
-        PTX_FIELD(Particle, active, "Active", 0, 1)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(Particle)
+        KL_FIELD(Particle, position, "Position", 0, 0),
+        KL_FIELD(Particle, velocity, "Velocity", 0, 0),
+        KL_FIELD(Particle, lifetime, "Lifetime", 0, 0),
+        KL_FIELD(Particle, age, "Age", 0, 0),
+        KL_FIELD(Particle, size, "Size", 0, 0),
+        KL_FIELD(Particle, color, "Color", 0, 0),
+        KL_FIELD(Particle, alpha, "Alpha", 0, 0),
+        KL_FIELD(Particle, active, "Active", 0, 1)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(Particle)
-        PTX_METHOD_AUTO(Particle, IsAlive, "Is alive"),
-        PTX_METHOD_AUTO(Particle, GetLifetimeProgress, "Get lifetime progress")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(Particle)
+        KL_METHOD_AUTO(Particle, IsAlive, "Is alive"),
+        KL_METHOD_AUTO(Particle, GetLifetimeProgress, "Get lifetime progress")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(Particle)
-        PTX_CTOR0(Particle)
-    PTX_END_DESCRIBE(Particle)
+    KL_BEGIN_DESCRIBE(Particle)
+        KL_CTOR0(Particle)
+    KL_END_DESCRIBE(Particle)
 };
 
-} // namespace ptx
+} // namespace koilo

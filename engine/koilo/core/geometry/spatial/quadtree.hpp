@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file quadtree.hpp
  * @brief Runtime quadtree for lightweight spatial partitioning.
@@ -6,12 +7,14 @@
 #pragma once
 
 #include <array>
-#include <cstddef>
 #include <memory>
 #include <vector>
 
-#include "../../math/vector2d.hpp"
-#include "../2d/rectangle.hpp"
+#include <koilo/core/math/vector2d.hpp>
+#include <koilo/core/geometry/2d/rectangle.hpp>
+
+
+namespace koilo {
 
 /**
  * @class QuadTree
@@ -58,7 +61,7 @@ public:
         }
 
     private:
-        static constexpr unsigned short kMaxItems = 8; ///< Max items before subdivision.
+        static constexpr unsigned short kMaxItems = 32; ///< Max items before subdivision.
         static constexpr unsigned char  kMaxDepth = 8; ///< Maximum tree depth.
 
         Rectangle2D bounds;
@@ -102,3 +105,5 @@ private:
     unsigned long totalItems;
     OverlapsCallback overlaps;
 };
+
+} // namespace koilo

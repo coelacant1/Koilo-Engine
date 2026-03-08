@@ -1,11 +1,15 @@
-#include <ptx/core/signal/noise/simplexnoise.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/core/signal/noise/simplexnoise.hpp>
 
-SimplexNoise::SimplexNoise(int seed) {
+
+namespace koilo {
+
+koilo::SimplexNoise::SimplexNoise(int seed) {
     (void)seed;
     //the seed determines the swaps that occur between the default order and the order we're actually going to use
     for(int i = 0; i < 400; i++){
-        uint8_t swapFrom = static_cast<uint8_t>(ptx::Random::Int(0, 255));
-        uint8_t swapTo = static_cast<uint8_t>(ptx::Random::Int(0, 255));
+        uint8_t swapFrom = static_cast<uint8_t>(koilo::Random::Int(0, 255));
+        uint8_t swapTo = static_cast<uint8_t>(koilo::Random::Int(0, 255));
         
         uint8_t temp = p[swapFrom];
         p[swapFrom] = p[swapTo];
@@ -19,7 +23,7 @@ SimplexNoise::SimplexNoise(int seed) {
 }
 
 // 2D simplex noise
-float SimplexNoise::Noise(float xin, float yin) const {
+float koilo::SimplexNoise::Noise(float xin, float yin) const {
     float n0, n1, n2; // Noise contributions from the three corners
     
     // Skew the input space to determine which simplex cell we're in
@@ -77,7 +81,7 @@ float SimplexNoise::Noise(float xin, float yin) const {
 }
 
 // 3D simplex noise
-float SimplexNoise::Noise(float xin, float yin, float zin) const {
+float koilo::SimplexNoise::Noise(float xin, float yin, float zin) const {
     float n0, n1, n2, n3; // Noise contributions from the four corners
     
     // Skew the input space to determine which simplex cell we're in
@@ -165,16 +169,18 @@ float SimplexNoise::Noise(float xin, float yin, float zin) const {
     return 32.0f * (n0 + n1 + n2 + n3);
 }
 
-void SimplexNoise::SetScale(Vector3D noiseScale){
+void koilo::SimplexNoise::SetScale(Vector3D noiseScale){
     this->noiseScale = noiseScale;
 }
 
-void SimplexNoise::SetZPosition(float zPosition){
+void koilo::SimplexNoise::SetZPosition(float zPosition){
     this->zPosition = zPosition;
 }
 
-float SimplexNoise::GetNoise(Vector3D position) const {
+float koilo::SimplexNoise::GetNoise(Vector3D position) const {
     Vector3D positionL = position * noiseScale;
 
     return Noise(positionL.X, positionL.Y, zPosition);
 }
+
+} // namespace koilo

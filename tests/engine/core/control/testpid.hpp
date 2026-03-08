@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testpid.hpp
  * @brief Unit tests for the PID class.
@@ -20,7 +21,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/core/control/pid.hpp>
+#include <koilo/core/control/pid.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testgradientcolor.hpp
  * @brief Unit tests for the GradientColor class.
@@ -12,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/core/color/gradientcolor.hpp>
+#include <koilo/core/color/gradientcolor.hpp>
 #include <utils/testhelpers.hpp>
 
 /**
@@ -43,5 +44,6 @@ public:
     /**
      * @brief Runs all test methods.
      */
+    static void TestSetColorsFromPalette();
     static void RunAllTests();
 };

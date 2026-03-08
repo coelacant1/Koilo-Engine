@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testrampfilter.cpp
  * @brief Implementation of RampFilter unit tests.
@@ -6,6 +7,7 @@
 #include "testrampfilter.hpp"
 #include <cmath>
 
+using namespace koilo;
 // ========== Constructor Tests ==========
 
 void TestRampFilter::TestDefaultConstructor() {
@@ -33,8 +35,8 @@ void TestRampFilter::TestParameterizedConstructor() {
 void TestRampFilter::TestFilter() {
     RampFilter filter(10);
     
-    // Start at 0, ramp to 100
-    float target = 100.0f;
+    // RampFilter ramps in [0, 1] range normalized by increment
+    float target = 1.0f;
     float previous = 0.0f;
     
     // Apply filter multiple times
@@ -42,15 +44,14 @@ void TestRampFilter::TestFilter() {
         float current = filter.Filter(target);
         TEST_ASSERT_TRUE(std::isfinite(current));
         
-        // Value should increase towards target
         if (i > 0) {
-            TEST_ASSERT_TRUE(current >= previous || std::abs(current - target) < 1.0f);
+            TEST_ASSERT_TRUE(current >= previous || std::abs(current - target) < 0.01f);
         }
         previous = current;
     }
     
-    // After enough iterations, should be close to target
-    TEST_ASSERT_FLOAT_WITHIN(15.0f, target, previous);
+    // After enough iterations, should be close to 1.0
+    TEST_ASSERT_FLOAT_WITHIN(0.15f, target, previous);
 }
 
 void TestRampFilter::TestSetIncrement() {

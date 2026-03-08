@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file mouse.hpp
  * @brief Mouse input handling including position, buttons, and scroll.
@@ -10,10 +11,10 @@
 
 #include <array>
 #include "keycodes.hpp"
-#include "../../../core/math/vector2d.hpp"
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/core/math/vector2d.hpp>
+#include <koilo/registry/reflect_macros.hpp>
 
-namespace ptx {
+namespace koilo {
 
 /**
  * @class Mouse
@@ -130,25 +131,25 @@ public:
      */
     bool IsCursorLocked() const { return cursorLocked; }
 
-    PTX_BEGIN_FIELDS(Mouse)
-        PTX_FIELD(Mouse, position, "Position", 0, 0),
-        PTX_FIELD(Mouse, cursorVisible, "Cursor visible", 0, 1),
-        PTX_FIELD(Mouse, cursorLocked, "Cursor locked", 0, 1)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(Mouse)
+        KL_FIELD(Mouse, position, "Position", 0, 0),
+        KL_FIELD(Mouse, cursorVisible, "Cursor visible", 0, 1),
+        KL_FIELD(Mouse, cursorLocked, "Cursor locked", 0, 1)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(Mouse)
-        PTX_METHOD_AUTO(Mouse, Update, "Update"),
-        PTX_METHOD_AUTO(Mouse, GetPosition, "Get position"),
-        PTX_METHOD_AUTO(Mouse, GetDelta, "Get delta"),
-        PTX_METHOD_AUTO(Mouse, GetScrollDelta, "Get scroll delta"),
-        PTX_METHOD_AUTO(Mouse, IsButtonPressed, "Is button pressed"),
-        PTX_METHOD_AUTO(Mouse, IsButtonHeld, "Is button held"),
-        PTX_METHOD_AUTO(Mouse, IsButtonReleased, "Is button released")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(Mouse)
+        KL_METHOD_AUTO(Mouse, Update, "Update"),
+        KL_METHOD_AUTO(Mouse, GetPosition, "Get position"),
+        KL_METHOD_AUTO(Mouse, GetDelta, "Get delta"),
+        KL_METHOD_AUTO(Mouse, GetScrollDelta, "Get scroll delta"),
+        KL_METHOD_AUTO(Mouse, IsButtonPressed, "Is button pressed"),
+        KL_METHOD_AUTO(Mouse, IsButtonHeld, "Is button held"),
+        KL_METHOD_AUTO(Mouse, IsButtonReleased, "Is button released")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(Mouse)
-        PTX_CTOR0(Mouse)
-    PTX_END_DESCRIBE(Mouse)
+    KL_BEGIN_DESCRIBE(Mouse)
+        KL_CTOR0(Mouse)
+    KL_END_DESCRIBE(Mouse)
 };
 
-} // namespace ptx
+} // namespace koilo

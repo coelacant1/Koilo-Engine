@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file EulerAngles.h
  * @brief Represents rotations in 3D space using Euler angles.
@@ -15,7 +16,10 @@
 #include "eulerconstants.hpp"
 #include "eulerorder.hpp"
 #include "vector3d.hpp"
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class EulerAngles
@@ -49,20 +53,22 @@ public:
      *
      * @return A string representing the `EulerAngles` in the format "(angles: [X, Y, Z], order: XYZ)".
      */
-    ptx::UString ToString();
+    koilo::UString ToString();
 
-    PTX_BEGIN_FIELDS(EulerAngles)
-        PTX_FIELD(EulerAngles, Angles, "Angles", 0, 0),
-        PTX_FIELD(EulerAngles, Order, "Order", 0, 0)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(EulerAngles)
+        KL_FIELD(EulerAngles, Angles, "Angles", 0, 0),
+        KL_FIELD(EulerAngles, Order, "Order", 0, 0)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(EulerAngles)
-        PTX_METHOD_AUTO(EulerAngles, ToString, "To string")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(EulerAngles)
+        KL_METHOD_AUTO(EulerAngles, ToString, "To string")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(EulerAngles)
-        PTX_CTOR0(EulerAngles),
-        PTX_CTOR(EulerAngles, Vector3D, EulerOrder)
-    PTX_END_DESCRIBE(EulerAngles)
+    KL_BEGIN_DESCRIBE(EulerAngles)
+        KL_CTOR0(EulerAngles),
+        KL_CTOR(EulerAngles, Vector3D, EulerOrder)
+    KL_END_DESCRIBE(EulerAngles)
 
 };
+
+} // namespace koilo

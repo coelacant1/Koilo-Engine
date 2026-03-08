@@ -1,18 +1,21 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 #include <algorithm>
 
-#include <ptx/core/color/gradientcolor.hpp>
+#include <koilo/core/color/gradientcolor.hpp>
 
-GradientColor::GradientColor(const RGBColor* colorStops, std::size_t count, bool stepped)
+namespace koilo {
+
+koilo::GradientColor::GradientColor(const Color888* colorStops, std::size_t count, bool stepped)
     : colors(), isStepped(stepped) {
     SetColors(colorStops, count);
 }
 
-GradientColor::GradientColor(std::vector<RGBColor> colorStops, bool stepped)
+koilo::GradientColor::GradientColor(std::vector<Color888> colorStops, bool stepped)
     : colors(std::move(colorStops)), isStepped(stepped) {}
 
-RGBColor GradientColor::GetColorAt(float ratio) const {
+Color888 koilo::GradientColor::GetColorAt(float ratio) const {
     if (colors.empty()) {
-        return RGBColor(0.0f, 0.0f, 0.0f);
+        return Color888(0.0f, 0.0f, 0.0f);
     }
     if (colors.size() == 1) {
         return colors.front();
@@ -29,10 +32,10 @@ RGBColor GradientColor::GetColorAt(float ratio) const {
 
     const std::size_t endIndex = startIndex + 1;
     const float mu = rawPosition - static_cast<float>(startIndex);
-    return RGBColor::InterpolateColors(colors[startIndex], colors[endIndex], mu);
+    return Color888::Lerp(colors[startIndex], colors[endIndex], mu);
 }
 
-void GradientColor::SetColors(const RGBColor* newColorStops, std::size_t count) {
+void koilo::GradientColor::SetColors(const Color888* newColorStops, std::size_t count) {
     if (!newColorStops || count == 0) {
         colors.clear();
         return;
@@ -42,18 +45,20 @@ void GradientColor::SetColors(const RGBColor* newColorStops, std::size_t count) 
     std::copy(newColorStops, newColorStops + count, colors.begin());
 }
 
-void GradientColor::SetColors(const std::vector<RGBColor>& newColorStops) {
+void koilo::GradientColor::SetColors(const std::vector<Color888>& newColorStops) {
     colors = newColorStops;
 }
 
-std::size_t GradientColor::GetColorCount() const noexcept {
+std::size_t koilo::GradientColor::GetColorCount() const noexcept {
     return colors.size();
 }
 
-bool GradientColor::IsStepped() const noexcept {
+bool koilo::GradientColor::IsStepped() const noexcept {
     return isStepped;
 }
 
-void GradientColor::SetStepped(bool stepped) noexcept {
+void koilo::GradientColor::SetStepped(bool stepped) noexcept {
     isStepped = stepped;
 }
+
+} // namespace koilo

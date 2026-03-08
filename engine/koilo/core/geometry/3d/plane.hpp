@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file Plane.h
  * @brief Defines the Plane class for representing a plane in 3D space.
@@ -11,9 +12,13 @@
 
 #pragma once
 
-#include "../../math/mathematics.hpp"
-#include "../../math/vector3d.hpp"
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/core/math/mathematics.hpp>
+#include <koilo/core/math/vector3d.hpp>
+#include <koilo/core/geometry/ray.hpp>
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class Plane
@@ -49,20 +54,50 @@ public:
      *
      * @return A string describing the plane's centroid and normal vector.
      */
-    ptx::UString ToString();
+    koilo::UString ToString();
 
-    PTX_BEGIN_FIELDS(Plane)
-        PTX_FIELD(Plane, Centroid, "Centroid", 0, 0),
-        PTX_FIELD(Plane, Normal, "Normal", 0, 0)
-    PTX_END_FIELDS
+    /**
+     * @brief Returns signed distance from a point to this plane.
+     * Positive = same side as normal, negative = opposite side.
+     */
+    float DistanceToPoint(const Vector3D& point) const;
 
-    PTX_BEGIN_METHODS(Plane)
-        PTX_METHOD_AUTO(Plane, ToString, "To string")
-    PTX_END_METHODS
+    /**
+     * @brief Checks if a ray intersects this plane.
+     * @param ray The ray to test.
+     * @param outT Output: distance along ray to intersection (only valid if returns true).
+     * @return True if the ray intersects (not parallel).
+     */
+    bool RayIntersect(const Ray& ray, float& outT) const;
 
-    PTX_BEGIN_DESCRIBE(Plane)
-        PTX_CTOR0(Plane),
-        PTX_CTOR(Plane, Vector3D, Vector3D)
-    PTX_END_DESCRIBE(Plane)
+    /**
+     * @brief Returns the closest point on the plane to a given point.
+     */
+    Vector3D ClosestPoint(const Vector3D& point) const;
+
+    /**
+     * @brief Returns the side of the plane a point is on.
+     * @return +1 if on normal side, -1 if opposite, 0 if on the plane.
+     */
+    int Side(const Vector3D& point) const;
+
+    KL_BEGIN_FIELDS(Plane)
+        KL_FIELD(Plane, Centroid, "Centroid", 0, 0),
+        KL_FIELD(Plane, Normal, "Normal", 0, 0)
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(Plane)
+        KL_METHOD_AUTO(Plane, ToString, "To string"),
+        KL_METHOD_AUTO(Plane, DistanceToPoint, "Distance to point"),
+        KL_METHOD_AUTO(Plane, ClosestPoint, "Closest point"),
+        KL_METHOD_AUTO(Plane, Side, "Side")
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(Plane)
+        KL_CTOR0(Plane),
+        KL_CTOR(Plane, Vector3D, Vector3D)
+    KL_END_DESCRIBE(Plane)
 
 };
+
+} // namespace koilo

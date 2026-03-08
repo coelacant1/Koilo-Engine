@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file capsulecollider.hpp
  * @brief Capsule collider for physics collision detection.
@@ -9,8 +10,9 @@
 #pragma once
 
 #include "collider.hpp"
+#include "../../registry/reflect_macros.hpp"
 
-namespace ptx {
+namespace koilo {
 
 /**
  * @class CapsuleCollider
@@ -37,9 +39,9 @@ public:
     CapsuleCollider(const Vector3D& position, float radius, float height);
 
     /**
-     * @brief Virtual destructor.
+     * @brief Destructor.
      */
-    virtual ~CapsuleCollider();
+    ~CapsuleCollider() override;
 
     // === Accessors ===
 
@@ -75,48 +77,58 @@ public:
     /**
      * @brief Performs raycast against capsule.
      */
-    virtual bool Raycast(const Vector3D& origin, const Vector3D& direction,
-                        RaycastHit& hit, float maxDistance) override;
+    bool Raycast(const Vector3D& origin, const Vector3D& direction,
+                  RaycastHit& hit, float maxDistance);
+
+    bool Raycast(const Ray& ray, RaycastHit& hit, float maxDistance) override;
 
     /**
      * @brief Checks if point is inside capsule.
      */
-    virtual bool ContainsPoint(const Vector3D& point) override;
+    bool ContainsPoint(const Vector3D& point) override;
 
     /**
      * @brief Gets closest point on capsule surface.
      */
-    virtual Vector3D ClosestPoint(const Vector3D& point) override;
+    Vector3D ClosestPoint(const Vector3D& point) override;
 
     /**
      * @brief Gets capsule center position.
      */
-    virtual Vector3D GetPosition() const override;
+    Vector3D GetPosition() const override;
 
     /**
      * @brief Sets capsule center position.
      */
-    virtual void SetPosition(const Vector3D& pos) override;
+    void SetPosition(const Vector3D& pos) override;
 
-    PTX_BEGIN_FIELDS(CapsuleCollider)
-        PTX_FIELD(CapsuleCollider, radius, "Radius", 0, 0),
-        PTX_FIELD(CapsuleCollider, height, "Height", 0, 0)
-    PTX_END_FIELDS
+    // Script-friendly raycast: returns hit/miss without out-param
+    bool ScriptRaycast(const Vector3D& origin, const Vector3D& direction, float maxDistance) {
+        RaycastHit hit;
+        return Raycast(Ray(origin, direction), hit, maxDistance);
+    }
 
-    PTX_BEGIN_METHODS(CapsuleCollider)
-        PTX_METHOD_AUTO(CapsuleCollider, GetRadius, "Get radius"),
-        PTX_METHOD_AUTO(CapsuleCollider, SetRadius, "Set radius"),
-        PTX_METHOD_AUTO(CapsuleCollider, GetHeight, "Get height"),
-        PTX_METHOD_AUTO(CapsuleCollider, SetHeight, "Set height"),
-        PTX_METHOD_AUTO(CapsuleCollider, Raycast, "Raycast"),
-        PTX_METHOD_AUTO(CapsuleCollider, ContainsPoint, "Contains point"),
-        PTX_METHOD_AUTO(CapsuleCollider, ClosestPoint, "Closest point")
-    PTX_END_METHODS
+    KL_BEGIN_FIELDS(CapsuleCollider)
+        KL_FIELD(CapsuleCollider, radius, "Radius", 0, 0),
+        KL_FIELD(CapsuleCollider, height, "Height", 0, 0)
+    KL_END_FIELDS
 
-    PTX_BEGIN_DESCRIBE(CapsuleCollider)
-        PTX_CTOR0(CapsuleCollider),
-        PTX_CTOR(CapsuleCollider, Vector3D, float, float)
-    PTX_END_DESCRIBE(CapsuleCollider)
+    KL_BEGIN_METHODS(CapsuleCollider)
+        KL_METHOD_AUTO(CapsuleCollider, GetRadius, "Get radius"),
+        KL_METHOD_AUTO(CapsuleCollider, SetRadius, "Set radius"),
+        KL_METHOD_AUTO(CapsuleCollider, GetHeight, "Get height"),
+        KL_METHOD_AUTO(CapsuleCollider, SetHeight, "Set height"),
+        KL_METHOD_AUTO(CapsuleCollider, ContainsPoint, "Contains point"),
+        KL_METHOD_AUTO(CapsuleCollider, ClosestPoint, "Closest point"),
+        KL_METHOD_AUTO(CapsuleCollider, GetPosition, "Get position"),
+        KL_METHOD_AUTO(CapsuleCollider, SetPosition, "Set position"),
+        KL_METHOD_AUTO(CapsuleCollider, ScriptRaycast, "Script-friendly raycast")
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(CapsuleCollider)
+        KL_CTOR0(CapsuleCollider),
+        KL_CTOR(CapsuleCollider, Vector3D, float, float)
+    KL_END_DESCRIBE(CapsuleCollider)
 };
 
-} // namespace ptx
+} // namespace koilo

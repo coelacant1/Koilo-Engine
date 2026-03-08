@@ -1,15 +1,19 @@
-#include <ptx/core/time/timestep.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/core/time/timestep.hpp>
 
-TimeStep::TimeStep(float frequency) {
+
+namespace koilo {
+
+koilo::TimeStep::TimeStep(float frequency) {
     SetFrequency(frequency);
 }
 
-void TimeStep::SetFrequency(float frequency) {
+void koilo::TimeStep::SetFrequency(float frequency) {
     this->updateInterval = uint16_t((1.0f / frequency) * 1000.0f);
 }
 
-bool TimeStep::IsReady() {
-    uint32_t currentMillis = ptx::Time::Millis();
+bool koilo::TimeStep::IsReady() {
+    uint32_t currentMillis = koilo::Time::Millis();
     if (currentMillis - previousMillis >= updateInterval) {
         previousMillis = currentMillis;
         return true;
@@ -17,3 +21,5 @@ bool TimeStep::IsReady() {
         return false;
     }
 }
+
+} // namespace koilo

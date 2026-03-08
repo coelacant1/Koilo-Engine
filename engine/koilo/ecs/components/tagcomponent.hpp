@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file tagcomponent.hpp
  * @brief Tag component for ECS (string identifier).
@@ -9,9 +10,9 @@
 #pragma once
 
 #include <string>
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
 
-namespace ptx {
+namespace koilo {
 
 /**
  * @struct TagComponent
@@ -30,17 +31,17 @@ struct TagComponent {
      */
     TagComponent(const std::string& t) : tag(t) {}
 
-    PTX_BEGIN_FIELDS(TagComponent)
-        PTX_FIELD(TagComponent, tag, "Tag", 0, 0)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(TagComponent)
+        KL_FIELD(TagComponent, tag, "Tag", 0, 0)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(TagComponent)
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(TagComponent)
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(TagComponent)
-        PTX_CTOR0(TagComponent),
-        PTX_CTOR(TagComponent, std::string)
-    PTX_END_DESCRIBE(TagComponent)
+    KL_BEGIN_DESCRIBE(TagComponent)
+        KL_CTOR0(TagComponent),
+        KL_CTOR(TagComponent, std::string)
+    KL_END_DESCRIBE(TagComponent)
 };
 
-} // namespace ptx
+} // namespace koilo

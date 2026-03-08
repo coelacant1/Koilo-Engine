@@ -1,9 +1,11 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testphysicssimulator.cpp
  * @brief Implementation of PhysicsSimulator unit tests.
  */
 
 #include "testphysicssimulator.hpp"
+using namespace koilo;
 
 // ========== Constructor Tests ==========
 

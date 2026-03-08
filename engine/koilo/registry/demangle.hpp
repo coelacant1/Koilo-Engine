@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 #pragma once
 #include <string>
 #if defined(__GNUG__)
@@ -5,7 +6,7 @@
   #include <memory>
 #endif
 
-namespace ptx {
+namespace koilo {
 inline std::string Demangle(const char* name) {
 #if defined(__GNUG__)
     int status = 0;
@@ -16,4 +17,4 @@ inline std::string Demangle(const char* name) {
     return std::string(name);
 #endif
 }
-} // namespace ptx
+} // namespace koilo

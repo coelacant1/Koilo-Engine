@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file CameraBase.h
  * @brief Declares the CameraBase class for defining camera functionality.
@@ -12,8 +13,12 @@
 #pragma once
 
 #include "cameralayout.hpp" // Include for camera layout management.
-#include "ipixelgroup.hpp" // Include for pixel group interface.
-#include "../../../core/math/transform.hpp" // Include for transformation utilities.
+#include <koilo/systems/render/core/ipixelgroup.hpp> // Include for pixel group interface.
+#include <koilo/core/math/transform.hpp> // Include for transformation utilities.
+#include <koilo/core/color/color888.hpp> // Include for sky gradient colors.
+
+
+namespace koilo {
 
 /**
  * @class CameraBase
@@ -24,11 +29,26 @@
  * pixel groups.
  */
 class CameraBase {
+public:
+    enum class ProjectionType { ORTHOGRAPHIC, PERSPECTIVE };
+
 protected:
     Transform* transform; ///< Pointer to the camera's transformation data.
     CameraLayout* cameraLayout; ///< Pointer to the camera's layout information.
     Quaternion lookOffset; ///< Look offset for the camera's orientation.
     bool is2D = false; ///< Flag indicating whether the camera operates in 2D mode.
+    
+    // Projection settings
+    ProjectionType projectionType_ = ProjectionType::ORTHOGRAPHIC;
+    float fov_ = 60.0f;          ///< Field of view in degrees (perspective only).
+    float nearPlane_ = 0.1f;     ///< Near clipping plane.
+    float farPlane_ = 1000.0f;   ///< Far clipping plane.
+    bool backfaceCulling_ = false; ///< Enable screen-space backface culling.
+
+    // Sky gradient
+    bool hasSkyGradient_ = false;
+    Color888 skyTop_{0, 0, 0};
+    Color888 skyBottom_{0, 0, 0};
 
 public:
     /**
@@ -132,4 +152,40 @@ public:
      */
     Quaternion GetLookOffset();
 
+    // Projection settings
+    ProjectionType GetProjectionType() const { return projectionType_; }
+    void SetProjectionType(ProjectionType type) { projectionType_ = type; }
+    void SetPerspective(float fov, float nearPlane, float farPlane);
+    float GetFOV() const { return fov_; }
+    float GetNearPlane() const { return nearPlane_; }
+    float GetFarPlane() const { return farPlane_; }
+    bool IsPerspective() const { return projectionType_ == ProjectionType::PERSPECTIVE; }
+    
+    // Backface culling
+    bool GetBackfaceCulling() const { return backfaceCulling_; }
+    void SetBackfaceCulling(bool enabled) { backfaceCulling_ = enabled; }
+
+    // Sky gradient background
+    bool HasSkyGradient() const { return hasSkyGradient_; }
+    Color888 GetSkyTop() const { return skyTop_; }
+    Color888 GetSkyBottom() const { return skyBottom_; }
+
+    /**
+     * @brief Sets a vertical gradient background (top to bottom).
+     * @param top Color at the top of the viewport.
+     * @param bottom Color at the bottom of the viewport.
+     */
+    void SetSkyGradient(Color888 top, Color888 bottom) {
+        skyTop_ = top;
+        skyBottom_ = bottom;
+        hasSkyGradient_ = true;
+    }
+
+    /**
+     * @brief Disables the sky gradient (reverts to black background).
+     */
+    void ClearSkyGradient() { hasSkyGradient_ = false; }
+
 };
+
+} // namespace koilo

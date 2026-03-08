@@ -1,4 +1,8 @@
-#include <ptx/systems/physics/vectorfield2d.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/systems/physics/vectorfield2d.hpp>
+#include <cmath>
+
+namespace koilo {
 
 VectorField2D::VectorField2D(uint16_t x, uint16_t y)
     : vecXP(static_cast<size_t>(x) * y, 0),
@@ -229,3 +233,5 @@ uint32_t VectorField2D::GetVectorAtPosition(float x, float y, bool &inBounds){
 
     return 0;
 }
+
+} // namespace koilo

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testcharacters.hpp
  * @brief Unit tests for the Characters class.
@@ -12,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/assets/font/characters.hpp>
+#include <koilo/assets/font/characters.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

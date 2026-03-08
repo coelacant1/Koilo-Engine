@@ -1,26 +1,61 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file pathfinding.hpp
- * @brief A* pathfinding and navigation mesh system.
+ * @brief Agent configuration for pathfinding.
  *
- * TODO: Implement pathfinding with the following features:
- * - A* pathfinding algorithm
- * - Navigation mesh (navmesh) generation
- * - Navigation mesh queries (find nearest point, raycast)
- * - Path smoothing and optimization
- * - Dynamic obstacle avoidance
- * - Path following behavior
- * - Multi-agent pathfinding (avoiding other agents)
- * - Jump points and off-mesh links
- * - Different agent sizes and movement capabilities
+ * Actual pathfinding algorithms are in pathfinder.hpp (PathfinderGrid with A*).
+ * This class holds per-agent navigation parameters.
  *
- * Consider using existing libraries:
- * - Recast/Detour for navmesh
- * - Custom grid-based or waypoint-based pathfinding
- *
- * @date TBD
+ * @date 11/10/2025
  * @author Coela
  */
 
 #pragma once
 
-// TODO: Implement Pathfinding class
+#include <koilo/registry/reflect_macros.hpp>
+
+namespace koilo {
+
+/**
+ * @class Pathfinding
+ * @brief Agent navigation configuration.
+ */
+class Pathfinding {
+protected:
+    float agentRadius = 0.5f;
+    float agentHeight = 2.0f;
+    bool initialized = false;
+
+public:
+    Pathfinding() = default;
+
+    void Initialize() { initialized = true; }
+    bool IsInitialized() const { return initialized; }
+    
+    void SetAgentRadius(float radius) { agentRadius = radius; }
+    float GetAgentRadius() const { return agentRadius; }
+    
+    void SetAgentHeight(float height) { agentHeight = height; }
+    float GetAgentHeight() const { return agentHeight; }
+
+    KL_BEGIN_FIELDS(Pathfinding)
+        KL_FIELD(Pathfinding, agentRadius, "Agent radius", 0.0f, 10.0f),
+        KL_FIELD(Pathfinding, agentHeight, "Agent height", 0.0f, 10.0f),
+        KL_FIELD(Pathfinding, initialized, "Initialized", 0, 1)
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(Pathfinding)
+        KL_METHOD_AUTO(Pathfinding, Initialize, "Initialize"),
+        KL_METHOD_AUTO(Pathfinding, IsInitialized, "Is initialized"),
+        KL_METHOD_AUTO(Pathfinding, SetAgentRadius, "Set agent radius"),
+        KL_METHOD_AUTO(Pathfinding, GetAgentRadius, "Get agent radius"),
+        KL_METHOD_AUTO(Pathfinding, SetAgentHeight, "Set agent height"),
+        KL_METHOD_AUTO(Pathfinding, GetAgentHeight, "Get agent height")
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(Pathfinding)
+        KL_CTOR0(Pathfinding)
+    KL_END_DESCRIBE(Pathfinding)
+};
+
+} // namespace koilo

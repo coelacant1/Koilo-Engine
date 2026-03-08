@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testplane.hpp
  * @brief Unit tests for the Plane class.
@@ -17,8 +18,8 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/core/geometry/3d/plane.hpp>
-#include <ptx/core/platform/ustring.hpp>
+#include <koilo/core/geometry/3d/plane.hpp>
+#include <koilo/core/platform/ustring.hpp>
 #include <utils/testhelpers.hpp>
 
 /**
@@ -42,5 +43,8 @@ public:
      * @brief Runs all test methods.
      */
     static void TestEdgeCases();
+    static void TestClosestPoint();
+    static void TestDistanceToPoint();
+    static void TestSide();
     static void RunAllTests();
 };

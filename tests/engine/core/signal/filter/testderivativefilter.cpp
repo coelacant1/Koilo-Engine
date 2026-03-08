@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testderivativefilter.cpp
  * @brief Implementation of DerivativeFilter unit tests.
@@ -5,6 +6,7 @@
 
 #include "testderivativefilter.hpp"
 
+using namespace koilo;
 // ========== Constructor Tests ==========
 
 void TestDerivativeFilter::TestDefaultConstructor() {

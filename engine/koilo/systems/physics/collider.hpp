@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file collider.hpp
  * @brief Base collider class for physics collision detection.
@@ -9,13 +10,14 @@
 #pragma once
 
 #include <string>
-#include "../../core/math/vector3d.hpp"
-#include "../../core/math/rotation.hpp"
+#include <koilo/core/math/vector3d.hpp>
+#include <koilo/core/math/rotation.hpp>
+#include <koilo/core/geometry/ray.hpp>
 #include "physicsmaterial.hpp"
 #include "raycasthit.hpp"
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
 
-namespace ptx {
+namespace koilo {
 
 /**
  * @enum ColliderType
@@ -137,15 +139,38 @@ public:
     // === Virtual Interface (Pure Virtual) ===
 
     /**
-     * @brief Performs raycast against this collider.
+     * @brief Performs raycast against this collider using a Ray object.
+     * @param ray The ray to cast.
+     * @param hit Output hit information.
+     * @param maxDistance Maximum ray distance.
+     * @return True if ray hits collider.
+     */
+    virtual bool Raycast(const Ray& ray, RaycastHit& hit, float maxDistance) = 0;
+
+    /**
+     * @brief Performs raycast against this collider (legacy interface).
      * @param origin Ray origin.
      * @param direction Ray direction (must be normalized).
      * @param hit Output hit information.
      * @param maxDistance Maximum ray distance.
      * @return True if ray hits collider.
      */
-    virtual bool Raycast(const Vector3D& origin, const Vector3D& direction,
-                         RaycastHit& hit, float maxDistance) = 0;
+    bool Raycast(const Vector3D& origin, const Vector3D& direction,
+                 RaycastHit& hit, float maxDistance) {
+        return Raycast(Ray(origin, direction), hit, maxDistance);
+    }
+
+    /**
+     * @brief Performs raycast and returns hit result by value.
+     *
+     * Script-friendly: no output parameter needed. Returns a default
+     * RaycastHit (distance == 0) on miss.
+     */
+    RaycastHit RaycastHitResult(const Vector3D& origin, const Vector3D& direction, float maxDistance) {
+        RaycastHit hit;
+        Raycast(Ray(origin, direction), hit, maxDistance);
+        return hit;
+    }
 
     /**
      * @brief Checks if a point is inside the collider.
@@ -171,32 +196,33 @@ public:
      */
     virtual void SetPosition(const Vector3D& pos) = 0;
 
-    PTX_BEGIN_FIELDS(Collider)
-        PTX_FIELD(Collider, isTrigger, "Is trigger", 0, 1),
-        PTX_FIELD(Collider, isEnabled, "Is enabled", 0, 1),
-        PTX_FIELD(Collider, layer, "Layer", 0, 0),
-        PTX_FIELD(Collider, tag, "Tag", 0, 0),
-        PTX_FIELD(Collider, material, "Material", 0, 0)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(Collider)
+        KL_FIELD(Collider, isTrigger, "Is trigger", 0, 1),
+        KL_FIELD(Collider, isEnabled, "Is enabled", 0, 1),
+        KL_FIELD(Collider, layer, "Layer", 0, 0),
+        KL_FIELD(Collider, tag, "Tag", 0, 0),
+        KL_FIELD(Collider, material, "Material", 0, 0)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(Collider)
-        PTX_METHOD_AUTO(Collider, GetType, "Get type"),
-        PTX_METHOD_AUTO(Collider, IsTrigger, "Is trigger"),
-        PTX_METHOD_AUTO(Collider, SetTrigger, "Set trigger"),
-        PTX_METHOD_AUTO(Collider, IsEnabled, "Is enabled"),
-        PTX_METHOD_AUTO(Collider, SetEnabled, "Set enabled"),
-        PTX_METHOD_AUTO(Collider, GetLayer, "Get layer"),
-        PTX_METHOD_AUTO(Collider, SetLayer, "Set layer"),
-        PTX_METHOD_AUTO(Collider, GetTag, "Get tag"),
-        PTX_METHOD_AUTO(Collider, SetTag, "Set tag"),
-        PTX_METHOD_AUTO(Collider, GetMaterial, "Get material"),
-        PTX_METHOD_AUTO(Collider, SetMaterial, "Set material"),
-        PTX_METHOD_AUTO(Collider, ContainsPoint, "Contains point")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(Collider)
+        KL_METHOD_AUTO(Collider, GetType, "Get type"),
+        KL_METHOD_AUTO(Collider, IsTrigger, "Is trigger"),
+        KL_METHOD_AUTO(Collider, SetTrigger, "Set trigger"),
+        KL_METHOD_AUTO(Collider, IsEnabled, "Is enabled"),
+        KL_METHOD_AUTO(Collider, SetEnabled, "Set enabled"),
+        KL_METHOD_AUTO(Collider, GetLayer, "Get layer"),
+        KL_METHOD_AUTO(Collider, SetLayer, "Set layer"),
+        KL_METHOD_AUTO(Collider, GetTag, "Get tag"),
+        KL_METHOD_AUTO(Collider, SetTag, "Set tag"),
+        KL_METHOD_AUTO(Collider, GetMaterial, "Get material"),
+        KL_METHOD_AUTO(Collider, SetMaterial, "Set material"),
+        KL_METHOD_AUTO(Collider, ContainsPoint, "Contains point"),
+        KL_METHOD_AUTO(Collider, RaycastHitResult, "Raycast")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(Collider)
+    KL_BEGIN_DESCRIBE(Collider)
         // Abstract class, no constructors exposed
-    PTX_END_DESCRIBE(Collider)
+    KL_END_DESCRIBE(Collider)
 };
 
-} // namespace ptx
+} // namespace koilo

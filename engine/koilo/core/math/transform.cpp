@@ -1,21 +1,25 @@
-#include <ptx/core/math/transform.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/core/math/transform.hpp>
 
-Transform::Transform() 
-    : baseRotation(1, 0, 0, 0), rotation(1, 0, 0, 0), position(0, 0, 0), scale(1, 1, 1), scaleRotationOffset(1, 0, 0, 0) {}
 
-Transform::Transform(const Vector3D& eulerXYZS, const Vector3D& position, const Vector3D& scale) {
+namespace koilo {
+
+koilo::Transform::Transform() 
+    : baseRotation(1, 0, 0, 0), rotation(1, 0, 0, 0), position(0, 0, 0), scale(1, 1, 1) {}
+
+koilo::Transform::Transform(const Vector3D& eulerXYZS, const Vector3D& position, const Vector3D& scale) {
     this->rotation = Rotation(EulerAngles(eulerXYZS, EulerConstants::EulerOrderXYZS)).GetQuaternion();
     this->position = position;
     this->scale = scale;
 }
 
-Transform::Transform(const Quaternion& rotation, const Vector3D& position, const Vector3D& scale) {
+koilo::Transform::Transform(const Quaternion& rotation, const Vector3D& position, const Vector3D& scale) {
     this->rotation = rotation;
     this->position = position;
     this->scale = scale;
 }
 
-Transform::Transform(const Vector3D& eulerXYZS, const Vector3D& position, const Vector3D& scale, const Vector3D& rotationOffset, const Vector3D& scaleOffset) {
+koilo::Transform::Transform(const Vector3D& eulerXYZS, const Vector3D& position, const Vector3D& scale, const Vector3D& rotationOffset, const Vector3D& scaleOffset) {
     this->rotation = Rotation(EulerAngles(eulerXYZS, EulerConstants::EulerOrderXYZS)).GetQuaternion();
     this->position = position;
     this->scale = scale;
@@ -23,7 +27,7 @@ Transform::Transform(const Vector3D& eulerXYZS, const Vector3D& position, const 
     this->scaleOffset = scaleOffset;
 }
 
-Transform::Transform(const Quaternion& rotation, const Vector3D& position, const Vector3D& scale, const Vector3D& rotationOffset, const Vector3D& scaleOffset) {
+koilo::Transform::Transform(const Quaternion& rotation, const Vector3D& position, const Vector3D& scale, const Vector3D& rotationOffset, const Vector3D& scaleOffset) {
     this->rotation = rotation;
     this->position = position;
     this->scale = scale;
@@ -31,92 +35,94 @@ Transform::Transform(const Quaternion& rotation, const Vector3D& position, const
     this->scaleOffset = scaleOffset;
 }
 
-Transform::Transform(const Transform& transform) {
+koilo::Transform::Transform(const Transform& transform) {
     this->baseRotation = transform.baseRotation;
     this->rotation = transform.rotation;
     this->position = transform.position;
     this->scale = transform.scale;
-    this->scaleRotationOffset = transform.scaleRotationOffset;
     this->rotationOffset = transform.rotationOffset;
     this->scaleOffset = transform.scaleOffset;
 }
 
-void Transform::SetBaseRotation(const Quaternion& baseRotation) {
+void koilo::Transform::SetBaseRotation(const Quaternion& baseRotation) {
     this->baseRotation = baseRotation;
 }
 
-Quaternion Transform::GetBaseRotation() const {
+Quaternion koilo::Transform::GetBaseRotation() const {
     return baseRotation;
 }
 
-void Transform::SetRotation(const Quaternion& rotation) {
+void koilo::Transform::SetRotation(const Quaternion& rotation) {
     this->rotation = rotation;
 }
 
-void Transform::SetRotation(const Vector3D& eulerXYZS) {
+void koilo::Transform::SetRotation(const Vector3D& eulerXYZS) {
     this->rotation = Rotation(EulerAngles(eulerXYZS, EulerConstants::EulerOrderXYZS)).GetQuaternion();
 }
 
-Quaternion Transform::GetRotation() const {
+Quaternion koilo::Transform::GetRotation() const {
     return rotation * baseRotation;
 }
 
-void Transform::SetPosition(const Vector3D& position) {
+void koilo::Transform::SetPosition(const Vector3D& position) {
     this->position = position;
 }
 
-Vector3D Transform::GetPosition() const {
+Vector3D koilo::Transform::GetPosition() const {
     return position;
 }
 
-void Transform::SetScale(const Vector3D& scale) {
+void koilo::Transform::SetScale(const Vector3D& scale) {
     this->scale = scale;
 }
 
-Vector3D Transform::GetScale() const {
+Vector3D koilo::Transform::GetScale() const {
     return scale;
 }
 
-void Transform::SetScaleRotationOffset(const Quaternion& scaleRotationOffset) {
-    this->scaleRotationOffset = scaleRotationOffset;
+void koilo::Transform::SetOrigin(const Vector3D& origin) {
+    this->rotationOffset = origin;
+    this->scaleOffset = origin;
 }
 
-Quaternion Transform::GetScaleRotationOffset() const {
-    return scaleRotationOffset;
-}
-
-void Transform::SetRotationOffset(const Vector3D& rotationOffset) {
-    this->rotationOffset = rotationOffset;
-}
-
-Vector3D Transform::GetRotationOffset() const {
+Vector3D koilo::Transform::GetOrigin() const {
     return rotationOffset;
 }
 
-void Transform::SetScaleOffset(const Vector3D& scaleOffset) {
+void koilo::Transform::SetRotationOffset(const Vector3D& rotationOffset) {
+    this->rotationOffset = rotationOffset;
+}
+
+Vector3D koilo::Transform::GetRotationOffset() const {
+    return rotationOffset;
+}
+
+void koilo::Transform::SetScaleOffset(const Vector3D& scaleOffset) {
     this->scaleOffset = scaleOffset;
 }
 
-Vector3D Transform::GetScaleOffset() const {
+Vector3D koilo::Transform::GetScaleOffset() const {
     return scaleOffset;
 }
 
-void Transform::Rotate(const Vector3D& eulerXYZS) {
+void koilo::Transform::Rotate(const Vector3D& eulerXYZS) {
     this->rotation = this->rotation * Rotation(EulerAngles(eulerXYZS, EulerConstants::EulerOrderXYZS)).GetQuaternion();
 }
 
-void Transform::Rotate(const Quaternion& rotation) {
+void koilo::Transform::Rotate(const Quaternion& rotation) {
     this->rotation = this->rotation * rotation;
 }
 
-void Transform::Translate(const Vector3D& offset) {
+void koilo::Transform::Translate(const Vector3D& offset) {
     this->position = this->position + offset;
 }
 
-void Transform::Scale(const Vector3D& scale) {
+void koilo::Transform::Scale(const Vector3D& scale) {
     this->scale = this->scale * scale;
 }
 
-ptx::UString Transform::ToString(){
+koilo::UString koilo::Transform::ToString(){
     return "[" + Rotation(this->rotation).GetEulerAngles(EulerConstants::EulerOrderXYZS).Angles.ToString() + " " + this->position.ToString() + " " + this->scale.ToString() + "]";
 }
+
+} // namespace koilo

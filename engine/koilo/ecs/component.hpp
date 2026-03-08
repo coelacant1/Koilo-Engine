@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file component.hpp
  * @brief Component type identification for ECS.
@@ -9,10 +10,8 @@
 #pragma once
 
 #include <cstdint>
-#include <typeindex>
-#include <type_traits>
 
-namespace ptx {
+namespace koilo {
 
 /**
  * @typedef ComponentTypeID
@@ -56,8 +55,9 @@ inline ComponentTypeID GetComponentTypeID() {
 
 /**
  * @brief Concept for component types (must be struct/class, not pointer).
+ * NOTE: Requires C++20. Commented out for C++17 compatibility.
  */
-template<typename T>
-concept ComponentType = std::is_class_v<T> && !std::is_pointer_v<T>;
+// template<typename T>
+// concept ComponentType = std::is_class_v<T> && !std::is_pointer_v<T>;
 
-} // namespace ptx
+} // namespace koilo

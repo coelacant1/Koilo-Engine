@@ -1,18 +1,22 @@
-#include <ptx/systems/scene/deform/trianglegroupdeformer.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/systems/scene/deform/trianglegroupdeformer.hpp>
 
-TriangleGroupDeformer::TriangleGroupDeformer(ITriangleGroup* object) {
+
+namespace koilo {
+
+koilo::TriangleGroupDeformer::TriangleGroupDeformer(ITriangleGroup* object) {
     objects = {object};
     objectCount = 1;
 }
 
-TriangleGroupDeformer::TriangleGroupDeformer(ITriangleGroup** objects, int objectCount) {
+koilo::TriangleGroupDeformer::TriangleGroupDeformer(ITriangleGroup** objects, int objectCount) {
     if (objects && objectCount > 0) {
         this->objects.assign(objects, objects + objectCount);
         this->objectCount = objectCount;
     }
 }
 
-bool TriangleGroupDeformer::CheckClipAxis(Vector3D base, bool positive, Axis valueCheckAxis) {
+bool koilo::TriangleGroupDeformer::CheckClipAxis(Vector3D base, bool positive, Axis valueCheckAxis) {
     if (valueCheckAxis == XAxis && positive && base.X > 0) {
         return true;
     } else if (valueCheckAxis == XAxis && !positive && base.X < 0) {
@@ -30,7 +34,7 @@ bool TriangleGroupDeformer::CheckClipAxis(Vector3D base, bool positive, Axis val
     }
 }
 
-void TriangleGroupDeformer::SinusoidalDeform(float magnitude, float timeRatio, float periodModifier, float frequencyModifier, Axis axis) {
+void koilo::TriangleGroupDeformer::SinusoidalDeform(float magnitude, float timeRatio, float periodModifier, float frequencyModifier, Axis axis) {
     for (int i = 0; i < objectCount; i++) {
         for (int j = 0; j < objects[i]->GetVertexCount(); j++) {
             Vector3D base = objects[i]->GetVertices()[j];
@@ -52,7 +56,7 @@ void TriangleGroupDeformer::SinusoidalDeform(float magnitude, float timeRatio, f
     }
 }
 
-void TriangleGroupDeformer::DropwaveDeform(float magnitude, float timeRatio, float periodModifier, float frequencyModifier, Axis axis) {
+void koilo::TriangleGroupDeformer::DropwaveDeform(float magnitude, float timeRatio, float periodModifier, float frequencyModifier, Axis axis) {
     for (int i = 0; i < objectCount; i++) {
         for (int j = 0; j < objects[i]->GetVertexCount(); j++) {
             Vector3D base = objects[i]->GetVertices()[j];
@@ -74,7 +78,7 @@ void TriangleGroupDeformer::DropwaveDeform(float magnitude, float timeRatio, flo
     }
 }
 
-void TriangleGroupDeformer::SineWaveSurfaceDeform(Vector3D offset, float magnitude, float timeRatio, float periodModifier, float frequencyModifier, Axis axis) {
+void koilo::TriangleGroupDeformer::SineWaveSurfaceDeform(Vector3D offset, float magnitude, float timeRatio, float periodModifier, float frequencyModifier, Axis axis) {
     for (int i = 0; i < objectCount; i++) {
         for (int j = 0; j < objects[i]->GetVertexCount(); j++) {
             Vector3D base = objects[i]->GetVertices()[j] - offset;
@@ -96,7 +100,7 @@ void TriangleGroupDeformer::SineWaveSurfaceDeform(Vector3D offset, float magnitu
     }
 }
 
-void TriangleGroupDeformer::CosineInterpolationDeformer(float* pointMultiplier, int points, float scale, float minAxis, float maxAxis, Axis selectionAxis, Axis deformAxis) {
+void koilo::TriangleGroupDeformer::CosineInterpolationDeformer(float* pointMultiplier, int points, float scale, float minAxis, float maxAxis, Axis selectionAxis, Axis deformAxis) {
     for (int i = 0; i < objectCount; i++) {
         for (int j = 0; j < objects[i]->GetVertexCount(); j++) {
             float value;
@@ -152,7 +156,7 @@ void TriangleGroupDeformer::CosineInterpolationDeformer(float* pointMultiplier, 
     }
 }
 
-void TriangleGroupDeformer::AxisZeroClipping(bool positive, Axis clipAxis, Axis valueCheckAxis) {
+void koilo::TriangleGroupDeformer::AxisZeroClipping(bool positive, Axis clipAxis, Axis valueCheckAxis) {
     for (int i = 0; i < objectCount; i++) {
         for (int j = 0; j < objects[i]->GetVertexCount(); j++) {
             Vector3D base = objects[i]->GetVertices()[j];
@@ -173,3 +177,5 @@ void TriangleGroupDeformer::AxisZeroClipping(bool positive, Axis clipAxis, Axis 
         }
     }
 }
+
+} // namespace koilo

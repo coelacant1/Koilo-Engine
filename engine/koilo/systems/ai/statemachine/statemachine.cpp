@@ -1,36 +1,39 @@
-#include <ptx/systems/ai/statemachine/statemachine.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/systems/ai/statemachine/statemachine.hpp>
+#include <koilo/core/time/timemanager.hpp>
 
-namespace ptx {
+namespace koilo {
 
 // === State ===
 
-State::State(const std::string& name)
+koilo::State::State(const std::string& name)
     : name(name) {
 }
 
-void State::AddTransition(const std::string& targetState, StateTransitionCondition condition) {
+void koilo::State::AddTransition(const std::string& targetState, StateTransitionCondition condition) {
     transitions.emplace_back(targetState, condition);
 }
 
-void State::Enter() {
+void koilo::State::Enter() {
     if (onEnter) {
         onEnter();
     }
 }
 
-void State::Update(float deltaTime) {
+void koilo::State::Update() {
     if (onUpdate) {
+        float deltaTime = TimeManager::GetInstance().GetDeltaTime();
         onUpdate(deltaTime);
     }
 }
 
-void State::Exit() {
+void koilo::State::Exit() {
     if (onExit) {
         onExit();
     }
 }
 
-std::string State::CheckTransitions() {
+std::string koilo::State::CheckTransitions() {
     for (const auto& transition : transitions) {
         if (transition.condition && transition.condition()) {
             return transition.targetStateName;
@@ -41,21 +44,21 @@ std::string State::CheckTransitions() {
 
 // === StateMachine ===
 
-StateMachine::StateMachine()
+koilo::StateMachine::StateMachine()
     : currentState(nullptr) {
 }
 
-StateMachine::~StateMachine() {
+koilo::StateMachine::~StateMachine() {
     Stop();
 }
 
-std::shared_ptr<State> StateMachine::AddState(const std::string& name) {
+std::shared_ptr<State> koilo::StateMachine::AddState(const std::string& name) {
     auto state = std::make_shared<State>(name);
     states[name] = state;
     return state;
 }
 
-std::shared_ptr<State> StateMachine::GetState(const std::string& name) {
+std::shared_ptr<State> koilo::StateMachine::GetState(const std::string& name) {
     auto it = states.find(name);
     if (it != states.end()) {
         return it->second;
@@ -63,7 +66,7 @@ std::shared_ptr<State> StateMachine::GetState(const std::string& name) {
     return nullptr;
 }
 
-void StateMachine::RemoveState(const std::string& name) {
+void koilo::StateMachine::RemoveState(const std::string& name) {
     // Exit state if it's current
     if (currentState && currentState->GetName() == name) {
         currentState->Exit();
@@ -73,18 +76,18 @@ void StateMachine::RemoveState(const std::string& name) {
     states.erase(name);
 }
 
-std::string StateMachine::GetCurrentStateName() const {
+std::string koilo::StateMachine::GetCurrentStateName() const {
     if (currentState) {
         return currentState->GetName();
     }
     return "";
 }
 
-void StateMachine::SetInitialState(const std::string& stateName) {
+void koilo::StateMachine::SetInitialState(const std::string& stateName) {
     initialStateName = stateName;
 }
 
-void StateMachine::TransitionTo(const std::string& stateName) {
+void koilo::StateMachine::TransitionTo(const std::string& stateName) {
     auto nextState = GetState(stateName);
     if (!nextState) {
         return;  // State doesn't exist
@@ -100,26 +103,26 @@ void StateMachine::TransitionTo(const std::string& stateName) {
     currentState->Enter();
 }
 
-void StateMachine::Start() {
+void koilo::StateMachine::Start() {
     if (!initialStateName.empty()) {
         TransitionTo(initialStateName);
     }
 }
 
-void StateMachine::Stop() {
+void koilo::StateMachine::Stop() {
     if (currentState) {
         currentState->Exit();
         currentState = nullptr;
     }
 }
 
-void StateMachine::Update(float deltaTime) {
+void koilo::StateMachine::Update() {
     if (!currentState) {
         return;
     }
 
     // Update current state
-    currentState->Update(deltaTime);
+    currentState->Update();
 
     // Check for transitions
     std::string nextStateName = currentState->CheckTransitions();
@@ -128,4 +131,4 @@ void StateMachine::Update(float deltaTime) {
     }
 }
 
-} // namespace ptx
+} // namespace koilo

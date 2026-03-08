@@ -1,6 +1,10 @@
-#include <ptx/systems/scene/deform/meshdeformer.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/systems/scene/deform/meshdeformer.hpp>
 
-bool MeshDeformer::CheckClipAxis(Vector3D base, bool positive, Axis valueCheckAxis){
+
+namespace koilo {
+
+bool koilo::MeshDeformer::CheckClipAxis(Vector3D base, bool positive, Axis valueCheckAxis){
     if (valueCheckAxis == XAxis && positive && base.X > 0){
         return true;
     }
@@ -24,21 +28,21 @@ bool MeshDeformer::CheckClipAxis(Vector3D base, bool positive, Axis valueCheckAx
     }
 }
 
-MeshDeformer::MeshDeformer(Mesh* object){
+koilo::MeshDeformer::MeshDeformer(Mesh* object){
     objects = {object};
     objectCount = 1;
 }
 
-MeshDeformer::MeshDeformer(Mesh** objects, int objectCount){
+koilo::MeshDeformer::MeshDeformer(Mesh** objects, uint32_t objectCount){
     if (objects && objectCount > 0) {
         this->objects.assign(objects, objects + objectCount);
         this->objectCount = objectCount;
     }
 }
 
-void MeshDeformer::PerspectiveDeform(float scaleRatio, Vector3D center, Axis axis){//0.0f close, 1.0f uniform, infinite infinite
-    for(int i = 0; i < objectCount; i++){
-        for(int j = 0; j < objects[i]->GetTriangleGroup()->GetVertexCount(); j++){
+void koilo::MeshDeformer::PerspectiveDeform(float scaleRatio, Vector3D center, Axis axis){//0.0f close, 1.0f uniform, infinite infinite
+    for(uint32_t i = 0; i < objectCount; i++){
+        for(uint32_t j = 0; j < objects[i]->GetTriangleGroup()->GetVertexCount(); j++){
             switch(axis){
                 case XAxis:
                     objects[i]->GetTriangleGroup()->GetVertices()[j].Y = objects[i]->GetTriangleGroup()->GetVertices()[j].Y * (1.0f - (objects[i]->GetTriangleGroup()->GetVertices()[j].X + center.X) / scaleRatio);
@@ -59,9 +63,9 @@ void MeshDeformer::PerspectiveDeform(float scaleRatio, Vector3D center, Axis axi
     }
 }
 
-void MeshDeformer::SinusoidalDeform(float magnitude, float timeRatio, float periodModifier, float frequencyModifier, Axis axis){
-    for(int i = 0; i < objectCount; i++){
-        for(int j = 0; j < objects[i]->GetTriangleGroup()->GetVertexCount(); j++){
+void koilo::MeshDeformer::SinusoidalDeform(float magnitude, float timeRatio, float periodModifier, float frequencyModifier, Axis axis){
+    for(uint32_t i = 0; i < objectCount; i++){
+        for(uint32_t j = 0; j < objects[i]->GetTriangleGroup()->GetVertexCount(); j++){
             Vector3D base = objects[i]->GetTriangleGroup()->GetVertices()[j];
             
             switch(axis){
@@ -81,9 +85,9 @@ void MeshDeformer::SinusoidalDeform(float magnitude, float timeRatio, float peri
     }
 }
 
-void MeshDeformer::DropwaveDeform(float magnitude, float timeRatio, float periodModifier, float frequencyModifier, Axis axis){
-    for(int i = 0; i < objectCount; i++){
-        for(int j = 0; j < objects[i]->GetTriangleGroup()->GetVertexCount(); j++){
+void koilo::MeshDeformer::DropwaveDeform(float magnitude, float timeRatio, float periodModifier, float frequencyModifier, Axis axis){
+    for(uint32_t i = 0; i < objectCount; i++){
+        for(uint32_t j = 0; j < objects[i]->GetTriangleGroup()->GetVertexCount(); j++){
             Vector3D base = objects[i]->GetTriangleGroup()->GetVertices()[j];
             
             switch(axis){
@@ -103,9 +107,9 @@ void MeshDeformer::DropwaveDeform(float magnitude, float timeRatio, float period
     }
 }
 
-void MeshDeformer::SineWaveSurfaceDeform(Vector3D offset, float magnitude, float timeRatio, float periodModifier, float frequencyModifier, Axis axis){
-    for(int i = 0; i < objectCount; i++){
-        for(int j = 0; j < objects[i]->GetTriangleGroup()->GetVertexCount(); j++){
+void koilo::MeshDeformer::SineWaveSurfaceDeform(Vector3D offset, float magnitude, float timeRatio, float periodModifier, float frequencyModifier, Axis axis){
+    for(uint32_t i = 0; i < objectCount; i++){
+        for(uint32_t j = 0; j < objects[i]->GetTriangleGroup()->GetVertexCount(); j++){
             Vector3D base = objects[i]->GetTriangleGroup()->GetVertices()[j] - offset;
             
             switch(axis){
@@ -125,10 +129,10 @@ void MeshDeformer::SineWaveSurfaceDeform(Vector3D offset, float magnitude, float
     }
 }
 
-void MeshDeformer::CosineInterpolationDeformer(float* pointMultiplier, int points, float scale, float minAxis, float maxAxis, Axis selectionAxis, Axis deformAxis){
+void koilo::MeshDeformer::CosineInterpolationDeformer(float* pointMultiplier, uint32_t points, float scale, float minAxis, float maxAxis, Axis selectionAxis, Axis deformAxis){
     //map axis offsets based on value range for multiplying vertex coordinates at set intervals spaced evenly across minimum and maximum range of selected axis
-    for(int i = 0; i < objectCount; i++){
-        for(int j = 0; j < objects[i]->GetTriangleGroup()->GetVertexCount(); j++){
+    for(uint32_t i = 0; i < objectCount; i++){
+        for(uint32_t j = 0; j < objects[i]->GetTriangleGroup()->GetVertexCount(); j++){
             float value;
             
             switch(selectionAxis){
@@ -150,7 +154,7 @@ void MeshDeformer::CosineInterpolationDeformer(float* pointMultiplier, int point
 
             float roundUpWindow = Mathematics::RoundUpWindow(value, stepWindow);
             float roundDownWindow = roundUpWindow - stepWindow;
-            int roundUpIndex = (roundUpWindow - minAxis) / stepWindow;
+            uint32_t roundUpIndex = (roundUpWindow - minAxis) / stepWindow;
             
             float intervalMultiplier, windowRatio;
             
@@ -185,9 +189,9 @@ void MeshDeformer::CosineInterpolationDeformer(float* pointMultiplier, int point
     }
 }
 
-void MeshDeformer::AxisZeroClipping(bool positive, Axis clipAxis, Axis valueCheckAxis){
-    for(int i = 0; i < objectCount; i++){
-        for(int j = 0; j < objects[i]->GetTriangleGroup()->GetVertexCount(); j++){
+void koilo::MeshDeformer::AxisZeroClipping(bool positive, Axis clipAxis, Axis valueCheckAxis){
+    for(uint32_t i = 0; i < objectCount; i++){
+        for(uint32_t j = 0; j < objects[i]->GetTriangleGroup()->GetVertexCount(); j++){
             Vector3D base = objects[i]->GetTriangleGroup()->GetVertices()[j];
             
             switch(clipAxis){
@@ -206,3 +210,5 @@ void MeshDeformer::AxisZeroClipping(bool positive, Axis clipAxis, Axis valueChec
         }
     }
 }
+
+} // namespace koilo

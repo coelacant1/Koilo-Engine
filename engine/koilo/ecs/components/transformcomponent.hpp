@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file transformcomponent.hpp
  * @brief Transform component for ECS (wraps existing Transform class).
@@ -8,16 +9,16 @@
 
 #pragma once
 
-#include "../../../core/math/transform.hpp"
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/core/math/transform.hpp>
+#include <koilo/registry/reflect_macros.hpp>
 
-namespace ptx {
+namespace koilo {
 
 /**
  * @struct TransformComponent
  * @brief Wraps the existing Transform class for use in ECS.
  *
- * This component uses the existing Transform class from ptx::core::math
+ * This component uses the existing Transform class from koilo::core::math
  * to avoid duplicating functionality.
  */
 struct TransformComponent {
@@ -79,25 +80,25 @@ struct TransformComponent {
      */
     void SetScale(const Vector3D& scl) { transform.SetScale(scl); }
 
-    PTX_BEGIN_FIELDS(TransformComponent)
-        PTX_FIELD(TransformComponent, transform, "Transform", 0, 0)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(TransformComponent)
+        KL_FIELD(TransformComponent, transform, "Transform", 0, 0)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(TransformComponent)
-        PTX_METHOD_AUTO(TransformComponent, GetPosition, "Get position"),
-        PTX_METHOD_AUTO(TransformComponent, SetPosition, "Set position"),
-        PTX_METHOD_AUTO(TransformComponent, GetRotation, "Get rotation"),
-        PTX_METHOD_AUTO(TransformComponent, SetRotation, "Set rotation"),
-        PTX_METHOD_AUTO(TransformComponent, GetScale, "Get scale"),
-        PTX_METHOD_AUTO(TransformComponent, SetScale, "Set scale")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(TransformComponent)
+        KL_METHOD_AUTO(TransformComponent, GetPosition, "Get position"),
+        KL_METHOD_AUTO(TransformComponent, SetPosition, "Set position"),
+        KL_METHOD_AUTO(TransformComponent, GetRotation, "Get rotation"),
+        KL_METHOD_AUTO(TransformComponent, SetRotation, "Set rotation"),
+        KL_METHOD_AUTO(TransformComponent, GetScale, "Get scale"),
+        KL_METHOD_AUTO(TransformComponent, SetScale, "Set scale")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(TransformComponent)
-        PTX_CTOR0(TransformComponent),
-        PTX_CTOR(TransformComponent, Vector3D),
-        PTX_CTOR(TransformComponent, Transform),
-        PTX_CTOR(TransformComponent, Quaternion, Vector3D, Vector3D)
-    PTX_END_DESCRIBE(TransformComponent)
+    KL_BEGIN_DESCRIBE(TransformComponent)
+        KL_CTOR0(TransformComponent),
+        KL_CTOR(TransformComponent, Vector3D),
+        KL_CTOR(TransformComponent, Transform),
+        KL_CTOR(TransformComponent, Quaternion, Vector3D, Vector3D)
+    KL_END_DESCRIBE(TransformComponent)
 };
 
-} // namespace ptx
+} // namespace koilo

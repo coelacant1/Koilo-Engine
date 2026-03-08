@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file KeyFrameTrack.h
  * @brief Declares the KeyFrameTrack template class for managing keyframe-based animations.
@@ -17,9 +18,12 @@
 #include <vector>
 
 #include "keyframe.hpp"
-#include "../../../core/math/mathematics.hpp"
-#include "../../../core/platform/time.hpp"
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/core/math/mathematics.hpp>
+#include <koilo/core/platform/time.hpp>
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class KeyFrameInterpolation
@@ -42,17 +46,17 @@ public:
         Step    ///< Step interpolation (discrete transitions).
     };
 
-    PTX_BEGIN_FIELDS(KeyFrameInterpolation)
+    KL_BEGIN_FIELDS(KeyFrameInterpolation)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(KeyFrameInterpolation)
+    KL_BEGIN_METHODS(KeyFrameInterpolation)
         /* No reflected methods. */
-    PTX_END_METHODS
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(KeyFrameInterpolation)
+    KL_BEGIN_DESCRIBE(KeyFrameInterpolation)
         /* No reflected ctors. */
-    PTX_END_DESCRIBE(KeyFrameInterpolation)
+    KL_END_DESCRIBE(KeyFrameInterpolation)
 
 };
 
@@ -134,40 +138,44 @@ private:
     void InsertKeyFrame(const KeyFrame& keyFrame);
     void UpdateFrameRange();
 
-    PTX_BEGIN_FIELDS(KeyFrameTrack)
+    KL_BEGIN_FIELDS(KeyFrameTrack)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(KeyFrameTrack)
-        PTX_METHOD_AUTO(KeyFrameTrack, GetCurrentTime, "Get current time"),
-        PTX_METHOD_AUTO(KeyFrameTrack, SetCurrentTime, "Set current time"),
-        PTX_METHOD_AUTO(KeyFrameTrack, Pause, "Pause"),
-        PTX_METHOD_AUTO(KeyFrameTrack, Play, "Play"),
-        PTX_METHOD_AUTO(KeyFrameTrack, SetPlaybackSpeed, "Set playback speed"),
-        PTX_METHOD_AUTO(KeyFrameTrack, GetPlaybackSpeed, "Get playback speed"),
-        PTX_METHOD_AUTO(KeyFrameTrack, SetInterpolationMethod, "Set interpolation method"),
-        PTX_METHOD_AUTO(KeyFrameTrack, GetInterpolationMethod, "Get interpolation method"),
-        PTX_METHOD_AUTO(KeyFrameTrack, SetMin, "Set min"),
-        PTX_METHOD_AUTO(KeyFrameTrack, SetMax, "Set max"),
-        PTX_METHOD_AUTO(KeyFrameTrack, SetRange, "Set range"),
-        PTX_METHOD_AUTO(KeyFrameTrack, GetMin, "Get min"),
-        PTX_METHOD_AUTO(KeyFrameTrack, GetMax, "Get max"),
-        PTX_METHOD_AUTO(KeyFrameTrack, AddParameter, "Add parameter"),
-        /* Add key frame */ PTX_METHOD_OVLD(KeyFrameTrack, AddKeyFrame, void, float, float),
-        /* Add key frame */ PTX_METHOD_OVLD(KeyFrameTrack, AddKeyFrame, void, const KeyFrame &),
-        PTX_METHOD_AUTO(KeyFrameTrack, RemoveKeyFrame, "Remove key frame"),
-        PTX_METHOD_AUTO(KeyFrameTrack, GetParameterValue, "Get parameter value"),
-        PTX_METHOD_AUTO(KeyFrameTrack, Reset, "Reset"),
-        PTX_METHOD_AUTO(KeyFrameTrack, Update, "Update"),
-        PTX_METHOD_AUTO(KeyFrameTrack, GetParameterCapacity, "Get parameter capacity"),
-        PTX_METHOD_AUTO(KeyFrameTrack, GetKeyFrameCapacity, "Get key frame capacity"),
-        PTX_METHOD_AUTO(KeyFrameTrack, GetParameterCount, "Get parameter count"),
-        PTX_METHOD_AUTO(KeyFrameTrack, GetKeyFrameCount, "Get key frame count"),
-        PTX_METHOD_AUTO(KeyFrameTrack, IsActive, "Is active")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(KeyFrameTrack)
+        KL_METHOD_AUTO(KeyFrameTrack, GetCurrentTime, "Get current time"),
+        KL_METHOD_AUTO(KeyFrameTrack, SetCurrentTime, "Set current time"),
+        KL_METHOD_AUTO(KeyFrameTrack, Pause, "Pause"),
+        KL_METHOD_AUTO(KeyFrameTrack, Play, "Play"),
+        KL_METHOD_AUTO(KeyFrameTrack, SetPlaybackSpeed, "Set playback speed"),
+        KL_METHOD_AUTO(KeyFrameTrack, GetPlaybackSpeed, "Get playback speed"),
+        KL_METHOD_AUTO(KeyFrameTrack, SetInterpolationMethod, "Set interpolation method"),
+        KL_METHOD_AUTO(KeyFrameTrack, GetInterpolationMethod, "Get interpolation method"),
+        KL_METHOD_AUTO(KeyFrameTrack, SetMin, "Set min"),
+        KL_METHOD_AUTO(KeyFrameTrack, SetMax, "Set max"),
+        KL_METHOD_AUTO(KeyFrameTrack, SetRange, "Set range"),
+        KL_METHOD_AUTO(KeyFrameTrack, GetMin, "Get min"),
+        KL_METHOD_AUTO(KeyFrameTrack, GetMax, "Get max"),
+        KL_METHOD_AUTO(KeyFrameTrack, AddParameter, "Add parameter"),
+        /* Add key frame */ KL_METHOD_OVLD(KeyFrameTrack, AddKeyFrame, void, float, float),
+        /* Add key frame */ KL_METHOD_OVLD(KeyFrameTrack, AddKeyFrame, void, const KeyFrame &),
+        KL_METHOD_AUTO(KeyFrameTrack, RemoveKeyFrame, "Remove key frame"),
+        KL_METHOD_AUTO(KeyFrameTrack, GetParameterValue, "Get parameter value"),
+        KL_METHOD_AUTO(KeyFrameTrack, Reset, "Reset"),
+        KL_METHOD_AUTO(KeyFrameTrack, Update, "Update"),
+        KL_METHOD_AUTO(KeyFrameTrack, GetParameterCapacity, "Get parameter capacity"),
+        KL_METHOD_AUTO(KeyFrameTrack, GetKeyFrameCapacity, "Get key frame capacity"),
+        KL_METHOD_AUTO(KeyFrameTrack, GetParameterCount, "Get parameter count"),
+        KL_METHOD_AUTO(KeyFrameTrack, GetKeyFrameCount, "Get key frame count"),
+        KL_METHOD_AUTO(KeyFrameTrack, IsActive, "Is active")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(KeyFrameTrack)
-        PTX_CTOR(KeyFrameTrack, float, float, InterpolationMethod, std::size_t, std::size_t)
-    PTX_END_DESCRIBE(KeyFrameTrack)
+    KL_BEGIN_DESCRIBE(KeyFrameTrack)
+        KL_CTOR0(KeyFrameTrack),
+        KL_CTOR(KeyFrameTrack, float, float),
+        KL_CTOR(KeyFrameTrack, float, float, InterpolationMethod, std::size_t, std::size_t)
+    KL_END_DESCRIBE(KeyFrameTrack)
 
 };
+
+} // namespace koilo

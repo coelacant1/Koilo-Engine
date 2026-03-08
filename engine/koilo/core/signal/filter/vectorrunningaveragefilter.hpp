@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file VectorRunningAverageFilter.h
  * @brief Implements a running average filter for 3D vector smoothing.
@@ -13,8 +14,11 @@
 #pragma once
 
 #include "runningaveragefilter.hpp"
-#include "../../math/vector3d.hpp" // Includes mathematical utilities for constraints and operations.
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/core/math/vector3d.hpp> // Includes mathematical utilities for constraints and operations.
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class VectorRunningAverageFilter
@@ -67,19 +71,21 @@ public:
      */
     size_t GetCapacity() const { return capacity; }
 
-    PTX_BEGIN_FIELDS(VectorRunningAverageFilter)
+    KL_BEGIN_FIELDS(VectorRunningAverageFilter)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(VectorRunningAverageFilter)
-        PTX_METHOD_AUTO(VectorRunningAverageFilter, Filter, "Filter"),
-        PTX_METHOD_AUTO(VectorRunningAverageFilter, SetGain, "Set gain"),
-        PTX_METHOD_AUTO(VectorRunningAverageFilter, Reset, "Reset"),
-        PTX_METHOD_AUTO(VectorRunningAverageFilter, GetCapacity, "Get capacity")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(VectorRunningAverageFilter)
+        KL_METHOD_AUTO(VectorRunningAverageFilter, Filter, "Filter"),
+        KL_METHOD_AUTO(VectorRunningAverageFilter, SetGain, "Set gain"),
+        KL_METHOD_AUTO(VectorRunningAverageFilter, Reset, "Reset"),
+        KL_METHOD_AUTO(VectorRunningAverageFilter, GetCapacity, "Get capacity")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(VectorRunningAverageFilter)
-        PTX_CTOR(VectorRunningAverageFilter, int, float)
-    PTX_END_DESCRIBE(VectorRunningAverageFilter)
+    KL_BEGIN_DESCRIBE(VectorRunningAverageFilter)
+        KL_CTOR(VectorRunningAverageFilter, int, float)
+    KL_END_DESCRIBE(VectorRunningAverageFilter)
 
 };
+
+} // namespace koilo

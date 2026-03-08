@@ -1,7 +1,11 @@
-#include <ptx/core/signal/filter/minfilter.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/core/signal/filter/minfilter.hpp>
 
 #include <algorithm>
 #include <numeric>
+
+
+namespace koilo {
 
 namespace {
 constexpr size_t kDefaultBlockDivisor = 10;
@@ -15,7 +19,7 @@ size_t ComputeBlockCount(size_t capacity) {
 }
 }
 
-MinFilter::MinFilter(size_t memory, bool ignoreSameValue)
+koilo::MinFilter::MinFilter(size_t memory, bool ignoreSameValue)
     : capacity(std::max<size_t>(1, memory)),
       blockCount(ComputeBlockCount(std::max<size_t>(1, memory))),
       values(capacity, 0.0f),
@@ -23,13 +27,13 @@ MinFilter::MinFilter(size_t memory, bool ignoreSameValue)
       ignoreSame(ignoreSameValue) {
 }
 
-void MinFilter::Reset() {
+void koilo::MinFilter::Reset() {
     std::fill(values.begin(), values.end(), 0.0f);
     std::fill(minValues.begin(), minValues.end(), 0.0f);
     currentAmount = 0;
 }
 
-void MinFilter::ShiftArray(std::vector<float>& arr) {
+void koilo::MinFilter::ShiftArray(std::vector<float>& arr) {
     if (arr.empty()) {
         return;
     }
@@ -39,7 +43,7 @@ void MinFilter::ShiftArray(std::vector<float>& arr) {
     arr.back() = 0.0f;
 }
 
-float MinFilter::Filter(float value) {
+float koilo::MinFilter::Filter(float value) {
     if (capacity == 0) {
         return value;
     }
@@ -69,3 +73,5 @@ float MinFilter::Filter(float value) {
     const float sum = std::accumulate(minValues.begin(), minValues.end(), 0.0f);
     return sum / static_cast<float>(blockCount);
 }
+
+} // namespace koilo

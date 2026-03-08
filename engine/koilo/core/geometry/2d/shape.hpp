@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file shape.hpp
  * @brief Defines the Shape base class for representing geometric shapes in 2D space.
@@ -13,8 +14,12 @@
 
 #pragma once
 
-#include "../../math/vector2d.hpp"
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/core/math/vector2d.hpp>
+#include <koilo/core/geometry/2d/aabb2d.hpp>
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class Shape
@@ -27,18 +32,18 @@ public:
         Vector2D minV;
         Vector2D maxV;
 
-    PTX_BEGIN_FIELDS(Bounds)
-        PTX_FIELD(Bounds, minV, "Min v", 0, 0),
-        PTX_FIELD(Bounds, maxV, "Max v", 0, 0)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(Bounds)
+        KL_FIELD(Bounds, minV, "Min v", 0, 0),
+        KL_FIELD(Bounds, maxV, "Max v", 0, 0)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(Bounds)
+    KL_BEGIN_METHODS(Bounds)
         /* No reflected methods. */
-    PTX_END_METHODS
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(Bounds)
+    KL_BEGIN_DESCRIBE(Bounds)
         /* No reflected ctors. */
-    PTX_END_DESCRIBE(Bounds)
+    KL_END_DESCRIBE(Bounds)
 
 };
 
@@ -137,8 +142,22 @@ public:
      */
     bool Overlaps(Shape& shape) const;
 
+    /**
+     * @brief Returns this shape's bounds as an AABB2D.
+     */
+    AABB2D GetAABB() const { return AABB2D(bounds.minV, bounds.maxV); }
+
+    /**
+     * @brief Tests overlap with another shape via their AABB bounds.
+     */
+    bool OverlapsAABB(const Shape& other) const {
+        return GetAABB().Overlaps(other.GetAABB());
+    }
+
 protected:
     Bounds bounds;   ///< The bounds of the shape.
     float rotation;  ///< The rotation of the shape in degrees.
 
 };
+
+} // namespace koilo

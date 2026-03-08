@@ -1,65 +1,71 @@
-#include <ptx/systems/render/core/pixel.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/systems/render/core/pixel.hpp>
 
-Pixel::Pixel() {
+
+namespace koilo {
+
+koilo::Pixel::Pixel() {
     // Default constructor
 }
 
-Pixel::Pixel(const Vector2D* position) {
+koilo::Pixel::Pixel(const Vector2D* position) {
     this->position = position;
 }
 
-const Vector2D Pixel::GetPosition() {
+const Vector2D koilo::Pixel::GetPosition() {
     return *position;
 }
 
-void Pixel::SetUpPixel(Pixel* pixel) {
+void koilo::Pixel::SetUpPixel(Pixel* pixel) {
     this->up = pixel;
     this->upExists = true;
 }
 
-void Pixel::SetDownPixel(Pixel* pixel) {
+void koilo::Pixel::SetDownPixel(Pixel* pixel) {
     this->down = pixel;
     this->downExists = true;
 }
 
-void Pixel::SetLeftPixel(Pixel* pixel) {
+void koilo::Pixel::SetLeftPixel(Pixel* pixel) {
     this->left = pixel;
     this->leftExists = true;
 }
 
-void Pixel::SetRightPixel(Pixel* pixel) {
+void koilo::Pixel::SetRightPixel(Pixel* pixel) {
     this->right = pixel;
     this->rightExists = true;
 }
 
-bool Pixel::HasUpPixel() {
+bool koilo::Pixel::HasUpPixel() {
     return upExists;
 }
 
-bool Pixel::HasDownPixel() {
+bool koilo::Pixel::HasDownPixel() {
     return downExists;
 }
 
-bool Pixel::HasLeftPixel() {
+bool koilo::Pixel::HasLeftPixel() {
     return leftExists;
 }
 
-bool Pixel::HasRightPixel() {
+bool koilo::Pixel::HasRightPixel() {
     return rightExists;
 }
 
-Pixel* Pixel::GetUpPixel() {
+Pixel* koilo::Pixel::GetUpPixel() {
     return up;
 }
 
-Pixel* Pixel::GetDownPixel() {
+Pixel* koilo::Pixel::GetDownPixel() {
     return down;
 }
 
-Pixel* Pixel::GetLeftPixel() {
+Pixel* koilo::Pixel::GetLeftPixel() {
     return left;
 }
 
-Pixel* Pixel::GetRightPixel() {
+Pixel* koilo::Pixel::GetRightPixel() {
     return right;
 }
+
+} // namespace koilo

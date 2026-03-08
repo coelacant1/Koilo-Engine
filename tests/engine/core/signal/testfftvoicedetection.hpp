@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testfftvoicedetection.hpp
  * @brief Unit tests for the FFTVoiceDetection class.
@@ -12,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/core/signal/fftvoicedetection.hpp>
+#include <koilo/core/signal/fftvoicedetection.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file TimeStep.h
  * @brief Utility class for timing operations based on a set frequency.
@@ -10,8 +11,11 @@
 #pragma once
 
 #include <stdint.h>
-#include "../platform/time.hpp"
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/core/platform/time.hpp>
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class TimeStep
@@ -41,17 +45,19 @@ public:
      */
     bool IsReady();
 
-    PTX_BEGIN_FIELDS(TimeStep)
+    KL_BEGIN_FIELDS(TimeStep)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(TimeStep)
-        PTX_METHOD_AUTO(TimeStep, SetFrequency, "Set frequency"),
-        PTX_METHOD_AUTO(TimeStep, IsReady, "Is ready")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(TimeStep)
+        KL_METHOD_AUTO(TimeStep, SetFrequency, "Set frequency"),
+        KL_METHOD_AUTO(TimeStep, IsReady, "Is ready")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(TimeStep)
-        PTX_CTOR(TimeStep, float)
-    PTX_END_DESCRIBE(TimeStep)
+    KL_BEGIN_DESCRIBE(TimeStep)
+        KL_CTOR(TimeStep, float)
+    KL_END_DESCRIBE(TimeStep)
 
 };
+
+} // namespace koilo

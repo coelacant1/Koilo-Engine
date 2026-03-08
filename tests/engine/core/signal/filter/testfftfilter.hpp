@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testfftfilter.hpp
  * @brief Unit tests for the FFTFilter class.
@@ -12,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/core/signal/filter/fftfilter.hpp>
+#include <koilo/core/signal/filter/fftfilter.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

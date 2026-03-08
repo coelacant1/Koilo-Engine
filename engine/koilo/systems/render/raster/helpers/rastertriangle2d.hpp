@@ -1,130 +1,136 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file rastertriangle2d.hpp
- * @brief Extends Triangle2D with rendering-specific data for rasterization.
+ * @brief Flat rasterization triangle - no inheritance, cache-optimised layout.
  * @date  26/06/2025
  * @author Coela Can't
  */
 #pragma once
 
-#include "../../../../core/geometry/2d/triangle.hpp"
-#include "../../../../core/math/transform.hpp"
-#include "../../../../core/math/vector3d.hpp"
-#include "../../../render/material/imaterial.hpp"
-#include "../../../../core/geometry/2d/rectangle.hpp"
+#include <koilo/core/math/transform.hpp>
+#include <koilo/core/math/vector2d.hpp>
+#include <koilo/core/math/vector3d.hpp>
+#include <koilo/systems/render/material/imaterial.hpp>
+#include <koilo/ksl/ksl_shader.hpp>
 #include "rastertriangle3d.hpp"
-#include "../../../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
- * @class RasterTriangle2D
- * @brief A 2D triangle with data needed for rasterization, like depth, UVs, and materials.
+ * @struct RasterTriangle2D
+ * @brief Flat POD-like struct for rasterization - no vtable, no inheritance.
  *
- * This class inherits the basic geometry from Triangle2D and adds all the
- * properties required to render it, including pointers to the original 3D data,
- * material information, and pre-calculated values for efficient intersection tests.
+ * Holds projected 2D screen vertices, inline world-space positions/UVs,
+ * and precomputed barycentric + AABB data.  All data lives in one
+ * contiguous block for cache locality in the per-pixel inner loop.
  */
-class RasterTriangle2D : public Triangle2D {
-public:
-    // --- Rendering & 3D Link Data ---
-    const Vector3D* t3p1;   ///< Pointer to the original first vertex in 3D space.
-    const Vector3D* t3p2;   ///< Pointer to the original second vertex in 3D space.
-    const Vector3D* t3p3;   ///< Pointer to the original third vertex in 3D space.
-    const Vector3D* normal; ///< Pointer to the original normal vector of the 3D triangle.
-    IMaterial* material;     ///< Material assigned to the triangle for shading.
+struct RasterTriangle2D {
+    // --- Screen-space vertices (projected 2D) ---
+    Vector2D p1, p2, p3;
 
-    // --- UV Mapping Data ---
-    const Vector2D* p1UV;   ///< UV coordinates of the first vertex.
-    const Vector2D* p2UV;   ///< UV coordinates of the second vertex.
-    const Vector2D* p3UV;   ///< UV coordinates of the third vertex.
-    bool hasUV;             ///< Flag indicating if the triangle has UV coordinates.
+    // --- World-space vertex positions (inline, no pointer chase) ---
+    Vector3D wp1, wp2, wp3;
 
-    // --- Pre-calculated values for efficiency ---
-    float averageDepth;     ///< Average depth of the triangle's vertices for z-buffering.
-    float denominator;      ///< Precomputed denominator for barycentric coordinate calculations.
-    Vector2D v0, v1;        ///< Edge vectors for barycentric calculations.
-    Rectangle2D bounds;     ///< Axis-aligned bounding box for fast spatial queries (e.g., QuadTree).
+    // --- Surface normal ---
+    Vector3D normal;
 
-    /**
-     * @brief Default constructor. Initializes all pointers to nullptr.
-     */
+    // --- Material (kept for reflection/scripting) ---
+    IMaterial* material;
+
+    // --- Direct shade pointers (hot-path, skip virtual dispatch) ---
+    ksl::KSLShadeFn shadeFn = nullptr;
+    void* shaderInstance = nullptr;
+    const ksl::FrameContext* frameCtx = nullptr;
+    uint8_t attribMask = ksl::SHADE_ATTRIB_ALL;  ///< Which ShadeInput fields this shader reads
+
+    // --- UV coordinates (inline; default (0,0) when absent) ---
+    Vector2D uv1, uv2, uv3;
+
+    // --- Per-vertex projected Z depths ---
+    float z1, z2, z3;
+
+    // --- Precomputed barycentric data ---
+    float denominator;       ///< 1/det for barycentric coordinate calculations.
+    Vector2D v0, v1;         ///< Edge vectors for barycentric calculations.
+
+    // --- AABB as raw floats (no Rectangle2D overhead) ---
+    float boundsMinX, boundsMinY, boundsMaxX, boundsMaxY;
+
+    // --- Precomputed pixel-space AABB (avoids float->int in scanline loop) ---
+    int16_t pixMinX, pixMinY, pixMaxX, pixMaxY;
+
+    // --- Depth sort key ---
+    float averageDepth;
+
+    // --- Constructors ---
     RasterTriangle2D();
 
-    /**
-     * @brief Projects a 3D triangle to a 2D raster triangle using a camera transform.
-     *
-     * This is the primary constructor for creating a renderable 2D triangle from 3D scene data.
-     * It handles the projection, calculates depth, copies material/UV data, and pre-computes
-     * values for efficient rasterization.
-     *
-     * @param camTransform The transform of the camera.
-     * @param lookDirection The look direction of the camera.
-     * @param sourceTriangle The source 3D triangle.
-     * @param mat The material to assign.
-     */
     RasterTriangle2D(const Transform& camTransform, const Quaternion& lookDirection,
                      const RasterTriangle3D& sourceTriangle, IMaterial* mat);
 
-    /**
-     * @brief Checks for intersection with a point using efficient barycentric coordinates.
-     *
-     * @param x The x-coordinate of the point.
-     * @param y The y-coordinate of the point.
-     * @param u [out] The first barycentric coordinate.
-     * @param v [out] The second barycentric coordinate.
-     * @param w [out] The third barycentric coordinate.
-     * @return true if the point is inside the triangle, false otherwise.
-     */
+    RasterTriangle2D(const Transform& camTransform, const Quaternion& lookDirection,
+                     const RasterTriangle3D& sourceTriangle, IMaterial* mat,
+                     float nearPlane, float fovScale,
+                     float viewportCenterX, float viewportCenterY,
+                     float viewportHalfW, float viewportHalfH);
+
+    /** @brief Direct construction from raw vertex/UV pointers (orthographic). */
+    RasterTriangle2D(const Transform& camTransform, const Quaternion& lookDirection,
+                     const Vector3D* v1, const Vector3D* v2, const Vector3D* v3,
+                     const Vector2D* t1, const Vector2D* t2, const Vector2D* t3,
+                     IMaterial* mat);
+
+    /** @brief Direct construction from raw vertex/UV pointers (perspective). */
+    RasterTriangle2D(const Transform& camTransform, const Quaternion& lookDirection,
+                     const Vector3D* v1, const Vector3D* v2, const Vector3D* v3,
+                     const Vector2D* t1, const Vector2D* t2, const Vector2D* t3,
+                     IMaterial* mat,
+                     float nearPlane, float fovScale,
+                     float viewportCenterX, float viewportCenterY,
+                     float viewportHalfW, float viewportHalfH);
+
+    bool IsBackFacing() const;
+
     bool GetBarycentricCoords(float x, float y, float& u, float& v, float& w) const;
 
-    /**
-     * @brief Checks if the triangle's bounding box overlaps with another rectangle.
-     * @param otherBounds The rectangle to test against.
-     * @return true if the bounds overlap, false otherwise.
-     */
-    bool Overlaps(const Rectangle2D& otherBounds) const;
+    /** @brief Simple AABB overlap test. */
+    bool Overlaps(float oMinX, float oMinY, float oMaxX, float oMaxY) const;
 
-    /**
-     * @brief Gets the assigned material.
-     */
     IMaterial* GetMaterial() const;
 
-    /**
-     * @brief Provides a string representation of the 2D vertices.
-     */
-    ptx::UString ToString() const;
+    koilo::UString ToString() const;
 
 private:
-    /**
-     * @brief Private helper to calculate the bounding box and barycentric denominator.
-     */
     void CalculateBoundsAndDenominator();
 
-    PTX_BEGIN_FIELDS(RasterTriangle2D)
-        PTX_FIELD(RasterTriangle2D, t3p1, "T3p1", 0, 0),
-        PTX_FIELD(RasterTriangle2D, t3p2, "T3p2", 0, 0),
-        PTX_FIELD(RasterTriangle2D, t3p3, "T3p3", 0, 0),
-        PTX_FIELD(RasterTriangle2D, normal, "Normal", 0, 0),
-        PTX_FIELD(RasterTriangle2D, material, "Material", 0, 0),
-        PTX_FIELD(RasterTriangle2D, p1UV, "P1 uv", 0, 0),
-        PTX_FIELD(RasterTriangle2D, p2UV, "P2 uv", 0, 0),
-        PTX_FIELD(RasterTriangle2D, p3UV, "P3 uv", 0, 0),
-        PTX_FIELD(RasterTriangle2D, hasUV, "Has uv", 0, 1),
-        PTX_FIELD(RasterTriangle2D, averageDepth, "Average depth", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(RasterTriangle2D, denominator, "Denominator", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(RasterTriangle2D, v0, "V0", 0, 0),
-        PTX_FIELD(RasterTriangle2D, v1, "V1", 0, 0),
-        PTX_FIELD(RasterTriangle2D, bounds, "Bounds", 0, 0)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(RasterTriangle2D)
+        KL_FIELD(RasterTriangle2D, wp1, "Wp1", 0, 0),
+        KL_FIELD(RasterTriangle2D, wp2, "Wp2", 0, 0),
+        KL_FIELD(RasterTriangle2D, wp3, "Wp3", 0, 0),
+        KL_FIELD(RasterTriangle2D, normal, "Normal", 0, 0),
+        KL_FIELD(RasterTriangle2D, material, "Material", 0, 0),
+        KL_FIELD(RasterTriangle2D, uv1, "Uv1", 0, 0),
+        KL_FIELD(RasterTriangle2D, uv2, "Uv2", 0, 0),
+        KL_FIELD(RasterTriangle2D, uv3, "Uv3", 0, 0),
+        KL_FIELD(RasterTriangle2D, averageDepth, "Average depth", __FLT_MIN__, __FLT_MAX__),
+        KL_FIELD(RasterTriangle2D, denominator, "Denominator", __FLT_MIN__, __FLT_MAX__),
+        KL_FIELD(RasterTriangle2D, v0, "V0", 0, 0),
+        KL_FIELD(RasterTriangle2D, v1, "V1", 0, 0)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(RasterTriangle2D)
-        PTX_METHOD_AUTO(RasterTriangle2D, GetBarycentricCoords, "Get barycentric coords"),
-        PTX_METHOD_AUTO(RasterTriangle2D, Overlaps, "Overlaps"),
-        PTX_METHOD_AUTO(RasterTriangle2D, GetMaterial, "Get material"),
-        PTX_METHOD_AUTO(RasterTriangle2D, ToString, "To string")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(RasterTriangle2D)
+        KL_METHOD_AUTO(RasterTriangle2D, GetBarycentricCoords, "Get barycentric coords"),
+        KL_METHOD_AUTO(RasterTriangle2D, GetMaterial, "Get material"),
+        KL_METHOD_AUTO(RasterTriangle2D, ToString, "To string")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(RasterTriangle2D)
-        PTX_CTOR0(RasterTriangle2D),
-        PTX_CTOR(RasterTriangle2D, const Transform &, const Quaternion &, const RasterTriangle3D &, IMaterial *)
-    PTX_END_DESCRIBE(RasterTriangle2D)
+    KL_BEGIN_DESCRIBE(RasterTriangle2D)
+        KL_CTOR0(RasterTriangle2D),
+        KL_CTOR(RasterTriangle2D, const Transform &, const Quaternion &, const RasterTriangle3D &, IMaterial *)
+    KL_END_DESCRIBE(RasterTriangle2D)
 
 };
+
+} // namespace koilo

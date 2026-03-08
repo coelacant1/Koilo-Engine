@@ -1,19 +1,23 @@
-﻿#include <ptx/systems/scene/animation/keyframetrack.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/systems/scene/animation/keyframetrack.hpp>
 
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <iterator>
 
+
+namespace koilo {
+
 namespace {
 constexpr float kSecondsPerMillisecond = 1.0f / 1000.0f;
 
 float CurrentSeconds() {
-	return static_cast<float>(ptx::Time::Millis()) * kSecondsPerMillisecond;
+	return static_cast<float>(koilo::Time::Millis()) * kSecondsPerMillisecond;
 }
 } // namespace
 
-KeyFrameTrack::KeyFrameTrack(float min,
+koilo::KeyFrameTrack::KeyFrameTrack(float min,
 							 float max,
 							 InterpolationMethod interpMethod,
 							 std::size_t parameterCapacity,
@@ -33,11 +37,11 @@ KeyFrameTrack::KeyFrameTrack(float min,
 	UpdateFrameRange();
 }
 
-float KeyFrameTrack::GetCurrentTime() const noexcept {
+float koilo::KeyFrameTrack::GetCurrentTime() const noexcept {
 	return currentTime_;
 }
 
-void KeyFrameTrack::SetCurrentTime(float setTime) {
+void koilo::KeyFrameTrack::SetCurrentTime(float setTime) {
 	currentTime_ = setTime;
 	if (!keyFrames_.empty() && stopFrameTime_ >= startFrameTime_) {
 		const float duration = stopFrameTime_ - startFrameTime_;
@@ -55,20 +59,20 @@ void KeyFrameTrack::SetCurrentTime(float setTime) {
 	lastUpdateSeconds_ = CurrentSeconds();
 }
 
-void KeyFrameTrack::Pause() {
+void koilo::KeyFrameTrack::Pause() {
 	isActive_ = false;
 }
 
-void KeyFrameTrack::Play() {
+void koilo::KeyFrameTrack::Play() {
 	isActive_ = true;
 	lastUpdateSeconds_ = CurrentSeconds();
 }
 
-void KeyFrameTrack::SetPlaybackSpeed(float playbackSpeed) noexcept {
+void koilo::KeyFrameTrack::SetPlaybackSpeed(float playbackSpeed) noexcept {
 	playbackSpeed_ = playbackSpeed;
 }
 
-void KeyFrameTrack::SetMin(float min) noexcept {
+void koilo::KeyFrameTrack::SetMin(float min) noexcept {
 	min_ = min;
 	if (min_ > max_) {
 		max_ = min_;
@@ -84,7 +88,7 @@ void KeyFrameTrack::SetMin(float min) noexcept {
 	}
 }
 
-void KeyFrameTrack::SetMax(float max) noexcept {
+void koilo::KeyFrameTrack::SetMax(float max) noexcept {
 	max_ = max;
 	if (max_ < min_) {
 		min_ = max_;
@@ -100,7 +104,7 @@ void KeyFrameTrack::SetMax(float max) noexcept {
 	}
 }
 
-void KeyFrameTrack::SetRange(float min, float max) noexcept {
+void koilo::KeyFrameTrack::SetRange(float min, float max) noexcept {
 	if (min <= max) {
 		min_ = min;
 		max_ = max;
@@ -119,7 +123,7 @@ void KeyFrameTrack::SetRange(float min, float max) noexcept {
 	}
 }
 
-void KeyFrameTrack::AddParameter(float* parameter) {
+void koilo::KeyFrameTrack::AddParameter(float* parameter) {
 	if (!parameter) {
 		return;
 	}
@@ -133,11 +137,11 @@ void KeyFrameTrack::AddParameter(float* parameter) {
 	*parameter = parameterValue_;
 }
 
-void KeyFrameTrack::AddKeyFrame(float time, float value) {
+void koilo::KeyFrameTrack::AddKeyFrame(float time, float value) {
 	AddKeyFrame(KeyFrame(time, value));
 }
 
-void KeyFrameTrack::AddKeyFrame(const KeyFrame& keyFrame) {
+void koilo::KeyFrameTrack::AddKeyFrame(const KeyFrame& keyFrame) {
 	if (keyFrames_.size() >= keyFrameCapacity_) {
 		return;
 	}
@@ -153,7 +157,7 @@ void KeyFrameTrack::AddKeyFrame(const KeyFrame& keyFrame) {
 	}
 }
 
-void KeyFrameTrack::RemoveKeyFrame(std::size_t index) {
+void koilo::KeyFrameTrack::RemoveKeyFrame(std::size_t index) {
 	if (index >= keyFrames_.size()) {
 		return;
 	}
@@ -168,11 +172,11 @@ void KeyFrameTrack::RemoveKeyFrame(std::size_t index) {
 	}
 }
 
-float KeyFrameTrack::GetParameterValue() const noexcept {
+float koilo::KeyFrameTrack::GetParameterValue() const noexcept {
 	return parameterValue_;
 }
 
-void KeyFrameTrack::Reset() {
+void koilo::KeyFrameTrack::Reset() {
 	parameterValue_ = ClampValue(min_);
 	currentTime_ = !keyFrames_.empty() ? keyFrames_.front().Time : 0.0f;
 	lastUpdateSeconds_ = CurrentSeconds();
@@ -184,7 +188,7 @@ void KeyFrameTrack::Reset() {
 	}
 }
 
-float KeyFrameTrack::Update() {
+float koilo::KeyFrameTrack::Update() {
 	const float currentSeconds = CurrentSeconds();
 
 	if (!isActive_ || keyFrames_.empty()) {
@@ -278,11 +282,11 @@ float KeyFrameTrack::Update() {
 	return parameterValue_;
 }
 
-float KeyFrameTrack::ClampValue(float value) const {
+float koilo::KeyFrameTrack::ClampValue(float value) const {
 	return Mathematics::Constrain(value, min_, max_);
 }
 
-void KeyFrameTrack::InsertKeyFrame(const KeyFrame& keyFrame) {
+void koilo::KeyFrameTrack::InsertKeyFrame(const KeyFrame& keyFrame) {
 	const auto insertPos = std::lower_bound(
 		keyFrames_.begin(),
 		keyFrames_.end(),
@@ -304,7 +308,7 @@ void KeyFrameTrack::InsertKeyFrame(const KeyFrame& keyFrame) {
 	keyFrames_.insert(insertPos, keyFrame);
 }
 
-void KeyFrameTrack::UpdateFrameRange() {
+void koilo::KeyFrameTrack::UpdateFrameRange() {
 	if (keyFrames_.empty()) {
 		startFrameTime_ = Mathematics::FLTMAX;
 		stopFrameTime_ = Mathematics::FLTMIN;
@@ -315,4 +319,6 @@ void KeyFrameTrack::UpdateFrameRange() {
 	stopFrameTime_ = keyFrames_.back().Time;
 	currentTime_ = Mathematics::Constrain(currentTime_, startFrameTime_, stopFrameTime_);
 }
+
+} // namespace koilo
 

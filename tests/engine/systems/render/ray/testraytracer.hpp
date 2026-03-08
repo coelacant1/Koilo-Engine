@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testraytracer.hpp
  * @brief Unit tests for the RayTracer class.
@@ -12,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/systems/render/ray/raytracer.hpp>
+#include <koilo/systems/render/ray/raytracer.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

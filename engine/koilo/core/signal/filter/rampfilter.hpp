@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file RampFilter.h
  * @brief Provides a class for smooth value transitions using a ramp filter.
@@ -12,8 +13,11 @@
 
 #pragma once
 
-#include "../../math/mathematics.hpp" // Includes mathematical utilities for constraints and operations.
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/core/math/mathematics.hpp> // Includes mathematical utilities for constraints and operations.
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class RampFilter
@@ -70,19 +74,21 @@ public:
      */
     void SetFrames(int frames);
 
-    PTX_BEGIN_FIELDS(RampFilter)
+    KL_BEGIN_FIELDS(RampFilter)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(RampFilter)
-        PTX_METHOD_AUTO(RampFilter, Filter, "Filter"),
-        PTX_METHOD_AUTO(RampFilter, SetIncrement, "Set increment"),
-        PTX_METHOD_AUTO(RampFilter, SetFrames, "Set frames")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(RampFilter)
+        KL_METHOD_AUTO(RampFilter, Filter, "Filter"),
+        KL_METHOD_AUTO(RampFilter, SetIncrement, "Set increment"),
+        KL_METHOD_AUTO(RampFilter, SetFrames, "Set frames")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(RampFilter)
-        PTX_CTOR0(RampFilter),
-        PTX_CTOR(RampFilter, int, float)
-    PTX_END_DESCRIBE(RampFilter)
+    KL_BEGIN_DESCRIBE(RampFilter)
+        KL_CTOR0(RampFilter),
+        KL_CTOR(RampFilter, int, float)
+    KL_END_DESCRIBE(RampFilter)
 
 };
+
+} // namespace koilo

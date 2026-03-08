@@ -1,10 +1,11 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 // ustring.hpp
 #pragma once
 
 #include <cstdint>
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
 
-namespace ptx {
+namespace koilo {
 
 /**
  * @file ustring.hpp
@@ -133,26 +134,26 @@ private:
     struct PImpl; ///< Opaque implementation (Arduino String or std::string).
     PImpl* pimpl; ///< Owning pointer to implementation.
 
-    PTX_BEGIN_FIELDS(UString)
+    KL_BEGIN_FIELDS(UString)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(UString)
-        PTX_SMETHOD_AUTO(UString::FromFloat, "From float"),
-        /* Append */ PTX_METHOD_OVLD(UString, Append, void, const char *),
-        /* Append */ PTX_METHOD_OVLD(UString, Append, void, const UString &),
-        PTX_METHOD_AUTO(UString, Length, "Length"),
-        PTX_METHOD_AUTO(UString, IsEmpty, "Is empty"),
-        PTX_METHOD_AUTO(UString, Clear, "Clear"),
-        PTX_METHOD_AUTO(UString, CStr, "Cstr")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(UString)
+        KL_SMETHOD_AUTO(UString::FromFloat, "From float"),
+        /* Append */ KL_METHOD_OVLD(UString, Append, void, const char *),
+        /* Append */ KL_METHOD_OVLD(UString, Append, void, const UString &),
+        KL_METHOD_AUTO(UString, Length, "Length"),
+        KL_METHOD_AUTO(UString, IsEmpty, "Is empty"),
+        KL_METHOD_AUTO(UString, Clear, "Clear"),
+        KL_METHOD_AUTO(UString, CStr, "Cstr")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(UString)
-        PTX_CTOR0(UString),
-        PTX_CTOR(UString, const char *),
-        PTX_CTOR(UString, const UString &),
-        PTX_CTOR(UString, UString &&)
-    PTX_END_DESCRIBE(UString)
+    KL_BEGIN_DESCRIBE(UString)
+        KL_CTOR0(UString),
+        KL_CTOR(UString, const char *),
+        KL_CTOR(UString, const UString &),
+        KL_CTOR(UString, UString &&)
+    KL_END_DESCRIBE(UString)
 
 };
 
@@ -173,4 +174,4 @@ UString operator+(const UString& lhs, const char* rhs);
  */
 UString operator+(const char* lhs, const UString& rhs);
 
-} // namespace ptx
+} // namespace koilo

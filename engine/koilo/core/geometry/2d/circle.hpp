@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file Circle.h
  * @brief Defines the Circle class for representing circular shapes in 2D space.
@@ -13,7 +14,10 @@
 #pragma once
 
 #include "shape.hpp"
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class Circle
@@ -38,16 +42,32 @@ public:
      */
     bool IsInShape(Vector2D point) override;
 
-    PTX_BEGIN_FIELDS(Circle2D)
+    /** @brief Returns radius of the circle. */
+    float GetRadius() const { return radius; }
+
+    /** @brief Circle-circle overlap via distance check. */
+    bool OverlapsCircle(const Circle2D& other) const {
+        Vector2D ca = GetCenter();
+        Vector2D cb = other.GetCenter();
+        float dx = ca.X - cb.X;
+        float dy = ca.Y - cb.Y;
+        float r = radius + other.radius;
+        return (dx * dx + dy * dy) <= r * r;
+    }
+
+    KL_BEGIN_FIELDS(Circle2D)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(Circle2D)
-        PTX_METHOD_AUTO(Circle2D, IsInShape, "Is in shape")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(Circle2D)
+        KL_METHOD_AUTO(Circle2D, IsInShape, "Is in shape"),
+        KL_METHOD_AUTO(Circle2D, OverlapsCircle, "Overlaps circle")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(Circle2D)
-        PTX_CTOR(Circle2D, Vector2D, float)
-    PTX_END_DESCRIBE(Circle2D)
+    KL_BEGIN_DESCRIBE(Circle2D)
+        KL_CTOR(Circle2D, Vector2D, float)
+    KL_END_DESCRIBE(Circle2D)
 
 };
+
+} // namespace koilo

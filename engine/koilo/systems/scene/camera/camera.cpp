@@ -1,17 +1,21 @@
-#include <ptx/systems/render/core/camera.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/systems/scene/camera/camera.hpp>
 
-#include <ptx/systems/render/core/ipixelgroup.hpp>
-#include <ptx/core/math/vector2d.hpp>
-#include <ptx/core/math/vector3d.hpp>
+#include <koilo/systems/render/core/ipixelgroup.hpp>
+#include <koilo/core/math/vector2d.hpp>
+#include <koilo/core/math/vector3d.hpp>
 
-Camera::Camera(Transform* transform, IPixelGroup* pixelGroup) {
+
+namespace koilo {
+
+koilo::Camera::Camera(Transform* transform, IPixelGroup* pixelGroup) {
     this->transform = transform;
     this->pixelGroup = pixelGroup;
 
     Set2D(true);
 }
 
-Camera::Camera(Transform* transform, CameraLayout* cameraLayout, IPixelGroup* pixelGroup) {
+koilo::Camera::Camera(Transform* transform, CameraLayout* cameraLayout, IPixelGroup* pixelGroup) {
     this->transform = transform;
     this->pixelGroup = pixelGroup;
     this->cameraLayout = cameraLayout;
@@ -23,18 +27,18 @@ Camera::Camera(Transform* transform, CameraLayout* cameraLayout, IPixelGroup* pi
     Set2D(false);
 }
 
-IPixelGroup* Camera::GetPixelGroup() {
+IPixelGroup* koilo::Camera::GetPixelGroup() {
     return pixelGroup;
 }
 
-Vector2D Camera::GetCameraMinCoordinate() {
+Vector2D koilo::Camera::GetCameraMinCoordinate() {
     if (!pixelGroup) {
         return {};
     }
 
     if (!calculatedMin) {
-        const uint16_t count = pixelGroup->GetPixelCount();
-        for (uint16_t i = 0; i < count; ++i) {
+        const uint32_t count = pixelGroup->GetPixelCount();
+        for (uint32_t i = 0; i < count; ++i) {
             const Vector2D coordinate = pixelGroup->GetCoordinate(i);
             minC.X = coordinate.X < minC.X ? coordinate.X : minC.X;
             minC.Y = coordinate.Y < minC.Y ? coordinate.Y : minC.Y;
@@ -46,14 +50,14 @@ Vector2D Camera::GetCameraMinCoordinate() {
     return minC;
 }
 
-Vector2D Camera::GetCameraMaxCoordinate() {
+Vector2D koilo::Camera::GetCameraMaxCoordinate() {
     if (!pixelGroup) {
         return {};
     }
 
     if (!calculatedMax) {
-        const uint16_t count = pixelGroup->GetPixelCount();
-        for (uint16_t i = 0; i < count; ++i) {
+        const uint32_t count = pixelGroup->GetPixelCount();
+        for (uint32_t i = 0; i < count; ++i) {
             const Vector2D coordinate = pixelGroup->GetCoordinate(i);
             maxC.X = coordinate.X > maxC.X ? coordinate.X : maxC.X;
             maxC.Y = coordinate.Y > maxC.Y ? coordinate.Y : maxC.Y;
@@ -65,11 +69,11 @@ Vector2D Camera::GetCameraMaxCoordinate() {
     return maxC;
 }
 
-Vector2D Camera::GetCameraCenterCoordinate() {
+Vector2D koilo::Camera::GetCameraCenterCoordinate() {
     return (GetCameraMinCoordinate() + GetCameraMaxCoordinate()) / 2.0f;
 }
 
-Vector3D Camera::GetCameraTransformMin() {
+Vector3D koilo::Camera::GetCameraTransformMin() {
     Vector2D minV2 = GetCameraMinCoordinate();
 
     if (!transform) {
@@ -79,7 +83,7 @@ Vector3D Camera::GetCameraTransformMin() {
     return transform->GetRotation().RotateVector(Vector3D(minV2.X, minV2.Y, 0) * transform->GetScale()) + transform->GetPosition();
 }
 
-Vector3D Camera::GetCameraTransformMax() {
+Vector3D koilo::Camera::GetCameraTransformMax() {
     Vector2D maxV2 = GetCameraMaxCoordinate();
 
     if (!transform) {
@@ -89,6 +93,8 @@ Vector3D Camera::GetCameraTransformMax() {
     return transform->GetRotation().RotateVector(Vector3D(maxV2.X, maxV2.Y, 0) * transform->GetScale()) + transform->GetPosition();
 }
 
-Vector3D Camera::GetCameraTransformCenter() {
+Vector3D koilo::Camera::GetCameraTransformCenter() {
     return (GetCameraTransformMin() + GetCameraTransformMax()) / 2.0f;
 }
+
+} // namespace koilo

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testcorners.cpp
  * @brief Implementation of Corners unit tests.
@@ -5,6 +6,7 @@
 
 #include "testcorners.hpp"
 
+using namespace koilo;
 // ========== Constructor Tests ==========
 
 void TestCorners::TestDefaultConstructor() {

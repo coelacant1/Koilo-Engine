@@ -1,9 +1,13 @@
-#include <ptx/core/signal/filter/peakdetection.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/core/signal/filter/peakdetection.hpp>
 
 #include <algorithm>
 #include <cmath>
 
-PeakDetection::PeakDetection(size_t sampleSizeValue, uint8_t lagValue, float thresholdValue, float influenceValue)
+
+namespace koilo {
+
+koilo::PeakDetection::PeakDetection(size_t sampleSizeValue, uint8_t lagValue, float thresholdValue, float influenceValue)
     : sampleSize(sampleSizeValue > 0 ? sampleSizeValue : 1),
       lag(std::max<uint8_t>(lagValue, static_cast<uint8_t>(1))),
       threshold(thresholdValue),
@@ -12,13 +16,13 @@ PeakDetection::PeakDetection(size_t sampleSizeValue, uint8_t lagValue, float thr
       averages(sampleSize, 0.0f),
       deviations(sampleSize, 0.0f) {}
 
-void PeakDetection::Reset() {
+void koilo::PeakDetection::Reset() {
     std::fill(filteredData.begin(), filteredData.end(), 0.0f);
     std::fill(averages.begin(), averages.end(), 0.0f);
     std::fill(deviations.begin(), deviations.end(), 0.0f);
 }
 
-void PeakDetection::GetStdDev(size_t start, size_t length, const float* data, float& avgRet, float& stdRet) const {
+void koilo::PeakDetection::GetStdDev(size_t start, size_t length, const float* data, float& avgRet, float& stdRet) const {
     if (data == nullptr || length == 0 || sampleSize == 0) {
         avgRet = 0.0f;
         stdRet = 0.0f;
@@ -52,7 +56,7 @@ void PeakDetection::GetStdDev(size_t start, size_t length, const float* data, fl
     stdRet = std::sqrt(variance / static_cast<float>(count));
 }
 
-void PeakDetection::Calculate(const float* data, std::vector<bool>& peaks) {
+void koilo::PeakDetection::Calculate(const float* data, std::vector<bool>& peaks) {
     if (data == nullptr || sampleSize == 0) {
         peaks.clear();
         return;
@@ -98,3 +102,5 @@ void PeakDetection::Calculate(const float* data, std::vector<bool>& peaks) {
         deviations[i] = stdDev;
     }
 }
+
+} // namespace koilo

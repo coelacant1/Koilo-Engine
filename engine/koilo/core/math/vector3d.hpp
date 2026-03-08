@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file Vector3D.h
  * @brief Defines a 3D vector and various related operations.
@@ -13,7 +14,11 @@
 #pragma once
 
 #include "mathematics.hpp"
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
+#include <cmath>
+
+
+namespace koilo {
 
 /**
  * @class Vector3D
@@ -216,7 +221,7 @@ public:
      * @brief Converts the vector to a string representation.
      * @return A `String` in the format "(X, Y, Z)".
      */
-    ptx::UString ToString() const;
+    koilo::UString ToString() const;
 
     // --- Static function declarations ---
 
@@ -379,6 +384,12 @@ public:
     bool operator !=(const Vector3D& vector) const;
 
     /**
+     * @brief Unary negation operator. Returns the negated vector.
+     * @return A new `Vector3D` with all components negated.
+     */
+    Vector3D operator -() const;
+
+    /**
      * @brief In-place addition operator. Adds another vector to this one component-wise.
      * @param vector The right-hand side `Vector3D`.
      * @return A reference to this `Vector3D` after addition.
@@ -448,61 +459,195 @@ public:
      */
     Vector3D operator /(const float& value) const;
 
-    PTX_BEGIN_FIELDS(Vector3D)
-        PTX_FIELD(Vector3D, X, "X", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(Vector3D, Y, "Y", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(Vector3D, Z, "Z", __FLT_MIN__, __FLT_MAX__)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(Vector3D)
+        KL_FIELD(Vector3D, X, "X", __FLT_MIN__, __FLT_MAX__),
+        KL_FIELD(Vector3D, Y, "Y", __FLT_MIN__, __FLT_MAX__),
+        KL_FIELD(Vector3D, Z, "Z", __FLT_MIN__, __FLT_MAX__)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(Vector3D)
-        PTX_METHOD_AUTO(Vector3D, Absolute, "Absolute"),
-        /* Normal */ PTX_METHOD_OVLD_CONST0(Vector3D, Normal, Vector3D),
-        /* Add */ PTX_METHOD_OVLD_CONST(Vector3D, Add, Vector3D, const float &),
-        /* Subtract */ PTX_METHOD_OVLD_CONST(Vector3D, Subtract, Vector3D, const float &),
-        /* Add */ PTX_METHOD_OVLD_CONST(Vector3D, Add, Vector3D, const Vector3D &),
-        /* Subtract */ PTX_METHOD_OVLD_CONST(Vector3D, Subtract, Vector3D, const Vector3D &),
-        /* Multiply */ PTX_METHOD_OVLD_CONST(Vector3D, Multiply, Vector3D, const Vector3D &),
-        /* Divide */ PTX_METHOD_OVLD_CONST(Vector3D, Divide, Vector3D, const Vector3D &),
-        /* Multiply */ PTX_METHOD_OVLD_CONST(Vector3D, Multiply, Vector3D, const float &),
-        /* Divide */ PTX_METHOD_OVLD_CONST(Vector3D, Divide, Vector3D, const float &),
-        /* Cross product */ PTX_METHOD_OVLD_CONST(Vector3D, CrossProduct, Vector3D, const Vector3D &),
-        PTX_METHOD_AUTO(Vector3D, UnitSphere, "Unit sphere"),
-        /* Constrain */ PTX_METHOD_OVLD_CONST(Vector3D, Constrain, Vector3D, const float &, const float &),
-        /* Constrain */ PTX_METHOD_OVLD_CONST(Vector3D, Constrain, Vector3D, const Vector3D &, const Vector3D &),
-        PTX_METHOD_AUTO(Vector3D, Permutate, "Permutate"),
-        PTX_METHOD_AUTO(Vector3D, Magnitude, "Magnitude"),
-        /* Dot product */ PTX_METHOD_OVLD_CONST(Vector3D, DotProduct, float, const Vector3D &),
-        /* Calculate euclidean distance */ PTX_METHOD_OVLD_CONST(Vector3D, CalculateEuclideanDistance, float, const Vector3D &),
-        PTX_METHOD_AUTO(Vector3D, AverageHighestTwoComponents, "Average highest two components"),
-        /* Max */ PTX_METHOD_OVLD_CONST0(Vector3D, Max, float),
-        /* Min */ PTX_METHOD_OVLD_CONST0(Vector3D, Min, float),
-        /* Is equal */ PTX_METHOD_OVLD_CONST(Vector3D, IsEqual, bool, const Vector3D &),
-        PTX_METHOD_AUTO(Vector3D, ToString, "To string"),
-        /* Max */ PTX_SMETHOD_OVLD(Vector3D, Max, Vector3D, const Vector3D &, const Vector3D &),
-        /* Min */ PTX_SMETHOD_OVLD(Vector3D, Min, Vector3D, const Vector3D &, const Vector3D &),
-        PTX_SMETHOD_AUTO(Vector3D::LERP, "Lerp"),
-        PTX_SMETHOD_AUTO(Vector3D::DegreesToRadians, "Degrees to radians"),
-        PTX_SMETHOD_AUTO(Vector3D::RadiansToDegrees, "Radians to degrees"),
-        /* Normal */ PTX_SMETHOD_OVLD(Vector3D, Normal, Vector3D, const Vector3D &),
-        /* Add */ PTX_SMETHOD_OVLD(Vector3D, Add, Vector3D, const Vector3D &, const Vector3D &),
-        /* Subtract */ PTX_SMETHOD_OVLD(Vector3D, Subtract, Vector3D, const Vector3D &, const Vector3D &),
-        /* Multiply */ PTX_SMETHOD_OVLD(Vector3D, Multiply, Vector3D, const Vector3D &, const Vector3D &),
-        /* Divide */ PTX_SMETHOD_OVLD(Vector3D, Divide, Vector3D, const Vector3D &, const Vector3D &),
-        /* Multiply */ PTX_SMETHOD_OVLD(Vector3D, Multiply, Vector3D, const Vector3D &, const float &),
-        /* Multiply */ PTX_SMETHOD_OVLD(Vector3D, Multiply, Vector3D, const float &, const Vector3D &),
-        /* Divide */ PTX_SMETHOD_OVLD(Vector3D, Divide, Vector3D, const Vector3D &, const float &),
-        /* Cross product */ PTX_SMETHOD_OVLD(Vector3D, CrossProduct, Vector3D, const Vector3D &, const Vector3D &),
-        /* Dot product */ PTX_SMETHOD_OVLD(Vector3D, DotProduct, float, const Vector3D &, const Vector3D &),
-        /* Calculate euclidean distance */ PTX_SMETHOD_OVLD(Vector3D, CalculateEuclideanDistance, float, const Vector3D &, const Vector3D &),
-        PTX_SMETHOD_AUTO(Vector3D::Reflect, "Reflect"),
-        /* Is equal */ PTX_SMETHOD_OVLD(Vector3D, IsEqual, bool, const Vector3D &, const Vector3D &)
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(Vector3D)
+        KL_METHOD_AUTO(Vector3D, Absolute, "Absolute"),
+        /* Normal */ KL_METHOD_OVLD_CONST0(Vector3D, Normal, Vector3D),
+        /* Add */ KL_METHOD_OVLD_CONST(Vector3D, Add, Vector3D, const float &),
+        /* Subtract */ KL_METHOD_OVLD_CONST(Vector3D, Subtract, Vector3D, const float &),
+        /* Add */ KL_METHOD_OVLD_CONST(Vector3D, Add, Vector3D, const Vector3D &),
+        /* Subtract */ KL_METHOD_OVLD_CONST(Vector3D, Subtract, Vector3D, const Vector3D &),
+        /* Multiply */ KL_METHOD_OVLD_CONST(Vector3D, Multiply, Vector3D, const Vector3D &),
+        /* Divide */ KL_METHOD_OVLD_CONST(Vector3D, Divide, Vector3D, const Vector3D &),
+        /* Multiply */ KL_METHOD_OVLD_CONST(Vector3D, Multiply, Vector3D, const float &),
+        /* Divide */ KL_METHOD_OVLD_CONST(Vector3D, Divide, Vector3D, const float &),
+        /* Cross product */ KL_METHOD_OVLD_CONST(Vector3D, CrossProduct, Vector3D, const Vector3D &),
+        KL_METHOD_AUTO(Vector3D, UnitSphere, "Unit sphere"),
+        /* Constrain */ KL_METHOD_OVLD_CONST(Vector3D, Constrain, Vector3D, const float &, const float &),
+        /* Constrain */ KL_METHOD_OVLD_CONST(Vector3D, Constrain, Vector3D, const Vector3D &, const Vector3D &),
+        KL_METHOD_AUTO(Vector3D, Permutate, "Permutate"),
+        KL_METHOD_AUTO(Vector3D, Magnitude, "Magnitude"),
+        /* Dot product */ KL_METHOD_OVLD_CONST(Vector3D, DotProduct, float, const Vector3D &),
+        /* Calculate euclidean distance */ KL_METHOD_OVLD_CONST(Vector3D, CalculateEuclideanDistance, float, const Vector3D &),
+        KL_METHOD_AUTO(Vector3D, AverageHighestTwoComponents, "Average highest two components"),
+        /* Max */ KL_METHOD_OVLD_CONST0(Vector3D, Max, float),
+        /* Min */ KL_METHOD_OVLD_CONST0(Vector3D, Min, float),
+        /* Is equal */ KL_METHOD_OVLD_CONST(Vector3D, IsEqual, bool, const Vector3D &),
+        KL_METHOD_AUTO(Vector3D, ToString, "To string"),
+        /* Max */ KL_SMETHOD_OVLD(Vector3D, Max, Vector3D, const Vector3D &, const Vector3D &),
+        /* Min */ KL_SMETHOD_OVLD(Vector3D, Min, Vector3D, const Vector3D &, const Vector3D &),
+        KL_SMETHOD_AUTO(Vector3D::LERP, "Lerp"),
+        KL_SMETHOD_AUTO(Vector3D::DegreesToRadians, "Degrees to radians"),
+        KL_SMETHOD_AUTO(Vector3D::RadiansToDegrees, "Radians to degrees"),
+        /* Normal */ KL_SMETHOD_OVLD(Vector3D, Normal, Vector3D, const Vector3D &),
+        /* Add */ KL_SMETHOD_OVLD(Vector3D, Add, Vector3D, const Vector3D &, const Vector3D &),
+        /* Subtract */ KL_SMETHOD_OVLD(Vector3D, Subtract, Vector3D, const Vector3D &, const Vector3D &),
+        /* Multiply */ KL_SMETHOD_OVLD(Vector3D, Multiply, Vector3D, const Vector3D &, const Vector3D &),
+        /* Divide */ KL_SMETHOD_OVLD(Vector3D, Divide, Vector3D, const Vector3D &, const Vector3D &),
+        /* Multiply */ KL_SMETHOD_OVLD(Vector3D, Multiply, Vector3D, const Vector3D &, const float &),
+        /* Multiply */ KL_SMETHOD_OVLD(Vector3D, Multiply, Vector3D, const float &, const Vector3D &),
+        /* Divide */ KL_SMETHOD_OVLD(Vector3D, Divide, Vector3D, const Vector3D &, const float &),
+        /* Cross product */ KL_SMETHOD_OVLD(Vector3D, CrossProduct, Vector3D, const Vector3D &, const Vector3D &),
+        /* Dot product */ KL_SMETHOD_OVLD(Vector3D, DotProduct, float, const Vector3D &, const Vector3D &),
+        /* Calculate euclidean distance */ KL_SMETHOD_OVLD(Vector3D, CalculateEuclideanDistance, float, const Vector3D &, const Vector3D &),
+        KL_SMETHOD_AUTO(Vector3D::Reflect, "Reflect"),
+        /* Is equal */ KL_SMETHOD_OVLD(Vector3D, IsEqual, bool, const Vector3D &, const Vector3D &),
+        // Operator overloading methods for script: vecA + vecB, vecA - vecB, etc.
+        koilo::make::MakeMethod<Vector3D, static_cast<Vector3D (Vector3D::*)(const Vector3D &) const>(&Vector3D::Add)>("__add", nullptr),
+        koilo::make::MakeMethod<Vector3D, static_cast<Vector3D (Vector3D::*)(const Vector3D &) const>(&Vector3D::Subtract)>("__sub", nullptr),
+        koilo::make::MakeMethod<Vector3D, static_cast<Vector3D (Vector3D::*)(const Vector3D &) const>(&Vector3D::Multiply)>("__mul", nullptr),
+        koilo::make::MakeMethod<Vector3D, static_cast<Vector3D (Vector3D::*)(const Vector3D &) const>(&Vector3D::Divide)>("__div", nullptr)
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(Vector3D)
-        PTX_CTOR0(Vector3D),
-        PTX_CTOR(Vector3D, const Vector3D &),
-        PTX_CTOR(Vector3D, const Vector3D *),
-        PTX_CTOR(Vector3D, const float &, const float &, const float &)
-    PTX_END_DESCRIBE(Vector3D)
+    KL_BEGIN_DESCRIBE(Vector3D)
+        KL_CTOR0(Vector3D),
+        KL_CTOR(Vector3D, const Vector3D &),
+        KL_CTOR(Vector3D, const Vector3D *),
+        KL_CTOR(Vector3D, const float &, const float &, const float &)
+    KL_END_DESCRIBE(Vector3D)
 
 };
+
+// ===== Inline implementations (hot-path critical) =====
+
+inline Vector3D::Vector3D() : X(0.0f), Y(0.0f), Z(0.0f) {}
+inline Vector3D::Vector3D(const Vector3D& v) : X(v.X), Y(v.Y), Z(v.Z) {}
+inline Vector3D::Vector3D(const Vector3D* v) : X(v->X), Y(v->Y), Z(v->Z) {}
+inline Vector3D::Vector3D(const float& X, const float& Y, const float& Z) : X(X), Y(Y), Z(Z) {}
+
+inline Vector3D Vector3D::Absolute() const { return Vector3D(fabsf(X), fabsf(Y), fabsf(Z)); }
+
+inline Vector3D Vector3D::Normal() const {
+    float magn = Magnitude();
+    if (Mathematics::IsClose(magn, 1.0f, Mathematics::EPSILON)) return *this;
+    if (Mathematics::IsClose(magn, 0.0f, Mathematics::EPSILON)) return Multiply(3.40282e+038f);
+    return Multiply(1.0f / magn);
+}
+
+inline Vector3D Vector3D::Add(const float& value) const { return Vector3D(X + value, Y + value, Z + value); }
+inline Vector3D Vector3D::Subtract(const float& value) const { return Vector3D(X - value, Y - value, Z - value); }
+inline Vector3D Vector3D::Add(const Vector3D& v) const { return Vector3D(X + v.X, Y + v.Y, Z + v.Z); }
+inline Vector3D Vector3D::Subtract(const Vector3D& v) const { return Vector3D(X - v.X, Y - v.Y, Z - v.Z); }
+inline Vector3D Vector3D::Multiply(const Vector3D& v) const { return Vector3D(X * v.X, Y * v.Y, Z * v.Z); }
+inline Vector3D Vector3D::Divide(const Vector3D& v) const { return Vector3D(X / v.X, Y / v.Y, Z / v.Z); }
+inline Vector3D Vector3D::Multiply(const float& s) const { return Vector3D(X * s, Y * s, Z * s); }
+inline Vector3D Vector3D::Divide(const float& s) const { return Vector3D(X / s, Y / s, Z / s); }
+
+inline Vector3D Vector3D::CrossProduct(const Vector3D& v) const {
+    return Vector3D(Y * v.Z - Z * v.Y, Z * v.X - X * v.Z, X * v.Y - Y * v.X);
+}
+
+inline Vector3D Vector3D::UnitSphere() const {
+    float len = Magnitude();
+    if (len == 0.0f) return Vector3D(0, 1, 0);
+    if (Mathematics::IsClose(len, 1.0f, Mathematics::EPSILON)) return *this;
+    float inv = 1.0f / len;
+    return Vector3D(X * inv, Y * inv, Z * inv);
+}
+
+inline Vector3D Vector3D::Constrain(const float& mn, const float& mx) const {
+    return Vector3D(Mathematics::Constrain(X, mn, mx), Mathematics::Constrain(Y, mn, mx), Mathematics::Constrain(Z, mn, mx));
+}
+inline Vector3D Vector3D::Constrain(const Vector3D& mn, const Vector3D& mx) const {
+    return Vector3D(Mathematics::Constrain(X, mn.X, mx.X), Mathematics::Constrain(Y, mn.Y, mx.Y), Mathematics::Constrain(Z, mn.Z, mx.Z));
+}
+
+inline Vector3D Vector3D::Permutate(const Vector3D& perm) const {
+    float p[3]; p[(int)perm.X] = X; p[(int)perm.Y] = Y; p[(int)perm.Z] = Z;
+    return Vector3D(p[0], p[1], p[2]);
+}
+
+inline float Vector3D::Magnitude() const { return std::sqrt(X * X + Y * Y + Z * Z); }
+inline float Vector3D::DotProduct(const Vector3D& v) const { return X * v.X + Y * v.Y + Z * v.Z; }
+
+inline float Vector3D::CalculateEuclideanDistance(const Vector3D& v) const {
+    float dx = X - v.X, dy = Y - v.Y, dz = Z - v.Z;
+    return std::sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+inline float Vector3D::AverageHighestTwoComponents() const {
+    Vector3D absV = Absolute();
+    float max1 = absV.Max();
+    float max2 = (max1 == absV.X) ? Mathematics::Max(absV.Y, absV.Z)
+               : (max1 == absV.Y) ? Mathematics::Max(absV.X, absV.Z)
+               : Mathematics::Max(absV.X, absV.Y);
+    return (max1 + max2) * 0.5f;
+}
+
+inline float Vector3D::Max() const { return Mathematics::Max(X, Y, Z); }
+inline float Vector3D::Min() const { return Mathematics::Min(X, Y, Z); }
+inline bool Vector3D::IsEqual(const Vector3D& v) const { return X == v.X && Y == v.Y && Z == v.Z; }
+
+// Static methods
+inline Vector3D Vector3D::Max(const Vector3D& a, const Vector3D& b) {
+    return Vector3D(a.X > b.X ? a.X : b.X, a.Y > b.Y ? a.Y : b.Y, a.Z > b.Z ? a.Z : b.Z);
+}
+inline Vector3D Vector3D::Min(const Vector3D& a, const Vector3D& b) {
+    return Vector3D(a.X < b.X ? a.X : b.X, a.Y < b.Y ? a.Y : b.Y, a.Z < b.Z ? a.Z : b.Z);
+}
+inline Vector3D Vector3D::LERP(const Vector3D& start, const Vector3D& finish, const float& ratio) {
+    return Vector3D(start.X + (finish.X - start.X) * ratio,
+                    start.Y + (finish.Y - start.Y) * ratio,
+                    start.Z + (finish.Z - start.Z) * ratio);
+}
+inline Vector3D Vector3D::DegreesToRadians(const Vector3D& d) {
+    return Vector3D(d.X * Mathematics::MPID180, d.Y * Mathematics::MPID180, d.Z * Mathematics::MPID180);
+}
+inline Vector3D Vector3D::RadiansToDegrees(const Vector3D& r) {
+    return Vector3D(r.X * Mathematics::M180DPI, r.Y * Mathematics::M180DPI, r.Z * Mathematics::M180DPI);
+}
+inline Vector3D Vector3D::Normal(const Vector3D& v) { return Vector3D(v).Normal(); }
+inline Vector3D Vector3D::Add(const Vector3D& a, const Vector3D& b) { return Vector3D(a.X + b.X, a.Y + b.Y, a.Z + b.Z); }
+inline Vector3D Vector3D::Subtract(const Vector3D& a, const Vector3D& b) { return Vector3D(a.X - b.X, a.Y - b.Y, a.Z - b.Z); }
+inline Vector3D Vector3D::Multiply(const Vector3D& a, const Vector3D& b) { return Vector3D(a.X * b.X, a.Y * b.Y, a.Z * b.Z); }
+inline Vector3D Vector3D::Divide(const Vector3D& a, const Vector3D& b) { return Vector3D(a.X / b.X, a.Y / b.Y, a.Z / b.Z); }
+inline Vector3D Vector3D::Multiply(const Vector3D& v, const float& s) { return Vector3D(v.X * s, v.Y * s, v.Z * s); }
+inline Vector3D Vector3D::Multiply(const float& s, const Vector3D& v) { return Vector3D(v.X * s, v.Y * s, v.Z * s); }
+inline Vector3D Vector3D::Divide(const Vector3D& v, const float& s) { return Vector3D(v.X / s, v.Y / s, v.Z / s); }
+inline Vector3D Vector3D::CrossProduct(const Vector3D& a, const Vector3D& b) {
+    return Vector3D(a.Y * b.Z - a.Z * b.Y, a.Z * b.X - a.X * b.Z, a.X * b.Y - a.Y * b.X);
+}
+inline float Vector3D::DotProduct(const Vector3D& a, const Vector3D& b) { return a.X * b.X + a.Y * b.Y + a.Z * b.Z; }
+inline float Vector3D::CalculateEuclideanDistance(const Vector3D& a, const Vector3D& b) {
+    float dx = a.X - b.X, dy = a.Y - b.Y, dz = a.Z - b.Z;
+    return std::sqrt(dx * dx + dy * dy + dz * dz);
+}
+inline Vector3D Vector3D::Reflect(const Vector3D& incident, const Vector3D& normal) {
+    float d = DotProduct(incident, normal);
+    return Vector3D(incident.X - 2.0f * d * normal.X,
+                    incident.Y - 2.0f * d * normal.Y,
+                    incident.Z - 2.0f * d * normal.Z);
+}
+inline bool Vector3D::IsEqual(const Vector3D& a, const Vector3D& b) { return a.X == b.X && a.Y == b.Y && a.Z == b.Z; }
+
+// Operators
+inline bool Vector3D::operator==(const Vector3D& v) const { return X == v.X && Y == v.Y && Z == v.Z; }
+inline bool Vector3D::operator!=(const Vector3D& v) const { return X != v.X || Y != v.Y || Z != v.Z; }
+inline Vector3D Vector3D::operator-() const { return Vector3D(-X, -Y, -Z); }
+inline Vector3D Vector3D::operator+=(const Vector3D& v) { X += v.X; Y += v.Y; Z += v.Z; return *this; }
+inline Vector3D Vector3D::operator=(const Vector3D& v) { X = v.X; Y = v.Y; Z = v.Z; return *this; }
+inline Vector3D Vector3D::operator+(const Vector3D& v) const { return Vector3D(X + v.X, Y + v.Y, Z + v.Z); }
+inline Vector3D Vector3D::operator-(const Vector3D& v) const { return Vector3D(X - v.X, Y - v.Y, Z - v.Z); }
+inline Vector3D Vector3D::operator*(const Vector3D& v) const { return Vector3D(X * v.X, Y * v.Y, Z * v.Z); }
+inline Vector3D Vector3D::operator/(const Vector3D& v) const { return Vector3D(X / v.X, Y / v.Y, Z / v.Z); }
+inline Vector3D Vector3D::operator+(const float& s) const { return Vector3D(X + s, Y + s, Z + s); }
+inline Vector3D Vector3D::operator-(const float& s) const { return Vector3D(X - s, Y - s, Z - s); }
+inline Vector3D Vector3D::operator*(const float& s) const { return Vector3D(X * s, Y * s, Z * s); }
+inline Vector3D Vector3D::operator/(const float& s) const { return Vector3D(X / s, Y / s, Z / s); }
+
+} // namespace koilo

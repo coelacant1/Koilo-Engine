@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file Transform.h
  * @brief Defines the Transform class for managing position, rotation, and scale of objects.
@@ -15,8 +16,11 @@
 #include "rotation.hpp"
 #include "vector3d.hpp"
 #include "mathematics.hpp"
-#include "../platform/ustring.hpp"
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/core/platform/ustring.hpp>
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class Transform
@@ -28,10 +32,9 @@ private:
     Quaternion rotation; ///< The current rotation of the object as a quaternion.
     Vector3D position; ///< The position of the object in 3D space.
     Vector3D scale; ///< The scale of the object in 3D space.
-    Quaternion scaleRotationOffset; ///< Offset for scaling transformations relative to rotation.
 
-    Vector3D scaleOffset; ///< Offset applied to the scale.
-    Vector3D rotationOffset; ///< Offset applied to the rotation.
+    Vector3D scaleOffset; ///< Pivot point for scale operations.
+    Vector3D rotationOffset; ///< Pivot point for rotation operations.
 
 public:
     /**
@@ -141,16 +144,17 @@ public:
     Vector3D GetScale() const;
 
     /**
-     * @brief Sets the scale rotation offset of the object.
-     * @param scaleRotationOffset The scale rotation offset as a quaternion.
+     * @brief Sets the origin (pivot point) for both rotation and scale.
+     * This is a convenience method that sets both rotationOffset and scaleOffset.
+     * @param origin The origin point in local space.
      */
-    void SetScaleRotationOffset(const Quaternion& scaleRotationOffset);
+    void SetOrigin(const Vector3D& origin);
 
     /**
-     * @brief Gets the scale rotation offset of the object.
-     * @return The scale rotation offset as a quaternion.
+     * @brief Gets the rotation offset (rotation pivot point).
+     * @return The rotation offset vector.
      */
-    Quaternion GetScaleRotationOffset() const;
+    Vector3D GetOrigin() const;
 
     /**
      * @brief Sets the rotation offset of the object.
@@ -204,42 +208,46 @@ public:
      * @brief Converts the transform to a string representation.
      * @return A string representing the transform.
      */
-    ptx::UString ToString();
+    koilo::UString ToString();
 
-    PTX_BEGIN_FIELDS(Transform)
-        /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(Transform)
+        KL_FIELD(Transform, rotation, "Rotation", 0, 0),
+        KL_FIELD(Transform, position, "Position", 0, 0),
+        KL_FIELD(Transform, scale, "Scale", 0, 0)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(Transform)
-        PTX_METHOD_AUTO(Transform, SetBaseRotation, "Set base rotation"),
-        PTX_METHOD_AUTO(Transform, GetBaseRotation, "Get base rotation"),
-        /* Set rotation */ PTX_METHOD_OVLD(Transform, SetRotation, void, const Quaternion &),
-        /* Set rotation */ PTX_METHOD_OVLD(Transform, SetRotation, void, const Vector3D &),
-        PTX_METHOD_AUTO(Transform, GetRotation, "Get rotation"),
-        PTX_METHOD_AUTO(Transform, SetPosition, "Set position"),
-        PTX_METHOD_AUTO(Transform, GetPosition, "Get position"),
-        PTX_METHOD_AUTO(Transform, SetScale, "Set scale"),
-        PTX_METHOD_AUTO(Transform, GetScale, "Get scale"),
-        PTX_METHOD_AUTO(Transform, SetScaleRotationOffset, "Set scale rotation offset"),
-        PTX_METHOD_AUTO(Transform, GetScaleRotationOffset, "Get scale rotation offset"),
-        PTX_METHOD_AUTO(Transform, SetRotationOffset, "Set rotation offset"),
-        PTX_METHOD_AUTO(Transform, GetRotationOffset, "Get rotation offset"),
-        PTX_METHOD_AUTO(Transform, SetScaleOffset, "Set scale offset"),
-        PTX_METHOD_AUTO(Transform, GetScaleOffset, "Get scale offset"),
-        /* Rotate */ PTX_METHOD_OVLD(Transform, Rotate, void, const Vector3D &),
-        /* Rotate */ PTX_METHOD_OVLD(Transform, Rotate, void, const Quaternion &),
-        PTX_METHOD_AUTO(Transform, Translate, "Translate"),
-        PTX_METHOD_AUTO(Transform, Scale, "Scale"),
-        PTX_METHOD_AUTO(Transform, ToString, "To string")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(Transform)
+        KL_METHOD_AUTO(Transform, SetBaseRotation, "Set base rotation"),
+        KL_METHOD_AUTO(Transform, GetBaseRotation, "Get base rotation"),
+        /* Set rotation */ KL_METHOD_OVLD(Transform, SetRotation, void, const Quaternion &),
+        /* Set rotation */ KL_METHOD_OVLD(Transform, SetRotation, void, const Vector3D &),
+        KL_METHOD_AUTO(Transform, GetRotation, "Get rotation"),
+        KL_METHOD_AUTO(Transform, SetPosition, "Set position"),
+        KL_METHOD_AUTO(Transform, GetPosition, "Get position"),
+        KL_METHOD_AUTO(Transform, SetScale, "Set scale"),
+        KL_METHOD_AUTO(Transform, GetScale, "Get scale"),
+        KL_METHOD_AUTO(Transform, SetOrigin, "Set origin (pivot for rotate+scale)"),
+        KL_METHOD_AUTO(Transform, GetOrigin, "Get origin"),
+        KL_METHOD_AUTO(Transform, SetRotationOffset, "Set rotation pivot"),
+        KL_METHOD_AUTO(Transform, GetRotationOffset, "Get rotation pivot"),
+        KL_METHOD_AUTO(Transform, SetScaleOffset, "Set scale pivot"),
+        KL_METHOD_AUTO(Transform, GetScaleOffset, "Get scale pivot"),
+        /* Rotate */ KL_METHOD_OVLD(Transform, Rotate, void, const Vector3D &),
+        /* Rotate */ KL_METHOD_OVLD(Transform, Rotate, void, const Quaternion &),
+        KL_METHOD_AUTO(Transform, Translate, "Translate"),
+        KL_METHOD_AUTO(Transform, Scale, "Scale"),
+        KL_METHOD_AUTO(Transform, ToString, "To string")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(Transform)
-        PTX_CTOR0(Transform),
-        PTX_CTOR(Transform, const Vector3D &, const Vector3D &, const Vector3D &),
-        PTX_CTOR(Transform, const Quaternion &, const Vector3D &, const Vector3D &),
-        PTX_CTOR(Transform, const Vector3D &, const Vector3D &, const Vector3D &, const Vector3D &, const Vector3D &),
-        PTX_CTOR(Transform, const Quaternion &, const Vector3D &, const Vector3D &, const Vector3D &, const Vector3D &),
-        PTX_CTOR(Transform, const Transform &)
-    PTX_END_DESCRIBE(Transform)
+    KL_BEGIN_DESCRIBE(Transform)
+        KL_CTOR0(Transform),
+        KL_CTOR(Transform, const Vector3D &, const Vector3D &, const Vector3D &),
+        KL_CTOR(Transform, const Quaternion &, const Vector3D &, const Vector3D &),
+        KL_CTOR(Transform, const Vector3D &, const Vector3D &, const Vector3D &, const Vector3D &, const Vector3D &),
+        KL_CTOR(Transform, const Quaternion &, const Vector3D &, const Vector3D &, const Vector3D &, const Vector3D &),
+        KL_CTOR(Transform, const Transform &)
+    KL_END_DESCRIBE(Transform)
 
 };
+
+} // namespace koilo

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testcasthelper.hpp
  * @brief Unit tests for the CastHelper class.
@@ -12,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/core/utils/casthelper.hpp>
+#include <koilo/core/utils/casthelper.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

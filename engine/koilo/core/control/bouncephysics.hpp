@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file BouncePhysics.h
  * @brief Defines the BouncePhysics class for simulating basic bouncing physics with velocity and gravity.
@@ -12,9 +13,12 @@
 
 #pragma once
 
-#include "../math/mathematics.hpp"
-#include "../signal/filter/runningaveragefilter.hpp"
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/core/math/mathematics.hpp>
+#include <koilo/core/signal/filter/runningaveragefilter.hpp>
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class BouncePhysics
@@ -54,17 +58,19 @@ public:
      */
     float Calculate(float velocity, float dT);
 
-    PTX_BEGIN_FIELDS(BouncePhysics)
+    KL_BEGIN_FIELDS(BouncePhysics)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(BouncePhysics)
-        /* Calculate */ PTX_METHOD_OVLD(BouncePhysics, Calculate, float, float, uint32_t),
-        /* Calculate */ PTX_METHOD_OVLD(BouncePhysics, Calculate, float, float, float)
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(BouncePhysics)
+        /* Calculate */ KL_METHOD_OVLD(BouncePhysics, Calculate, float, float, uint32_t),
+        /* Calculate */ KL_METHOD_OVLD(BouncePhysics, Calculate, float, float, float)
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(BouncePhysics)
-        PTX_CTOR(BouncePhysics, float, float)
-    PTX_END_DESCRIBE(BouncePhysics)
+    KL_BEGIN_DESCRIBE(BouncePhysics)
+        KL_CTOR(BouncePhysics, float, float)
+    KL_END_DESCRIBE(BouncePhysics)
 
 };
+
+} // namespace koilo

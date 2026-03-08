@@ -1,23 +1,24 @@
-#include <ptx/systems/profiling/memoryprofiler.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/systems/profiling/memoryprofiler.hpp>
 #include <iostream>
 #include <iomanip>
 #include <sstream>
 #include <algorithm>
 
-namespace ptx {
+namespace koilo {
 
-MemoryProfiler* MemoryProfiler::instance = nullptr;
+MemoryProfiler* koilo::MemoryProfiler::instance = nullptr;
 
-MemoryProfiler::MemoryProfiler()
+koilo::MemoryProfiler::MemoryProfiler()
     : enabled(true), currentFrame(0) {
     instance = this;
 }
 
-MemoryProfiler::~MemoryProfiler() {
+koilo::MemoryProfiler::~MemoryProfiler() {
     instance = nullptr;
 }
 
-MemoryProfiler& MemoryProfiler::GetInstance() {
+MemoryProfiler& koilo::MemoryProfiler::GetInstance() {
     if (!instance) {
         static MemoryProfiler defaultInstance;
         instance = &defaultInstance;
@@ -27,7 +28,7 @@ MemoryProfiler& MemoryProfiler::GetInstance() {
 
 // === Tracking ===
 
-void MemoryProfiler::TrackAllocation(void* address, size_t size, const std::string& tag) {
+void koilo::MemoryProfiler::TrackAllocation(void* address, size_t size, const std::string& tag) {
     if (!enabled || !address) {
         return;
     }
@@ -50,7 +51,7 @@ void MemoryProfiler::TrackAllocation(void* address, size_t size, const std::stri
     usageByTag[tag] += size;
 }
 
-void MemoryProfiler::TrackFree(void* address) {
+void koilo::MemoryProfiler::TrackFree(void* address) {
     if (!enabled || !address) {
         return;
     }
@@ -80,7 +81,7 @@ void MemoryProfiler::TrackFree(void* address) {
 
 // === Statistics ===
 
-size_t MemoryProfiler::GetUsageByTag(const std::string& tag) const {
+size_t koilo::MemoryProfiler::GetUsageByTag(const std::string& tag) const {
     auto it = usageByTag.find(tag);
     if (it != usageByTag.end()) {
         return it->second;
@@ -90,11 +91,11 @@ size_t MemoryProfiler::GetUsageByTag(const std::string& tag) const {
 
 // === Reporting ===
 
-void MemoryProfiler::PrintReport() const {
+void koilo::MemoryProfiler::PrintReport() const {
     std::cout << GetReportString();
 }
 
-std::string MemoryProfiler::GetReportString() const {
+std::string koilo::MemoryProfiler::GetReportString() const {
     std::ostringstream oss;
 
     oss << "\n========================================\n";
@@ -130,7 +131,7 @@ std::string MemoryProfiler::GetReportString() const {
     return oss.str();
 }
 
-void MemoryProfiler::PrintLeaks() const {
+void koilo::MemoryProfiler::PrintLeaks() const {
     if (allocations.empty()) {
         std::cout << "No memory leaks detected.\n";
         return;
@@ -169,7 +170,7 @@ void MemoryProfiler::PrintLeaks() const {
     std::cout << "========================================\n";
 }
 
-void MemoryProfiler::Clear() {
+void koilo::MemoryProfiler::Clear() {
     stats = MemoryStats();
     allocations.clear();
     usageByTag.clear();
@@ -177,7 +178,7 @@ void MemoryProfiler::Clear() {
 
 // === Utility ===
 
-std::string MemoryProfiler::FormatBytes(size_t bytes) {
+std::string koilo::MemoryProfiler::FormatBytes(size_t bytes) {
     const char* units[] = { "B", "KB", "MB", "GB", "TB" };
     int unitIndex = 0;
     double size = static_cast<double>(bytes);
@@ -192,4 +193,4 @@ std::string MemoryProfiler::FormatBytes(size_t bytes) {
     return oss.str();
 }
 
-} // namespace ptx
+} // namespace koilo

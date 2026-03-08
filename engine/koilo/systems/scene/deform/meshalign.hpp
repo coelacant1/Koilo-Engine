@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file MeshAlign.h
  * @brief Provides the MeshAlign class for aligning 3D objects within defined 2D camera bounds.
@@ -10,9 +11,12 @@
 
 #pragma once
 
-#include "../../../core/geometry/3d/plane.hpp"
-#include "../mesh.hpp"
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/core/geometry/3d/plane.hpp>
+#include <koilo/systems/scene/mesh.hpp>
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class MeshAlign
@@ -299,42 +303,44 @@ public:
      */
     void AlignObjects(Mesh** objs, uint8_t numObjects);
 
-    PTX_BEGIN_FIELDS(MeshAlign)
+    KL_BEGIN_FIELDS(MeshAlign)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(MeshAlign)
-        /* Get centroid */ PTX_METHOD_OVLD(MeshAlign, GetCentroid, Vector3D, Mesh *),
-        /* Get centroid */ PTX_METHOD_OVLD(MeshAlign, GetCentroid, Vector3D, Mesh **, uint8_t),
-        /* Get object center */ PTX_METHOD_OVLD(MeshAlign, GetObjectCenter, Vector3D, Mesh *),
-        /* Get object center */ PTX_METHOD_OVLD(MeshAlign, GetObjectCenter, Vector3D, Mesh **, uint8_t),
-        /* Get object size */ PTX_METHOD_OVLD(MeshAlign, GetObjectSize, Vector3D, Mesh *),
-        /* Get object size */ PTX_METHOD_OVLD(MeshAlign, GetObjectSize, Vector3D, Mesh **, uint8_t),
-        /* Get plane normal */ PTX_METHOD_OVLD(MeshAlign, GetPlaneNormal, Quaternion, Mesh *),
-        /* Get plane normal */ PTX_METHOD_OVLD(MeshAlign, GetPlaneNormal, Quaternion, Mesh **, uint8_t),
-        /* Get plane orientation */ PTX_METHOD_OVLD(MeshAlign, GetPlaneOrientation, Quaternion, Mesh *, Vector3D),
-        /* Get plane orientation */ PTX_METHOD_OVLD(MeshAlign, GetPlaneOrientation, Quaternion, Mesh **, uint8_t, Vector3D),
-        /* Get transform */ PTX_METHOD_OVLD(MeshAlign, GetTransform, Transform, Mesh *),
-        /* Get transform */ PTX_METHOD_OVLD(MeshAlign, GetTransform, Transform, Mesh **, uint8_t),
-        /* Get object planarity ratio */ PTX_METHOD_OVLD(MeshAlign, GetObjectPlanarityRatio, float, Mesh *),
-        /* Get object planarity ratio */ PTX_METHOD_OVLD(MeshAlign, GetObjectPlanarityRatio, float, Mesh **, uint8_t),
-        PTX_METHOD_AUTO(MeshAlign, SetPlaneOffsetAngle, "Set plane offset angle"),
-        PTX_METHOD_AUTO(MeshAlign, SetEdgeMargin, "Set edge margin"),
-        PTX_METHOD_AUTO(MeshAlign, SetForwardVector, "Set forward vector"),
-        PTX_METHOD_AUTO(MeshAlign, SetCameraMin, "Set camera min"),
-        PTX_METHOD_AUTO(MeshAlign, SetCameraMax, "Set camera max"),
-        PTX_METHOD_AUTO(MeshAlign, SetMirrorX, "Set mirror x"),
-        PTX_METHOD_AUTO(MeshAlign, SetMirrorY, "Set mirror y"),
-        PTX_METHOD_AUTO(MeshAlign, SetJustification, "Set justification"),
-        PTX_METHOD_AUTO(MeshAlign, SetScale, "Set scale"),
-        PTX_METHOD_AUTO(MeshAlign, AlignObjectNoScale, "Align object no scale"),
-        PTX_METHOD_AUTO(MeshAlign, AlignObjectsNoScale, "Align objects no scale"),
-        PTX_METHOD_AUTO(MeshAlign, AlignObject, "Align object"),
-        PTX_METHOD_AUTO(MeshAlign, AlignObjects, "Align objects")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(MeshAlign)
+        /* Get centroid */ KL_METHOD_OVLD(MeshAlign, GetCentroid, Vector3D, Mesh *),
+        /* Get centroid */ KL_METHOD_OVLD(MeshAlign, GetCentroid, Vector3D, Mesh **, uint8_t),
+        /* Get object center */ KL_METHOD_OVLD(MeshAlign, GetObjectCenter, Vector3D, Mesh *),
+        /* Get object center */ KL_METHOD_OVLD(MeshAlign, GetObjectCenter, Vector3D, Mesh **, uint8_t),
+        /* Get object size */ KL_METHOD_OVLD(MeshAlign, GetObjectSize, Vector3D, Mesh *),
+        /* Get object size */ KL_METHOD_OVLD(MeshAlign, GetObjectSize, Vector3D, Mesh **, uint8_t),
+        /* Get plane normal */ KL_METHOD_OVLD(MeshAlign, GetPlaneNormal, Quaternion, Mesh *),
+        /* Get plane normal */ KL_METHOD_OVLD(MeshAlign, GetPlaneNormal, Quaternion, Mesh **, uint8_t),
+        /* Get plane orientation */ KL_METHOD_OVLD(MeshAlign, GetPlaneOrientation, Quaternion, Mesh *, Vector3D),
+        /* Get plane orientation */ KL_METHOD_OVLD(MeshAlign, GetPlaneOrientation, Quaternion, Mesh **, uint8_t, Vector3D),
+        /* Get transform */ KL_METHOD_OVLD(MeshAlign, GetTransform, Transform, Mesh *),
+        /* Get transform */ KL_METHOD_OVLD(MeshAlign, GetTransform, Transform, Mesh **, uint8_t),
+        /* Get object planarity ratio */ KL_METHOD_OVLD(MeshAlign, GetObjectPlanarityRatio, float, Mesh *),
+        /* Get object planarity ratio */ KL_METHOD_OVLD(MeshAlign, GetObjectPlanarityRatio, float, Mesh **, uint8_t),
+        KL_METHOD_AUTO(MeshAlign, SetPlaneOffsetAngle, "Set plane offset angle"),
+        KL_METHOD_AUTO(MeshAlign, SetEdgeMargin, "Set edge margin"),
+        KL_METHOD_AUTO(MeshAlign, SetForwardVector, "Set forward vector"),
+        KL_METHOD_AUTO(MeshAlign, SetCameraMin, "Set camera min"),
+        KL_METHOD_AUTO(MeshAlign, SetCameraMax, "Set camera max"),
+        KL_METHOD_AUTO(MeshAlign, SetMirrorX, "Set mirror x"),
+        KL_METHOD_AUTO(MeshAlign, SetMirrorY, "Set mirror y"),
+        KL_METHOD_AUTO(MeshAlign, SetJustification, "Set justification"),
+        KL_METHOD_AUTO(MeshAlign, SetScale, "Set scale"),
+        KL_METHOD_AUTO(MeshAlign, AlignObjectNoScale, "Align object no scale"),
+        KL_METHOD_AUTO(MeshAlign, AlignObjectsNoScale, "Align objects no scale"),
+        KL_METHOD_AUTO(MeshAlign, AlignObject, "Align object"),
+        KL_METHOD_AUTO(MeshAlign, AlignObjects, "Align objects")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(MeshAlign)
-        PTX_CTOR(MeshAlign, Vector2D, Vector2D, Quaternion)
-    PTX_END_DESCRIBE(MeshAlign)
+    KL_BEGIN_DESCRIBE(MeshAlign)
+        KL_CTOR(MeshAlign, Vector2D, Vector2D, Quaternion)
+    KL_END_DESCRIBE(MeshAlign)
 
 };
+
+} // namespace koilo

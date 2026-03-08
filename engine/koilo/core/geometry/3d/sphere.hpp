@@ -1,38 +1,41 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
- * @file Sphere.h
- * @brief Defines the Sphere class for simulating spherical boundary objects.
+ * @file sphere.hpp
+ * @brief Defines the Sphere geometry primitive.
  *
- * The Sphere class provides functionality to represent a 3D sphere's position, velocity,
- * and radius, along with methods to handle motion, detect intersections, and resolve collisions.
+ * Pure geometric representation of a sphere (position + radius).
  *
  * @date 22/12/2024
- * @version 1.0
+ * @version 2.0
  * @author Coela Can't
  */
 
 #pragma once
 
-#include "../../math/rotation.hpp"
-#include "../../math/vector3d.hpp"
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/core/math/vector3d.hpp>
+#include <koilo/core/math/quaternion.hpp>
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class Sphere
- * @brief Represents a spherical boundary object for motion and collision simulations.
+ * @brief Sphere with position, radius, and optional physics (velocity, collision).
  */
 class Sphere {
 private:
-    Vector3D centerPosition; ///< Center position of the sphere.
-    Quaternion previousRotation; ///< Previous rotation of the sphere.
+    Vector3D centerPosition;
+    Quaternion previousRotation;
     float radius = 1.0f; ///< Radius of the sphere.
 
 public:
-    Vector3D velocity = Vector3D(0, 0, 0); ///< Velocity vector of the sphere.
-    Vector3D position = Vector3D(0, 0, 0); ///< Current position of the sphere.
+    Vector3D velocity = Vector3D(0, 0, 0); ///< Velocity vector.
+    Vector3D position = Vector3D(0, 0, 0); ///< Center position of the sphere.
 
     /**
-     * @brief Constructs a Sphere with a given object, position, and radius.
-     * @param position Initial position of the sphere.
+     * @brief Constructs a Sphere with a given position and radius.
+     * @param position Center position of the sphere.
      * @param radius Radius of the sphere.
      */
     Sphere(Vector3D position, float radius);
@@ -43,42 +46,26 @@ public:
      */
     float GetRadius();
 
-    /**
-     * @brief Updates the sphere's position and velocity based on acceleration and rotation.
-     * @param dT Time step in seconds.
-     * @param acceleration Acceleration vector applied to the sphere.
-     * @param rotation Rotation quaternion applied to the sphere.
-     */
     void Update(float dT, Vector3D acceleration, Quaternion rotation);
-
-    /**
-     * @brief Checks if the sphere intersects with another Sphere.
-     * @param bO Pointer to the other Sphere.
-     * @return True if the spheres intersect, false otherwise.
-     */
     bool IsIntersecting(Sphere* bO);
-
-    /**
-     * @brief Resolves collision between this sphere and another Sphere.
-     * @param elasticity Elasticity coefficient for the collision.
-     * @param bO Pointer to the other Sphere.
-     */
     void Collide(float elasticity, Sphere* bO);
 
-    PTX_BEGIN_FIELDS(Sphere)
-        PTX_FIELD(Sphere, velocity, "Velocity", 0, 0),
-        PTX_FIELD(Sphere, position, "Position", 0, 0)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(Sphere)
+        KL_FIELD(Sphere, velocity, "Velocity", 0, 0),
+        KL_FIELD(Sphere, position, "Position", 0, 0)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(Sphere)
-        PTX_METHOD_AUTO(Sphere, GetRadius, "Get radius"),
-        PTX_METHOD_AUTO(Sphere, Update, "Update"),
-        PTX_METHOD_AUTO(Sphere, IsIntersecting, "Is intersecting"),
-        PTX_METHOD_AUTO(Sphere, Collide, "Collide")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(Sphere)
+        KL_METHOD_AUTO(Sphere, GetRadius, "Get radius"),
+        KL_METHOD_AUTO(Sphere, Update, "Update"),
+        KL_METHOD_AUTO(Sphere, IsIntersecting, "Is intersecting"),
+        KL_METHOD_AUTO(Sphere, Collide, "Collide")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(Sphere)
-        PTX_CTOR(Sphere, Vector3D, float)
-    PTX_END_DESCRIBE(Sphere)
+    KL_BEGIN_DESCRIBE(Sphere)
+        KL_CTOR(Sphere, Vector3D, float)
+    KL_END_DESCRIBE(Sphere)
 
 };
+
+} // namespace koilo

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file triangle2d.hpp
  * @brief 2-D analytic triangle
@@ -7,8 +8,11 @@
 #pragma once
 
 #include "shape.hpp"
-#include "../../math/vector2d.hpp"
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/core/math/vector2d.hpp>
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class Triangle2D
@@ -39,21 +43,23 @@ public:
      */
     bool IsInShape(Vector2D point) override;
 
-    PTX_BEGIN_FIELDS(Triangle2D)
-        PTX_FIELD(Triangle2D, p1, "P1", 0, 0),
-        PTX_FIELD(Triangle2D, p2, "P2", 0, 0),
-        PTX_FIELD(Triangle2D, p3, "P3", 0, 0)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(Triangle2D)
+        KL_FIELD(Triangle2D, p1, "P1", 0, 0),
+        KL_FIELD(Triangle2D, p2, "P2", 0, 0),
+        KL_FIELD(Triangle2D, p3, "P3", 0, 0)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(Triangle2D)
-        PTX_METHOD_AUTO(Triangle2D, GetArea, "Get area"),
-        PTX_METHOD_AUTO(Triangle2D, GetCentroid, "Get centroid"),
-        PTX_METHOD_AUTO(Triangle2D, IsInShape, "Is in shape")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(Triangle2D)
+        KL_METHOD_AUTO(Triangle2D, GetArea, "Get area"),
+        KL_METHOD_AUTO(Triangle2D, GetCentroid, "Get centroid"),
+        KL_METHOD_AUTO(Triangle2D, IsInShape, "Is in shape")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(Triangle2D)
-        PTX_CTOR0(Triangle2D),
-        PTX_CTOR(Triangle2D, const Vector2D &, const Vector2D &, const Vector2D &)
-    PTX_END_DESCRIBE(Triangle2D)
+    KL_BEGIN_DESCRIBE(Triangle2D)
+        KL_CTOR0(Triangle2D),
+        KL_CTOR(Triangle2D, const Vector2D &, const Vector2D &, const Vector2D &)
+    KL_END_DESCRIBE(Triangle2D)
 
 };
+
+} // namespace koilo

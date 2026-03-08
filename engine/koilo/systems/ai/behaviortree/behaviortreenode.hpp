@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file behaviortreenode.hpp
  * @brief Base node for behavior trees.
@@ -11,9 +12,9 @@
 #include <memory>
 #include <vector>
 #include <string>
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
 
-namespace ptx {
+namespace koilo {
 
 /**
  * @enum NodeStatus
@@ -76,20 +77,20 @@ public:
      */
     size_t GetChildCount() const { return children.size(); }
 
-    PTX_BEGIN_FIELDS(BehaviorTreeNode)
-        PTX_FIELD(BehaviorTreeNode, name, "Name", 0, 0)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(BehaviorTreeNode)
+        KL_FIELD(BehaviorTreeNode, name, "Name", 0, 0)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(BehaviorTreeNode)
-        PTX_METHOD_AUTO(BehaviorTreeNode, Reset, "Reset"),
-        PTX_METHOD_AUTO(BehaviorTreeNode, GetName, "Get name"),
-        PTX_METHOD_AUTO(BehaviorTreeNode, SetName, "Set name"),
-        PTX_METHOD_AUTO(BehaviorTreeNode, GetChildCount, "Get child count")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(BehaviorTreeNode)
+        KL_METHOD_AUTO(BehaviorTreeNode, Reset, "Reset"),
+        KL_METHOD_AUTO(BehaviorTreeNode, GetName, "Get name"),
+        KL_METHOD_AUTO(BehaviorTreeNode, SetName, "Set name"),
+        KL_METHOD_AUTO(BehaviorTreeNode, GetChildCount, "Get child count")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(BehaviorTreeNode)
+    KL_BEGIN_DESCRIBE(BehaviorTreeNode)
         // Abstract class, no constructors
-    PTX_END_DESCRIBE(BehaviorTreeNode)
+    KL_END_DESCRIBE(BehaviorTreeNode)
 };
 
 // === Composite Nodes ===
@@ -107,16 +108,16 @@ public:
     virtual NodeStatus Execute() override;
     virtual void Reset() override;
 
-    PTX_BEGIN_FIELDS(SequenceNode)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(SequenceNode)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(SequenceNode)
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(SequenceNode)
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(SequenceNode)
-        PTX_CTOR0(SequenceNode),
-        PTX_CTOR(SequenceNode, std::string)
-    PTX_END_DESCRIBE(SequenceNode)
+    KL_BEGIN_DESCRIBE(SequenceNode)
+        KL_CTOR0(SequenceNode),
+        KL_CTOR(SequenceNode, std::string)
+    KL_END_DESCRIBE(SequenceNode)
 };
 
 /**
@@ -132,16 +133,16 @@ public:
     virtual NodeStatus Execute() override;
     virtual void Reset() override;
 
-    PTX_BEGIN_FIELDS(SelectorNode)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(SelectorNode)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(SelectorNode)
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(SelectorNode)
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(SelectorNode)
-        PTX_CTOR0(SelectorNode),
-        PTX_CTOR(SelectorNode, std::string)
-    PTX_END_DESCRIBE(SelectorNode)
+    KL_BEGIN_DESCRIBE(SelectorNode)
+        KL_CTOR0(SelectorNode),
+        KL_CTOR(SelectorNode, std::string)
+    KL_END_DESCRIBE(SelectorNode)
 };
 
 /**
@@ -157,18 +158,18 @@ public:
     ParallelNode(int successThreshold = 1, int failureThreshold = 1, const std::string& name = "Parallel");
     virtual NodeStatus Execute() override;
 
-    PTX_BEGIN_FIELDS(ParallelNode)
-        PTX_FIELD(ParallelNode, successThreshold, "Success threshold", 0, 0),
-        PTX_FIELD(ParallelNode, failureThreshold, "Failure threshold", 0, 0)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(ParallelNode)
+        KL_FIELD(ParallelNode, successThreshold, "Success threshold", 0, 0),
+        KL_FIELD(ParallelNode, failureThreshold, "Failure threshold", 0, 0)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(ParallelNode)
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(ParallelNode)
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(ParallelNode)
-        PTX_CTOR0(ParallelNode),
-        PTX_CTOR(ParallelNode, int, int, std::string)
-    PTX_END_DESCRIBE(ParallelNode)
+    KL_BEGIN_DESCRIBE(ParallelNode)
+        KL_CTOR0(ParallelNode),
+        KL_CTOR(ParallelNode, int, int, std::string)
+    KL_END_DESCRIBE(ParallelNode)
 };
 
 // === Decorator Nodes ===
@@ -182,16 +183,16 @@ public:
     InverterNode(const std::string& name = "Inverter");
     virtual NodeStatus Execute() override;
 
-    PTX_BEGIN_FIELDS(InverterNode)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(InverterNode)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(InverterNode)
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(InverterNode)
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(InverterNode)
-        PTX_CTOR0(InverterNode),
-        PTX_CTOR(InverterNode, std::string)
-    PTX_END_DESCRIBE(InverterNode)
+    KL_BEGIN_DESCRIBE(InverterNode)
+        KL_CTOR0(InverterNode),
+        KL_CTOR(InverterNode, std::string)
+    KL_END_DESCRIBE(InverterNode)
 };
 
 /**
@@ -208,17 +209,17 @@ public:
     virtual NodeStatus Execute() override;
     virtual void Reset() override;
 
-    PTX_BEGIN_FIELDS(RepeaterNode)
-        PTX_FIELD(RepeaterNode, repeatCount, "Repeat count", 0, 0)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(RepeaterNode)
+        KL_FIELD(RepeaterNode, repeatCount, "Repeat count", 0, 0)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(RepeaterNode)
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(RepeaterNode)
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(RepeaterNode)
-        PTX_CTOR0(RepeaterNode),
-        PTX_CTOR(RepeaterNode, int, std::string)
-    PTX_END_DESCRIBE(RepeaterNode)
+    KL_BEGIN_DESCRIBE(RepeaterNode)
+        KL_CTOR0(RepeaterNode),
+        KL_CTOR(RepeaterNode, int, std::string)
+    KL_END_DESCRIBE(RepeaterNode)
 };
 
 /**
@@ -230,16 +231,16 @@ public:
     SucceederNode(const std::string& name = "Succeeder");
     virtual NodeStatus Execute() override;
 
-    PTX_BEGIN_FIELDS(SucceederNode)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(SucceederNode)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(SucceederNode)
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(SucceederNode)
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(SucceederNode)
-        PTX_CTOR0(SucceederNode),
-        PTX_CTOR(SucceederNode, std::string)
-    PTX_END_DESCRIBE(SucceederNode)
+    KL_BEGIN_DESCRIBE(SucceederNode)
+        KL_CTOR0(SucceederNode),
+        KL_CTOR(SucceederNode, std::string)
+    KL_END_DESCRIBE(SucceederNode)
 };
 
-} // namespace ptx
+} // namespace koilo

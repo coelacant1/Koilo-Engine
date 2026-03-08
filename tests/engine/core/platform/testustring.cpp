@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testustring.cpp
  * @brief Implementation of UString unit tests.
@@ -5,7 +6,7 @@
 
 #include "testustring.hpp"
 
-using namespace ptx;
+using namespace koilo;
 
 // ========== Constructor Tests ==========
 
@@ -76,19 +77,42 @@ void TestUString::TestCStr() {
 // ========== Test Runner ==========
 
 void TestUString::TestAppend() {
-    // TODO: Implement test for Append()
-    // UString obj; // Requires constructor parameters
-    TEST_ASSERT_TRUE(false);  // Not implemented
+    UString str("Hello");
+    str += " World";
+    TEST_ASSERT_EQUAL_STRING("Hello World", str.CStr());
+    
+    UString str2("Foo");
+    UString append(" Bar");
+    str2 += append;
+    TEST_ASSERT_EQUAL_STRING("Foo Bar", str2.CStr());
 }
 
 void TestUString::TestEdgeCases() {
-    // TODO: Test edge cases (null, boundaries, extreme values)
-    TEST_ASSERT_TRUE(false);  // Not implemented
+    UString empty1;
+    UString empty2("");
+    TEST_ASSERT_TRUE(empty1.IsEmpty());
+    TEST_ASSERT_TRUE(empty2.IsEmpty());
+    
+    UString nullStr(nullptr);
+    TEST_ASSERT_TRUE(nullStr.IsEmpty());
+    TEST_ASSERT_EQUAL(0, nullStr.Length());
+    
+    UString veryLong("This is a very long string that should test memory allocation and handling of larger strings without issues");
+    TEST_ASSERT_TRUE(veryLong.Length() > 50);
+    TEST_ASSERT_FALSE(veryLong.IsEmpty());
 }
 
 void TestUString::TestParameterizedConstructor() {
-    // TODO: Implement test for parameterized constructor
-    TEST_ASSERT_TRUE(false);  // Not implemented
+    UString str1("Test");
+    TEST_ASSERT_EQUAL_STRING("Test", str1.CStr());
+    TEST_ASSERT_EQUAL(4, str1.Length());
+    
+    UString str2("Another String");
+    TEST_ASSERT_EQUAL_STRING("Another String", str2.CStr());
+    TEST_ASSERT_EQUAL(14, str2.Length());
+    
+    UString copy(str2);
+    TEST_ASSERT_EQUAL_STRING(str2.CStr(), copy.CStr());
 }
 
 void TestUString::RunAllTests() {

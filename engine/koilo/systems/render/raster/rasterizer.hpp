@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file rasterizer.h
  * @brief Provides functionality for rasterizing 3D scenes into 2D camera views.
@@ -12,12 +13,15 @@
 
 #pragma once
 
-#include "../../scene/scene.hpp"
-#include "../../../core/geometry/spatial/quadtree.hpp"
-#include "../core/camerabase.hpp"
-#include "../../../core/color/rgbcolor.hpp"
+#include <koilo/systems/scene/scene.hpp>
+#include <koilo/systems/scene/camera/camerabase.hpp>
+#include <koilo/core/color/color888.hpp>
 #include "helpers/rastertriangle2d.hpp"
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
+#include <vector>
+
+
+namespace koilo {
 
 /**
  * @class Rasterizer
@@ -25,34 +29,64 @@
  */
 class Rasterizer {
 private:
-    /**
-     * @brief Finds the correct color for a single pixel by testing against a list of triangles.
-     *
-     * @param candidate_triangles A C-style array of pointers to candidate 2D raster triangles.
-     * @param count The number of triangles in the candidates array.
-     * @param pixel_coord The 2D coordinate of the pixel being rendered.
-     * @return The calculated RGBColor for the pixel. Returns black if no intersection.
-     */
-    static RGBColor RasterizePixel(RasterTriangle2D** candidate_triangles, unsigned short count, const Vector2D& pixel_coord);
+    // Depth buffer - always populated after Rasterize(); used by DrawLine3D
+    static std::vector<float> s_depthBuf;
+    static int s_bufW, s_bufH;
+
+    // Normal debug buffer (opt-in)
+    static bool s_debugEnabled;
+    static std::vector<float> s_normalBuf;
+
+    // Projection state saved from the last Rasterize() call; consumed by DrawLine3D
+    static bool s_rsPerspective;
+    static float s_rsFovScale, s_rsNearPlane;
+    static float s_rsCX, s_rsCY, s_rsHH;
+    static Quaternion s_rsInvRot;
+    static Vector3D s_rsCamPos, s_rsCamScl;
 
 public:
-    /**
-     * @brief Renders an entire scene from the perspective of a given camera.
-     * @param scene The scene containing meshes and materials.
-     * @param camera The camera defining the viewpoint and projection.
-     */
     static void Rasterize(Scene* scene, CameraBase* camera);
 
-    PTX_BEGIN_FIELDS(Rasterizer)
+    /**
+     * @brief Rasterize a single world-space line segment into buffer using the
+     *        depth buffer from the last Rasterize() call.
+     *
+     * The line is transformed, near-plane clipped, viewport-clipped (Liang-Barsky),
+     * then Bresenham-drawn with per-pixel linear-Z depth testing that exactly
+     * matches the triangle rasterizer's depth convention.
+     *
+     * @param worldA  World-space start point.
+     * @param worldB  World-space end point.
+     * @param color   Line color.
+     * @param depthTest  If true, tests and writes the depth buffer.
+     * @param buffer  Flat Color888 output (row-major, size w*h).
+     * @param w       Buffer width.
+     * @param h       Buffer height.
+     */
+    static void DrawLine3D(const Vector3D& worldA, const Vector3D& worldB,
+                           Color888 color, bool depthTest,
+                           Color888* buffer, int w, int h);
+
+    // --- Debug buffer control ---
+    static void EnableDebugBuffers(bool enable) { s_debugEnabled = enable; }
+    static bool DebugBuffersEnabled() { return s_debugEnabled; }
+    static const float* GetDepthBuffer() { return s_depthBuf.empty() ? nullptr : s_depthBuf.data(); }
+    static const float* GetNormalBuffer() { return s_normalBuf.empty() ? nullptr : s_normalBuf.data(); }
+    static int GetDebugWidth() { return s_bufW; }
+    static int GetDebugHeight() { return s_bufH; }
+
+    KL_BEGIN_FIELDS(Rasterizer)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(Rasterizer)
-        PTX_SMETHOD_AUTO(Rasterizer::Rasterize, "Rasterize")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(Rasterizer)
+        KL_SMETHOD_AUTO(Rasterizer::Rasterize, "Rasterize")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(Rasterizer)
+    KL_BEGIN_DESCRIBE(Rasterizer)
         /* No reflected ctors. */
-    PTX_END_DESCRIBE(Rasterizer)
+    KL_END_DESCRIBE(Rasterizer)
 
 };
+
+} // namespace koilo

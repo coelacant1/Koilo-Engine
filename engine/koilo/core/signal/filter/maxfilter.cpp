@@ -1,7 +1,11 @@
-#include <ptx/core/signal/filter/maxfilter.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/core/signal/filter/maxfilter.hpp>
 
 #include <algorithm>
 #include <numeric>
+
+
+namespace koilo {
 
 namespace {
 constexpr size_t kDefaultBlockDivisor = 10;
@@ -15,20 +19,20 @@ size_t ComputeBlockCount(size_t capacity) {
 }
 }
 
-MaxFilter::MaxFilter(size_t memory)
+koilo::MaxFilter::MaxFilter(size_t memory)
     : capacity(std::max<size_t>(1, memory)),
       blockCount(ComputeBlockCount(std::max<size_t>(1, memory))),
       values(capacity, 0.0f),
       maxValues(blockCount, 0.0f) {
 }
 
-void MaxFilter::Reset() {
+void koilo::MaxFilter::Reset() {
     std::fill(values.begin(), values.end(), 0.0f);
     std::fill(maxValues.begin(), maxValues.end(), 0.0f);
     currentAmount = 0;
 }
 
-void MaxFilter::ShiftArray(std::vector<float>& arr) {
+void koilo::MaxFilter::ShiftArray(std::vector<float>& arr) {
     if (arr.empty()) {
         return;
     }
@@ -38,7 +42,7 @@ void MaxFilter::ShiftArray(std::vector<float>& arr) {
     arr.back() = 0.0f;
 }
 
-float MaxFilter::Filter(float value) {
+float koilo::MaxFilter::Filter(float value) {
     if (capacity == 0) {
         return value;
     }
@@ -67,3 +71,5 @@ float MaxFilter::Filter(float value) {
     const float sum = std::accumulate(maxValues.begin(), maxValues.end(), 0.0f);
     return sum / static_cast<float>(blockCount);
 }
+
+} // namespace koilo

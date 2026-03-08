@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testustring.hpp
  * @brief Unit tests for the UString class.
@@ -12,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/core/platform/ustring.hpp>
+#include <koilo/core/platform/ustring.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

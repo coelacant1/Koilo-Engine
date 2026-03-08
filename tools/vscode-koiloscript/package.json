@@ -1,0 +1,32 @@
+{
+  "name": "koiloscript",
+  "displayName": "KoiloScript Language Support",
+  "description": "Syntax highlighting, bracket matching, and comment toggling for KoiloScript (.ks) files used by KoiloEngine.",
+  "version": "1.0.0",
+  "publisher": "koiloengine",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/coelacant1/KoiloEngine"
+  },
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": ["Programming Languages"],
+  "contributes": {
+    "languages": [
+      {
+        "id": "koiloscript",
+        "aliases": ["KoiloScript", "koiloscript"],
+        "extensions": [".ks"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "koiloscript",
+        "scopeName": "source.koiloscript",
+        "path": "./syntaxes/koiloscript.tmLanguage.json"
+      }
+    ]
+  }
+}

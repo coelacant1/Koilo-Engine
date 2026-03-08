@@ -1,22 +1,27 @@
-#include <ptx/core/signal/functiongenerator.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/core/signal/functiongenerator.hpp>
+#include <cmath>
 
-FunctionGenerator::FunctionGenerator(Function function, float minimum, float maximum, float period) {
+
+namespace koilo {
+
+koilo::FunctionGenerator::FunctionGenerator(Function function, float minimum, float maximum, float period) {
     this->function = function;
     this->minimum = minimum;
     this->maximum = maximum;
     this->period = period;
 }
 
-void FunctionGenerator::SetPeriod(float period) {
+void koilo::FunctionGenerator::SetPeriod(float period) {
     this->period = period;
 }
 
-void FunctionGenerator::SetFunction(Function function) {
+void koilo::FunctionGenerator::SetFunction(Function function) {
     this->function = function;
 }
 
-float FunctionGenerator::Update() {
-    float currentTime = fmod(ptx::Time::Micros() / 1000000.0f, period);
+float koilo::FunctionGenerator::Update() {
+    float currentTime = fmod(koilo::Time::Micros() / 1000000.0f, period);
     float ratio = currentTime / period;
 
     switch (function) {
@@ -35,25 +40,27 @@ float FunctionGenerator::Update() {
     }
 }
 
-float FunctionGenerator::TriangleWave(float ratio) {
+float koilo::FunctionGenerator::TriangleWave(float ratio) {
     float wave = (ratio > 0.5f ? 1.0f - ratio : ratio) * 2.0f;
     return Mathematics::Map(wave, 0.0f, 1.0f, minimum, maximum);
 }
 
-float FunctionGenerator::SquareWave(float ratio) {
+float koilo::FunctionGenerator::SquareWave(float ratio) {
     float wave = ratio > 0.5f ? 1.0f : 0.0f;
     return Mathematics::Map(wave, 0.0f, 1.0f, minimum, maximum);
 }
 
-float FunctionGenerator::SineWave(float ratio) {
+float koilo::FunctionGenerator::SineWave(float ratio) {
     float wave = sinf(ratio * 360.0f * 3.14159f / 180.0f);
     return Mathematics::Map(wave, -1.0f, 1.0f, minimum, maximum);
 }
 
-float FunctionGenerator::SawtoothWave(float ratio) {
+float koilo::FunctionGenerator::SawtoothWave(float ratio) {
     return Mathematics::Map(ratio, 0.0f, 1.0f, minimum, maximum);
 }
 
-float FunctionGenerator::GravityFunction(float ratio) {//drop for first half, then stay at the bottom for the second half
+float koilo::FunctionGenerator::GravityFunction(float ratio) {//drop for first half, then stay at the bottom for the second half
     return (ratio * 2.0f) < 1.0f ? ratio * ratio * 4.0f : 1.0f;
 }
+
+} // namespace koilo

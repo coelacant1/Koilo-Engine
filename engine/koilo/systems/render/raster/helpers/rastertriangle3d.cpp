@@ -1,4 +1,8 @@
-#include <ptx/systems/render/raster/helpers/rastertriangle3d.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/systems/render/raster/helpers/rastertriangle3d.hpp>
+
+
+namespace koilo {
 
 /**
  * @file rastertriangle3d.cpp
@@ -9,7 +13,7 @@
  */
 
 /** @brief Default-constructs with null pointers and no UVs. */
-RasterTriangle3D::RasterTriangle3D()
+koilo::RasterTriangle3D::RasterTriangle3D()
     : p1(nullptr), p2(nullptr), p3(nullptr),
       uv1(nullptr), uv2(nullptr), uv3(nullptr),
       hasUV(false) {}
@@ -23,7 +27,7 @@ RasterTriangle3D::RasterTriangle3D()
  * If all vertex pointers are valid, precomputes @ref edge1, @ref edge2 and a unit @ref normal.
  * Sets @ref hasUV to false.
  */
-RasterTriangle3D::RasterTriangle3D(const Vector3D* v1, const Vector3D* v2, const Vector3D* v3)
+koilo::RasterTriangle3D::RasterTriangle3D(const Vector3D* v1, const Vector3D* v2, const Vector3D* v3)
     : p1(v1), p2(v2), p3(v3){
     
     if (p1 && p2 && p3) {
@@ -47,7 +51,7 @@ RasterTriangle3D::RasterTriangle3D(const Vector3D* v1, const Vector3D* v2, const
  * If all vertex pointers are valid, precomputes @ref edge1, @ref edge2 and a unit @ref normal.
  * Sets @ref hasUV to true and forwards the UV pointers.
  */
-RasterTriangle3D::RasterTriangle3D(const Vector3D* v1, const Vector3D* v2, const Vector3D* v3,
+koilo::RasterTriangle3D::RasterTriangle3D(const Vector3D* v1, const Vector3D* v2, const Vector3D* v3,
                                    const Vector2D* t1, const Vector2D* t2, const Vector2D* t3)
     : p1(v1), p2(v2), p3(v3),
       uv1(t1), uv2(t2), uv3(t3) {
@@ -66,7 +70,7 @@ RasterTriangle3D::RasterTriangle3D(const Vector3D* v1, const Vector3D* v2, const
  * @brief Access the precomputed unit normal.
  * @return Reference to the triangle's unit-length normal.
  */
-const Vector3D& RasterTriangle3D::GetNormal() const {
+const Vector3D& koilo::RasterTriangle3D::GetNormal() const {
     return normal;
 }
 
@@ -83,7 +87,7 @@ const Vector3D& RasterTriangle3D::GetNormal() const {
  * intersections outside the triangle (u < 0, v < 0, u + v > 1). A hit requires
  * out_t > EPSILON to ensure it lies in front of the origin.
  */
-bool RasterTriangle3D::IntersectsRay(const Vector3D& rayOrigin, const Vector3D& rayDir,
+bool koilo::RasterTriangle3D::IntersectsRay(const Vector3D& rayOrigin, const Vector3D& rayDir,
                                    float& out_t, float& out_u, float& out_v) const {
     Vector3D pvec = rayDir.CrossProduct(edge2);
     float det = edge1.DotProduct(pvec);
@@ -115,3 +119,5 @@ bool RasterTriangle3D::IntersectsRay(const Vector3D& rayOrigin, const Vector3D& 
     // Ensure the intersection is in front of the ray's origin
     return (out_t > Mathematics::EPSILON);
 }
+
+} // namespace koilo

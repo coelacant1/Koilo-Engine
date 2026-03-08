@@ -1,31 +1,31 @@
-#include <ptx/debug/profiler.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/debug/profiler.hpp>
 #include <iostream>
 #include <fstream>
-#include <sstream>
 #include <algorithm>
 #include <iomanip>
 
-namespace ptx {
+namespace koilo {
 
 // Static member initialization
-Profiler* Profiler::instance = nullptr;
+Profiler* koilo::Profiler::instance = nullptr;
 
 // === Profiler Implementation ===
 
-Profiler::Profiler()
+koilo::Profiler::Profiler()
     : enabled(false), currentDepth(0), frameStartTime(0.0), lastFrameTime(0.0),
       fps(0.0), frameCount(0) {
     startTime = std::chrono::high_resolution_clock::now();
 }
 
-Profiler& Profiler::GetInstance() {
+Profiler& koilo::Profiler::GetInstance() {
     if (instance == nullptr) {
         instance = new Profiler();
     }
     return *instance;
 }
 
-void Profiler::BeginFrame() {
+void koilo::Profiler::BeginFrame() {
     if (!enabled) return;
 
     std::lock_guard<std::mutex> lock(mutex);
@@ -35,7 +35,7 @@ void Profiler::BeginFrame() {
     results.clear();
 }
 
-void Profiler::EndFrame() {
+void koilo::Profiler::EndFrame() {
     if (!enabled) return;
 
     std::lock_guard<std::mutex> lock(mutex);
@@ -52,7 +52,7 @@ void Profiler::EndFrame() {
     frameCount++;
 }
 
-void Profiler::BeginScope(const std::string& name) {
+void koilo::Profiler::BeginScope(const std::string& name) {
     if (!enabled) return;
 
     std::lock_guard<std::mutex> lock(mutex);
@@ -69,7 +69,7 @@ void Profiler::BeginScope(const std::string& name) {
     currentDepth++;
 }
 
-void Profiler::EndScope(const std::string& name) {
+void koilo::Profiler::EndScope(const std::string& name) {
     if (!enabled) return;
 
     std::lock_guard<std::mutex> lock(mutex);
@@ -96,7 +96,7 @@ void Profiler::EndScope(const std::string& name) {
     }
 }
 
-const ProfileStats* Profiler::GetStats(const std::string& name) const {
+const ProfileStats* koilo::Profiler::GetStats(const std::string& name) const {
     auto it = stats.find(name);
     if (it != stats.end()) {
         return &it->second;
@@ -104,20 +104,20 @@ const ProfileStats* Profiler::GetStats(const std::string& name) const {
     return nullptr;
 }
 
-void Profiler::ClearStats() {
+void koilo::Profiler::ClearStats() {
     std::lock_guard<std::mutex> lock(mutex);
     stats.clear();
     results.clear();
     frameCount = 0;
 }
 
-double Profiler::GetCurrentTime() const {
+double koilo::Profiler::GetCurrentTime() const {
     auto now = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(now - startTime);
     return static_cast<double>(duration.count());
 }
 
-bool Profiler::ExportJSON(const std::string& filepath) {
+bool koilo::Profiler::ExportJSON(const std::string& filepath) {
     std::lock_guard<std::mutex> lock(mutex);
 
     std::ofstream file(filepath);
@@ -167,7 +167,7 @@ bool Profiler::ExportJSON(const std::string& filepath) {
     return true;
 }
 
-bool Profiler::ExportCSV(const std::string& filepath) {
+bool koilo::Profiler::ExportCSV(const std::string& filepath) {
     std::lock_guard<std::mutex> lock(mutex);
 
     std::ofstream file(filepath);
@@ -193,7 +193,7 @@ bool Profiler::ExportCSV(const std::string& filepath) {
     return true;
 }
 
-bool Profiler::ExportChromeTrace(const std::string& filepath) {
+bool koilo::Profiler::ExportChromeTrace(const std::string& filepath) {
     std::lock_guard<std::mutex> lock(mutex);
 
     std::ofstream file(filepath);
@@ -235,7 +235,7 @@ bool Profiler::ExportChromeTrace(const std::string& filepath) {
     return true;
 }
 
-void Profiler::PrintStats() {
+void koilo::Profiler::PrintStats() {
     std::lock_guard<std::mutex> lock(mutex);
 
     std::cout << "\n=== Profiler Statistics ===\n";
@@ -278,17 +278,17 @@ void Profiler::PrintStats() {
 
 // === ProfileScope Implementation ===
 
-ProfileScope::ProfileScope(const std::string& name)
-    : name(name), active(Profiler::GetInstance().IsEnabled()) {
+koilo::ProfileScope::ProfileScope(const std::string& name)
+    : name(name), active(koilo::Profiler::GetInstance().IsEnabled()) {
     if (active) {
-        Profiler::GetInstance().BeginScope(name);
+        koilo::Profiler::GetInstance().BeginScope(name);
     }
 }
 
-ProfileScope::~ProfileScope() {
+koilo::ProfileScope::~ProfileScope() {
     if (active) {
-        Profiler::GetInstance().EndScope(name);
+        koilo::Profiler::GetInstance().EndScope(name);
     }
 }
 
-} // namespace ptx
+} // namespace koilo

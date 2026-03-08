@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testtransform.hpp
  * @brief Unit tests for the Transform class.
@@ -13,7 +14,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/core/math/transform.hpp>
+#include <koilo/core/math/transform.hpp>
 #include <utils/testhelpers.hpp>
 
 class TestTransform {
@@ -44,7 +45,7 @@ public:
     static void TestGetRotationOffset();
     static void TestGetScale();
     static void TestGetScaleOffset();
-    static void TestGetScaleRotationOffset();
+
     static void TestParameterizedConstructor();
     static void TestScale();
     static void TestSetBaseRotation();
@@ -53,6 +54,8 @@ public:
     static void TestSetRotationOffset();
     static void TestSetScale();
     static void TestSetScaleOffset();
-    static void TestSetScaleRotationOffset();
+
+    static void TestGetOrigin();
+    static void TestSetOrigin();
     static void RunAllTests();
 };

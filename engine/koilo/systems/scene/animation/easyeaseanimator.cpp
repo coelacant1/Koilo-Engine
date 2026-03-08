@@ -1,8 +1,12 @@
-#include <ptx/systems/scene/animation/easyeaseanimator.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/systems/scene/animation/easyeaseanimator.hpp>
 
 #include <algorithm>
 
-EasyEaseAnimator::EasyEaseAnimator(std::size_t maxParameters,
+
+namespace koilo {
+
+koilo::EasyEaseAnimator::EasyEaseAnimator(std::size_t maxParameters,
                                    InterpolationMethod interpMethod,
                                    float springConstant,
                                    float dampingConstant)
@@ -25,14 +29,14 @@ EasyEaseAnimator::EasyEaseAnimator(std::size_t maxParameters,
     }
 }
 
-void EasyEaseAnimator::SetConstants(uint16_t dictionaryValue, float springConstant, float damping) {
+void koilo::EasyEaseAnimator::SetConstants(uint16_t dictionaryValue, float springConstant, float damping) {
     const std::size_t index = FindIndex(dictionaryValue);
     if (index != kInvalidIndex) {
         dampedSprings_[index].SetConstants(springConstant, damping);
     }
 }
 
-float EasyEaseAnimator::GetValue(uint16_t dictionaryValue) const {
+float koilo::EasyEaseAnimator::GetValue(uint16_t dictionaryValue) const {
     const std::size_t index = FindIndex(dictionaryValue);
     if (index != kInvalidIndex && parameters_[index]) {
         return *parameters_[index];
@@ -40,7 +44,7 @@ float EasyEaseAnimator::GetValue(uint16_t dictionaryValue) const {
     return 0.0f;
 }
 
-float EasyEaseAnimator::GetTarget(uint16_t dictionaryValue) const {
+float koilo::EasyEaseAnimator::GetTarget(uint16_t dictionaryValue) const {
     const std::size_t index = FindIndex(dictionaryValue);
     if (index != kInvalidIndex) {
         return goal_[index];
@@ -48,7 +52,7 @@ float EasyEaseAnimator::GetTarget(uint16_t dictionaryValue) const {
     return 0.0f;
 }
 
-void EasyEaseAnimator::AddParameter(float* parameter,
+void koilo::EasyEaseAnimator::AddParameter(float* parameter,
                                     uint16_t dictionaryValue,
                                     uint16_t frames,
                                     float basis,
@@ -74,21 +78,52 @@ void EasyEaseAnimator::AddParameter(float* parameter,
     dampedSprings_[index].SetConstants(defaultSpringConstant_, defaultDampingConstant_);
 }
 
-void EasyEaseAnimator::AddParameterFrame(uint16_t dictionaryValue, float value) {
+void koilo::EasyEaseAnimator::AddParameterByIndex(uint16_t dictionaryValue,
+                                                  uint16_t frames,
+                                                  float basis,
+                                                  float goal) {
+    if (currentParameters_ >= capacity_) {
+        return;
+    }
+
+    if (FindIndex(dictionaryValue) != kInvalidIndex) {
+        return;
+    }
+
+    // Ensure internal storage has room
+    if (internalValues_.size() <= currentParameters_) {
+        internalValues_.resize(capacity_, 0.0f);
+    }
+
+    const std::size_t index = currentParameters_++;
+    internalValues_[index] = basis;
+    basis_[index] = basis;
+    goal_[index] = goal;
+    parameters_[index] = &internalValues_[index];
+    parameterFrame_[index] = 0.0f;
+    previousSet_[index] = 0.0f;
+    dictionary_[index] = dictionaryValue;
+    interpolationMethods_[index] = defaultMethod_;
+
+    rampFilters_[index].SetFrames(frames);
+    dampedSprings_[index].SetConstants(defaultSpringConstant_, defaultDampingConstant_);
+}
+
+void koilo::EasyEaseAnimator::AddParameterFrame(uint16_t dictionaryValue, float value) {
     const std::size_t index = FindIndex(dictionaryValue);
     if (index != kInvalidIndex) {
         parameterFrame_[index] = value;
     }
 }
 
-void EasyEaseAnimator::SetInterpolationMethod(uint16_t dictionaryValue, InterpolationMethod interpMethod) {
+void koilo::EasyEaseAnimator::SetInterpolationMethod(uint16_t dictionaryValue, InterpolationMethod interpMethod) {
     const std::size_t index = FindIndex(dictionaryValue);
     if (index != kInvalidIndex) {
         interpolationMethods_[index] = interpMethod;
     }
 }
 
-void EasyEaseAnimator::Reset() {
+void koilo::EasyEaseAnimator::Reset() {
     for (std::size_t i = 0; i < currentParameters_; ++i) {
         if (parameters_[i]) {
             *parameters_[i] = basis_[i];
@@ -98,7 +133,7 @@ void EasyEaseAnimator::Reset() {
     }
 }
 
-void EasyEaseAnimator::SetParameters() {
+void koilo::EasyEaseAnimator::SetParameters() {
     for (std::size_t i = 0; i < currentParameters_; ++i) {
         if (!parameters_[i]) {
             continue;
@@ -125,7 +160,7 @@ void EasyEaseAnimator::SetParameters() {
     }
 }
 
-void EasyEaseAnimator::Update() {
+void koilo::EasyEaseAnimator::Update() {
     for (std::size_t i = 0; i < currentParameters_; ++i) {
         const float set = rampFilters_[i].Filter(parameterFrame_[i]);
         const float fullRange = Mathematics::Map(set, basis_[i], goal_[i], 0.0f, 1.0f);
@@ -157,7 +192,7 @@ void EasyEaseAnimator::Update() {
     }
 }
 
-std::size_t EasyEaseAnimator::FindIndex(uint16_t dictionaryValue) const {
+std::size_t koilo::EasyEaseAnimator::FindIndex(uint16_t dictionaryValue) const {
     for (std::size_t i = 0; i < currentParameters_; ++i) {
         if (dictionary_[i] == dictionaryValue) {
             return i;
@@ -165,3 +200,5 @@ std::size_t EasyEaseAnimator::FindIndex(uint16_t dictionaryValue) const {
     }
     return kInvalidIndex;
 }
+
+} // namespace koilo

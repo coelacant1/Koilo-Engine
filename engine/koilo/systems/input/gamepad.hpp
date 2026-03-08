@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file gamepad.hpp
  * @brief Gamepad/controller input with button and axis mapping.
@@ -10,9 +11,9 @@
 
 #include <array>
 #include "keycodes.hpp"
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
 
-namespace ptx {
+namespace koilo {
 
 /**
  * @class Gamepad
@@ -122,26 +123,26 @@ public:
      */
     float GetDeadZone() const { return deadZone; }
 
-    PTX_BEGIN_FIELDS(Gamepad)
-        PTX_FIELD(Gamepad, id, "Id", -1, 16),
-        PTX_FIELD(Gamepad, connected, "Connected", 0, 1),
-        PTX_FIELD(Gamepad, deadZone, "Dead zone", 0.0f, 1.0f)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(Gamepad)
+        KL_FIELD(Gamepad, id, "Id", -1, 16),
+        KL_FIELD(Gamepad, connected, "Connected", 0, 1),
+        KL_FIELD(Gamepad, deadZone, "Dead zone", 0.0f, 1.0f)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(Gamepad)
-        PTX_METHOD_AUTO(Gamepad, Update, "Update"),
-        PTX_METHOD_AUTO(Gamepad, IsConnected, "Is connected"),
-        PTX_METHOD_AUTO(Gamepad, GetID, "Get id"),
-        PTX_METHOD_AUTO(Gamepad, IsButtonPressed, "Is button pressed"),
-        PTX_METHOD_AUTO(Gamepad, IsButtonHeld, "Is button held"),
-        PTX_METHOD_AUTO(Gamepad, IsButtonReleased, "Is button released"),
-        PTX_METHOD_AUTO(Gamepad, GetAxisValue, "Get axis value")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(Gamepad)
+        KL_METHOD_AUTO(Gamepad, Update, "Update"),
+        KL_METHOD_AUTO(Gamepad, IsConnected, "Is connected"),
+        KL_METHOD_AUTO(Gamepad, GetID, "Get id"),
+        KL_METHOD_AUTO(Gamepad, IsButtonPressed, "Is button pressed"),
+        KL_METHOD_AUTO(Gamepad, IsButtonHeld, "Is button held"),
+        KL_METHOD_AUTO(Gamepad, IsButtonReleased, "Is button released"),
+        KL_METHOD_AUTO(Gamepad, GetAxisValue, "Get axis value")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(Gamepad)
-        PTX_CTOR0(Gamepad),
-        PTX_CTOR(Gamepad, int)
-    PTX_END_DESCRIBE(Gamepad)
+    KL_BEGIN_DESCRIBE(Gamepad)
+        KL_CTOR0(Gamepad),
+        KL_CTOR(Gamepad, int)
+    KL_END_DESCRIBE(Gamepad)
 };
 
-} // namespace ptx
+} // namespace koilo

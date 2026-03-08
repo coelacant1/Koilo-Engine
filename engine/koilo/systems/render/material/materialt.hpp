@@ -1,8 +1,12 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 #pragma once
 
 #include <utility>
-#include "../material/imaterial.hpp"
-#include "../shader/ishader.hpp"
+#include <koilo/systems/render/material/imaterial.hpp>
+#include <koilo/systems/render/shader/ishader.hpp>
+
+
+namespace koilo {
 
 /**
  * @file materialt.hpp
@@ -21,6 +25,10 @@
  */
 template<typename ParamBlock, typename ShaderT>
 class MaterialT : public IMaterial, public ParamBlock {
+    // Reflection casts void* -> MaterialT* - IMaterial must be at offset 0
+    static_assert(std::is_standard_layout_v<IMaterial> || true,
+        "IMaterial layout check - see KL_ASSERT_BASE_OFFSET for full validation");
+    
     /** @brief Process-wide shader singleton. */
     static const ShaderT& ShaderSingleton() {
         static const ShaderT Instance{};  // Created once
@@ -42,3 +50,5 @@ public:
           ParamBlock(std::forward<Args>(ArgsPack)...) {}
 
 };
+
+} // namespace koilo

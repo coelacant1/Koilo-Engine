@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file PID.h
  * @brief Defines the `PID` class for implementing a proportional-integral-derivative controller.
@@ -13,7 +14,10 @@
 #pragma once
 
 #include <stdint.h>
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class PID
@@ -77,18 +81,20 @@ public:
      */
     float Calculate(float setpoint, float processVariable, float dT);
 
-    PTX_BEGIN_FIELDS(PID)
+    KL_BEGIN_FIELDS(PID)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(PID)
-        /* Calculate */ PTX_METHOD_OVLD(PID, Calculate, float, float, float, uint32_t),
-        /* Calculate */ PTX_METHOD_OVLD(PID, Calculate, float, float, float, float)
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(PID)
+        /* Calculate */ KL_METHOD_OVLD(PID, Calculate, float, float, float, uint32_t),
+        /* Calculate */ KL_METHOD_OVLD(PID, Calculate, float, float, float, float)
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(PID)
-        PTX_CTOR0(PID),
-        PTX_CTOR(PID, float, float, float)
-    PTX_END_DESCRIBE(PID)
+    KL_BEGIN_DESCRIBE(PID)
+        KL_CTOR0(PID),
+        KL_CTOR(PID, float, float, float)
+    KL_END_DESCRIBE(PID)
 
 };
+
+} // namespace koilo

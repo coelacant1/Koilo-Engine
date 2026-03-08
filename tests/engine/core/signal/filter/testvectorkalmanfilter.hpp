@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testvectorkalmanfilter.hpp
  * @brief Unit tests for the VectorKalmanFilter class.
@@ -15,7 +16,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/core/signal/filter/vectorkalmanfilter.hpp>
+#include <koilo/core/signal/filter/vectorkalmanfilter.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file TriangleGroup.h
  * @brief Defines the TriangleGroup class for dynamic manipulation of triangles in 3D space.
@@ -13,11 +14,14 @@
 #pragma once
 
 #include <vector>
-#include "../../core/geometry/3d/triangle.hpp"
+#include <koilo/core/geometry/3d/triangle.hpp>
 #include "itrianglegroup.hpp"
 #include "indexgroup.hpp"
 #include "istatictrianglegroup.hpp"
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class TriangleGroup
@@ -55,32 +59,34 @@ public:
     const IndexGroup* GetIndexGroup() override;
 
     /** @brief Number of triangles stored. */
-    int GetTriangleCount() override;
+    uint32_t GetTriangleCount() override;
 
     /** @brief Mutable pointer to contiguous vertex storage (size == GetVertexCount()). */
     Vector3D* GetVertices() override;
 
     /** @brief Number of vertices stored. */
-    int GetVertexCount() override;
+    uint32_t GetVertexCount() override;
 
     /** @brief Mutable pointer to first Triangle3D (size == GetTriangleCount()). */
     Triangle3D* GetTriangles() override;
 
-    PTX_BEGIN_FIELDS(TriangleGroup)
+    KL_BEGIN_FIELDS(TriangleGroup)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(TriangleGroup)
-        PTX_METHOD_AUTO(TriangleGroup, GetIndexGroup, "Get index group"),
-        PTX_METHOD_AUTO(TriangleGroup, GetTriangleCount, "Get triangle count"),
-        PTX_METHOD_AUTO(TriangleGroup, GetVertices, "Get vertices"),
-        PTX_METHOD_AUTO(TriangleGroup, GetVertexCount, "Get vertex count"),
-        PTX_METHOD_AUTO(TriangleGroup, GetTriangles, "Get triangles")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(TriangleGroup)
+        KL_METHOD_AUTO(TriangleGroup, GetIndexGroup, "Get index group"),
+        KL_METHOD_AUTO(TriangleGroup, GetTriangleCount, "Get triangle count"),
+        KL_METHOD_AUTO(TriangleGroup, GetVertices, "Get vertices"),
+        KL_METHOD_AUTO(TriangleGroup, GetVertexCount, "Get vertex count"),
+        KL_METHOD_AUTO(TriangleGroup, GetTriangles, "Get triangles")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(TriangleGroup)
-        PTX_CTOR(TriangleGroup, IStaticTriangleGroup *)
-    PTX_END_DESCRIBE(TriangleGroup)
+    KL_BEGIN_DESCRIBE(TriangleGroup)
+        KL_CTOR(TriangleGroup, IStaticTriangleGroup *)
+    KL_END_DESCRIBE(TriangleGroup)
 
 };
+
+} // namespace koilo
 

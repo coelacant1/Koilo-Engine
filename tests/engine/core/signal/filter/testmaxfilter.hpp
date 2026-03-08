@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testmaxfilter.hpp
  * @brief Unit tests for the MaxFilter class.
@@ -13,7 +14,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/core/signal/filter/maxfilter.hpp>
+#include <koilo/core/signal/filter/maxfilter.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

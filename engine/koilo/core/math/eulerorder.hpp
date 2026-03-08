@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file EulerOrder.h
  * @brief Defines the EulerOrder class for specifying rotation orders in 3D space.
@@ -13,7 +14,10 @@
 #pragma once
 
 #include "vector3d.hpp"
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class EulerOrder
@@ -84,21 +88,23 @@ public:
      *
      * @return A string describing the axis order, frame, and permutation.
      */
-    ptx::UString ToString();
+    koilo::UString ToString();
 
-    PTX_BEGIN_FIELDS(EulerOrder)
-        PTX_FIELD(EulerOrder, AxisOrder, "Axis order", 0, 0),
-        PTX_FIELD(EulerOrder, FrameTaken, "Frame taken", 0, 0),
-        PTX_FIELD(EulerOrder, Permutation, "Permutation", 0, 0)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(EulerOrder)
+        KL_FIELD(EulerOrder, AxisOrder, "Axis order", 0, 0),
+        KL_FIELD(EulerOrder, FrameTaken, "Frame taken", 0, 0),
+        KL_FIELD(EulerOrder, Permutation, "Permutation", 0, 0)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(EulerOrder)
-        PTX_METHOD_AUTO(EulerOrder, ToString, "To string")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(EulerOrder)
+        KL_METHOD_AUTO(EulerOrder, ToString, "To string")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(EulerOrder)
-        PTX_CTOR0(EulerOrder),
-        PTX_CTOR(EulerOrder, Axis, AxisFrame, Vector3D)
-    PTX_END_DESCRIBE(EulerOrder)
+    KL_BEGIN_DESCRIBE(EulerOrder)
+        KL_CTOR0(EulerOrder),
+        KL_CTOR(EulerOrder, Axis, AxisFrame, Vector3D)
+    KL_END_DESCRIBE(EulerOrder)
 
 };
+
+} // namespace koilo

@@ -1,8 +1,9 @@
-#include <ptx/ecs/component.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/ecs/component.hpp>
 
-namespace ptx {
+namespace koilo {
 
 // Initialize static counter
-ComponentTypeID ComponentTypeIDGenerator::counter = 0;
+ComponentTypeID koilo::ComponentTypeIDGenerator::counter = 0;
 
-} // namespace ptx
+} // namespace koilo

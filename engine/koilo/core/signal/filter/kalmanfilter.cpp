@@ -1,19 +1,23 @@
-#include <ptx/core/signal/filter/kalmanfilter.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/core/signal/filter/kalmanfilter.hpp>
 
 #include <limits>
 
-KalmanFilter::KalmanFilter(float processNoise, float sensorNoise, float errorCovariance)
+
+namespace koilo {
+
+koilo::KalmanFilter::KalmanFilter(float processNoise, float sensorNoise, float errorCovariance)
     : processNoise(processNoise),
       sensorNoise(sensorNoise),
       estimation(0.0f),
       errorCovariance(errorCovariance) {}
 
-void KalmanFilter::Reset(float estimationValue, float errorCovarianceValue) {
+void koilo::KalmanFilter::Reset(float estimationValue, float errorCovarianceValue) {
     estimation = estimationValue;
     errorCovariance = errorCovarianceValue;
 }
 
-float KalmanFilter::Filter(float value) {
+float koilo::KalmanFilter::Filter(float value) {
     errorCovariance += processNoise;
 
     const float denominator = errorCovariance + sensorNoise;
@@ -25,3 +29,5 @@ float KalmanFilter::Filter(float value) {
 
     return estimation;
 }
+
+} // namespace koilo

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testlight.hpp
  * @brief Unit tests for the Light class.
@@ -12,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/systems/scene/lighting/light.hpp>
+#include <koilo/systems/scene/lighting/light.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

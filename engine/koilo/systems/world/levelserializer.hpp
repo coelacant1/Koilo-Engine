@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file levelserializer.hpp
  * @brief Serialization/deserialization for levels (gameplay entity containers).
@@ -13,10 +14,11 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <functional>
 #include "level.hpp"
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
 
-namespace ptx {
+namespace koilo {
 
 // Forward declarations
 class EntityManager;
@@ -27,8 +29,7 @@ class EntityManager;
  */
 enum class SerializationFormat {
     JSON,       ///< JSON text format (human-readable)
-    Binary,     ///< Binary format (compact, fast)
-    XML         ///< XML format (verbose, compatible)
+    Binary      ///< Binary format (compact, fast)
 };
 
 /**
@@ -38,7 +39,20 @@ enum class SerializationFormat {
 struct SerializedEntity {
     EntityID id;                                         ///< Entity ID
     std::vector<std::string> componentTypes;             ///< Component type names
-    std::vector<std::string> componentData;              ///< Serialized component data
+    std::vector<std::string> componentData;              ///< Serialized component data (JSON)
+
+    KL_BEGIN_FIELDS(SerializedEntity)
+        KL_FIELD(SerializedEntity, id, "Id", 0, 0)
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(SerializedEntity)
+        /* No reflected methods. */
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(SerializedEntity)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(SerializedEntity)
+
 };
 
 /**
@@ -52,141 +66,117 @@ struct SerializedLevel {
     bool isStreamable;                                   ///< Streaming flag
     Vector3D streamingOrigin;                            ///< Streaming origin
     float streamingRadius;                               ///< Streaming radius
+
+    SerializedLevel() : isStreamable(false), streamingRadius(0.0f) {}
+
+    KL_BEGIN_FIELDS(SerializedLevel)
+        KL_FIELD(SerializedLevel, name, "Name", 0, 0)
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(SerializedLevel)
+        /* No reflected methods. */
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(SerializedLevel)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(SerializedLevel)
+
+};
+
+/**
+ * @struct ComponentSerializerEntry
+ * @brief Type-erased component serialization entry.
+ */
+struct ComponentSerializerEntry {
+    std::string typeName;
+    std::function<bool(EntityManager*, Entity)> hasComponent;
+    std::function<const void*(EntityManager*, Entity)> getComponent;
+    std::function<void(EntityManager*, Entity, const std::string&)> addFromJSON;
+    const ClassDesc* classDesc;
+
+    KL_BEGIN_FIELDS(ComponentSerializerEntry)
+        KL_FIELD(ComponentSerializerEntry, typeName, "Type name", 0, 0),
+        KL_FIELD(ComponentSerializerEntry, classDesc, "Class desc", 0, 0)
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(ComponentSerializerEntry)
+        /* ComponentSerializerEntry is engine-internal */
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(ComponentSerializerEntry)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(ComponentSerializerEntry)
+
 };
 
 /**
  * @class LevelSerializer
- * @brief Handles serialization and deserialization of levels (gameplay entity containers).
+ * @brief Handles serialization and deserialization of levels.
  *
- * The LevelSerializer can save levels to disk in various formats
- * and load them back, recreating all entities and components.
- *
- * Note: This is for Level objects (gameplay/entities), not Scene objects (rendering/meshes).
+ * Uses the reflection system and a component registry to serialize
+ * entity component data without compile-time type knowledge.
  */
 class LevelSerializer {
 private:
-    EntityManager* entityManager;        ///< Entity manager (not owned)
-    SerializationFormat format;          ///< Current format
+    EntityManager* entityManager;
+    SerializationFormat format;
 
 public:
-    /**
-     * @brief Constructor.
-     */
     LevelSerializer(EntityManager* entityManager = nullptr,
                     SerializationFormat format = SerializationFormat::JSON);
-
-    /**
-     * @brief Destructor.
-     */
     ~LevelSerializer();
 
     // === Configuration ===
-
-    /**
-     * @brief Sets the entity manager.
-     */
     void SetEntityManager(EntityManager* manager) { entityManager = manager; }
-
-    /**
-     * @brief Gets the entity manager.
-     */
     EntityManager* GetEntityManager() const { return entityManager; }
-
-    /**
-     * @brief Sets the serialization format.
-     */
     void SetFormat(SerializationFormat newFormat) { format = newFormat; }
-
-    /**
-     * @brief Gets the serialization format.
-     */
     SerializationFormat GetFormat() const { return format; }
 
+    // === Component Registry ===
+
+    /**
+     * @brief Initializes the component type registry. Call once at startup.
+     */
+    static void InitializeComponentRegistry();
+
+    /**
+     * @brief Gets the registered component serializers.
+     */
+    static std::vector<ComponentSerializerEntry>& GetComponentRegistry();
+
     // === Serialization ===
-
-    /**
-     * @brief Serializes a level to a file.
-     */
     bool SerializeLevelToFile(std::shared_ptr<Level> level, const std::string& filePath);
-
-    /**
-     * @brief Deserializes a level from a file.
-     */
     std::shared_ptr<Level> DeserializeLevelFromFile(const std::string& filePath);
-
-    /**
-     * @brief Serializes a level to a string.
-     */
     std::string SerializeLevelToString(std::shared_ptr<Level> level);
-
-    /**
-     * @brief Deserializes a level from a string.
-     */
     std::shared_ptr<Level> DeserializeLevelFromString(const std::string& data);
 
     // === Entity Serialization ===
-
-    /**
-     * @brief Serializes an entity.
-     */
     SerializedEntity SerializeEntity(Entity entity);
-
-    /**
-     * @brief Deserializes an entity.
-     */
     Entity DeserializeEntity(const SerializedEntity& serializedEntity);
 
-    // === Component Serialization ===
+    KL_BEGIN_FIELDS(LevelSerializer)
+    KL_END_FIELDS
 
-    /**
-     * @brief Serializes a component to a string.
-     */
-    template<typename T>
-    std::string SerializeComponent(const T& component);
+    KL_BEGIN_METHODS(LevelSerializer)
+        KL_METHOD_AUTO(LevelSerializer, SerializeLevelToFile, "Serialize level to file"),
+        KL_METHOD_AUTO(LevelSerializer, DeserializeLevelFromFile, "Deserialize level from file")
+    KL_END_METHODS
 
-    /**
-     * @brief Deserializes a component from a string.
-     */
-    template<typename T>
-    T DeserializeComponent(const std::string& data);
-
-    PTX_BEGIN_FIELDS(LevelSerializer)
-    PTX_END_FIELDS
-
-    PTX_BEGIN_METHODS(LevelSerializer)
-        PTX_METHOD_AUTO(LevelSerializer, SerializeLevelToFile, "Serialize level to file"),
-        PTX_METHOD_AUTO(LevelSerializer, DeserializeLevelFromFile, "Deserialize level from file")
-    PTX_END_METHODS
-
-    PTX_BEGIN_DESCRIBE(LevelSerializer)
-        PTX_CTOR(LevelSerializer, EntityManager*, SerializationFormat)
-    PTX_END_DESCRIBE(LevelSerializer)
+    KL_BEGIN_DESCRIBE(LevelSerializer)
+        KL_CTOR0(LevelSerializer)
+    KL_END_DESCRIBE(LevelSerializer)
 
 private:
-    // Format-specific helpers
     bool SerializeToJSON(const SerializedLevel& level, const std::string& filePath);
     bool SerializeToBinary(const SerializedLevel& level, const std::string& filePath);
-    bool SerializeToXML(const SerializedLevel& level, const std::string& filePath);
+    std::string SerializeToJSONString(const SerializedLevel& level);
 
     SerializedLevel DeserializeFromJSON(const std::string& filePath);
     SerializedLevel DeserializeFromBinary(const std::string& filePath);
-    SerializedLevel DeserializeFromXML(const std::string& filePath);
+    SerializedLevel DeserializeFromJSONString(const std::string& json);
+
+    SerializedLevel BuildSerializedLevel(std::shared_ptr<Level> level);
+    std::shared_ptr<Level> RebuildLevel(const SerializedLevel& serialized, const std::string& filePath = "");
 };
 
-// === Template Implementations ===
-
-template<typename T>
-std::string LevelSerializer::SerializeComponent(const T& component) {
-    // TODO: Use reflection system to serialize component fields
-    // For now, return empty string
-    return "";
-}
-
-template<typename T>
-T LevelSerializer::DeserializeComponent(const std::string& data) {
-    // TODO: Use reflection system to deserialize component fields
-    // For now, return default-constructed component
-    return T();
-}
-
-} // namespace ptx
+} // namespace koilo
