@@ -1,13 +1,15 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testcameramanager.cpp
  * @brief Implementation of CameraManager unit tests.
  */
 
 #include "testcameramanager.hpp"
-#include <ptx/systems/render/core/camera.hpp>
-#include <ptx/systems/render/core/pixelgroup.hpp>
-#include <ptx/core/math/transform.hpp>
+#include <koilo/systems/scene/camera/camera.hpp>
+#include <koilo/systems/render/core/pixelgroup.hpp>
+#include <koilo/core/math/transform.hpp>
 
+using namespace koilo;
 // ========== Constructor Tests ==========
 
 void TestCameraManager::TestDefaultConstructor() {
@@ -106,10 +108,20 @@ void TestCameraManager::TestEdgeCases() {
     TEST_ASSERT_EQUAL(0, nullManager.GetCameraCount());
 }
 
+void TestCameraManager::TestGetCamera() {
+    Transform t;
+    PixelGroup p(4, Vector2D(4.0f, 4.0f), Vector2D(0.0f, 0.0f), 2);
+    Camera c(&t, &p);
+    CameraBase* arr[] = {&c};
+    CameraManager mgr(arr, 1);
+    TEST_ASSERT_EQUAL_PTR(&c, mgr.GetCameras()[0]);
+}
+
 void TestCameraManager::RunAllTests() {
     RUN_TEST(TestDefaultConstructor);
     RUN_TEST(TestParameterizedConstructor);
     RUN_TEST(TestGetCameras);
     RUN_TEST(TestGetCameraCount);
     RUN_TEST(TestEdgeCases);
+    RUN_TEST(TestGetCamera);
 }

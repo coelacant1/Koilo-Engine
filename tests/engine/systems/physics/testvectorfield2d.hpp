@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testvectorfield2d.hpp
  * @brief Unit tests for the VectorField2D class.
@@ -12,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/systems/physics/vectorfield2d.hpp>
+#include <koilo/systems/physics/vectorfield2d.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

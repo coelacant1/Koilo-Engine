@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testphysicssimulator.hpp
  * @brief Unit tests for the PhysicsSimulator class.
@@ -12,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/systems/physics/physicssimulator.hpp>
+#include <koilo/systems/physics/physicssimulator.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

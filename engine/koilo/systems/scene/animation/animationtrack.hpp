@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file AnimationTrack.h
  * @brief Declares the AnimationTrack template class for managing animation tracks with keyframes.
@@ -16,6 +17,8 @@
 #include <cstddef>
 
 #include "keyframetrack.hpp"
+
+namespace koilo {
 
 /**
  * @class AnimationTrack
@@ -122,3 +125,5 @@ public:
     KeyFrameInterpolation::InterpolationMethod GetInterpolationMethod() const;
 
 };
+
+} // namespace koilo

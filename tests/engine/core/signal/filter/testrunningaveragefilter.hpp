@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testrunningaveragefilter.hpp
  * @brief Unit tests for the RunningAverageFilter class.
@@ -13,7 +14,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/core/signal/filter/runningaveragefilter.hpp>
+#include <koilo/core/signal/filter/runningaveragefilter.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

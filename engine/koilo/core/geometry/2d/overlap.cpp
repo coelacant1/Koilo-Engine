@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 // overlap.cpp
 /**
  * @file overlap.cpp
@@ -5,8 +6,11 @@
  * @date  25/06/2025
  */
 
-#include <ptx/core/geometry/2d/overlap.hpp>
-#include <ptx/core/math/mathematics.hpp>
+#include <koilo/core/geometry/2d/overlap.hpp>
+#include <koilo/core/math/mathematics.hpp>
+#include <cmath>
+
+namespace koilo {
 
 /**
  * @brief Rectangle-Rectangle overlap with AABB fast path and SAT for rotated cases.
@@ -140,3 +144,5 @@ bool Overlap2D::Overlaps(const Circle2D& c, const Ellipse2D& e){
 bool Overlap2D::Overlaps(const Triangle2D& t, const Ellipse2D& e){
     return Overlaps(Rectangle2D(t.GetBounds()), Rectangle2D(e.GetBounds()));
 }
+
+} // namespace koilo

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testbouncephysics.hpp
  * @brief Unit tests for the BouncePhysics class.
@@ -6,7 +7,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/core/control/bouncephysics.hpp>
+#include <koilo/core/control/bouncephysics.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

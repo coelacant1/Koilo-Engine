@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file entity.hpp
  * @brief Entity handle for ECS system.
@@ -9,9 +10,8 @@
 #pragma once
 
 #include <cstdint>
-#include "../../registry/reflect_macros.hpp"
 
-namespace ptx {
+namespace koilo {
 
 /**
  * @typedef EntityID
@@ -94,22 +94,6 @@ public:
         return (static_cast<uint64_t>(generation) << 32) | static_cast<uint64_t>(index);
     }
 
-    PTX_BEGIN_FIELDS(Entity)
-        PTX_FIELD(Entity, id, "ID", 0, 0)
-    PTX_END_FIELDS
-
-    PTX_BEGIN_METHODS(Entity)
-        PTX_METHOD_AUTO(Entity, GetID, "Get ID"),
-        PTX_METHOD_AUTO(Entity, GetIndex, "Get index"),
-        PTX_METHOD_AUTO(Entity, GetGeneration, "Get generation"),
-        PTX_METHOD_AUTO(Entity, IsNull, "Is null"),
-        PTX_METHOD_AUTO(Entity, IsValid, "Is valid")
-    PTX_END_METHODS
-
-    PTX_BEGIN_DESCRIBE(Entity)
-        PTX_CTOR0(Entity),
-        PTX_CTOR(Entity, uint64_t)
-    PTX_END_DESCRIBE(Entity)
 };
 
 /**
@@ -117,14 +101,4 @@ public:
  */
 constexpr EntityID NULL_ENTITY = 0;
 
-} // namespace ptx
-
-// Hash function for Entity (for unordered_map/set)
-namespace std {
-    template<>
-    struct hash<ptx::Entity> {
-        size_t operator()(const ptx::Entity& entity) const {
-            return hash<ptx::EntityID>()(entity.GetID());
-        }
-    };
-}
+} // namespace koilo

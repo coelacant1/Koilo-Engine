@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
-"""GeneratePTXAll.py
+# SPDX-License-Identifier: GPL-3.0-or-later
+"""GenerateKoiloAll.py
 ---------------------
 Generate an umbrella header that `#include`s every public *.hpp under a root.
 
-Default behavior (no --output provided): write into `<root>/ptxall.hpp`.
+Default behavior (no --output provided): write into `<root>/koiloall.hpp`.
 Preferred modern usage: supply an explicit --output path inside the CMake
-build tree (e.g. `${CMAKE_BINARY_DIR}/generated/ptx/ptxall.hpp`) so the file
+build tree (e.g. `${CMAKE_BINARY_DIR}/generated/koilo/koiloall.hpp`) so the file
 is not tracked in the source repo.
 
 Examples:
-    python scripts/GeneratePTXAll.py --root engine/include/ptx \
-                 --output build/generated/ptx/ptxall.hpp
-    python scripts/GeneratePTXAll.py --root engine/include/ptx --output build/gen/ptx/ptxall.hpp
+    python scripts/GenerateKoiloAll.py --root engine/koilo \
+                 --output build/generated/koilo/koiloall.hpp
+    python scripts/GenerateKoiloAll.py --root engine/koilo --output build/gen/koilo/koiloall.hpp
 """
 
 from pathlib import Path
@@ -31,12 +32,12 @@ try:  # When invoked via PlatformIO extra_scripts
 except Exception:  # Stand-alone
     DEFAULT_REPO_ROOT = Path(__file__).resolve().parents[1]
 
-DEFAULT_HEADER_ROOT = Path("engine") / "include" / "ptx"
+DEFAULT_HEADER_ROOT = Path("engine") / "koilo"
 
 def parse_args() -> argparse.Namespace:
-    ap = argparse.ArgumentParser(description="Generate umbrella ptxall.hpp")
-    ap.add_argument("--root", default=str(DEFAULT_HEADER_ROOT), help="Header root to scan (default: engine/include/ptx)")
-    ap.add_argument("--output", default=None, help="Output file path (default: <root>/ptxall.hpp)")
+    ap = argparse.ArgumentParser(description="Generate umbrella koiloall.hpp")
+    ap.add_argument("--root", default=str(DEFAULT_HEADER_ROOT), help="Header root to scan (default: engine/koilo)")
+    ap.add_argument("--output", default=None, help="Output file path (default: <root>/koiloall.hpp)")
     return ap.parse_args()
 
 def gather_headers(include_root: Path, output_name: str) -> list[str]:
@@ -49,14 +50,16 @@ def gather_headers(include_root: Path, output_name: str) -> list[str]:
             if f == output_name:
                 continue
 
-            # Filter out template and virtual files (same as UpdatePTXRegistry.py)
+            # Filter out template and virtual files UNLESS they have KL_BEGIN_DESCRIBE or KL_DECLARE_DESCRIBE
             file_path = Path(path, f)
             try:
                 text = file_path.read_text(encoding="utf-8", errors="ignore")
-                if re.search(r'\btemplate\s*<', text):
-                    continue
-                if re.search(r'\bvirtual\b', text):
-                    continue
+                has_describe = 'KL_BEGIN_DESCRIBE' in text or 'KL_DECLARE_DESCRIBE' in text
+                if not has_describe:
+                    if re.search(r'\btemplate\s*<', text):
+                        continue
+                    if re.search(r'\bvirtual\b', text):
+                        continue
             except Exception:
                 pass  # Include file if we can't read it
 
@@ -71,13 +74,13 @@ def generate(include_root: Path, output_file: Path) -> int:
     with output_file.open("w", encoding="utf-8") as fp:
         fp.write(
             "/**\n"
-            " * @file ptxall.hpp (auto-generated)\n"
+            " * @file koiloall.hpp (auto-generated)\n"
             " * @brief Umbrella header - DO NOT EDIT BY HAND.\n"
             " */\n"
             "#pragma once\n\n"
         )
         for h in hdrs:
-            fp.write(f'#include "{h}"\n')
+            fp.write(f'#include <koilo/{h}>\n')
 
     print_success(f"Regenerated {output_file} with {len(hdrs)} headers")
     print_status(f"   Root: {include_root}", Colors.GREEN)
@@ -97,9 +100,9 @@ def main_cli() -> int:
         if not out_path.is_absolute():
             out_path = (repo_root / out_path).resolve()
     else:
-        out_path = root_path / "ptxall.hpp"
+        out_path = root_path / "koiloall.hpp"
 
-    print_section("Generating PTX umbrella header")
+    print_section("Generating Koilo umbrella header")
     return generate(root_path, out_path)
 
 if __name__ == "__main__":
@@ -108,8 +111,8 @@ else:  # Imported (e.g. via PlatformIO) - retain legacy behavior
     try:
         root_candidate = DEFAULT_REPO_ROOT / DEFAULT_HEADER_ROOT
         if not root_candidate.exists():
-            root_candidate = DEFAULT_REPO_ROOT / "lib" / "ptx"
-        legacy_out = root_candidate / "ptxall.hpp"
+            root_candidate = DEFAULT_REPO_ROOT / "lib" / "koiloscript"
+        legacy_out = root_candidate / "koiloall.hpp"
         generate(root_candidate, legacy_out)
     except Exception:
         pass

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testblendshape.hpp
  * @brief Unit tests for the Blendshape class.
@@ -12,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/systems/scene/deform/blendshape.hpp>
+#include <koilo/systems/scene/deform/blendshape.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

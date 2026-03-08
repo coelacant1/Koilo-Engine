@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file resourcemanager.hpp
  * @brief Central resource management system for loading and caching assets.
@@ -16,9 +17,9 @@
 #include <vector>
 #include <typeindex>
 #include "resourcehandle.hpp"
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
 
-namespace ptx {
+namespace koilo {
 
 /**
  * @typedef ResourceLoader
@@ -237,26 +238,26 @@ private:
      */
     void UpdateMemoryTracking();
 
-    PTX_BEGIN_FIELDS(ResourceManager)
-        PTX_FIELD(ResourceManager, totalMemoryUsed, "Total memory used", 0, 0),
-        PTX_FIELD(ResourceManager, memoryLimit, "Memory limit", 0, 0),
-        PTX_FIELD(ResourceManager, hotReloadEnabled, "Hot reload enabled", 0, 1)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(ResourceManager)
+        KL_FIELD(ResourceManager, totalMemoryUsed, "Total memory used", 0, 0),
+        KL_FIELD(ResourceManager, memoryLimit, "Memory limit", 0, 0),
+        KL_FIELD(ResourceManager, hotReloadEnabled, "Hot reload enabled", 0, 1)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(ResourceManager)
-        PTX_METHOD_AUTO(ResourceManager, UnloadAllResources, "Unload all resources"),
-        PTX_METHOD_AUTO(ResourceManager, GetTotalMemoryUsed, "Get total memory used"),
-        PTX_METHOD_AUTO(ResourceManager, SetMemoryLimit, "Set memory limit"),
-        PTX_METHOD_AUTO(ResourceManager, GarbageCollect, "Garbage collect"),
-        PTX_METHOD_AUTO(ResourceManager, GetCachedResourceCount, "Get cached resource count"),
-        PTX_METHOD_AUTO(ResourceManager, PrintStatistics, "Print statistics"),
-        PTX_METHOD_AUTO(ResourceManager, EnableHotReload, "Enable hot reload"),
-        PTX_METHOD_AUTO(ResourceManager, CheckHotReload, "Check hot reload")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(ResourceManager)
+        KL_METHOD_AUTO(ResourceManager, UnloadAllResources, "Unload all resources"),
+        KL_METHOD_AUTO(ResourceManager, GetTotalMemoryUsed, "Get total memory used"),
+        KL_METHOD_AUTO(ResourceManager, SetMemoryLimit, "Set memory limit"),
+        KL_METHOD_AUTO(ResourceManager, GarbageCollect, "Garbage collect"),
+        KL_METHOD_AUTO(ResourceManager, GetCachedResourceCount, "Get cached resource count"),
+        KL_METHOD_AUTO(ResourceManager, PrintStatistics, "Print statistics"),
+        KL_METHOD_AUTO(ResourceManager, EnableHotReload, "Enable hot reload"),
+        KL_METHOD_AUTO(ResourceManager, CheckHotReload, "Check hot reload")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(ResourceManager)
+    KL_BEGIN_DESCRIBE(ResourceManager)
         // Singleton, no constructors exposed
-    PTX_END_DESCRIBE(ResourceManager)
+    KL_END_DESCRIBE(ResourceManager)
 };
 
 // Template implementations
@@ -308,7 +309,7 @@ ResourceHandle<T> ResourceManager::Load(const std::string& path) {
 
 template<typename T>
 void ResourceManager::LoadAsync(const std::string& path, std::function<void(ResourceHandle<T>)> callback) {
-    // TODO: Implement async loading with thread pool
+    // DEFERRED: Async loading with thread pool (not needed for MCU target)
     // For now, just load synchronously and call callback
     auto handle = Load<T>(path);
     if (callback) {
@@ -447,4 +448,4 @@ std::shared_ptr<T> ResourceManager::DefaultLoader(const std::string& path) {
     return nullptr;
 }
 
-} // namespace ptx
+} // namespace koilo

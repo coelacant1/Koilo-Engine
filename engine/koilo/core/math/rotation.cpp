@@ -1,7 +1,12 @@
-#include <ptx/core/math/rotation.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/core/math/rotation.hpp>
+#include <cmath>
+
+
+namespace koilo {
 
 // Define the private member functions
-Quaternion Rotation::AxisAngleToQuaternion(const AxisAngle& axisAngle) {
+Quaternion koilo::Rotation::AxisAngleToQuaternion(const AxisAngle& axisAngle) {
     float halfRotation = Mathematics::DegreesToRadians(axisAngle.Rotation) / 2.0f;
     float scale = sinf(halfRotation);
 
@@ -13,7 +18,7 @@ Quaternion Rotation::AxisAngleToQuaternion(const AxisAngle& axisAngle) {
     );
 }
 
-Quaternion Rotation::DirectionAngleToQuaternion(const DirectionAngle& directionAngle) {
+Quaternion koilo::Rotation::DirectionAngleToQuaternion(const DirectionAngle& directionAngle) {
     Vector3D right =   Vector3D(1, 0, 0);
     Vector3D up =      Vector3D(0, 1, 0);
     Vector3D forward = Vector3D(0, 0, 1);
@@ -33,11 +38,11 @@ Quaternion Rotation::DirectionAngleToQuaternion(const DirectionAngle& directionA
     return RotationMatrixToQuaternion(RotationMatrix(rotatedRight, directionAngle.Direction, rotatedForward)).UnitQuaternion();
 }
 
-Quaternion Rotation::RotationMatrixToQuaternion(const RotationMatrix& rM) {
+Quaternion koilo::Rotation::RotationMatrixToQuaternion(const RotationMatrix& rM) {
     return RotationMatrixToQuaternion(rM.XAxis, rM.YAxis, rM.ZAxis);
 }
 
-Quaternion Rotation::RotationMatrixToQuaternion(const Vector3D& X, const Vector3D& Y, const Vector3D& Z) {
+Quaternion koilo::Rotation::RotationMatrixToQuaternion(const Vector3D& X, const Vector3D& Y, const Vector3D& Z) {
     Quaternion q = Quaternion();
 		
     float matrixTrace = X.X + Y.Y + Z.Z;
@@ -79,7 +84,7 @@ Quaternion Rotation::RotationMatrixToQuaternion(const Vector3D& X, const Vector3
     return q.UnitQuaternion().Conjugate();
 }
 
-Quaternion Rotation::EulerAnglesToQuaternion(const EulerAngles& eulerAngles) {
+Quaternion koilo::Rotation::EulerAnglesToQuaternion(const EulerAngles& eulerAngles) {
     Quaternion q = Quaternion(1, 0, 0, 0);
     Vector3D eA = eulerAngles.Angles;
     float sx, sy, sz, cx, cy, cz;
@@ -132,14 +137,14 @@ Quaternion Rotation::EulerAnglesToQuaternion(const EulerAngles& eulerAngles) {
     return q;
 }
 
-Quaternion Rotation::YawPitchRollToQuaternion(const YawPitchRoll& ypr) {
+Quaternion koilo::Rotation::YawPitchRollToQuaternion(const YawPitchRoll& ypr) {
     (void)ypr;
     //std::cout << "YPR to Quaternion not implemented." << std::endl;
 
     return Quaternion();
 }
 
-EulerAngles Rotation::RotationMatrixToEulerAngles(const RotationMatrix& rM, const EulerOrder& order) {
+EulerAngles koilo::Rotation::RotationMatrixToEulerAngles(const RotationMatrix& rM, const EulerOrder& order) {
     (void)rM;
     (void)order;
     EulerAngles eulerAngles = EulerAngles(Vector3D(0, 0, 0), order);
@@ -147,14 +152,14 @@ EulerAngles Rotation::RotationMatrixToEulerAngles(const RotationMatrix& rM, cons
     return eulerAngles;
 }
 
-RotationMatrix Rotation::EulerAnglesToRotationMatrix(const EulerAngles& eulerAngles) {
+RotationMatrix koilo::Rotation::EulerAnglesToRotationMatrix(const EulerAngles& eulerAngles) {
     (void)eulerAngles;
     RotationMatrix rM = RotationMatrix(Vector3D(0, 0, 0));
 
     return rM;
 }
 
-Quaternion Rotation::QuaternionFromDirectionVectors(const Vector3D& initial, const Vector3D& target) {
+Quaternion koilo::Rotation::QuaternionFromDirectionVectors(const Vector3D& initial, const Vector3D& target) {
     Quaternion q = Quaternion(1, 0, 0, 0);
     Vector3D tempV = Vector3D(0, 0, 0);
     Vector3D xAxis = Vector3D(1, 0, 0);
@@ -198,47 +203,47 @@ Quaternion Rotation::QuaternionFromDirectionVectors(const Vector3D& initial, con
 }
 
 // Define the public member functions
-Rotation::Rotation() {
+koilo::Rotation::Rotation() {
     quaternionRotation = Quaternion();
 }
 
-Rotation::Rotation(const Quaternion& quaternion) {
+koilo::Rotation::Rotation(const Quaternion& quaternion) {
     quaternionRotation = quaternion;
 }
 
-Rotation::Rotation(const AxisAngle& axisAngle) {
+koilo::Rotation::Rotation(const AxisAngle& axisAngle) {
     quaternionRotation = AxisAngleToQuaternion(axisAngle);
 }
 
-Rotation::Rotation(const DirectionAngle& directionAngle) {
+koilo::Rotation::Rotation(const DirectionAngle& directionAngle) {
     quaternionRotation = DirectionAngleToQuaternion(directionAngle);
 }
 
-Rotation::Rotation(const RotationMatrix& rotationMatrix) {
+koilo::Rotation::Rotation(const RotationMatrix& rotationMatrix) {
     quaternionRotation = RotationMatrixToQuaternion(rotationMatrix);
 }
 
-Rotation::Rotation(const Vector3D& X, const Vector3D& Y, const Vector3D& Z) {
+koilo::Rotation::Rotation(const Vector3D& X, const Vector3D& Y, const Vector3D& Z) {
     quaternionRotation = RotationMatrixToQuaternion(X, Y, Z);
 }
 
-Rotation::Rotation(const EulerAngles& eulerAngles) {
+koilo::Rotation::Rotation(const EulerAngles& eulerAngles) {
     quaternionRotation = EulerAnglesToQuaternion(eulerAngles);
 }
 
-Rotation::Rotation(const Vector3D& initial, const Vector3D& target) {
+koilo::Rotation::Rotation(const Vector3D& initial, const Vector3D& target) {
     quaternionRotation = QuaternionFromDirectionVectors(initial, target);
 }
 
-Rotation::Rotation(const YawPitchRoll& ypr) {
+koilo::Rotation::Rotation(const YawPitchRoll& ypr) {
     quaternionRotation = YawPitchRollToQuaternion(ypr);
 }
 
-Quaternion Rotation::GetQuaternion() {
+Quaternion koilo::Rotation::GetQuaternion() {
     return quaternionRotation;
 }
 
-AxisAngle Rotation::GetAxisAngle() {
+AxisAngle koilo::Rotation::GetAxisAngle() {
     AxisAngle axisAngle = AxisAngle(0, 0, 1, 0);
     Quaternion q = quaternionRotation;
 
@@ -266,7 +271,7 @@ AxisAngle Rotation::GetAxisAngle() {
     return axisAngle;
 }
 
-DirectionAngle Rotation::GetDirectionAngle() {
+DirectionAngle koilo::Rotation::GetDirectionAngle() {
     Quaternion q = quaternionRotation.UnitQuaternion();
     Vector3D up = Vector3D(0, 1, 0);//up vector
     Vector3D right = Vector3D(1, 0, 0);
@@ -288,7 +293,7 @@ DirectionAngle Rotation::GetDirectionAngle() {
     return DirectionAngle(angle, rotatedUp);
 }
 
-RotationMatrix Rotation::GetRotationMatrix() {
+RotationMatrix koilo::Rotation::GetRotationMatrix() {
     Vector3D X = Vector3D(1, 0, 0);
     Vector3D Y = Vector3D(0, 1, 0);
     Vector3D Z = Vector3D(0, 0, 1);
@@ -300,7 +305,7 @@ RotationMatrix Rotation::GetRotationMatrix() {
     );
 }
 
-EulerAngles Rotation::GetEulerAngles(const EulerOrder& order) {
+EulerAngles koilo::Rotation::GetEulerAngles(const EulerOrder& order) {
     EulerAngles eulerAngles;
     Quaternion q = quaternionRotation;
     float sqx = q.X * q.X;
@@ -397,7 +402,7 @@ EulerAngles Rotation::GetEulerAngles(const EulerOrder& order) {
     return eulerAngles;
 }
 
-YawPitchRoll Rotation::GetYawPitchRoll() {
+YawPitchRoll koilo::Rotation::GetYawPitchRoll() {
     Quaternion q = quaternionRotation;
 
     //intrinsic tait-bryan rotation of order XYZ
@@ -411,3 +416,5 @@ YawPitchRoll Rotation::GetYawPitchRoll() {
 
     return YawPitchRoll(yaw, pitch, roll);
 }
+
+} // namespace koilo

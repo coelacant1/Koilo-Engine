@@ -1,31 +1,35 @@
-#include <ptx/core/geometry/3d/sphere.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/core/geometry/3d/sphere.hpp>
+#include <cmath>
 
-Sphere::Sphere(Vector3D position, float radius) {
+
+namespace koilo {
+
+koilo::Sphere::Sphere(Vector3D position, float radius) {
     this->position = position;
     this->radius = radius;
 }
 
-float Sphere::GetRadius() {
+float koilo::Sphere::GetRadius() {
     return radius;
 }
 
-void Sphere::Update(float dT, Vector3D acceleration, Quaternion rotation) {
+void koilo::Sphere::Update(float dT, Vector3D acceleration, Quaternion rotation) {
     Quaternion rotationChange = rotation.Multiply(previousRotation.MultiplicativeInverse());
-    velocity = rotationChange.RotateVector(velocity) * 0.999f + acceleration * dT; // maintain momentum of existing velocity, apply local acceleration
+    velocity = rotationChange.RotateVector(velocity) * 0.999f + acceleration * dT;
     velocity = velocity.Constrain(-2500, 2500);
     position = position + velocity * dT;
 
     previousRotation = rotation;
 }
 
-bool Sphere::IsIntersecting(Sphere* bO) {
+bool koilo::Sphere::IsIntersecting(Sphere* bO) {
     return radius + bO->GetRadius() > fabs((position - bO->position).Magnitude());
 }
 
-void Sphere::Collide(float elasticity, Sphere* bO) {
+void koilo::Sphere::Collide(float elasticity, Sphere* bO) {
     (void)elasticity;
     if (IsIntersecting(bO)) {
-        // collision
         Vector3D direction = (position - bO->position).Normal();
         Vector3D vDiff = velocity - bO->velocity;
         float fellingSpeed = vDiff.DotProduct(direction);
@@ -42,5 +46,7 @@ void Sphere::Collide(float elasticity, Sphere* bO) {
 
         bO->velocity = bO->velocity + direction * speed1;
         this->velocity = this->velocity + direction * (speed2 - fellingSpeed);
-    } // else{//no collision}
+    }
 }
+
+} // namespace koilo

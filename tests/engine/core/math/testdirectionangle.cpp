@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testdirectionangle.cpp
  * @brief Implementation of DirectionAngle unit tests.
@@ -5,6 +6,7 @@
 
 #include "testdirectionangle.hpp"
 
+using namespace koilo;
 // ========== Constructor Tests ==========
 
 // ========== Field Access Tests ==========
@@ -14,7 +16,7 @@
 void TestDirectionAngle::TestToString() {
     DirectionAngle da(90.0f, Vector3D(1.0f, 0.0f, 0.0f));
 
-    ptx::UString str = da.ToString();
+    koilo::UString str = da.ToString();
     TEST_ASSERT_TRUE(str.Length() > 0);
 }
 
@@ -25,19 +27,30 @@ void TestDirectionAngle::TestToString() {
 // ========== Test Runner ==========
 
 void TestDirectionAngle::TestDefaultConstructor() {
-    // TODO: Implement test for default constructor
-    DirectionAngle obj(0.0f, 1.0f, 0.0f, 0.0f);
-    TEST_ASSERT_TRUE(false);  // Not implemented
+    DirectionAngle da(0.0f, 1.0f, 0.0f, 0.0f);
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, 0.0f, da.Rotation);
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, 1.0f, da.Direction.X);
 }
 
 void TestDirectionAngle::TestEdgeCases() {
-    // TODO: Test edge cases (null, boundaries, extreme values)
-    TEST_ASSERT_TRUE(false);  // Not implemented
+    DirectionAngle zero(0.0f, Vector3D(1.0f, 0.0f, 0.0f));
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, 0.0f, zero.Rotation);
+    
+    DirectionAngle full(360.0f, Vector3D(0.0f, 0.0f, 1.0f));
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, 360.0f, full.Rotation);
+    
+    DirectionAngle negative(-90.0f, Vector3D(1.0f, 1.0f, 1.0f));
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, -90.0f, negative.Rotation);
 }
 
 void TestDirectionAngle::TestParameterizedConstructor() {
-    // TODO: Implement test for parameterized constructor
-    TEST_ASSERT_TRUE(false);  // Not implemented
+    DirectionAngle da1(45.0f, 1.0f, 0.0f, 0.0f);
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, 45.0f, da1.Rotation);
+    
+    Vector3D dir(0.0f, 1.0f, 0.0f);
+    DirectionAngle da2(90.0f, dir);
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, 90.0f, da2.Rotation);
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, 1.0f, da2.Direction.Y);
 }
 
 void TestDirectionAngle::RunAllTests() {

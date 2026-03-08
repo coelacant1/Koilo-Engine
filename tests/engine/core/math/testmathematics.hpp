@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file TestMathematics.h
  * @brief Provides unit tests for the Mathematics utility functions.
@@ -13,7 +14,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/core/math/mathematics.hpp>
+#include <koilo/core/math/mathematics.hpp>
 
 /**
  * @class TestMathematics
@@ -57,5 +58,8 @@ public:
     /**
      * @brief Runs all the test methods in the class.
      */
+    static void TestDefaultConstructor();
+    static void TestEdgeCases();
+    static void TestParameterizedConstructor();
     static void RunAllTests();
 };

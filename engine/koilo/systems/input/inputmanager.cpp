@@ -1,15 +1,16 @@
-#include <ptx/systems/input/inputmanager.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/systems/input/inputmanager.hpp>
 
-namespace ptx {
+namespace koilo {
 
-InputManager::InputManager() {
+koilo::InputManager::InputManager() {
     // Initialize gamepads
     for (int i = 0; i < MaxGamepads; ++i) {
         gamepads[i] = Gamepad(i);
     }
 }
 
-void InputManager::Update() {
+void koilo::InputManager::Update() {
     keyboard.Update();
     mouse.Update();
 
@@ -18,7 +19,7 @@ void InputManager::Update() {
     }
 }
 
-Gamepad& InputManager::GetGamepad(int id) {
+Gamepad& koilo::InputManager::GetGamepad(int id) {
     // Clamp ID to valid range
     if (id < 0) id = 0;
     if (id >= MaxGamepads) id = MaxGamepads - 1;
@@ -31,25 +32,25 @@ Gamepad& InputManager::GetGamepad(int id) {
     return gamepads[id];
 }
 
-bool InputManager::IsGamepadConnected(int id) const {
+bool koilo::InputManager::IsGamepadConnected(int id) const {
     auto it = gamepads.find(id);
     if (it == gamepads.end()) return false;
     return it->second.IsConnected();
 }
 
-bool InputManager::IsGamepadButtonPressed(int id, GamepadButton button) const {
+bool koilo::InputManager::IsGamepadButtonPressed(int id, GamepadButton button) const {
     auto it = gamepads.find(id);
     if (it == gamepads.end()) return false;
     return it->second.IsButtonPressed(button);
 }
 
-bool InputManager::IsGamepadButtonHeld(int id, GamepadButton button) const {
+bool koilo::InputManager::IsGamepadButtonHeld(int id, GamepadButton button) const {
     auto it = gamepads.find(id);
     if (it == gamepads.end()) return false;
     return it->second.IsButtonHeld(button);
 }
 
-float InputManager::GetGamepadAxis(int id, GamepadAxis axis) const {
+float koilo::InputManager::GetGamepadAxis(int id, GamepadAxis axis) const {
     auto it = gamepads.find(id);
     if (it == gamepads.end()) return 0.0f;
     return it->second.GetAxisValue(axis);
@@ -57,19 +58,19 @@ float InputManager::GetGamepadAxis(int id, GamepadAxis axis) const {
 
 // Action mapping implementations
 
-void InputManager::MapAction(const std::string& action, KeyCode key) {
+void koilo::InputManager::MapAction(const std::string& action, KeyCode key) {
     actionToKey[action] = key;
 }
 
-void InputManager::MapAction(const std::string& action, MouseButton button) {
+void koilo::InputManager::MapAction(const std::string& action, MouseButton button) {
     actionToMouseButton[action] = button;
 }
 
-void InputManager::MapAction(const std::string& action, GamepadButton button) {
+void koilo::InputManager::MapAction(const std::string& action, GamepadButton button) {
     actionToGamepadButton[action] = button;
 }
 
-bool InputManager::IsActionPressed(const std::string& action) const {
+bool koilo::InputManager::IsActionPressed(const std::string& action) const {
     // Check keyboard
     auto keyIt = actionToKey.find(action);
     if (keyIt != actionToKey.end()) {
@@ -99,7 +100,7 @@ bool InputManager::IsActionPressed(const std::string& action) const {
     return false;
 }
 
-bool InputManager::IsActionHeld(const std::string& action) const {
+bool koilo::InputManager::IsActionHeld(const std::string& action) const {
     // Check keyboard
     auto keyIt = actionToKey.find(action);
     if (keyIt != actionToKey.end()) {
@@ -131,15 +132,15 @@ bool InputManager::IsActionHeld(const std::string& action) const {
 
 // Axis mapping implementations
 
-void InputManager::MapAxis(const std::string& axis, GamepadAxis gamepadAxis) {
+void koilo::InputManager::MapAxis(const std::string& axis, GamepadAxis gamepadAxis) {
     axisMapping[axis] = gamepadAxis;
 }
 
-float InputManager::GetAxis(const std::string& axis, int gamepadId) const {
+float koilo::InputManager::GetAxis(const std::string& axis, int gamepadId) const {
     auto it = axisMapping.find(axis);
     if (it == axisMapping.end()) return 0.0f;
 
     return GetGamepadAxis(gamepadId, it->second);
 }
 
-} // namespace ptx
+} // namespace koilo

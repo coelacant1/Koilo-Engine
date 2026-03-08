@@ -1,4 +1,4 @@
-name: PTXEngine CI
+name: KoiloEngine CI
 
 on:
   push:
@@ -14,50 +14,49 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y ninja-build lua5.3 liblua5.3-dev python3
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build python3 libsdl2-dev libglew-dev
 
-      # Step 1: Configure
-      - name: "Step 1: CMake Configure"
+      - name: CMake Configure
         run: ./build.sh configure
 
-      # Step 2: Generate reflection registry
-      - name: "Step 2: Generate Reflection Registry"
+      - name: Generate Reflection Registry
         run: ./build.sh registry
+
+      - name: Validate Reflection Headers
+        run: python3 scripts/validate_reflection_headers.py --check
 
       - name: Show reflection cache
         run: |
-          if [ -f build/generated/.ptx_reflect_cache.json ]; then
+          if [ -f build/generated/.koilo_reflect_cache.json ]; then
             echo "=== Reflection Cache ==="
-            cat build/generated/.ptx_reflect_cache.json | head -n 50
+            head -n 50 build/generated/.koilo_reflect_cache.json
           fi
 
-      # Step 3: Build core library
-      - name: "Step 3: Build ptx_core"
+      - name: Build koilo_core
         run: ./build.sh core
 
-      - name: Verify ptx_core exists
-        run: test -f build/libptx_core.a && echo "ptx_core built successfully"
+      - name: Verify koilo_core exists
+        run: test -f build/libkoilo_core.a && echo "koilo_core built successfully"
 
-      # Step 4: Build reflection library
-      - name: "Step 4: Build ptx_reflect"
+      - name: Build koilo_reflect
         run: ./build.sh reflect
 
-      - name: Verify ptx_reflect exists
-        run: test -f build/libptx_reflect.so && echo "ptx_reflect built successfully"
+      - name: Verify koilo_reflect exists
+        run: test -f build/libkoilo_reflect.so && echo "koilo_reflect built successfully"
 
-      # Step 5: Generate test skeletons
-      - name: "Step 5: Generate Test Skeletons"
+      - name: Generate Test Skeletons
         run: ./build.sh test-skeletons
 
       - name: Show test skeleton cache
         run: |
           if [ -f build/generated/.test_skeleton_cache.json ]; then
             echo "=== Test Skeleton Cache ==="
-            cat build/generated/.test_skeleton_cache.json | head -n 50
+            head -n 50 build/generated/.test_skeleton_cache.json
           fi
 
-      # Step 6: Build and run tests
-      - name: "Step 6: Build and Run Tests"
+      - name: Build and Run Tests
         run: ./build.sh tests
 
       - name: Show test results
@@ -68,38 +67,15 @@ jobs:
             cat build/Testing/Temporary/LastTest.log
           fi
 
-      # Step 7: Build Lua module
-      - name: "Step 7: Build Lua Module"
-        run: ./build.sh lua
+      - name: Header Compilation Check
+        run: ./build.sh headercheck
 
-      - name: Verify Lua module exists
-        run: test -f build/ptx.so && echo "Lua module built successfully"
-
-      - name: "Step 8: Lua Smoke Test"
-        run: |
-          lua -e "package.cpath='build/?.so;'..package.cpath; local p=assert(require('ptx')); print('Lua module loaded'); local classes=p.list_classes and p.list_classes() or {}; print('Classes available:', #classes)"
-
-      # Step 9: Header compilation check
-      - name: "Step 9: Header Compilation Check"
-        run: |
-          cd build
-          cmake --build . --target ptx_headercheck
-
-      - name: Report header check success
-        run: echo "All headers compile individually"
-
-      # Step 10: Python reflection test
-      - name: "Step 10: Python Reflection Test"
-        run: |
-          python3 bindings/python/reflection_demo.py || echo "Python demo returned non-zero (non-fatal)"
-
-      # Upload artifacts
       - name: Upload reflection cache
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: reflection-cache
-          path: build/generated/.ptx_reflect_cache.json
+          path: build/generated/.koilo_reflect_cache.json
           if-no-files-found: ignore
 
       - name: Upload test skeleton cache
@@ -118,16 +94,13 @@ jobs:
           path: build/Testing/
           if-no-files-found: ignore
 
-      # Final summary
-      - name: "Build Summary"
+      - name: Build Summary
         run: |
           echo "================================"
-          echo "PTXEngine CI Complete"
+          echo "KoiloEngine CI Complete"
           echo "================================"
           echo "Core library built"
           echo "Reflection library built"
           echo "Tests passed"
-          echo "Lua module built"
           echo "Headers validated"
-          echo "Python bindings tested"
           echo "================================"

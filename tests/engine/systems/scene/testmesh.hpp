@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testmesh.hpp
  * @brief Unit tests for the Mesh class.
@@ -12,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/systems/scene/mesh.hpp>
+#include <koilo/systems/scene/mesh.hpp>
 #include <utils/testhelpers.hpp>
 
 /**
@@ -52,5 +53,11 @@ public:
     static void TestSetMaterial();
     static void TestSetTransform();
     static void TestUpdateTransform();
+    static void TestGetBlendshapeController();
+    static void TestSetBlendshapeController();
+    static void TestUpdateBlendshapes();
+    static void TestGetSkeleton();
+    static void TestSetSkeleton();
+    static void TestUpdateSkinning();
     static void RunAllTests();
 };

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file statemachine.hpp
  * @brief Finite state machine for AI behaviors.
@@ -13,9 +14,9 @@
 #include <vector>
 #include <string>
 #include <functional>
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
 
-namespace ptx {
+namespace koilo {
 
 // Forward declarations
 class State;
@@ -38,18 +39,18 @@ struct StateTransition {
     StateTransition(const std::string& target, StateTransitionCondition cond)
         : targetStateName(target), condition(cond) {}
 
-    PTX_BEGIN_FIELDS(StateTransition)
-        PTX_FIELD(StateTransition, targetStateName, "Target state name", 0, 0),
-        PTX_FIELD(StateTransition, condition, "Condition", 0, 0)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(StateTransition)
+        KL_FIELD(StateTransition, targetStateName, "Target state name", 0, 0),
+        KL_FIELD(StateTransition, condition, "Condition", 0, 0)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(StateTransition)
+    KL_BEGIN_METHODS(StateTransition)
         /* No reflected methods. */
-    PTX_END_METHODS
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(StateTransition)
-        PTX_CTOR(StateTransition, const std::string &, StateTransitionCondition)
-    PTX_END_DESCRIBE(StateTransition)
+    KL_BEGIN_DESCRIBE(StateTransition)
+        KL_CTOR(StateTransition, const std::string &, StateTransitionCondition)
+    KL_END_DESCRIBE(StateTransition)
 
 };
 
@@ -104,7 +105,7 @@ public:
     /**
      * @brief Called every frame while in this state.
      */
-    void Update(float deltaTime);
+    void Update();
 
     /**
      * @brief Called when exiting this state.
@@ -117,20 +118,20 @@ public:
      */
     std::string CheckTransitions();
 
-    PTX_BEGIN_FIELDS(State)
-        PTX_FIELD(State, name, "Name", 0, 0)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(State)
+        KL_FIELD(State, name, "Name", 0, 0)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(State)
-        PTX_METHOD_AUTO(State, GetName, "Get name"),
-        PTX_METHOD_AUTO(State, Enter, "Enter"),
-        PTX_METHOD_AUTO(State, Update, "Update"),
-        PTX_METHOD_AUTO(State, Exit, "Exit")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(State)
+        KL_METHOD_AUTO(State, GetName, "Get name"),
+        KL_METHOD_AUTO(State, Enter, "Enter"),
+        KL_METHOD_AUTO(State, Update, "Update"),
+        KL_METHOD_AUTO(State, Exit, "Exit")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(State)
-        PTX_CTOR(State, std::string)
-    PTX_END_DESCRIBE(State)
+    KL_BEGIN_DESCRIBE(State)
+        KL_CTOR(State, std::string)
+    KL_END_DESCRIBE(State)
 };
 
 /**
@@ -208,24 +209,24 @@ public:
     /**
      * @brief Updates the current state and checks for transitions.
      */
-    void Update(float deltaTime);
+    void Update();
 
-    PTX_BEGIN_FIELDS(StateMachine)
-        PTX_FIELD(StateMachine, initialStateName, "Initial state", 0, 0)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(StateMachine)
+        KL_FIELD(StateMachine, initialStateName, "Initial state", 0, 0)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(StateMachine)
-        PTX_METHOD_AUTO(StateMachine, GetCurrentStateName, "Get current state name"),
-        PTX_METHOD_AUTO(StateMachine, SetInitialState, "Set initial state"),
-        PTX_METHOD_AUTO(StateMachine, TransitionTo, "Transition to"),
-        PTX_METHOD_AUTO(StateMachine, Start, "Start"),
-        PTX_METHOD_AUTO(StateMachine, Stop, "Stop"),
-        PTX_METHOD_AUTO(StateMachine, Update, "Update")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(StateMachine)
+        KL_METHOD_AUTO(StateMachine, GetCurrentStateName, "Get current state name"),
+        KL_METHOD_AUTO(StateMachine, SetInitialState, "Set initial state"),
+        KL_METHOD_AUTO(StateMachine, TransitionTo, "Transition to"),
+        KL_METHOD_AUTO(StateMachine, Start, "Start"),
+        KL_METHOD_AUTO(StateMachine, Stop, "Stop"),
+        KL_METHOD_AUTO(StateMachine, Update, "Update")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(StateMachine)
-        PTX_CTOR0(StateMachine)
-    PTX_END_DESCRIBE(StateMachine)
+    KL_BEGIN_DESCRIBE(StateMachine)
+        KL_CTOR0(StateMachine)
+    KL_END_DESCRIBE(StateMachine)
 };
 
-} // namespace ptx
+} // namespace koilo

@@ -1,5 +1,10 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 // imagesequence.cpp
-#include <ptx/assets/image/imagesequence.hpp>
+#include <koilo/assets/image/imagesequence.hpp>
+#include <cmath>
+
+
+namespace koilo {
 
 /**
  * @file imagesequence.cpp
@@ -8,8 +13,8 @@
  * @author Coela Can't
  */
 
-ImageSequence::ImageSequence(Image* image, const uint8_t** data, unsigned int imageCount, float fps) {
-    this->startTime = ptx::Time::Millis();
+koilo::ImageSequence::ImageSequence(Image* image, const uint8_t** data, unsigned int imageCount, float fps) {
+    this->startTime = koilo::Time::Millis();
     this->image = image;
     this->data = data;
     this->imageCount = imageCount;
@@ -17,34 +22,36 @@ ImageSequence::ImageSequence(Image* image, const uint8_t** data, unsigned int im
     this->frameTime = ((float)imageCount) / fps;
 }
 
-void ImageSequence::SetFPS(float fps) {
+void koilo::ImageSequence::SetFPS(float fps) {
     this->fps = fps;
 }
 
-void ImageSequence::SetSize(Vector2D size) {
+void koilo::ImageSequence::SetSize(Vector2D size) {
     image->SetSize(size);
 }
 
-void ImageSequence::SetPosition(Vector2D offset) {
+void koilo::ImageSequence::SetPosition(Vector2D offset) {
     image->SetPosition(offset);
 }
 
-void ImageSequence::SetRotation(float angle) {
+void koilo::ImageSequence::SetRotation(float angle) {
     image->SetRotation(angle);
 }
 
-void ImageSequence::Reset() {
+void koilo::ImageSequence::Reset() {
     currentFrame = 0;
-    startTime = ptx::Time::Millis();
+    startTime = koilo::Time::Millis();
 }
 
-void ImageSequence::Update() {
+void koilo::ImageSequence::Update() {
     // Normalize time [0,1) over full sequence duration, then map to [0, imageCount-1]
-    float currentTime = fmod((ptx::Time::Millis() - startTime) / 1000.0f, frameTime) / frameTime;
+    float currentTime = fmod((koilo::Time::Millis() - startTime) / 1000.0f, frameTime) / frameTime;
     currentFrame = (unsigned int)Mathematics::Map(currentTime, 0.0f, 1.0f, 0.0f, float(imageCount - 1));
     image->SetData(data[currentFrame]);
 }
 
-RGBColor ImageSequence::GetColorAtCoordinate(Vector2D point){
+koilo::Color888 koilo::ImageSequence::GetColorAtCoordinate(Vector2D point){
     return image->GetColorAtCoordinate(point);
 }
+
+} // namespace koilo

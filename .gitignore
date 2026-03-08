@@ -16,10 +16,6 @@
 *.dylib
 *.dll
 
-# Fortran module files
-*.mod
-*.smod
-
 # Compiled Static libraries
 *.lai
 *.la
@@ -31,26 +27,36 @@
 *.out
 *.app
 
-# User Defined
-.vscode/c_cpp_properties.json
-.vscode/launch.json
-.vscode/ipch
-.pio/
-.pio/*
-.pio
-.pioenvs/
-.piolibdeps/
+# IDE / Editor
 .clang_complete
 .gcc-flags.json
-.c*/
-.d*/
-.ptx_reflect_cache.json
-*__pycache__/
+.vscode/settings.json
+.vscode/launch.json
+.vscode/c_cpp_properties.json
+*/*.vsix
+
+# PlatformIO
+.pio/
+.pioenvs/
+.piolibdeps/
+
+# Build
 build/
 external/unity/*
+.koilo_reflect_cache.json
+__pycache__/
 */.venv/
-docs/
 
-# External libraries
-lib/lua/
-lib/lua/*
+# OS
+Thumbs.db
+.DS_Store
+
+# Generated
+tools/vscode-koiloscript/*.vsix
+
+# Private assets
+assets/fbx/ascii/commissions/
+assets/fbx/binary/commissions/
+assets/kmesh/commissions/
+
+docs/.wip/

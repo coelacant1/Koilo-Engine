@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file IPixelGroup.h
  * @brief Declares the IPixelGroup interface for managing collections of pixels.
@@ -11,8 +12,11 @@
 
 #pragma once
 
-#include "../../../core/color/rgbcolor.hpp" // Include for RGB color representation.
-#include "../../../core/geometry/2d/rectangle.hpp" // Include for 2D bounding box representation.
+#include <koilo/core/color/color888.hpp>
+#include <koilo/core/geometry/2d/rectangle.hpp> // Include for 2D bounding box representation.
+
+
+namespace koilo {
 
 /**
  * @class IPixelGroup
@@ -55,7 +59,7 @@ public:
      * @param count The index of the pixel.
      * @return The coordinate of the pixel as a Vector2D.
      */
-    virtual Vector2D GetCoordinate(uint16_t count) = 0;
+    virtual Vector2D GetCoordinate(uint32_t count) = 0;
 
     /**
      * @brief Retrieves the index of a pixel at a specific location.
@@ -71,28 +75,28 @@ public:
      * @param count The index of the pixel.
      * @return Pointer to the RGB color of the pixel.
      */
-    virtual RGBColor* GetColor(uint16_t count) = 0;
+    virtual Color888* GetColor(uint32_t count) = 0;
 
     /**
      * @brief Retrieves the array of colors for the pixel group.
      *
      * @return Pointer to the array of RGB colors.
      */
-    virtual RGBColor* GetColors() = 0;
+    virtual Color888* GetColors() = 0;
 
     /**
      * @brief Retrieves the color buffer for the pixel group.
      *
      * @return Pointer to the color buffer array.
      */
-    virtual RGBColor* GetColorBuffer() = 0;
+    virtual Color888* GetColorBuffer() = 0;
 
     /**
      * @brief Retrieves the total number of pixels in the group.
      *
      * @return The total pixel count.
      */
-    virtual uint16_t GetPixelCount() = 0;
+    virtual uint32_t GetPixelCount() = 0;
 
     /**
      * @brief Checks if the pixel group overlaps with a bounding box.
@@ -117,7 +121,7 @@ public:
      * @param upIndex Pointer to store the index of the pixel above.
      * @return True if a pixel above exists, otherwise false.
      */
-    virtual bool GetUpIndex(uint16_t count, uint16_t* upIndex) = 0;
+    virtual bool GetUpIndex(uint32_t count, uint32_t* upIndex) = 0;
 
     /**
      * @brief Retrieves the index of the pixel below a given pixel.
@@ -126,7 +130,7 @@ public:
      * @param downIndex Pointer to store the index of the pixel below.
      * @return True if a pixel below exists, otherwise false.
      */
-    virtual bool GetDownIndex(uint16_t count, uint16_t* downIndex) = 0;
+    virtual bool GetDownIndex(uint32_t count, uint32_t* downIndex) = 0;
 
     /**
      * @brief Retrieves the index of the pixel to the left of a given pixel.
@@ -135,7 +139,7 @@ public:
      * @param leftIndex Pointer to store the index of the pixel to the left.
      * @return True if a pixel to the left exists, otherwise false.
      */
-    virtual bool GetLeftIndex(uint16_t count, uint16_t* leftIndex) = 0;
+    virtual bool GetLeftIndex(uint32_t count, uint32_t* leftIndex) = 0;
 
     /**
      * @brief Retrieves the index of the pixel to the right of a given pixel.
@@ -144,7 +148,7 @@ public:
      * @param rightIndex Pointer to store the index of the pixel to the right.
      * @return True if a pixel to the right exists, otherwise false.
      */
-    virtual bool GetRightIndex(uint16_t count, uint16_t* rightIndex) = 0;
+    virtual bool GetRightIndex(uint32_t count, uint32_t* rightIndex) = 0;
 
     /**
      * @brief Retrieves an alternate X-axis index for a given pixel.
@@ -153,7 +157,7 @@ public:
      * @param index Pointer to store the alternate X index.
      * @return True if an alternate index exists, otherwise false.
      */
-    virtual bool GetAlternateXIndex(uint16_t count, uint16_t* index) = 0;
+    virtual bool GetAlternateXIndex(uint32_t count, uint32_t* index) = 0;
 
     /**
      * @brief Retrieves an alternate Y-axis index for a given pixel.
@@ -162,7 +166,7 @@ public:
      * @param index Pointer to store the alternate Y index.
      * @return True if an alternate index exists, otherwise false.
      */
-    virtual bool GetAlternateYIndex(uint16_t count, uint16_t* index) = 0;
+    virtual bool GetAlternateYIndex(uint32_t count, uint32_t* index) = 0;
 
     /**
      * @brief Retrieves an offset X-axis index for a given pixel.
@@ -172,7 +176,7 @@ public:
      * @param x1 The X-axis offset value.
      * @return True if an offset index exists, otherwise false.
      */
-    virtual bool GetOffsetXIndex(uint16_t count, uint16_t* index, int x1) = 0;
+    virtual bool GetOffsetXIndex(uint32_t count, uint32_t* index, int x1) = 0;
 
     /**
      * @brief Retrieves an offset Y-axis index for a given pixel.
@@ -182,7 +186,7 @@ public:
      * @param y1 The Y-axis offset value.
      * @return True if an offset index exists, otherwise false.
      */
-    virtual bool GetOffsetYIndex(uint16_t count, uint16_t* index, int y1) = 0;
+    virtual bool GetOffsetYIndex(uint32_t count, uint32_t* index, int y1) = 0;
 
     /**
      * @brief Retrieves an offset XY-axis index for a given pixel.
@@ -193,7 +197,7 @@ public:
      * @param y1 The Y-axis offset value.
      * @return True if an offset index exists, otherwise false.
      */
-    virtual bool GetOffsetXYIndex(uint16_t count, uint16_t* index, int x1, int y1) = 0;
+    virtual bool GetOffsetXYIndex(uint32_t count, uint32_t* index, int x1, int y1) = 0;
 
     /**
      * @brief Retrieves a radial index for a given pixel based on distance and angle.
@@ -204,7 +208,7 @@ public:
      * @param angle The angle in degrees.
      * @return True if a radial index exists, otherwise false.
      */
-    virtual bool GetRadialIndex(uint16_t count, uint16_t* index, int pixels, float angle) = 0;
+    virtual bool GetRadialIndex(uint32_t count, uint32_t* index, int pixels, float angle) = 0;
 
     /**
      * @brief Sorts the pixels in a grid structure.
@@ -212,3 +216,5 @@ public:
     virtual void GridSort() = 0;
 
 };
+
+} // namespace koilo

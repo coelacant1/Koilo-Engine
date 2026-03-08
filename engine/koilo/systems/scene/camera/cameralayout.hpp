@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file CameraLayout.h
  * @brief Declares the CameraLayout class for managing camera orientation and axis alignment.
@@ -11,8 +12,11 @@
 
 #pragma once
 
-#include "../../../core/math/transform.hpp" // Include for mathematical transformations.
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/core/math/transform.hpp> // Include for mathematical transformations.
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class CameraLayout
@@ -110,20 +114,22 @@ public:
      */
     Quaternion GetRotation();
 
-    PTX_BEGIN_FIELDS(CameraLayout)
+    KL_BEGIN_FIELDS(CameraLayout)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(CameraLayout)
-        PTX_METHOD_AUTO(CameraLayout, GetForwardAxis, "Get forward axis"),
-        PTX_METHOD_AUTO(CameraLayout, GetUpAxis, "Get up axis"),
-        PTX_METHOD_AUTO(CameraLayout, GetForwardVector, "Get forward vector"),
-        PTX_METHOD_AUTO(CameraLayout, GetUpVector, "Get up vector"),
-        PTX_METHOD_AUTO(CameraLayout, GetRotation, "Get rotation")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(CameraLayout)
+        KL_METHOD_AUTO(CameraLayout, GetForwardAxis, "Get forward axis"),
+        KL_METHOD_AUTO(CameraLayout, GetUpAxis, "Get up axis"),
+        KL_METHOD_AUTO(CameraLayout, GetForwardVector, "Get forward vector"),
+        KL_METHOD_AUTO(CameraLayout, GetUpVector, "Get up vector"),
+        KL_METHOD_AUTO(CameraLayout, GetRotation, "Get rotation")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(CameraLayout)
-        PTX_CTOR(CameraLayout, ForwardAxis, UpAxis)
-    PTX_END_DESCRIBE(CameraLayout)
+    KL_BEGIN_DESCRIBE(CameraLayout)
+        KL_CTOR(CameraLayout, ForwardAxis, UpAxis)
+    KL_END_DESCRIBE(CameraLayout)
 
 };
+
+} // namespace koilo

@@ -1,23 +1,24 @@
-#include <ptx/systems/scene/scene.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/systems/scene/scene.hpp>
 
-Scene::Scene(unsigned int maxMeshes) : maxMeshes(static_cast<int>(maxMeshes)) {
-	meshes.reserve(this->maxMeshes);
+
+namespace koilo {
+
+koilo::Scene::Scene() {
 }
 
-void Scene::AddMesh(Mesh* mesh) {
-	if (numMeshes >= static_cast<unsigned int>(maxMeshes)) {
-		return;
-	}
+koilo::Scene::~Scene() {
+    for (auto* node : ownedNodes_) {
+        delete node;
+    }
+}
 
-	if (numMeshes < meshes.size()) {
-		meshes[numMeshes] = mesh;
-	} else {
-		meshes.push_back(mesh);
-	}
+void koilo::Scene::AddMesh(Mesh* mesh) {
+	meshes.push_back(mesh);
 	numMeshes = static_cast<unsigned int>(meshes.size());
 }
 
-void Scene::RemoveElement(unsigned int element) {
+void koilo::Scene::RemoveElement(unsigned int element) {
 	if (element >= meshes.size()) {
 		return;
 	}
@@ -26,13 +27,13 @@ void Scene::RemoveElement(unsigned int element) {
 	numMeshes = static_cast<unsigned int>(meshes.size());
 }
 
-void Scene::RemoveMesh(unsigned int i) {
+void koilo::Scene::RemoveMesh(unsigned int i) {
 	if (i < numMeshes) {
 		RemoveElement(i);
 	}
 }
 
-void Scene::RemoveMesh(Mesh* mesh) {
+void koilo::Scene::RemoveMesh(Mesh* mesh) {
 	for (unsigned int i = 0; i < numMeshes; i++) {
 		if (meshes[i] == mesh) {
 			RemoveElement(i);
@@ -41,15 +42,20 @@ void Scene::RemoveMesh(Mesh* mesh) {
 	}
 }
 
-Mesh** Scene::GetMeshes() {
+Mesh** koilo::Scene::GetMeshes() {
 	return meshes.data();
 }
 
-uint8_t Scene::GetMeshCount() {
-	return static_cast<uint8_t>(numMeshes);
+unsigned int koilo::Scene::GetMeshCount() {
+	return numMeshes;
 }
 
-uint32_t Scene::GetTotalTriangleCount() const {
+Mesh* koilo::Scene::GetMesh(unsigned int index) {
+    if (index >= numMeshes) return nullptr;
+    return meshes[index];
+}
+
+uint32_t koilo::Scene::GetTotalTriangleCount() const {
     uint32_t count = 0;
     for (unsigned int i = 0; i < numMeshes; ++i) {
         if (meshes[i] && meshes[i]->IsEnabled()) {
@@ -58,3 +64,25 @@ uint32_t Scene::GetTotalTriangleCount() const {
     }
     return count;
 }
+
+SceneNode* koilo::Scene::CreateObject(const std::string& name) {
+    auto it = nodesByName_.find(name);
+    if (it != nodesByName_.end()) {
+        return it->second;  // already exists
+    }
+    auto* node = new SceneNode(name);
+    ownedNodes_.push_back(node);
+    nodesByName_[name] = node;
+    return node;
+}
+
+SceneNode* koilo::Scene::Find(const std::string& name) {
+    auto it = nodesByName_.find(name);
+    return (it != nodesByName_.end()) ? it->second : nullptr;
+}
+
+std::size_t koilo::Scene::GetNodeCount() const {
+    return ownedNodes_.size();
+}
+
+} // namespace koilo

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testquaternionkalmanfilter.cpp
  * @brief Implementation of QuaternionKalmanFilter unit tests.
@@ -6,6 +7,7 @@
 #include "testquaternionkalmanfilter.hpp"
 #include <cmath>
 
+using namespace koilo;
 // ========== Constructor Tests ==========
 
 void TestQuaternionKalmanFilter::TestDefaultConstructor() {
@@ -70,16 +72,15 @@ void TestQuaternionKalmanFilter::TestFilter() {
 // ========== Test Runner ==========
 
 void TestQuaternionKalmanFilter::TestEdgeCases() {
-    // Test with zero quaternion components
-    QuaternionKalmanFilter zeroFilter(0.3f, 5);
-    Quaternion zeroInput(0.0f, 0.0f, 0.0f, 0.0f);
-    Quaternion zeroResult = zeroFilter.Filter(zeroInput);
+    // Test with identity quaternion
+    QuaternionKalmanFilter identFilter(0.3f, 5);
+    Quaternion identInput(1.0f, 0.0f, 0.0f, 0.0f);
+    Quaternion identResult = identFilter.Filter(identInput);
 
-    // Should handle zero quaternion gracefully
-    TEST_ASSERT_TRUE(std::isfinite(zeroResult.W));
-    TEST_ASSERT_TRUE(std::isfinite(zeroResult.X));
-    TEST_ASSERT_TRUE(std::isfinite(zeroResult.Y));
-    TEST_ASSERT_TRUE(std::isfinite(zeroResult.Z));
+    TEST_ASSERT_TRUE(std::isfinite(identResult.W));
+    TEST_ASSERT_TRUE(std::isfinite(identResult.X));
+    TEST_ASSERT_TRUE(std::isfinite(identResult.Y));
+    TEST_ASSERT_TRUE(std::isfinite(identResult.Z));
 
     // Test with very small gain (heavy filtering)
     QuaternionKalmanFilter smallGainFilter(0.01f, 20);

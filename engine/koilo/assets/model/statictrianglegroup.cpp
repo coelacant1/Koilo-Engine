@@ -1,53 +1,59 @@
-#include <ptx/assets/model/statictrianglegroup.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/assets/model/statictrianglegroup.hpp>
 
-StaticTriangleGroup::StaticTriangleGroup(Vector3D* vertices, const IndexGroup* indexGroup, int vertexCount, int triangleCount)
-    : triangles(nullptr), vertices(vertices), indexGroup(indexGroup), uvIndexGroup(nullptr), uvVertices(nullptr), hasUV(false), vertexCount(vertexCount), triangleCount(triangleCount) {
 
-    for (int i = 0; i < triangleCount; i++) {
+namespace koilo {
+
+koilo::StaticTriangleGroup::StaticTriangleGroup(Vector3D* vertices, const IndexGroup* indexGroup, uint32_t vertexCount, uint32_t triangleCount)
+    : triangles(new Triangle3D[triangleCount]), vertices(vertices), indexGroup(indexGroup), uvIndexGroup(nullptr), uvVertices(nullptr), hasUV(false), vertexCount(vertexCount), triangleCount(triangleCount) {
+
+    for (uint32_t i = 0; i < triangleCount; i++) {
         triangles[i].p1 = &vertices[indexGroup[i].A];
         triangles[i].p2 = &vertices[indexGroup[i].B];
         triangles[i].p3 = &vertices[indexGroup[i].C];
     }
 }
 
-StaticTriangleGroup::StaticTriangleGroup(Vector3D* vertices, const IndexGroup* indexGroup, const IndexGroup* uvIndexGroup, const Vector2D* uvVertices, int vertexCount, int triangleCount)
-    : triangles(nullptr), vertices(vertices), indexGroup(indexGroup), uvIndexGroup(uvIndexGroup), uvVertices(uvVertices), hasUV(true), vertexCount(vertexCount), triangleCount(triangleCount) {
+koilo::StaticTriangleGroup::StaticTriangleGroup(Vector3D* vertices, const IndexGroup* indexGroup, const IndexGroup* uvIndexGroup, const Vector2D* uvVertices, uint32_t vertexCount, uint32_t triangleCount)
+    : triangles(new Triangle3D[triangleCount]), vertices(vertices), indexGroup(indexGroup), uvIndexGroup(uvIndexGroup), uvVertices(uvVertices), hasUV(true), vertexCount(vertexCount), triangleCount(triangleCount) {
 
-    for (int i = 0; i < triangleCount; i++) {
+    for (uint32_t i = 0; i < triangleCount; i++) {
         triangles[i].p1 = &vertices[indexGroup[i].A];
         triangles[i].p2 = &vertices[indexGroup[i].B];
         triangles[i].p3 = &vertices[indexGroup[i].C];
     }
 }
 
-bool StaticTriangleGroup::HasUV(){
+bool koilo::StaticTriangleGroup::HasUV(){
     return hasUV;
 }
 
-const IndexGroup* StaticTriangleGroup::GetIndexGroup() {
+const IndexGroup* koilo::StaticTriangleGroup::GetIndexGroup() {
     return indexGroup;
 }
 
-int StaticTriangleGroup::GetTriangleCount() {
+uint32_t koilo::StaticTriangleGroup::GetTriangleCount() {
     return triangleCount;
 }
 
-Vector3D* StaticTriangleGroup::GetVertices() {
+Vector3D* koilo::StaticTriangleGroup::GetVertices() {
     return vertices;
 }
 
-int StaticTriangleGroup::GetVertexCount() {
+uint32_t koilo::StaticTriangleGroup::GetVertexCount() {
     return vertexCount;
 }
 
-Triangle3D* StaticTriangleGroup::GetTriangles() {
+Triangle3D* koilo::StaticTriangleGroup::GetTriangles() {
     return triangles;
 }
 
-const Vector2D* StaticTriangleGroup::GetUVVertices() {
+const Vector2D* koilo::StaticTriangleGroup::GetUVVertices() {
     return uvVertices;
 }
 
-const IndexGroup* StaticTriangleGroup::GetUVIndexGroup() {
+const IndexGroup* koilo::StaticTriangleGroup::GetUVIndexGroup() {
     return uvIndexGroup;
 }
+
+} // namespace koilo

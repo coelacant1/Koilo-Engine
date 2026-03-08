@@ -1,10 +1,11 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 // image.hpp
 /**
  * @file Image.h
  * @brief Palette-indexed 2D image with transform and color sampling helpers.
  *
  * The Image class represents a static bitmap whose pixels are indices into an RGB palette.
- * It supports a local 2D transform (size, offset, rotation) and can sample an RGBColor
+ * It supports a local 2D transform (size, offset, rotation) and can sample an Color888
  * at an XY coordinate in the same space. Rotation is around @ref offset.
  *
  * @date 22/12/2024
@@ -13,10 +14,13 @@
 #pragma once
 
 #include <stdint.h>
-#include "../../core/math/vector2d.hpp"      // Vector2D
-#include "../../core/math/mathematics.hpp"   // Mathematics::Map
-#include "../../core/color/rgbcolor.hpp"     // RGBColor
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/core/math/vector2d.hpp>      // Vector2D
+#include <koilo/core/math/mathematics.hpp>   // Mathematics::Map
+#include <koilo/core/color/color888.hpp>
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class Image
@@ -69,10 +73,10 @@ public:
     /**
      * @brief Sample color at a world-space coordinate considering size/offset/rotation.
      * @param point XY coordinate in the same space as @ref size and @ref offset.
-     * @return RGBColor at that coordinate; returns default-constructed RGBColor() if
+     * @return Color888 at that coordinate; returns default-constructed Color888() if
      *         out-of-bounds or palette index is invalid.
      */
-    RGBColor GetColorAtCoordinate(Vector2D point);
+    Color888 GetColorAtCoordinate(Vector2D point);
 
 private:
     // Backing data (not owned)
@@ -89,21 +93,23 @@ private:
     Vector2D offset{0.0f, 0.0f};         ///< center/rotation origin
     float angle = 0.0f;                  ///< degrees CCW
 
-    PTX_BEGIN_FIELDS(Image)
+    KL_BEGIN_FIELDS(Image)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(Image)
-        PTX_METHOD_AUTO(Image, SetData, "Set data"),
-        PTX_METHOD_AUTO(Image, SetColorPalette, "Set color palette"),
-        PTX_METHOD_AUTO(Image, SetSize, "Set size"),
-        PTX_METHOD_AUTO(Image, SetPosition, "Set position"),
-        PTX_METHOD_AUTO(Image, SetRotation, "Set rotation"),
-        PTX_METHOD_AUTO(Image, GetColorAtCoordinate, "Get color at coordinate")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(Image)
+        KL_METHOD_AUTO(Image, SetData, "Set data"),
+        KL_METHOD_AUTO(Image, SetColorPalette, "Set color palette"),
+        KL_METHOD_AUTO(Image, SetSize, "Set size"),
+        KL_METHOD_AUTO(Image, SetPosition, "Set position"),
+        KL_METHOD_AUTO(Image, SetRotation, "Set rotation"),
+        KL_METHOD_AUTO(Image, GetColorAtCoordinate, "Get color at coordinate")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(Image)
-        PTX_CTOR(Image, const uint8_t *, const uint8_t *, unsigned int, unsigned int, uint8_t)
-    PTX_END_DESCRIBE(Image)
+    KL_BEGIN_DESCRIBE(Image)
+        KL_CTOR(Image, const uint8_t *, const uint8_t *, unsigned int, unsigned int, uint8_t)
+    KL_END_DESCRIBE(Image)
 
 };
+
+} // namespace koilo

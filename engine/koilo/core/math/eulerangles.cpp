@@ -1,17 +1,23 @@
-#include <ptx/core/math/eulerangles.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/core/math/eulerangles.hpp>
+
+
+namespace koilo {
 
 // Default constructor.
-EulerAngles::EulerAngles() 
+koilo::EulerAngles::EulerAngles() 
     : Angles(0, 0, 0), Order(EulerConstants::EulerOrderXYZS) {}
 
 // Constructor with angles and order.
-EulerAngles::EulerAngles(Vector3D angles, EulerOrder order) 
+koilo::EulerAngles::EulerAngles(Vector3D angles, EulerOrder order) 
     : Angles(angles), Order(order) {}
 
 // Convert EulerAngles to a string representation.
-ptx::UString EulerAngles::ToString() {
-    ptx::UString angles = Angles.ToString();
-    ptx::UString order = Order.ToString();
+koilo::UString koilo::EulerAngles::ToString() {
+    koilo::UString angles = Angles.ToString();
+    koilo::UString order = Order.ToString();
 
     return "[ " + angles + ", " + order + " ]";
 }
+
+} // namespace koilo

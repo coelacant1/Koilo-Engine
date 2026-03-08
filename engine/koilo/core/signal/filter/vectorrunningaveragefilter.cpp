@@ -1,15 +1,19 @@
-#include <ptx/core/signal/filter/vectorrunningaveragefilter.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/core/signal/filter/vectorrunningaveragefilter.hpp>
 
 #include <algorithm>
 
-VectorRunningAverageFilter::VectorRunningAverageFilter(size_t memory, float gainValue)
+
+namespace koilo {
+
+koilo::VectorRunningAverageFilter::VectorRunningAverageFilter(size_t memory, float gainValue)
     : X(memory, gainValue),
       Y(memory, gainValue),
       Z(memory, gainValue),
       capacity(std::max<size_t>(1, memory))
 {}
 
-Vector3D VectorRunningAverageFilter::Filter(Vector3D input) {
+Vector3D koilo::VectorRunningAverageFilter::Filter(Vector3D input) {
     return Vector3D{
         X.Filter(input.X),
         Y.Filter(input.Y),
@@ -17,14 +21,16 @@ Vector3D VectorRunningAverageFilter::Filter(Vector3D input) {
     };
 }
 
-void VectorRunningAverageFilter::SetGain(float gainValue) {
+void koilo::VectorRunningAverageFilter::SetGain(float gainValue) {
     X.SetGain(gainValue);
     Y.SetGain(gainValue);
     Z.SetGain(gainValue);
 }
 
-void VectorRunningAverageFilter::Reset() {
+void koilo::VectorRunningAverageFilter::Reset() {
     X.Reset();
     Y.Reset();
     Z.Reset();
 }
+
+} // namespace koilo

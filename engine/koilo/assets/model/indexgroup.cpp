@@ -1,6 +1,10 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 // indexgroup.cpp
-#include <ptx/assets/model/indexgroup.hpp>
-#include <ptx/core/utils/casthelper.hpp>
+#include <koilo/assets/model/indexgroup.hpp>
+#include <koilo/core/utils/casthelper.hpp>
+
+
+namespace koilo {
 
 /**
  * @file indexgroup.cpp
@@ -9,13 +13,13 @@
  * @author Coela
  */
 
-IndexGroup::IndexGroup() : A(0), B(0), C(0) {}
+koilo::IndexGroup::IndexGroup() : A(0), B(0), C(0) {}
 
-IndexGroup::IndexGroup(const IndexGroup& indexGroup) : A(indexGroup.A), B(indexGroup.B), C(indexGroup.C) {}
+koilo::IndexGroup::IndexGroup(const IndexGroup& indexGroup) : A(indexGroup.A), B(indexGroup.B), C(indexGroup.C) {}
 
-IndexGroup::IndexGroup(uint16_t A, uint16_t B, uint16_t C) : A(A), B(B), C(C) {}
+koilo::IndexGroup::IndexGroup(uint32_t A, uint32_t B, uint32_t C) : A(A), B(B), C(C) {}
 
-IndexGroup IndexGroup::Add(IndexGroup indexGroup) {
+IndexGroup koilo::IndexGroup::Add(IndexGroup indexGroup) {
     return IndexGroup{
         CastHelper::ToU16(CastHelper::ToU32(this->A) + CastHelper::ToU32(indexGroup.A)),
         CastHelper::ToU16(CastHelper::ToU32(this->B) + CastHelper::ToU32(indexGroup.B)),
@@ -23,7 +27,7 @@ IndexGroup IndexGroup::Add(IndexGroup indexGroup) {
     };
 }
 
-IndexGroup IndexGroup::Subtract(IndexGroup indexGroup) {
+IndexGroup koilo::IndexGroup::Subtract(IndexGroup indexGroup) {
     return IndexGroup{
         CastHelper::ToU16(CastHelper::ToU32(this->A) - CastHelper::ToU32(indexGroup.A)),
         CastHelper::ToU16(CastHelper::ToU32(this->B) - CastHelper::ToU32(indexGroup.B)),
@@ -31,7 +35,7 @@ IndexGroup IndexGroup::Subtract(IndexGroup indexGroup) {
     };
 }
 
-IndexGroup IndexGroup::Multiply(IndexGroup indexGroup) {
+IndexGroup koilo::IndexGroup::Multiply(IndexGroup indexGroup) {
     return IndexGroup{
         CastHelper::ToU16(CastHelper::ToU32(this->A) * CastHelper::ToU32(indexGroup.A)),
         CastHelper::ToU16(CastHelper::ToU32(this->B) * CastHelper::ToU32(indexGroup.B)),
@@ -39,7 +43,7 @@ IndexGroup IndexGroup::Multiply(IndexGroup indexGroup) {
     };
 }
 
-IndexGroup IndexGroup::Divide(IndexGroup indexGroup) {
+IndexGroup koilo::IndexGroup::Divide(IndexGroup indexGroup) {
     return IndexGroup{
         CastHelper::ToU16(CastHelper::ToU32(this->A) / CastHelper::ToU32(indexGroup.A)),
         CastHelper::ToU16(CastHelper::ToU32(this->B) / CastHelper::ToU32(indexGroup.B)),
@@ -47,10 +51,12 @@ IndexGroup IndexGroup::Divide(IndexGroup indexGroup) {
     };
 }
 
-ptx::UString IndexGroup::ToString() {
-    ptx::UString sa = Mathematics::DoubleToCleanString(A);
-    ptx::UString sb = Mathematics::DoubleToCleanString(B);
-    ptx::UString sc = Mathematics::DoubleToCleanString(C);
+koilo::UString koilo::IndexGroup::ToString() {
+    koilo::UString sa = Mathematics::DoubleToCleanString(A);
+    koilo::UString sb = Mathematics::DoubleToCleanString(B);
+    koilo::UString sc = Mathematics::DoubleToCleanString(C);
     
     return "[" + sa + ", " + sb + ", " + sc + "]";
 }
+
+} // namespace koilo

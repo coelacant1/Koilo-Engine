@@ -1,8 +1,12 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 // characters.hpp
 #pragma once
 
 #include <stdint.h>
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @file characters.hpp
@@ -23,6 +27,28 @@ public:
     static const uint8_t COLON[8];     ///< ':' glyph (8 rows x 8 bits).
     static const uint8_t FWDSLSH[8];   ///< '/' glyph.
     static const uint8_t SPACE[8];     ///< ' ' space glyph (blank).
+    static const uint8_t PERIOD[8];    ///< '.'
+    static const uint8_t COMMA[8];     ///< ','
+    static const uint8_t EXCLAIM[8];   ///< '!'
+    static const uint8_t QUESTION[8];  ///< '?'
+    static const uint8_t DASH[8];      ///< '-'
+    static const uint8_t PLUS[8];      ///< '+'
+    static const uint8_t EQUALS[8];    ///< '='
+    static const uint8_t LPAREN[8];    ///< '('
+    static const uint8_t RPAREN[8];    ///< ')'
+    static const uint8_t LANGLE[8];    ///< '<'
+    static const uint8_t RANGLE[8];    ///< '>'
+    static const uint8_t SEMICOLON[8]; ///< ';'
+    static const uint8_t UNDERSCORE[8];///< '_'
+    static const uint8_t HASH[8];      ///< '#'
+    static const uint8_t AT[8];        ///< '@'
+    static const uint8_t PERCENT[8];   ///< '%'
+    static const uint8_t ASTERISK[8];  ///< '*'
+    static const uint8_t AMPERSAND[8]; ///< '&'
+    static const uint8_t QUOTE[8];     ///< '\''
+    static const uint8_t DQUOTE[8];    ///< '"'
+    static const uint8_t LBRACKET[8];  ///< '['
+    static const uint8_t RBRACKET[8];  ///< ']'
 
     // -------- Digits --------
     static const uint8_t N0[8]; ///< '0'
@@ -72,16 +98,18 @@ public:
      */
     static const uint8_t* GetCharacter(char character);
 
-    PTX_BEGIN_FIELDS(Characters)
+    KL_BEGIN_FIELDS(Characters)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(Characters)
-        PTX_SMETHOD_AUTO(Characters::GetCharacter, "Get character")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(Characters)
+        KL_SMETHOD_AUTO(Characters::GetCharacter, "Get character")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(Characters)
+    KL_BEGIN_DESCRIBE(Characters)
         /* No reflected ctors. */
-    PTX_END_DESCRIBE(Characters)
+    KL_END_DESCRIBE(Characters)
 
 };
+
+} // namespace koilo

@@ -1,7 +1,9 @@
-#include <ptx/systems/ui/uielement.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/systems/ui/uielement.hpp>
 #include <algorithm>
 
-namespace ptx {
+namespace koilo {
+
 
 UIElement::UIElement()
     : parent(nullptr), position(0, 0), size(100, 100), pivot(0.5f, 0.5f),
@@ -106,25 +108,25 @@ void UIElement::RecalculateWorldRect() {
     float anchorMaxY = parentRect.y + parentRect.height * anchor.maxY;
 
     // Calculate size based on anchors
-    float width = size.x;
-    float height = size.y;
+    float width = size.X;
+    float height = size.Y;
 
     if (anchor.minX != anchor.maxX) {
         // Stretched horizontally
-        width = (anchorMaxX - anchorMinX) + size.x;
+        width = (anchorMaxX - anchorMinX) + size.X;
     }
     if (anchor.minY != anchor.maxY) {
         // Stretched vertically
-        height = (anchorMaxY - anchorMinY) + size.y;
+        height = (anchorMaxY - anchorMinY) + size.Y;
     }
 
     // Apply scale
-    width *= scale.x;
-    height *= scale.y;
+    width *= scale.X;
+    height *= scale.Y;
 
     // Calculate position with pivot
-    float x = anchorMinX + position.x - (width * pivot.x);
-    float y = anchorMinY + position.y - (height * pivot.y);
+    float x = anchorMinX + position.X - (width * pivot.X);
+    float y = anchorMinY + position.Y - (height * pivot.Y);
 
     worldRect = Rect(x, y, width, height);
 }
@@ -165,4 +167,5 @@ void UIElement::OnRelease() {
     // Override in derived classes
 }
 
-} // namespace ptx
+
+} // namespace koilo

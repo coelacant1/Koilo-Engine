@@ -1,4 +1,5 @@
-#include <ptx/core/platform/console.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/core/platform/console.hpp>
 
 #if defined(ARDUINO)
   #include <Arduino.h>
@@ -6,7 +7,7 @@
   #include <iostream>
 #endif
 
-namespace ptx::Console {
+namespace koilo::Console {
 
 void Begin(std::uint32_t baud) {
 #if defined(ARDUINO)
@@ -75,4 +76,4 @@ void Println(float value, int precision) {
     Println();
 }
 
-} // namespace ptx::Console
+} // namespace koilo::Console

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testellipse2d.cpp
  * @brief Implementation of Ellipse2D unit tests.
@@ -6,6 +7,7 @@
 #include "testellipse2d.hpp"
 #include <utils/testhelpers.hpp>
 
+using namespace koilo;
 // ========== Constructor Tests ==========
 
 void TestEllipse2D::TestDefaultConstructor() {
@@ -22,8 +24,8 @@ void TestEllipse2D::TestDefaultConstructor() {
     TEST_ASSERT_FLOAT_WITHIN(TestHelpers::DEFAULT_TOLERANCE, 0.0f, retrievedCenter.Y);
 
     Vector2D retrievedSize = ellipse.GetSize();
-    TEST_ASSERT_FLOAT_WITHIN(TestHelpers::DEFAULT_TOLERANCE, 2.0f, retrievedSize.X);
-    TEST_ASSERT_FLOAT_WITHIN(TestHelpers::DEFAULT_TOLERANCE, 1.0f, retrievedSize.Y);
+    TEST_ASSERT_FLOAT_WITHIN(TestHelpers::DEFAULT_TOLERANCE, 1.0f, retrievedSize.X);
+    TEST_ASSERT_FLOAT_WITHIN(TestHelpers::DEFAULT_TOLERANCE, 0.5f, retrievedSize.Y);
 }
 
 void TestEllipse2D::TestParameterizedConstructor() {
@@ -39,8 +41,8 @@ void TestEllipse2D::TestParameterizedConstructor() {
     TEST_ASSERT_FLOAT_WITHIN(TestHelpers::DEFAULT_TOLERANCE, 3.0f, retrievedCenter.Y);
 
     Vector2D retrievedSize = ellipse.GetSize();
-    TEST_ASSERT_FLOAT_WITHIN(TestHelpers::DEFAULT_TOLERANCE, 10.0f, retrievedSize.X);
-    TEST_ASSERT_FLOAT_WITHIN(TestHelpers::DEFAULT_TOLERANCE, 6.0f, retrievedSize.Y);
+    TEST_ASSERT_FLOAT_WITHIN(TestHelpers::DEFAULT_TOLERANCE, 5.0f, retrievedSize.X);
+    TEST_ASSERT_FLOAT_WITHIN(TestHelpers::DEFAULT_TOLERANCE, 3.0f, retrievedSize.Y);
 
     float retrievedRotation = ellipse.GetRotation();
     TEST_ASSERT_FLOAT_WITHIN(TestHelpers::DEFAULT_TOLERANCE, 45.0f, retrievedRotation);

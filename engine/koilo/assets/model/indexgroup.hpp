@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 // indexgroup.hpp
 /**
  * @file IndexGroup.h
@@ -14,10 +15,13 @@
 #pragma once
 
 #include <stdint.h>
-#include "../../core/utils/casthelper.hpp"   // CastHelper::ToU16
-#include "../../core/math/mathematics.hpp"  // Mathematics::DoubleToCleanString
-#include "../../core/platform/ustring.hpp"  // ptx::UString
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/core/utils/casthelper.hpp>   // CastHelper::ToU16
+#include <koilo/core/math/mathematics.hpp>  // Mathematics::DoubleToCleanString
+#include <koilo/core/platform/ustring.hpp>  // koilo::UString
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class IndexGroup
@@ -29,9 +33,9 @@
  */
 class IndexGroup {
 public:
-    uint16_t A; ///< First index of the triangle.
-    uint16_t B; ///< Second index of the triangle.
-    uint16_t C; ///< Third index of the triangle.
+    uint32_t A; ///< First index of the triangle.
+    uint32_t B; ///< Second index of the triangle.
+    uint32_t C; ///< Third index of the triangle.
 
     /** @brief Default-constructs (0,0,0). */
     IndexGroup();
@@ -39,13 +43,16 @@ public:
     /** @brief Copy-constructs from another IndexGroup. */
     IndexGroup(const IndexGroup& indexGroup);
 
+    /** @brief Copy-assignment operator. */
+    IndexGroup& operator=(const IndexGroup& indexGroup) = default;
+
     /**
      * @brief Construct from three indices.
      * @param A First index (A).
      * @param B Second index (B).
      * @param C Third index (C).
      */
-    IndexGroup(uint16_t A, uint16_t B, uint16_t C);
+    IndexGroup(uint32_t A, uint32_t B, uint32_t C);
 
     /**
      * @brief Adds two IndexGroups component-wise.
@@ -78,29 +85,43 @@ public:
     IndexGroup Divide(IndexGroup indexGroup);
 
     /**
+     * @brief Retrieves an index by position (0=A, 1=B, 2=C).
+     */
+    uint32_t GetIndex(uint8_t idx) const {
+        switch (idx) {
+            case 0: return A;
+            case 1: return B;
+            default: return C;
+        }
+    }
+
+    /**
      * @brief Convert to a human-readable string.
      * @return UString formatted as "[A, B, C]".
      */
-    ptx::UString ToString();
+    koilo::UString ToString();
 
-    PTX_BEGIN_FIELDS(IndexGroup)
-        PTX_FIELD(IndexGroup, A, "A", 0, 65535),
-        PTX_FIELD(IndexGroup, B, "B", 0, 65535),
-        PTX_FIELD(IndexGroup, C, "C", 0, 65535)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(IndexGroup)
+        KL_FIELD(IndexGroup, A, "A", 0, 65535),
+        KL_FIELD(IndexGroup, B, "B", 0, 65535),
+        KL_FIELD(IndexGroup, C, "C", 0, 65535)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(IndexGroup)
-        PTX_METHOD_AUTO(IndexGroup, Add, "Add"),
-        PTX_METHOD_AUTO(IndexGroup, Subtract, "Subtract"),
-        PTX_METHOD_AUTO(IndexGroup, Multiply, "Multiply"),
-        PTX_METHOD_AUTO(IndexGroup, Divide, "Divide"),
-        PTX_METHOD_AUTO(IndexGroup, ToString, "To string")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(IndexGroup)
+        KL_METHOD_AUTO(IndexGroup, Add, "Add"),
+        KL_METHOD_AUTO(IndexGroup, Subtract, "Subtract"),
+        KL_METHOD_AUTO(IndexGroup, Multiply, "Multiply"),
+        KL_METHOD_AUTO(IndexGroup, Divide, "Divide"),
+        KL_METHOD_AUTO(IndexGroup, GetIndex, "Get index"),
+        KL_METHOD_AUTO(IndexGroup, ToString, "To string")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(IndexGroup)
-        PTX_CTOR0(IndexGroup),
-        PTX_CTOR(IndexGroup, const IndexGroup &),
-        PTX_CTOR(IndexGroup, uint16_t, uint16_t, uint16_t)
-    PTX_END_DESCRIBE(IndexGroup)
+    KL_BEGIN_DESCRIBE(IndexGroup)
+        KL_CTOR0(IndexGroup),
+        KL_CTOR(IndexGroup, const IndexGroup &),
+        KL_CTOR(IndexGroup, uint16_t, uint16_t, uint16_t)
+    KL_END_DESCRIBE(IndexGroup)
 
 };
+
+} // namespace koilo

@@ -1,23 +1,25 @@
-#include <ptx/systems/audio/audiosource.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/systems/audio/audiosource.hpp>
+#include <koilo/core/time/timemanager.hpp>
 #include <algorithm>
 
-namespace ptx {
+namespace koilo {
 
-AudioSource::AudioSource()
+koilo::AudioSource::AudioSource()
     : clip(nullptr), state(AudioSourceState::Stopped), playbackPosition(0.0f),
       position(0, 0, 0), velocity(0, 0, 0), minDistance(1.0f), maxDistance(100.0f),
       rolloffFactor(1.0f), volume(1.0f), pitch(1.0f), pan(0.0f), loop(false),
       spatial(true), priority(128) {
 }
 
-AudioSource::AudioSource(std::shared_ptr<AudioClip> clip)
+koilo::AudioSource::AudioSource(std::shared_ptr<AudioClip> clip)
     : clip(clip), state(AudioSourceState::Stopped), playbackPosition(0.0f),
       position(0, 0, 0), velocity(0, 0, 0), minDistance(1.0f), maxDistance(100.0f),
       rolloffFactor(1.0f), volume(1.0f), pitch(1.0f), pan(0.0f), loop(false),
       spatial(true), priority(128) {
 }
 
-void AudioSource::Play() {
+void koilo::AudioSource::Play() {
     if (clip == nullptr || !clip->IsLoaded()) {
         return;
     }
@@ -30,34 +32,34 @@ void AudioSource::Play() {
     }
 }
 
-void AudioSource::Pause() {
+void koilo::AudioSource::Pause() {
     if (state == AudioSourceState::Playing) {
         state = AudioSourceState::Paused;
     }
 }
 
-void AudioSource::Stop() {
+void koilo::AudioSource::Stop() {
     state = AudioSourceState::Stopped;
     playbackPosition = 0.0f;
 }
 
-void AudioSource::SetVolume(float vol) {
+void koilo::AudioSource::SetVolume(float vol) {
     volume = std::clamp(vol, 0.0f, 1.0f);
 }
 
-void AudioSource::SetPitch(float p) {
+void koilo::AudioSource::SetPitch(float p) {
     pitch = std::clamp(p, 0.1f, 3.0f);
 }
 
-void AudioSource::SetPan(float p) {
+void koilo::AudioSource::SetPan(float p) {
     pan = std::clamp(p, -1.0f, 1.0f);
 }
 
-void AudioSource::SetPriority(int prio) {
+void koilo::AudioSource::SetPriority(int prio) {
     priority = std::clamp(prio, 0, 255);
 }
 
-void AudioSource::SetPlaybackPosition(float position) {
+void koilo::AudioSource::SetPlaybackPosition(float position) {
     if (clip == nullptr || !clip->IsLoaded()) {
         return;
     }
@@ -65,7 +67,8 @@ void AudioSource::SetPlaybackPosition(float position) {
     playbackPosition = std::clamp(position, 0.0f, clip->GetDuration());
 }
 
-void AudioSource::Update(float deltaTime) {
+void koilo::AudioSource::Update() {
+    float deltaTime = TimeManager::GetInstance().GetDeltaTime();
     if (state != AudioSourceState::Playing) {
         return;
     }
@@ -90,4 +93,4 @@ void AudioSource::Update(float deltaTime) {
     }
 }
 
-} // namespace ptx
+} // namespace koilo

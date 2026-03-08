@@ -1,16 +1,17 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testreflection.hpp
  * @brief Unit tests for the Reflection class.
  *
  * @date 10/10/2025
  * @version 1.0
- * @author Coela (Auto-Generated)
+ * @author Coela
  */
 
 #pragma once
 
 #include <unity.h>
-#include <ptx/core/platform/console.hpp>
+#include <koilo/core/platform/console.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

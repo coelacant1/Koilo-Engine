@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testpeakdetection.hpp
  * @brief Unit tests for the PeakDetection class.
@@ -12,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/core/signal/filter/peakdetection.hpp>
+#include <koilo/core/signal/filter/peakdetection.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

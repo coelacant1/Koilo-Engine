@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 #pragma once
 
 #include <cstdint> // For std::uint32_t
 
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
 
 /**
  * @file Console.hpp
@@ -12,10 +13,10 @@
  */
 
 /**
- * @namespace ptx::Console
+ * @namespace koilo::Console
  * @brief Unifies console output between Arduino (Serial) and native C++ (std::cout).
  */
-namespace ptx {
+namespace koilo {
 namespace Console {
 
     /**
@@ -64,34 +65,34 @@ namespace Console {
     void Println(float value, int precision = 2);
 
     struct Reflection {
-        static void Begin(uint32_t baud = 9600) { ::ptx::Console::Begin(baud); }
+        static void Begin(uint32_t baud = 9600) { ::koilo::Console::Begin(baud); }
 
-    static void Print(const char* msg) { ::ptx::Console::Print(msg); }
-    static void Print(int value) { ::ptx::Console::Print(value); }
-    static void Print(float value, int precision = 2) { ::ptx::Console::Print(value, precision); }
+    static void Print(const char* msg) { ::koilo::Console::Print(msg); }
+    static void Print(int value) { ::koilo::Console::Print(value); }
+    static void Print(float value, int precision = 2) { ::koilo::Console::Print(value, precision); }
 
-    static void Println() { ::ptx::Console::Println(); }
-    static void Println(const char* msg) { ::ptx::Console::Println(msg); }
-    static void Println(int value) { ::ptx::Console::Println(value); }
-    static void Println(float value, int precision = 2) { ::ptx::Console::Println(value, precision); }
+    static void Println() { ::koilo::Console::Println(); }
+    static void Println(const char* msg) { ::koilo::Console::Println(msg); }
+    static void Println(int value) { ::koilo::Console::Println(value); }
+    static void Println(float value, int precision = 2) { ::koilo::Console::Println(value, precision); }
 
-        PTX_BEGIN_FIELDS(Reflection)
+        KL_BEGIN_FIELDS(Reflection)
             /* No reflected fields. */
-        PTX_END_FIELDS
+        KL_END_FIELDS
 
-        PTX_BEGIN_METHODS(Reflection)
-            PTX_SMETHOD_OVLD(Reflection, Begin, void, uint32_t),
-            PTX_SMETHOD_OVLD(Reflection, Print, void, const char *),
-            PTX_SMETHOD_OVLD(Reflection, Print, void, int),
-            PTX_SMETHOD_OVLD(Reflection, Print, void, float, int),
-            PTX_SMETHOD_OVLD0(Reflection, Println, void),
-            PTX_SMETHOD_OVLD(Reflection, Println, void, const char *),
-            PTX_SMETHOD_OVLD(Reflection, Println, void, int),
-            PTX_SMETHOD_OVLD(Reflection, Println, void, float, int)
-        PTX_END_METHODS
+        KL_BEGIN_METHODS(Reflection)
+            KL_SMETHOD_OVLD(Reflection, Begin, void, uint32_t),
+            KL_SMETHOD_OVLD(Reflection, Print, void, const char *),
+            KL_SMETHOD_OVLD(Reflection, Print, void, int),
+            KL_SMETHOD_OVLD(Reflection, Print, void, float, int),
+            KL_SMETHOD_OVLD0(Reflection, Println, void),
+            KL_SMETHOD_OVLD(Reflection, Println, void, const char *),
+            KL_SMETHOD_OVLD(Reflection, Println, void, int),
+            KL_SMETHOD_OVLD(Reflection, Println, void, float, int)
+        KL_END_METHODS
 
-        PTX_BEGIN_DESCRIBE(Reflection)
-        PTX_END_DESCRIBE(Reflection)
+        KL_BEGIN_DESCRIBE(Reflection)
+        KL_END_DESCRIBE(Reflection)
     };
 } // namespace Console
-} // namespace ptx
+} // namespace koilo

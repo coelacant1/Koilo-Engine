@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file Quaternion.h
  * @brief Defines the Quaternion class for 3D rotations and transformations.
@@ -18,7 +19,10 @@
 #include "mathematics.hpp"
 #include "vector2d.hpp"
 #include "vector3d.hpp"
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class Quaternion
@@ -317,9 +321,9 @@ public:
 
     /**
      * @brief Converts this quaternion to a string representation (e.g. "(W, X, Y, Z)").
-     * @return A \c ptx::UString displaying the quaternion's components.
+     * @return A \c koilo::UString displaying the quaternion's components.
      */
-    ptx::UString ToString() const;
+    koilo::UString ToString() const;
 
     // --- Operator Overloads ---
 
@@ -336,6 +340,12 @@ public:
      * @return \c true if not equal, otherwise \c false.
      */
     bool operator !=(const Quaternion& quaternion) const;
+
+    /**
+     * @brief Unary negation operator. Returns the additive inverse of the quaternion.
+     * @return A new quaternion with all components negated.
+     */
+    Quaternion operator -() const;
 
     /**
      * @brief Assignment operator. Copies another quaternion's components to this one.
@@ -510,69 +520,177 @@ public:
      */
     static float Normal(const Quaternion& quaternion);
 
-    PTX_BEGIN_FIELDS(Quaternion)
-        PTX_FIELD(Quaternion, W, "W", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(Quaternion, X, "X", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(Quaternion, Y, "Y", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(Quaternion, Z, "Z", __FLT_MIN__, __FLT_MAX__)
-    PTX_END_FIELDS
+    /**
+     * @brief Constructs a quaternion representing a look-at rotation.
+     *
+     * Builds an orientation quaternion from a forward direction and an up reference vector.
+     * The resulting quaternion rotates from the default forward (-Z) to look along the
+     * given direction, with the camera's up axis as close to the provided up vector as possible.
+     * This avoids gimbal lock by constructing an orthonormal basis directly.
+     *
+     * @param forward The direction to look toward (does not need to be normalized).
+     * @param up The world up reference vector (does not need to be normalized).
+     * @return A unit quaternion representing the look-at orientation.
+     */
+    static Quaternion LookAt(const Vector3D& forward, const Vector3D& up);
 
-    PTX_BEGIN_METHODS(Quaternion)
-        /* Rotate vector */ PTX_METHOD_OVLD_CONST(Quaternion, RotateVector, Vector2D, const Vector2D &),
-        PTX_METHOD_AUTO(Quaternion, RotateVectorUnit, "Rotate vector unit"),
-        /* Unrotate vector */ PTX_METHOD_OVLD_CONST(Quaternion, UnrotateVector, Vector2D, const Vector2D &),
-        /* Rotate vector */ PTX_METHOD_OVLD_CONST(Quaternion, RotateVector, Vector3D, const Vector3D &),
-        /* Unrotate vector */ PTX_METHOD_OVLD_CONST(Quaternion, UnrotateVector, Vector3D, const Vector3D &),
-        PTX_METHOD_AUTO(Quaternion, GetBiVector, "Get bi vector"),
-        PTX_METHOD_AUTO(Quaternion, GetNormal, "Get normal"),
-        PTX_SMETHOD_AUTO(Quaternion::SphericalInterpolation, "Spherical interpolation"),
-        PTX_METHOD_AUTO(Quaternion, DeltaRotation, "Delta rotation"),
-        /* Add */ PTX_METHOD_OVLD_CONST(Quaternion, Add, Quaternion, const Quaternion &),
-        /* Subtract */ PTX_METHOD_OVLD_CONST(Quaternion, Subtract, Quaternion, const Quaternion &),
-        /* Multiply */ PTX_METHOD_OVLD_CONST(Quaternion, Multiply, Quaternion, const Quaternion &),
-        /* Multiply */ PTX_METHOD_OVLD_CONST(Quaternion, Multiply, Quaternion, const float &),
-        /* Divide */ PTX_METHOD_OVLD_CONST(Quaternion, Divide, Quaternion, const Quaternion &),
-        /* Divide */ PTX_METHOD_OVLD_CONST(Quaternion, Divide, Quaternion, const float &),
-        /* Power */ PTX_METHOD_OVLD_CONST(Quaternion, Power, Quaternion, const Quaternion &),
-        /* Power */ PTX_METHOD_OVLD_CONST(Quaternion, Power, Quaternion, const float &),
-        /* Permutate */ PTX_METHOD_OVLD_CONST(Quaternion, Permutate, Quaternion, const Vector3D &),
-        /* Absolute */ PTX_METHOD_OVLD_CONST0(Quaternion, Absolute, Quaternion),
-        /* Additive inverse */ PTX_METHOD_OVLD_CONST0(Quaternion, AdditiveInverse, Quaternion),
-        /* Multiplicative inverse */ PTX_METHOD_OVLD_CONST0(Quaternion, MultiplicativeInverse, Quaternion),
-        /* Conjugate */ PTX_METHOD_OVLD_CONST0(Quaternion, Conjugate, Quaternion),
-        /* Unit quaternion */ PTX_METHOD_OVLD_CONST0(Quaternion, UnitQuaternion, Quaternion),
-        /* Magnitude */ PTX_METHOD_OVLD_CONST0(Quaternion, Magnitude, float),
-        /* Dot product */ PTX_METHOD_OVLD_CONST(Quaternion, DotProduct, float, const Quaternion &),
-        /* Normal */ PTX_METHOD_OVLD_CONST0(Quaternion, Normal, float),
-        PTX_METHOD_AUTO(Quaternion, IsNaN, "Is na n"),
-        PTX_METHOD_AUTO(Quaternion, IsFinite, "Is finite"),
-        PTX_METHOD_AUTO(Quaternion, IsInfinite, "Is infinite"),
-        PTX_METHOD_AUTO(Quaternion, IsNonZero, "Is non zero"),
-        PTX_METHOD_AUTO(Quaternion, IsEqual, "Is equal"),
-        PTX_METHOD_AUTO(Quaternion, IsClose, "Is close"),
-        PTX_METHOD_AUTO(Quaternion, ToString, "To string"),
-        /* Add */ PTX_SMETHOD_OVLD(Quaternion, Add, Quaternion, const Quaternion &, const Quaternion &),
-        /* Subtract */ PTX_SMETHOD_OVLD(Quaternion, Subtract, Quaternion, const Quaternion &, const Quaternion &),
-        /* Multiply */ PTX_SMETHOD_OVLD(Quaternion, Multiply, Quaternion, const Quaternion &, const Quaternion &),
-        /* Divide */ PTX_SMETHOD_OVLD(Quaternion, Divide, Quaternion, const Quaternion &, const Quaternion &),
-        /* Power */ PTX_SMETHOD_OVLD(Quaternion, Power, Quaternion, const Quaternion &, const Quaternion &),
-        /* Dot product */ PTX_SMETHOD_OVLD(Quaternion, DotProduct, float, const Quaternion &, const Quaternion &),
-        /* Power */ PTX_SMETHOD_OVLD(Quaternion, Power, Quaternion, const Quaternion &, const float &),
-        /* Permutate */ PTX_SMETHOD_OVLD(Quaternion, Permutate, Quaternion, const Quaternion &, const Vector3D &),
-        /* Absolute */ PTX_SMETHOD_OVLD(Quaternion, Absolute, Quaternion, const Quaternion &),
-        /* Additive inverse */ PTX_SMETHOD_OVLD(Quaternion, AdditiveInverse, Quaternion, const Quaternion &),
-        /* Multiplicative inverse */ PTX_SMETHOD_OVLD(Quaternion, MultiplicativeInverse, Quaternion, const Quaternion &),
-        /* Conjugate */ PTX_SMETHOD_OVLD(Quaternion, Conjugate, Quaternion, const Quaternion &),
-        /* Unit quaternion */ PTX_SMETHOD_OVLD(Quaternion, UnitQuaternion, Quaternion, const Quaternion &),
-        /* Magnitude */ PTX_SMETHOD_OVLD(Quaternion, Magnitude, float, const Quaternion &),
-        /* Normal */ PTX_SMETHOD_OVLD(Quaternion, Normal, float, const Quaternion &)
-    PTX_END_METHODS
+    KL_BEGIN_FIELDS(Quaternion)
+        KL_FIELD(Quaternion, W, "W", __FLT_MIN__, __FLT_MAX__),
+        KL_FIELD(Quaternion, X, "X", __FLT_MIN__, __FLT_MAX__),
+        KL_FIELD(Quaternion, Y, "Y", __FLT_MIN__, __FLT_MAX__),
+        KL_FIELD(Quaternion, Z, "Z", __FLT_MIN__, __FLT_MAX__)
+    KL_END_FIELDS
 
-    PTX_BEGIN_DESCRIBE(Quaternion)
-        PTX_CTOR0(Quaternion),
-        PTX_CTOR(Quaternion, const Quaternion &),
-        PTX_CTOR(Quaternion, const Vector3D &),
-        PTX_CTOR(Quaternion, const float &, const float &, const float &, const float &)
-    PTX_END_DESCRIBE(Quaternion)
+    KL_BEGIN_METHODS(Quaternion)
+        /* Rotate vector */ KL_METHOD_OVLD_CONST(Quaternion, RotateVector, Vector2D, const Vector2D &),
+        KL_METHOD_AUTO(Quaternion, RotateVectorUnit, "Rotate vector unit"),
+        /* Unrotate vector */ KL_METHOD_OVLD_CONST(Quaternion, UnrotateVector, Vector2D, const Vector2D &),
+        /* Rotate vector */ KL_METHOD_OVLD_CONST(Quaternion, RotateVector, Vector3D, const Vector3D &),
+        /* Unrotate vector */ KL_METHOD_OVLD_CONST(Quaternion, UnrotateVector, Vector3D, const Vector3D &),
+        KL_METHOD_AUTO(Quaternion, GetBiVector, "Get bi vector"),
+        KL_METHOD_AUTO(Quaternion, GetNormal, "Get normal"),
+        KL_SMETHOD_AUTO(Quaternion::SphericalInterpolation, "Spherical interpolation"),
+        KL_METHOD_AUTO(Quaternion, DeltaRotation, "Delta rotation"),
+        /* Add */ KL_METHOD_OVLD_CONST(Quaternion, Add, Quaternion, const Quaternion &),
+        /* Subtract */ KL_METHOD_OVLD_CONST(Quaternion, Subtract, Quaternion, const Quaternion &),
+        /* Multiply */ KL_METHOD_OVLD_CONST(Quaternion, Multiply, Quaternion, const Quaternion &),
+        /* Multiply */ KL_METHOD_OVLD_CONST(Quaternion, Multiply, Quaternion, const float &),
+        /* Divide */ KL_METHOD_OVLD_CONST(Quaternion, Divide, Quaternion, const Quaternion &),
+        /* Divide */ KL_METHOD_OVLD_CONST(Quaternion, Divide, Quaternion, const float &),
+        /* Power */ KL_METHOD_OVLD_CONST(Quaternion, Power, Quaternion, const Quaternion &),
+        /* Power */ KL_METHOD_OVLD_CONST(Quaternion, Power, Quaternion, const float &),
+        /* Permutate */ KL_METHOD_OVLD_CONST(Quaternion, Permutate, Quaternion, const Vector3D &),
+        /* Absolute */ KL_METHOD_OVLD_CONST0(Quaternion, Absolute, Quaternion),
+        /* Additive inverse */ KL_METHOD_OVLD_CONST0(Quaternion, AdditiveInverse, Quaternion),
+        /* Multiplicative inverse */ KL_METHOD_OVLD_CONST0(Quaternion, MultiplicativeInverse, Quaternion),
+        /* Conjugate */ KL_METHOD_OVLD_CONST0(Quaternion, Conjugate, Quaternion),
+        /* Unit quaternion */ KL_METHOD_OVLD_CONST0(Quaternion, UnitQuaternion, Quaternion),
+        /* Magnitude */ KL_METHOD_OVLD_CONST0(Quaternion, Magnitude, float),
+        /* Dot product */ KL_METHOD_OVLD_CONST(Quaternion, DotProduct, float, const Quaternion &),
+        /* Normal */ KL_METHOD_OVLD_CONST0(Quaternion, Normal, float),
+        KL_METHOD_AUTO(Quaternion, IsNaN, "Is na n"),
+        KL_METHOD_AUTO(Quaternion, IsFinite, "Is finite"),
+        KL_METHOD_AUTO(Quaternion, IsInfinite, "Is infinite"),
+        KL_METHOD_AUTO(Quaternion, IsNonZero, "Is non zero"),
+        KL_METHOD_AUTO(Quaternion, IsEqual, "Is equal"),
+        KL_METHOD_AUTO(Quaternion, IsClose, "Is close"),
+        KL_METHOD_AUTO(Quaternion, ToString, "To string"),
+        /* Add */ KL_SMETHOD_OVLD(Quaternion, Add, Quaternion, const Quaternion &, const Quaternion &),
+        /* Subtract */ KL_SMETHOD_OVLD(Quaternion, Subtract, Quaternion, const Quaternion &, const Quaternion &),
+        /* Multiply */ KL_SMETHOD_OVLD(Quaternion, Multiply, Quaternion, const Quaternion &, const Quaternion &),
+        /* Divide */ KL_SMETHOD_OVLD(Quaternion, Divide, Quaternion, const Quaternion &, const Quaternion &),
+        /* Power */ KL_SMETHOD_OVLD(Quaternion, Power, Quaternion, const Quaternion &, const Quaternion &),
+        /* Dot product */ KL_SMETHOD_OVLD(Quaternion, DotProduct, float, const Quaternion &, const Quaternion &),
+        /* Power */ KL_SMETHOD_OVLD(Quaternion, Power, Quaternion, const Quaternion &, const float &),
+        /* Permutate */ KL_SMETHOD_OVLD(Quaternion, Permutate, Quaternion, const Quaternion &, const Vector3D &),
+        /* Absolute */ KL_SMETHOD_OVLD(Quaternion, Absolute, Quaternion, const Quaternion &),
+        /* Additive inverse */ KL_SMETHOD_OVLD(Quaternion, AdditiveInverse, Quaternion, const Quaternion &),
+        /* Multiplicative inverse */ KL_SMETHOD_OVLD(Quaternion, MultiplicativeInverse, Quaternion, const Quaternion &),
+        /* Conjugate */ KL_SMETHOD_OVLD(Quaternion, Conjugate, Quaternion, const Quaternion &),
+        /* Unit quaternion */ KL_SMETHOD_OVLD(Quaternion, UnitQuaternion, Quaternion, const Quaternion &),
+        /* Magnitude */ KL_SMETHOD_OVLD(Quaternion, Magnitude, float, const Quaternion &),
+        /* Normal */ KL_SMETHOD_OVLD(Quaternion, Normal, float, const Quaternion &),
+        KL_SMETHOD_AUTO(Quaternion::LookAt, "Look at")
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(Quaternion)
+        KL_CTOR0(Quaternion),
+        KL_CTOR(Quaternion, const Quaternion &),
+        KL_CTOR(Quaternion, const Vector3D &),
+        KL_CTOR(Quaternion, const float &, const float &, const float &, const float &)
+    KL_END_DESCRIBE(Quaternion)
 
 };
+
+// ============================================================================
+// Inline hot-path implementations
+// ============================================================================
+
+inline Quaternion::Quaternion() : W(1.0f), X(0.0f), Y(0.0f), Z(0.0f) {}
+
+inline Quaternion::Quaternion(const Quaternion& q) : W(q.W), X(q.X), Y(q.Y), Z(q.Z) {}
+
+inline Quaternion::Quaternion(const Vector3D& v) : W(0.0f), X(v.X), Y(v.Y), Z(v.Z) {}
+
+inline Quaternion::Quaternion(const float& w, const float& x, const float& y, const float& z)
+    : W(w), X(x), Y(y), Z(z) {}
+
+inline float Quaternion::Normal() const {
+    return Mathematics::Sqrt(W * W + X * X + Y * Y + Z * Z);
+}
+
+inline float Quaternion::DotProduct(const Quaternion& q) const {
+    return (W * q.W) + (X * q.X) + (Y * q.Y) + (Z * q.Z);
+}
+
+inline Quaternion Quaternion::Conjugate() const {
+    return Quaternion(W, -X, -Y, -Z);
+}
+
+inline Quaternion Quaternion::UnitQuaternion() const {
+    float n = 1.0f / Normal();
+    return Quaternion(W * n, X * n, Y * n, Z * n);
+}
+
+inline Quaternion Quaternion::Add(const Quaternion& q) const {
+    return Quaternion(W + q.W, X + q.X, Y + q.Y, Z + q.Z);
+}
+
+inline Quaternion Quaternion::Subtract(const Quaternion& q) const {
+    return Quaternion(W - q.W, X - q.X, Y - q.Y, Z - q.Z);
+}
+
+inline Quaternion Quaternion::Multiply(const Quaternion& q) const {
+    return Quaternion(
+        W * q.W - X * q.X - Y * q.Y - Z * q.Z,
+        W * q.X + X * q.W + Y * q.Z - Z * q.Y,
+        W * q.Y - X * q.Z + Y * q.W + Z * q.X,
+        W * q.Z + X * q.Y - Y * q.X + Z * q.W
+    );
+}
+
+inline Quaternion Quaternion::Multiply(const float& s) const {
+    return Quaternion(W * s, X * s, Y * s, Z * s);
+}
+
+inline Vector3D Quaternion::RotateVector(const Vector3D& v) const {
+    // Optimized Rodrigues' rotation: t = 2*(q.xyz × v), result = v + w*t + q.xyz × t
+    Quaternion q = UnitQuaternion();
+    float tx = 2.0f * (q.Y * v.Z - q.Z * v.Y);
+    float ty = 2.0f * (q.Z * v.X - q.X * v.Z);
+    float tz = 2.0f * (q.X * v.Y - q.Y * v.X);
+    return Vector3D(
+        v.X + q.W * tx + (q.Y * tz - q.Z * ty),
+        v.Y + q.W * ty + (q.Z * tx - q.X * tz),
+        v.Z + q.W * tz + (q.X * ty - q.Y * tx)
+    );
+}
+
+inline Quaternion Quaternion::AdditiveInverse() const {
+    return Quaternion(-W, -X, -Y, -Z);
+}
+
+inline Quaternion Quaternion::Absolute() const {
+    return Quaternion(fabsf(W), fabsf(X), fabsf(Y), fabsf(Z));
+}
+
+inline float Quaternion::Magnitude() const {
+    return Mathematics::Sqrt(Normal());
+}
+
+inline bool Quaternion::IsClose(const Quaternion& q, const float& epsilon) const {
+    return fabsf(W - q.W) < epsilon &&
+        fabsf(X - q.X) < epsilon &&
+        fabsf(Y - q.Y) < epsilon &&
+        fabsf(Z - q.Z) < epsilon;
+}
+
+inline Quaternion Quaternion::operator-() const { return AdditiveInverse(); }
+inline Quaternion Quaternion::operator+(const Quaternion& q) const { return Add(q); }
+inline Quaternion Quaternion::operator-(const Quaternion& q) const { return Subtract(q); }
+inline Quaternion Quaternion::operator*(const Quaternion& q) const { return Multiply(q); }
+
+inline Quaternion operator*(const float& s, const Quaternion& q) { return q.Multiply(s); }
+inline Quaternion operator*(const Quaternion& q, const float& s) { return q.Multiply(s); }
+
+} // namespace koilo

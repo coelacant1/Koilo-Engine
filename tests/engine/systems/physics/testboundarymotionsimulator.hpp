@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testboundarymotionsimulator.hpp
  * @brief Unit tests for the BoundaryMotionSimulator class.
@@ -12,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/systems/physics/boundarymotionsimulator.hpp>
+#include <koilo/systems/physics/boundarymotionsimulator.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

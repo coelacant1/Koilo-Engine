@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testplane.cpp
  * @brief Implementation of Plane unit tests.
@@ -5,6 +6,7 @@
 
 #include "testplane.hpp"
 
+using namespace koilo;
 // ========== Constructor Tests ==========
 
 void TestPlane::TestDefaultConstructor() {
@@ -42,7 +44,7 @@ void TestPlane::TestToString() {
     Vector3D normal(0.0f, 1.0f, 0.0f);
     Plane plane(centroid, normal);
 
-    ptx::UString result = plane.ToString();
+    koilo::UString result = plane.ToString();
 
     // Verify that the string is not empty
     TEST_ASSERT_FALSE(result.IsEmpty());
@@ -100,6 +102,24 @@ void TestPlane::TestEdgeCases() {
     TEST_ASSERT_VECTOR3D_EQUAL(largeN, plane4.Normal);
 }
 
+void TestPlane::TestClosestPoint() {
+    // TODO: Implement test for ClosestPoint()
+    Plane obj;
+    TEST_IGNORE_MESSAGE("Stub");
+}
+
+void TestPlane::TestDistanceToPoint() {
+    // TODO: Implement test for DistanceToPoint()
+    Plane obj;
+    TEST_IGNORE_MESSAGE("Stub");
+}
+
+void TestPlane::TestSide() {
+    // TODO: Implement test for Side()
+    Plane obj;
+    TEST_IGNORE_MESSAGE("Stub");
+}
+
 void TestPlane::RunAllTests() {
     RUN_TEST(TestDefaultConstructor);
     RUN_TEST(TestParameterizedConstructor);
@@ -107,4 +127,7 @@ void TestPlane::RunAllTests() {
     RUN_TEST(TestToString);
 
     RUN_TEST(TestEdgeCases);
+    RUN_TEST(TestClosestPoint);
+    RUN_TEST(TestDistanceToPoint);
+    RUN_TEST(TestSide);
 }

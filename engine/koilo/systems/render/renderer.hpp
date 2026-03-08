@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file renderer.hpp
  * @brief Declares the RenderingEngine class for rendering and display operations.
@@ -11,11 +12,14 @@
 
 #pragma once
 
-#include "../core/cameramanager.hpp" // Include for camera management.
-#include "../../scene/scene.hpp" // Include for scene management.
-#include "../raster/rasterizer.hpp" // Include for rasterization operations.
-#include "../ray/raytracer.hpp" // Include for display test utilities.
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/systems/scene/camera/cameramanager.hpp> // Include for camera management.
+#include <koilo/systems/scene/scene.hpp> // Include for scene management.
+#include <koilo/systems/render/raster/rasterizer.hpp> // Include for rasterization operations.
+#include <koilo/systems/render/ray/raytracer.hpp> // Include for display test utilities.
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class RenderingEngine
@@ -48,17 +52,19 @@ public:
      */
     static void RayTrace(Scene* scene, CameraManager* cameraManager);
 
-    PTX_BEGIN_FIELDS(RenderingEngine)
+    KL_BEGIN_FIELDS(RenderingEngine)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(RenderingEngine)
-        PTX_SMETHOD_AUTO(RenderingEngine::Rasterize, "Rasterize"),
-        PTX_SMETHOD_AUTO(RenderingEngine::RayTrace, "Ray trace")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(RenderingEngine)
+        KL_SMETHOD_AUTO(RenderingEngine::Rasterize, "Rasterize"),
+        KL_SMETHOD_AUTO(RenderingEngine::RayTrace, "Ray trace")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(RenderingEngine)
+    KL_BEGIN_DESCRIBE(RenderingEngine)
         /* No reflected ctors. */
-    PTX_END_DESCRIBE(RenderingEngine)
+    KL_END_DESCRIBE(RenderingEngine)
 
 };
+
+} // namespace koilo

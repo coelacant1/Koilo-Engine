@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file debugdraw.hpp
  * @brief Debug visualization for lines, shapes, and text in 3D space.
@@ -9,13 +10,13 @@
 #pragma once
 
 #include <vector>
-#include <string>
 #include <cstdint>
-#include "../core/mathematics/vector3d.hpp"
-#include "../core/mathematics/matrix4x4.hpp"
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/core/math/vector3d.hpp>
+#include <koilo/core/math/matrix4x4.hpp>
+#include <koilo/core/platform/ustring.hpp>
+#include <koilo/registry/reflect_macros.hpp>
 
-namespace ptx {
+namespace koilo {
 
 /**
  * @struct Color
@@ -40,21 +41,21 @@ struct Color {
     static const Color Purple;
     static const Color Gray;
 
-    PTX_BEGIN_FIELDS(Color)
-        PTX_FIELD(Color, r, "R", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(Color, g, "G", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(Color, b, "B", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(Color, a, "A", __FLT_MIN__, __FLT_MAX__)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(Color)
+        KL_FIELD(Color, r, "R", __FLT_MIN__, __FLT_MAX__),
+        KL_FIELD(Color, g, "G", __FLT_MIN__, __FLT_MAX__),
+        KL_FIELD(Color, b, "B", __FLT_MIN__, __FLT_MAX__),
+        KL_FIELD(Color, a, "A", __FLT_MIN__, __FLT_MAX__)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(Color)
+    KL_BEGIN_METHODS(Color)
         /* No reflected methods. */
-    PTX_END_METHODS
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(Color)
-        PTX_CTOR0(Color),
-        PTX_CTOR(Color, float, float, float, float)
-    PTX_END_DESCRIBE(Color)
+    KL_BEGIN_DESCRIBE(Color)
+        KL_CTOR0(Color),
+        KL_CTOR(Color, float, float, float, float)
+    KL_END_DESCRIBE(Color)
 
 };
 
@@ -78,21 +79,21 @@ struct DebugLine {
     float duration;    // Duration in seconds (0 = one frame)
     bool depthTest;    // If false, draws on top of everything
 
-    PTX_BEGIN_FIELDS(DebugLine)
-        PTX_FIELD(DebugLine, start, "Start", -2147483648, 2147483647),
-        PTX_FIELD(DebugLine, end, "End", -2147483648, 2147483647),
-        PTX_FIELD(DebugLine, color, "Color", 0, 0),
-        PTX_FIELD(DebugLine, duration, "Duration", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(DebugLine, depthTest, "Depth test", 0, 1)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(DebugLine)
+        KL_FIELD(DebugLine, start, "Start", -2147483648, 2147483647),
+        KL_FIELD(DebugLine, end, "End", -2147483648, 2147483647),
+        KL_FIELD(DebugLine, color, "Color", 0, 0),
+        KL_FIELD(DebugLine, duration, "Duration", __FLT_MIN__, __FLT_MAX__),
+        KL_FIELD(DebugLine, depthTest, "Depth test", 0, 1)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(DebugLine)
+    KL_BEGIN_METHODS(DebugLine)
         /* No reflected methods. */
-    PTX_END_METHODS
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(DebugLine)
+    KL_BEGIN_DESCRIBE(DebugLine)
         /* No reflected ctors. */
-    PTX_END_DESCRIBE(DebugLine)
+    KL_END_DESCRIBE(DebugLine)
 
 };
 
@@ -108,22 +109,22 @@ struct DebugSphere {
     bool depthTest;
     DebugDrawMode mode;
 
-    PTX_BEGIN_FIELDS(DebugSphere)
-        PTX_FIELD(DebugSphere, center, "Center", -2147483648, 2147483647),
-        PTX_FIELD(DebugSphere, radius, "Radius", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(DebugSphere, color, "Color", 0, 0),
-        PTX_FIELD(DebugSphere, duration, "Duration", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(DebugSphere, depthTest, "Depth test", 0, 1),
-        PTX_FIELD(DebugSphere, mode, "Mode", 0, 0)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(DebugSphere)
+        KL_FIELD(DebugSphere, center, "Center", -2147483648, 2147483647),
+        KL_FIELD(DebugSphere, radius, "Radius", __FLT_MIN__, __FLT_MAX__),
+        KL_FIELD(DebugSphere, color, "Color", 0, 0),
+        KL_FIELD(DebugSphere, duration, "Duration", __FLT_MIN__, __FLT_MAX__),
+        KL_FIELD(DebugSphere, depthTest, "Depth test", 0, 1),
+        KL_FIELD(DebugSphere, mode, "Mode", 0, 0)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(DebugSphere)
+    KL_BEGIN_METHODS(DebugSphere)
         /* No reflected methods. */
-    PTX_END_METHODS
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(DebugSphere)
+    KL_BEGIN_DESCRIBE(DebugSphere)
         /* No reflected ctors. */
-    PTX_END_DESCRIBE(DebugSphere)
+    KL_END_DESCRIBE(DebugSphere)
 
 };
 
@@ -140,23 +141,23 @@ struct DebugBox {
     bool depthTest;
     DebugDrawMode mode;
 
-    PTX_BEGIN_FIELDS(DebugBox)
-        PTX_FIELD(DebugBox, center, "Center", -2147483648, 2147483647),
-        PTX_FIELD(DebugBox, extents, "Extents", -2147483648, 2147483647),
-        PTX_FIELD(DebugBox, transform, "Transform", -2147483648, 2147483647),
-        PTX_FIELD(DebugBox, color, "Color", 0, 0),
-        PTX_FIELD(DebugBox, duration, "Duration", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(DebugBox, depthTest, "Depth test", 0, 1),
-        PTX_FIELD(DebugBox, mode, "Mode", 0, 0)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(DebugBox)
+        KL_FIELD(DebugBox, center, "Center", -2147483648, 2147483647),
+        KL_FIELD(DebugBox, extents, "Extents", -2147483648, 2147483647),
+        KL_FIELD(DebugBox, transform, "Transform", -2147483648, 2147483647),
+        KL_FIELD(DebugBox, color, "Color", 0, 0),
+        KL_FIELD(DebugBox, duration, "Duration", __FLT_MIN__, __FLT_MAX__),
+        KL_FIELD(DebugBox, depthTest, "Depth test", 0, 1),
+        KL_FIELD(DebugBox, mode, "Mode", 0, 0)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(DebugBox)
+    KL_BEGIN_METHODS(DebugBox)
         /* No reflected methods. */
-    PTX_END_METHODS
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(DebugBox)
+    KL_BEGIN_DESCRIBE(DebugBox)
         /* No reflected ctors. */
-    PTX_END_DESCRIBE(DebugBox)
+    KL_END_DESCRIBE(DebugBox)
 
 };
 
@@ -165,29 +166,29 @@ struct DebugBox {
  * @brief Debug text in 3D space or screen space.
  */
 struct DebugText {
-    std::string text;
+    UString text;
     Vector3D position;  // World position or screen position (if screenSpace is true)
     Color color;
     float duration;
     bool screenSpace;   // If true, position is in screen space
     float scale;
 
-    PTX_BEGIN_FIELDS(DebugText)
-        PTX_FIELD(DebugText, text, "Text", 0, 0),
-        PTX_FIELD(DebugText, position, "Position", -2147483648, 2147483647),
-        PTX_FIELD(DebugText, color, "Color", 0, 0),
-        PTX_FIELD(DebugText, duration, "Duration", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(DebugText, screenSpace, "Screen space", 0, 1),
-        PTX_FIELD(DebugText, scale, "Scale", __FLT_MIN__, __FLT_MAX__)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(DebugText)
+        KL_FIELD(DebugText, text, "Text", 0, 0),
+        KL_FIELD(DebugText, position, "Position", -2147483648, 2147483647),
+        KL_FIELD(DebugText, color, "Color", 0, 0),
+        KL_FIELD(DebugText, duration, "Duration", __FLT_MIN__, __FLT_MAX__),
+        KL_FIELD(DebugText, screenSpace, "Screen space", 0, 1),
+        KL_FIELD(DebugText, scale, "Scale", __FLT_MIN__, __FLT_MAX__)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(DebugText)
+    KL_BEGIN_METHODS(DebugText)
         /* No reflected methods. */
-    PTX_END_METHODS
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(DebugText)
+    KL_BEGIN_DESCRIBE(DebugText)
         /* No reflected ctors. */
-    PTX_END_DESCRIBE(DebugText)
+    KL_END_DESCRIBE(DebugText)
 
 };
 
@@ -234,9 +235,8 @@ public:
 
     /**
      * @brief Updates debug draws (removes expired ones).
-     * @param deltaTime Time since last update in seconds.
      */
-    void Update(float deltaTime);
+    void Update();
 
     /**
      * @brief Clears all debug draws.
@@ -365,7 +365,7 @@ public:
      * @param duration Duration in seconds.
      * @param scale Text scale.
      */
-    void DrawText(const std::string& text, const Vector3D& position, const Color& color = Color::White,
+    void DrawText(const UString& text, const Vector3D& position, const Color& color = Color::White,
                   float duration = 0.0f, float scale = 1.0f);
 
     /**
@@ -377,7 +377,7 @@ public:
      * @param duration Duration in seconds.
      * @param scale Text scale.
      */
-    void DrawScreenText(const std::string& text, float screenX, float screenY,
+    void DrawScreenText(const UString& text, float screenX, float screenY,
                         const Color& color = Color::White, float duration = 0.0f, float scale = 1.0f);
 
     // === Accessors for Rendering ===
@@ -402,27 +402,27 @@ public:
      */
     const std::vector<DebugText>& GetTexts() const { return texts; }
 
-    PTX_BEGIN_FIELDS(DebugDraw)
-        PTX_FIELD(DebugDraw, enabled, "Enabled", 0, 1)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(DebugDraw)
+        KL_FIELD(DebugDraw, enabled, "Enabled", 0, 1)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(DebugDraw)
-        PTX_METHOD_AUTO(DebugDraw, Enable, "Enable"),
-        PTX_METHOD_AUTO(DebugDraw, Disable, "Disable"),
-        PTX_METHOD_AUTO(DebugDraw, IsEnabled, "Is enabled"),
-        PTX_METHOD_AUTO(DebugDraw, Update, "Update"),
-        PTX_METHOD_AUTO(DebugDraw, Clear, "Clear"),
-        PTX_METHOD_AUTO(DebugDraw, DrawLine, "Draw line"),
-        PTX_METHOD_AUTO(DebugDraw, DrawSphere, "Draw sphere"),
-        PTX_METHOD_AUTO(DebugDraw, DrawBox, "Draw box"),
-        PTX_METHOD_AUTO(DebugDraw, DrawAxes, "Draw axes"),
-        PTX_METHOD_AUTO(DebugDraw, DrawGrid, "Draw grid"),
-        PTX_METHOD_AUTO(DebugDraw, DrawText, "Draw text")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(DebugDraw)
+        KL_METHOD_AUTO(DebugDraw, Enable, "Enable"),
+        KL_METHOD_AUTO(DebugDraw, Disable, "Disable"),
+        KL_METHOD_AUTO(DebugDraw, IsEnabled, "Is enabled"),
+        KL_METHOD_AUTO(DebugDraw, Update, "Update"),
+        KL_METHOD_AUTO(DebugDraw, Clear, "Clear"),
+        KL_METHOD_AUTO(DebugDraw, DrawLine, "Draw line"),
+        KL_METHOD_AUTO(DebugDraw, DrawSphere, "Draw sphere"),
+        KL_METHOD_AUTO(DebugDraw, DrawBox, "Draw box"),
+        KL_METHOD_AUTO(DebugDraw, DrawAxes, "Draw axes"),
+        KL_METHOD_AUTO(DebugDraw, DrawGrid, "Draw grid"),
+        KL_METHOD_AUTO(DebugDraw, DrawText, "Draw text")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(DebugDraw)
+    KL_BEGIN_DESCRIBE(DebugDraw)
         // Singleton, no constructors exposed
-    PTX_END_DESCRIBE(DebugDraw)
+    KL_END_DESCRIBE(DebugDraw)
 };
 
-} // namespace ptx
+} // namespace koilo

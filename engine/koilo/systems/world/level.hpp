@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file level.hpp
  * @brief Represents a game level/scene with entities and resources.
@@ -10,12 +11,12 @@
 
 #include <string>
 #include <vector>
-#include <memory>
 #include <unordered_map>
-#include "../../registry/reflect_macros.hpp"
-#include "../ecs/entity.hpp"
+#include <koilo/core/math/vector3d.hpp>
+#include <koilo/registry/reflect_macros.hpp>
+#include <koilo/ecs/entity.hpp>
 
-namespace ptx {
+namespace koilo {
 
 // Forward declarations
 class EntityManager;
@@ -216,25 +217,25 @@ public:
      */
     void Deactivate();
 
-    PTX_BEGIN_FIELDS(Level)
-        PTX_FIELD(Level, name, "Name", 0, 0),
-        PTX_FIELD(Level, filePath, "File path", 0, 0),
-        PTX_FIELD(Level, isStreamable, "Streamable", 0, 1),
-        PTX_FIELD(Level, streamingRadius, "Streaming radius", 0, 0)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(Level)
+        KL_FIELD(Level, name, "Name", 0, 0),
+        KL_FIELD(Level, filePath, "File path", 0, 0),
+        KL_FIELD(Level, isStreamable, "Streamable", 0, 1),
+        KL_FIELD(Level, streamingRadius, "Streaming radius", 0, 0)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(Level)
-        PTX_METHOD_AUTO(Level, GetName, "Get name"),
-        PTX_METHOD_AUTO(Level, SetName, "Set name"),
-        PTX_METHOD_AUTO(Level, GetEntityCount, "Get entity count"),
-        PTX_METHOD_AUTO(Level, IsStreamable, "Is streamable"),
-        PTX_METHOD_AUTO(Level, Load, "Load"),
-        PTX_METHOD_AUTO(Level, Unload, "Unload")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(Level)
+        KL_METHOD_AUTO(Level, GetName, "Get name"),
+        KL_METHOD_AUTO(Level, SetName, "Set name"),
+        KL_METHOD_AUTO(Level, GetEntityCount, "Get entity count"),
+        KL_METHOD_AUTO(Level, IsStreamable, "Is streamable"),
+        KL_METHOD_AUTO(Level, Load, "Load"),
+        KL_METHOD_AUTO(Level, Unload, "Unload")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(Level)
-        PTX_CTOR(Level, std::string)
-    PTX_END_DESCRIBE(Level)
+    KL_BEGIN_DESCRIBE(Level)
+        KL_CTOR(Level, std::string)
+    KL_END_DESCRIBE(Level)
 };
 
-} // namespace ptx
+} // namespace koilo

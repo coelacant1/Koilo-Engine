@@ -1,13 +1,17 @@
-#include <ptx/systems/render/core/cameralayout.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/systems/scene/camera/cameralayout.hpp>
 
-CameraLayout::CameraLayout(ForwardAxis forwardAxis, UpAxis upAxis) {
+
+namespace koilo {
+
+koilo::CameraLayout::CameraLayout(ForwardAxis forwardAxis, UpAxis upAxis) {
     this->forwardAxis = forwardAxis;
     this->upAxis = upAxis;
 
     CalculateTransform();
 }
 
-bool CameraLayout::VerifyTransform() {
+bool koilo::CameraLayout::VerifyTransform() {
     if (forwardAxis == XForward || forwardAxis == XNForward) {
         return !(upAxis == XUp || upAxis == XNUp);
     } else if (forwardAxis == YForward || forwardAxis == YNForward) {
@@ -17,7 +21,7 @@ bool CameraLayout::VerifyTransform() {
     }
 }
 
-void CameraLayout::CalculateTransform() {
+void koilo::CameraLayout::CalculateTransform() {
     Vector3D upVector, forwardVector, rightVector;
 
     if (VerifyTransform()) {
@@ -30,15 +34,15 @@ void CameraLayout::CalculateTransform() {
     // else bad transform
 }
 
-CameraLayout::ForwardAxis CameraLayout::GetForwardAxis() {
+koilo::CameraLayout::ForwardAxis koilo::CameraLayout::GetForwardAxis() {
     return forwardAxis;
 }
 
-CameraLayout::UpAxis CameraLayout::GetUpAxis() {
+koilo::CameraLayout::UpAxis koilo::CameraLayout::GetUpAxis() {
     return upAxis;
 }
 
-Vector3D CameraLayout::GetForwardVector() {
+Vector3D koilo::CameraLayout::GetForwardVector() {
     Vector3D forwardVector;
 
     switch (forwardAxis) {
@@ -53,7 +57,7 @@ Vector3D CameraLayout::GetForwardVector() {
     return forwardVector;
 }
 
-Vector3D CameraLayout::GetUpVector() {
+Vector3D koilo::CameraLayout::GetUpVector() {
     Vector3D upVector;
 
     switch (upAxis) {
@@ -68,6 +72,8 @@ Vector3D CameraLayout::GetUpVector() {
     return upVector;
 }
 
-Quaternion CameraLayout::GetRotation() {
+Quaternion koilo::CameraLayout::GetRotation() {
     return rotation;
 }
+
+} // namespace koilo

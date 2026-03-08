@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
 """
 Unit tests for generatereflectionentry.py
 
 Tests the reflection entry generation system, including:
-- PTX_BEGIN_DESCRIBE detection
+- KL_BEGIN_DESCRIBE detection
 - Namespace qualification
 - Nested class detection
 - Private nested class filtering
@@ -17,7 +18,8 @@ from pathlib import Path
 import sys
 
 # Add scripts directory to path
-SCRIPT_DIR = Path(__file__).resolve().parent.parent
+REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+SCRIPT_DIR = REPO_ROOT / "scripts"
 sys.path.insert(0, str(SCRIPT_DIR))
 
 from generatereflectionentry import find_candidates, qualify_name, build_class_list, write_output
@@ -28,7 +30,7 @@ from generatereflectionentry import find_candidates, qualify_name, build_class_l
 # ============================================================================
 
 class TestCandidateFinding(unittest.TestCase):
-    """Test finding classes with PTX_BEGIN_DESCRIBE"""
+    """Test finding classes with KL_BEGIN_DESCRIBE"""
 
     def setUp(self):
         self.temp_dir = tempfile.mkdtemp()
@@ -36,16 +38,16 @@ class TestCandidateFinding(unittest.TestCase):
         self.root = Path(self.temp_dir)
 
     def test_find_simple_class(self):
-        """Test finding simple class with PTX_BEGIN_DESCRIBE"""
+        """Test finding simple class with KL_BEGIN_DESCRIBE"""
         header = self.root / "vector.hpp"
         header.write_text("""
 class Vector3D {
 public:
     float x, y, z;
 
-    PTX_BEGIN_DESCRIBE(Vector3D)
-        PTX_FIELD(Vector3D, x, "X", -100.0f, 100.0f)
-    PTX_END_DESCRIBE(Vector3D)
+    KL_BEGIN_DESCRIBE(Vector3D)
+        KL_FIELD(Vector3D, x, "X", -100.0f, 100.0f)
+    KL_END_DESCRIBE(Vector3D)
 };
 """)
 
@@ -60,15 +62,15 @@ public:
         """Test finding multiple classes"""
         (self.root / "vector.hpp").write_text("""
 class Vector2D {
-    PTX_BEGIN_DESCRIBE(Vector2D)
-    PTX_END_DESCRIBE(Vector2D)
+    KL_BEGIN_DESCRIBE(Vector2D)
+    KL_END_DESCRIBE(Vector2D)
 };
 """)
 
         (self.root / "matrix.hpp").write_text("""
 class Matrix {
-    PTX_BEGIN_DESCRIBE(Matrix)
-    PTX_END_DESCRIBE(Matrix)
+    KL_BEGIN_DESCRIBE(Matrix)
+    KL_END_DESCRIBE(Matrix)
 };
 """)
 
@@ -86,8 +88,8 @@ class Matrix {
 
         (subdir / "vector.hpp").write_text("""
 class Vector3D {
-    PTX_BEGIN_DESCRIBE(Vector3D)
-    PTX_END_DESCRIBE(Vector3D)
+    KL_BEGIN_DESCRIBE(Vector3D)
+    KL_END_DESCRIBE(Vector3D)
 };
 """)
 
@@ -100,16 +102,16 @@ class Vector3D {
         """Test that template files are excluded"""
         (self.root / "concrete.hpp").write_text("""
 class Concrete {
-    PTX_BEGIN_DESCRIBE(Concrete)
-    PTX_END_DESCRIBE(Concrete)
+    KL_BEGIN_DESCRIBE(Concrete)
+    KL_END_DESCRIBE(Concrete)
 };
 """)
 
         (self.root / "template.hpp").write_text("""
 template <typename T>
 class Template {
-    PTX_BEGIN_DESCRIBE(Template)
-    PTX_END_DESCRIBE(Template)
+    KL_BEGIN_DESCRIBE(Template)
+    KL_END_DESCRIBE(Template)
 };
 """)
 
@@ -122,8 +124,8 @@ class Template {
         """Test that files with virtual methods are excluded"""
         (self.root / "concrete.hpp").write_text("""
 class Concrete {
-    PTX_BEGIN_DESCRIBE(Concrete)
-    PTX_END_DESCRIBE(Concrete)
+    KL_BEGIN_DESCRIBE(Concrete)
+    KL_END_DESCRIBE(Concrete)
 };
 """)
 
@@ -131,8 +133,8 @@ class Concrete {
 class Abstract {
     virtual void DoWork() = 0;
 
-    PTX_BEGIN_DESCRIBE(Abstract)
-    PTX_END_DESCRIBE(Abstract)
+    KL_BEGIN_DESCRIBE(Abstract)
+    KL_END_DESCRIBE(Abstract)
 };
 """)
 
@@ -146,13 +148,13 @@ class Abstract {
         header = self.root / "test.hpp"
         header.write_text("""
 class MyClass {
-    PTX_BEGIN_DESCRIBE(MyClass)
-    PTX_END_DESCRIBE(MyClass)
+    KL_BEGIN_DESCRIBE(MyClass)
+    KL_END_DESCRIBE(MyClass)
 };
 
 enum class ColorType {
-    PTX_BEGIN_DESCRIBE(ENUM)  // Should be ignored
-    PTX_END_DESCRIBE(ENUM)
+    KL_BEGIN_DESCRIBE(ENUM)  // Should be ignored
+    KL_END_DESCRIBE(ENUM)
 };
 """)
 
@@ -183,7 +185,7 @@ public:
     def test_qualify_with_namespace(self):
         """Test class in namespace"""
         txt = """
-namespace ptx {
+namespace koilo {
 
 class Vector3D {
 public:
@@ -193,12 +195,12 @@ public:
 }
 """
         result = qualify_name("Vector3D", txt)
-        self.assertEqual(result, "ptx::Vector3D")
+        self.assertEqual(result, "koilo::Vector3D")
 
     def test_qualify_with_nested_namespaces(self):
         """Test class in nested namespaces"""
         txt = """
-namespace ptx {
+namespace koilo {
 namespace core {
 namespace math {
 
@@ -212,15 +214,15 @@ public:
 }
 """
         result = qualify_name("Vector3D", txt)
-        self.assertEqual(result, "ptx::core::math::Vector3D")
+        self.assertEqual(result, "koilo::core::math::Vector3D")
 
     def test_qualify_already_qualified(self):
         """Test that already qualified names are returned as-is"""
         txt = """
 class Vector3D {};
 """
-        result = qualify_name("ptx::Vector3D", txt)
-        self.assertEqual(result, "ptx::Vector3D")
+        result = qualify_name("koilo::Vector3D", txt)
+        self.assertEqual(result, "koilo::Vector3D")
 
     def test_qualify_nested_class_public(self):
         """Test nested class in public section"""
@@ -277,7 +279,7 @@ class MyClass {
         """Test that @namespace in comments is ignored"""
         txt = """
 /**
- * @namespace ptx
+ * @namespace koilo
  */
 class MyClass {
     int value;
@@ -290,7 +292,7 @@ class MyClass {
     def test_qualify_multiple_classes_same_namespace(self):
         """Test qualifying one of multiple classes in same namespace"""
         txt = """
-namespace ptx {
+namespace koilo {
 
 class Vector2D {
     float x, y;
@@ -303,7 +305,7 @@ class Vector3D {
 }
 """
         result = qualify_name("Vector3D", txt)
-        self.assertEqual(result, "ptx::Vector3D")
+        self.assertEqual(result, "koilo::Vector3D")
 
 
 # ============================================================================
@@ -322,15 +324,15 @@ class TestClassListBuilding(unittest.TestCase):
         """Test building list from simple classes"""
         (self.root / "vector.hpp").write_text("""
 class Vector3D {
-    PTX_BEGIN_DESCRIBE(Vector3D)
-    PTX_END_DESCRIBE(Vector3D)
+    KL_BEGIN_DESCRIBE(Vector3D)
+    KL_END_DESCRIBE(Vector3D)
 };
 """)
 
         (self.root / "matrix.hpp").write_text("""
 class Matrix {
-    PTX_BEGIN_DESCRIBE(Matrix)
-    PTX_END_DESCRIBE(Matrix)
+    KL_BEGIN_DESCRIBE(Matrix)
+    KL_END_DESCRIBE(Matrix)
 };
 """)
 
@@ -343,11 +345,11 @@ class Matrix {
     def test_build_list_with_namespaces(self):
         """Test building list with namespace qualification"""
         (self.root / "vector.hpp").write_text("""
-namespace ptx {
+namespace koilo {
 
 class Vector3D {
-    PTX_BEGIN_DESCRIBE(Vector3D)
-    PTX_END_DESCRIBE(Vector3D)
+    KL_BEGIN_DESCRIBE(Vector3D)
+    KL_END_DESCRIBE(Vector3D)
 };
 
 }
@@ -356,7 +358,7 @@ class Vector3D {
         classes = build_class_list(self.root)
 
         self.assertEqual(len(classes), 1)
-        self.assertIn("ptx::Vector3D", classes)
+        self.assertIn("koilo::Vector3D", classes)
 
     def test_build_list_excludes_private_nested(self):
         """Test that private nested classes are excluded"""
@@ -364,14 +366,14 @@ class Vector3D {
 class Shape {
 public:
     class PublicNested {
-        PTX_BEGIN_DESCRIBE(PublicNested)
-        PTX_END_DESCRIBE(PublicNested)
+        KL_BEGIN_DESCRIBE(PublicNested)
+        KL_END_DESCRIBE(PublicNested)
     };
 
 private:
     class PrivateNested {
-        PTX_BEGIN_DESCRIBE(PrivateNested)
-        PTX_END_DESCRIBE(PrivateNested)
+        KL_BEGIN_DESCRIBE(PrivateNested)
+        KL_END_DESCRIBE(PrivateNested)
     };
 };
 """)
@@ -389,22 +391,22 @@ private:
         """Test that class list is sorted"""
         (self.root / "zebra.hpp").write_text("""
 class Zebra {
-    PTX_BEGIN_DESCRIBE(Zebra)
-    PTX_END_DESCRIBE(Zebra)
+    KL_BEGIN_DESCRIBE(Zebra)
+    KL_END_DESCRIBE(Zebra)
 };
 """)
 
         (self.root / "alpha.hpp").write_text("""
 class Alpha {
-    PTX_BEGIN_DESCRIBE(Alpha)
-    PTX_END_DESCRIBE(Alpha)
+    KL_BEGIN_DESCRIBE(Alpha)
+    KL_END_DESCRIBE(Alpha)
 };
 """)
 
         (self.root / "beta.hpp").write_text("""
 class Beta {
-    PTX_BEGIN_DESCRIBE(Beta)
-    PTX_END_DESCRIBE(Beta)
+    KL_BEGIN_DESCRIBE(Beta)
+    KL_END_DESCRIBE(Beta)
 };
 """)
 
@@ -419,15 +421,15 @@ class Beta {
         # Create two files with same class (shouldn't happen in practice)
         (self.root / "vector1.hpp").write_text("""
 class Vector3D {
-    PTX_BEGIN_DESCRIBE(Vector3D)
-    PTX_END_DESCRIBE(Vector3D)
+    KL_BEGIN_DESCRIBE(Vector3D)
+    KL_END_DESCRIBE(Vector3D)
 };
 """)
 
         (self.root / "vector2.hpp").write_text("""
 class Vector3D {
-    PTX_BEGIN_DESCRIBE(Vector3D)
-    PTX_END_DESCRIBE(Vector3D)
+    KL_BEGIN_DESCRIBE(Vector3D)
+    KL_END_DESCRIBE(Vector3D)
 };
 """)
 
@@ -461,7 +463,7 @@ class TestOutputGeneration(unittest.TestCase):
 
         # Check structure
         self.assertIn("Auto-generated", content)
-        self.assertIn("#include <ptx/ptxall.hpp>", content)
+        self.assertIn("#include <koilo/koiloall.hpp>", content)
         self.assertIn("struct _AutoDescribe", content)
 
         # Check Describe() calls
@@ -472,14 +474,14 @@ class TestOutputGeneration(unittest.TestCase):
     def test_write_output_with_namespaces(self):
         """Test writing with namespace-qualified classes"""
         output = Path(self.temp_dir) / "reflection_entry_gen.cpp"
-        classes = ["ptx::Vector3D", "ptx::core::Matrix"]
+        classes = ["koilo::Vector3D", "koilo::core::Matrix"]
 
         write_output(output, classes)
 
         content = output.read_text()
 
-        self.assertIn("(void)ptx::Vector3D::Describe();", content)
-        self.assertIn("(void)ptx::core::Matrix::Describe();", content)
+        self.assertIn("(void)koilo::Vector3D::Describe();", content)
+        self.assertIn("(void)koilo::core::Matrix::Describe();", content)
 
     def test_write_output_with_nested_classes(self):
         """Test writing with nested classes"""
@@ -608,7 +610,7 @@ public:
     def test_namespace_with_colons_in_declaration(self):
         """Test namespace declared with :: notation"""
         txt = """
-namespace ptx::core {
+namespace koilo::core {
 
 class Vector3D {
     float x, y, z;
@@ -617,9 +619,9 @@ class Vector3D {
 }
 """
         result = qualify_name("Vector3D", txt)
-        # Should handle ptx::core as namespace segments
+        # Should handle koilo::core as namespace segments
         self.assertIn("Vector3D", result)
-        self.assertIn("ptx", result)
+        self.assertIn("koiloscript", result)
         self.assertIn("core", result)
 
 

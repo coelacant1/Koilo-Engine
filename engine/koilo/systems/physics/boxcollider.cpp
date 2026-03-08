@@ -1,21 +1,29 @@
-#include <ptx/systems/physics/boxcollider.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/systems/physics/boxcollider.hpp>
 #include <algorithm>
 #include <limits>
 
-namespace ptx {
+namespace koilo {
 
-BoxCollider::BoxCollider()
+koilo::BoxCollider::BoxCollider()
     : Collider(ColliderType::Box), Cube(Vector3D(0, 0, 0), Vector3D(1, 1, 1)) {
+    position = Vector3D(0, 0, 0);
 }
 
-BoxCollider::BoxCollider(const Vector3D& center, const Vector3D& size)
+koilo::BoxCollider::BoxCollider(const Vector3D& center, const Vector3D& size)
     : Collider(ColliderType::Box), Cube(center, size) {
+    position = center;
 }
 
-BoxCollider::~BoxCollider() {
+koilo::BoxCollider::~BoxCollider() {
 }
 
-bool BoxCollider::Raycast(const Vector3D& origin, const Vector3D& direction,
+bool koilo::BoxCollider::Raycast(const Vector3D& origin, const Vector3D& direction,
+                          RaycastHit& hit, float maxDistance) {
+    return Raycast(Ray(origin, direction), hit, maxDistance);
+}
+
+bool koilo::BoxCollider::Raycast(const Ray& ray,
                           RaycastHit& hit, float maxDistance) {
     // AABB ray intersection algorithm (slab method)
     Vector3D min = GetMinimum();
@@ -25,38 +33,38 @@ bool BoxCollider::Raycast(const Vector3D& origin, const Vector3D& direction,
     float tmax = std::numeric_limits<float>::infinity();
 
     // X-axis slab
-    if (std::abs(direction.x) > 1e-6f) {
-        float tx1 = (min.x - origin.x) / direction.x;
-        float tx2 = (max.x - origin.x) / direction.x;
+    if (std::abs(ray.direction.X) > 1e-6f) {
+        float tx1 = (min.X - ray.origin.X) / ray.direction.X;
+        float tx2 = (max.X - ray.origin.X) / ray.direction.X;
         tmin = std::max(tmin, std::min(tx1, tx2));
         tmax = std::min(tmax, std::max(tx1, tx2));
     } else {
-        // Ray parallel to slab, check if origin is within slab
-        if (origin.x < min.x || origin.x > max.x) {
+        // Ray parallel to slab, check if ray.origin is within slab
+        if (ray.origin.X < min.X || ray.origin.X > max.X) {
             return false;
         }
     }
 
     // Y-axis slab
-    if (std::abs(direction.y) > 1e-6f) {
-        float ty1 = (min.y - origin.y) / direction.y;
-        float ty2 = (max.y - origin.y) / direction.y;
+    if (std::abs(ray.direction.Y) > 1e-6f) {
+        float ty1 = (min.Y - ray.origin.Y) / ray.direction.Y;
+        float ty2 = (max.Y - ray.origin.Y) / ray.direction.Y;
         tmin = std::max(tmin, std::min(ty1, ty2));
         tmax = std::min(tmax, std::max(ty1, ty2));
     } else {
-        if (origin.y < min.y || origin.y > max.y) {
+        if (ray.origin.Y < min.Y || ray.origin.Y > max.Y) {
             return false;
         }
     }
 
     // Z-axis slab
-    if (std::abs(direction.z) > 1e-6f) {
-        float tz1 = (min.z - origin.z) / direction.z;
-        float tz2 = (max.z - origin.z) / direction.z;
+    if (std::abs(ray.direction.Z) > 1e-6f) {
+        float tz1 = (min.Z - ray.origin.Z) / ray.direction.Z;
+        float tz2 = (max.Z - ray.origin.Z) / ray.direction.Z;
         tmin = std::max(tmin, std::min(tz1, tz2));
         tmax = std::min(tmax, std::max(tz1, tz2));
     } else {
-        if (origin.z < min.z || origin.z > max.z) {
+        if (ray.origin.Z < min.Z || ray.origin.Z > max.Z) {
             return false;
         }
     }
@@ -71,7 +79,7 @@ bool BoxCollider::Raycast(const Vector3D& origin, const Vector3D& direction,
 
     // Fill hit information
     hit.distance = t;
-    hit.point = origin + direction * t;
+    hit.point = ray.origin + ray.direction * t;
     hit.collider = this;
 
     // Calculate normal based on which face was hit
@@ -80,47 +88,47 @@ bool BoxCollider::Raycast(const Vector3D& origin, const Vector3D& direction,
     Vector3D halfSize = GetSize() * 0.5f;
 
     // Find which axis has the largest relative distance
-    Vector3D absLocal(std::abs(localHit.x / halfSize.x),
-                      std::abs(localHit.y / halfSize.y),
-                      std::abs(localHit.z / halfSize.z));
+    Vector3D absLocal(std::abs(localHit.X / halfSize.X),
+                      std::abs(localHit.Y / halfSize.Y),
+                      std::abs(localHit.Z / halfSize.Z));
 
-    if (absLocal.x > absLocal.y && absLocal.x > absLocal.z) {
-        hit.normal = Vector3D(localHit.x > 0 ? 1.0f : -1.0f, 0, 0);
-    } else if (absLocal.y > absLocal.z) {
-        hit.normal = Vector3D(0, localHit.y > 0 ? 1.0f : -1.0f, 0);
+    if (absLocal.X > absLocal.Y && absLocal.X > absLocal.Z) {
+        hit.normal = Vector3D(localHit.X > 0 ? 1.0f : -1.0f, 0, 0);
+    } else if (absLocal.Y > absLocal.Z) {
+        hit.normal = Vector3D(0, localHit.Y > 0 ? 1.0f : -1.0f, 0);
     } else {
-        hit.normal = Vector3D(0, 0, localHit.z > 0 ? 1.0f : -1.0f);
+        hit.normal = Vector3D(0, 0, localHit.Z > 0 ? 1.0f : -1.0f);
     }
 
     return true;
 }
 
-bool BoxCollider::ContainsPoint(const Vector3D& point) {
+bool koilo::BoxCollider::ContainsPoint(const Vector3D& point) {
     Vector3D min = GetMinimum();
     Vector3D max = GetMaximum();
 
-    return (point.x >= min.x && point.x <= max.x &&
-            point.y >= min.y && point.y <= max.y &&
-            point.z >= min.z && point.z <= max.z);
+    return (point.X >= min.X && point.X <= max.X &&
+            point.Y >= min.Y && point.Y <= max.Y &&
+            point.Z >= min.Z && point.Z <= max.Z);
 }
 
-Vector3D BoxCollider::ClosestPoint(const Vector3D& point) {
+Vector3D koilo::BoxCollider::ClosestPoint(const Vector3D& point) {
     Vector3D min = GetMinimum();
     Vector3D max = GetMaximum();
 
     return Vector3D(
-        std::clamp(point.x, min.x, max.x),
-        std::clamp(point.y, min.y, max.y),
-        std::clamp(point.z, min.z, max.z)
+        std::clamp(point.X, min.X, max.X),
+        std::clamp(point.Y, min.Y, max.Y),
+        std::clamp(point.Z, min.Z, max.Z)
     );
 }
 
-Vector3D BoxCollider::GetPosition() const {
+Vector3D koilo::BoxCollider::GetPosition() const {
     return position;
 }
 
-void BoxCollider::SetPosition(const Vector3D& pos) {
+void koilo::BoxCollider::SetPosition(const Vector3D& pos) {
     position = pos;
 }
 
-} // namespace ptx
+} // namespace koilo

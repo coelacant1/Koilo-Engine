@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
 """
-Unit tests for UpdatePTXRegistry.py
+Unit tests for UpdateKoiloRegistry.py
 
 Tests the reflection macro generation functionality including:
 - Adding macros to files without them
@@ -18,11 +19,12 @@ import shutil
 from pathlib import Path
 
 # Add scripts directory to path
-SCRIPT_DIR = Path(__file__).resolve().parent.parent
+REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+SCRIPT_DIR = REPO_ROOT / "scripts"
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from updateptxregistry import (
-    strip_ptx_blocks,
+from updatekoiloregistry import (
+    strip_koilo_blocks,
     find_comment_spans,
     in_comment,
     ensure_reflect_include,
@@ -69,34 +71,34 @@ class TestCommentDetection(unittest.TestCase):
 
 
 class TestMacroManipulation(unittest.TestCase):
-    """Test PTX macro manipulation"""
+    """Test Koilo macro manipulation"""
 
-    def test_strip_ptx_blocks(self):
+    def test_strip_koilo_blocks(self):
         src = """
 class Foo {
-    PTX_BEGIN_FIELDS(Foo)
-        PTX_FIELD(Foo, value, "Value", 0, 100),
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(Foo)
+        KL_FIELD(Foo, value, "Value", 0, 100),
+    KL_END_FIELDS
 
     int value;
 };
 """
-        result = strip_ptx_blocks(src)
-        self.assertNotIn("PTX_BEGIN_FIELDS", result)
-        self.assertNotIn("PTX_END_FIELDS", result)
+        result = strip_koilo_blocks(src)
+        self.assertNotIn("KL_BEGIN_FIELDS", result)
+        self.assertNotIn("KL_END_FIELDS", result)
         self.assertIn("int value;", result)
 
     def test_validate_macro_blocks_valid(self):
         src = """
 class Foo {
-    PTX_BEGIN_FIELDS(Foo)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(Foo)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(Foo)
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(Foo)
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(Foo)
-    PTX_END_DESCRIBE(Foo)
+    KL_BEGIN_DESCRIBE(Foo)
+    KL_END_DESCRIBE(Foo)
 };
 """
         # Should not raise
@@ -105,9 +107,9 @@ class Foo {
     def test_validate_macro_blocks_mismatched(self):
         src = """
 class Foo {
-    PTX_BEGIN_FIELDS(Foo)
-    PTX_BEGIN_METHODS(Foo)
-    PTX_END_METHODS
+    KL_BEGIN_FIELDS(Foo)
+    KL_BEGIN_METHODS(Foo)
+    KL_END_METHODS
 };
 """
         with self.assertRaises(RuntimeError) as ctx:
@@ -325,7 +327,7 @@ public:
 
 
 class TestBlockGeneration(unittest.TestCase):
-    """Test PTX block generation"""
+    """Test Koilo block generation"""
 
     def test_generate_simple_blocks(self):
         ci = ClassInfo(
@@ -343,17 +345,17 @@ class TestBlockGeneration(unittest.TestCase):
 
         blocks = gen_blocks(ci)
 
-        self.assertIn("PTX_BEGIN_FIELDS(TestClass)", blocks)
-        self.assertIn("PTX_END_FIELDS", blocks)
-        self.assertIn("PTX_FIELD(TestClass, value,", blocks)
+        self.assertIn("KL_BEGIN_FIELDS(TestClass)", blocks)
+        self.assertIn("KL_END_FIELDS", blocks)
+        self.assertIn("KL_FIELD(TestClass, value,", blocks)
 
-        self.assertIn("PTX_BEGIN_METHODS(TestClass)", blocks)
-        self.assertIn("PTX_END_METHODS", blocks)
-        self.assertIn("PTX_METHOD_AUTO(TestClass, GetValue,", blocks)
+        self.assertIn("KL_BEGIN_METHODS(TestClass)", blocks)
+        self.assertIn("KL_END_METHODS", blocks)
+        self.assertIn("KL_METHOD_AUTO(TestClass, GetValue,", blocks)
 
-        self.assertIn("PTX_BEGIN_DESCRIBE(TestClass)", blocks)
-        self.assertIn("PTX_END_DESCRIBE(TestClass)", blocks)
-        self.assertIn("PTX_CTOR0(TestClass)", blocks)
+        self.assertIn("KL_BEGIN_DESCRIBE(TestClass)", blocks)
+        self.assertIn("KL_END_DESCRIBE(TestClass)", blocks)
+        self.assertIn("KL_CTOR0(TestClass)", blocks)
 
     def test_generate_overloaded_methods(self):
         ci = ClassInfo(
@@ -375,7 +377,7 @@ class TestBlockGeneration(unittest.TestCase):
         blocks = gen_blocks(ci)
 
         # Should use overload macros
-        self.assertIn("PTX_METHOD_OVLD", blocks)
+        self.assertIn("KL_METHOD_OVLD", blocks)
 
     def test_generate_static_methods(self):
         ci = ClassInfo(
@@ -395,7 +397,7 @@ class TestBlockGeneration(unittest.TestCase):
 
         blocks = gen_blocks(ci)
 
-        self.assertIn("PTX_SMETHOD_AUTO(TestClass::Create,", blocks)
+        self.assertIn("KL_SMETHOD_AUTO(TestClass::Create,", blocks)
 
 
 class TestIncludeInjection(unittest.TestCase):
@@ -440,7 +442,7 @@ class TestEndToEndTransformation(unittest.TestCase):
         self.addCleanup(shutil.rmtree, self.temp_dir)
 
     def test_add_macros_to_simple_class(self):
-        """Test adding PTX macros to a class without them"""
+        """Test adding Koilo macros to a class without them"""
 
         # Create a simple header file
         header_content = """#pragma once
@@ -469,15 +471,15 @@ public:
         blocks = gen_blocks(ci)
 
         # Verify generated blocks
-        self.assertIn("PTX_BEGIN_FIELDS(SimpleClass)", blocks)
-        self.assertIn("PTX_FIELD(SimpleClass, value,", blocks)
-        self.assertIn("PTX_METHOD_AUTO(SimpleClass, GetValue,", blocks)
-        self.assertIn("PTX_METHOD_AUTO(SimpleClass, SetValue,", blocks)
-        # Constructor may be PTX_CTOR or PTX_CTOR(SimpleClass, int)
-        self.assertTrue("PTX_CTOR" in blocks)
+        self.assertIn("KL_BEGIN_FIELDS(SimpleClass)", blocks)
+        self.assertIn("KL_FIELD(SimpleClass, value,", blocks)
+        self.assertIn("KL_METHOD_AUTO(SimpleClass, GetValue,", blocks)
+        self.assertIn("KL_METHOD_AUTO(SimpleClass, SetValue,", blocks)
+        # Constructor may be KL_CTOR or KL_CTOR(SimpleClass, int)
+        self.assertTrue("KL_CTOR" in blocks)
 
     def test_update_existing_macros(self):
-        """Test updating existing PTX macros when class changes"""
+        """Test updating existing Koilo macros when class changes"""
 
         # Header with existing macros (missing a method)
         header_content = """#pragma once
@@ -491,18 +493,18 @@ public:
     void SetValue(int v);
     void NewMethod();  // This is new!
 
-    PTX_BEGIN_FIELDS(UpdateClass)
-        PTX_FIELD(UpdateClass, value, "Value", 0, 0),
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(UpdateClass)
+        KL_FIELD(UpdateClass, value, "Value", 0, 0),
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(UpdateClass)
-        PTX_METHOD_AUTO(UpdateClass, GetValue, "Get value"),
-        PTX_METHOD_AUTO(UpdateClass, SetValue, "Set value")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(UpdateClass)
+        KL_METHOD_AUTO(UpdateClass, GetValue, "Get value"),
+        KL_METHOD_AUTO(UpdateClass, SetValue, "Set value")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(UpdateClass)
-        PTX_CTOR0(UpdateClass)
-    PTX_END_DESCRIBE(UpdateClass)
+    KL_BEGIN_DESCRIBE(UpdateClass)
+        KL_CTOR0(UpdateClass)
+    KL_END_DESCRIBE(UpdateClass)
 };
 """
 

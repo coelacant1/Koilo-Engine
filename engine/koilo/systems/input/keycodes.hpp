@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file keycodes.hpp
  * @brief Standard keyboard key codes for the input system.
@@ -9,9 +10,9 @@
 #pragma once
 
 #include <cstdint>
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
 
-namespace ptx {
+namespace koilo {
 
 /**
  * @enum KeyCode
@@ -93,19 +94,6 @@ enum class KeyCode : uint16_t {
 
     // Max key code
     MaxKeyCode = 512
-
-    PTX_BEGIN_FIELDS(KeyCode)
-        /* No reflected fields. */
-    PTX_END_FIELDS
-
-    PTX_BEGIN_METHODS(KeyCode)
-        /* No reflected methods. */
-    PTX_END_METHODS
-
-    PTX_BEGIN_DESCRIBE(KeyCode)
-        /* No reflected ctors. */
-    PTX_END_DESCRIBE(KeyCode)
-
 };
 
 /**
@@ -119,19 +107,6 @@ enum class MouseButton : uint8_t {
     X1 = 3,
     X2 = 4,
     MaxButton = 8
-
-    PTX_BEGIN_FIELDS(MouseButton)
-        /* No reflected fields. */
-    PTX_END_FIELDS
-
-    PTX_BEGIN_METHODS(MouseButton)
-        /* No reflected methods. */
-    PTX_END_METHODS
-
-    PTX_BEGIN_DESCRIBE(MouseButton)
-        /* No reflected ctors. */
-    PTX_END_DESCRIBE(MouseButton)
-
 };
 
 /**
@@ -155,19 +130,6 @@ enum class GamepadButton : uint8_t {
     DPadLeft = 13,
     DPadRight = 14,
     MaxButton = 16
-
-    PTX_BEGIN_FIELDS(GamepadButton)
-        /* No reflected fields. */
-    PTX_END_FIELDS
-
-    PTX_BEGIN_METHODS(GamepadButton)
-        /* No reflected methods. */
-    PTX_END_METHODS
-
-    PTX_BEGIN_DESCRIBE(GamepadButton)
-        /* No reflected ctors. */
-    PTX_END_DESCRIBE(GamepadButton)
-
 };
 
 /**
@@ -182,19 +144,35 @@ enum class GamepadAxis : uint8_t {
     LeftTrigger = 4,
     RightTrigger = 5,
     MaxAxis = 6
-
-    PTX_BEGIN_FIELDS(GamepadAxis)
-        /* No reflected fields. */
-    PTX_END_FIELDS
-
-    PTX_BEGIN_METHODS(GamepadAxis)
-        /* No reflected methods. */
-    PTX_END_METHODS
-
-    PTX_BEGIN_DESCRIBE(GamepadAxis)
-        /* No reflected ctors. */
-    PTX_END_DESCRIBE(GamepadAxis)
-
 };
 
-} // namespace ptx
+/**
+ * @class InputCodes
+ * @brief Wrapper class for runtime reflection of input enums.
+ */
+class InputCodes {
+public:
+    KeyCode keyCode = KeyCode::Unknown;
+    MouseButton mouseButton = MouseButton::Left;
+    GamepadButton gamepadButton = GamepadButton::A;
+    GamepadAxis gamepadAxis = GamepadAxis::LeftX;
+
+    InputCodes() = default;
+    
+    KL_BEGIN_FIELDS(InputCodes)
+        KL_FIELD(InputCodes, keyCode, "Key code", 0, 512),
+        KL_FIELD(InputCodes, mouseButton, "Mouse button", 0, 8),
+        KL_FIELD(InputCodes, gamepadButton, "Gamepad button", 0, 16),
+        KL_FIELD(InputCodes, gamepadAxis, "Gamepad axis", 0, 6)
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(InputCodes)
+        /* No reflected methods. */
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(InputCodes)
+        KL_CTOR0(InputCodes)
+    KL_END_DESCRIBE(InputCodes)
+};
+
+} // namespace koilo

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testkalmanfilter.cpp
  * @brief Implementation of KalmanFilter unit tests.
@@ -6,6 +7,7 @@
 #include "testkalmanfilter.hpp"
 #include <cmath>
 
+using namespace koilo;
 // ========== Constructor Tests ==========
 
 void TestKalmanFilter::TestParameterizedConstructor() {

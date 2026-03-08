@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testwait.hpp
  * @brief Unit tests for the Wait class.
@@ -12,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/core/time/wait.hpp>
+#include <koilo/core/time/wait.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

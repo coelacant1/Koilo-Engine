@@ -1,25 +1,26 @@
-#include <ptx/resources/resourcemanager.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/resources/resourcemanager.hpp>
 #include <iostream>
 #include <sys/stat.h>
 
-namespace ptx {
+namespace koilo {
 
 // Static instance
-ResourceManager* ResourceManager::instance = nullptr;
+ResourceManager* koilo::ResourceManager::instance = nullptr;
 
 // Constructor
-ResourceManager::ResourceManager()
+koilo::ResourceManager::ResourceManager()
     : nextID(0), generation(0), hotReloadEnabled(false),
       totalMemoryUsed(0), memoryLimit(0) {
 }
 
 // Destructor
-ResourceManager::~ResourceManager() {
+koilo::ResourceManager::~ResourceManager() {
     UnloadAllResources();
 }
 
 // Singleton instance
-ResourceManager& ResourceManager::GetInstance() {
+ResourceManager& koilo::ResourceManager::GetInstance() {
     if (instance == nullptr) {
         instance = new ResourceManager();
     }
@@ -28,7 +29,7 @@ ResourceManager& ResourceManager::GetInstance() {
 
 // === Resource Unloading ===
 
-void ResourceManager::UnloadAllResources() {
+void koilo::ResourceManager::UnloadAllResources() {
     std::lock_guard<std::mutex> lock(cacheMutex);
 
     // Unload all resources in all type caches
@@ -52,7 +53,7 @@ void ResourceManager::UnloadAllResources() {
 
 // === Hot Reload ===
 
-void ResourceManager::CheckHotReload() {
+void koilo::ResourceManager::CheckHotReload() {
     if (!hotReloadEnabled) return;
 
     std::lock_guard<std::mutex> lock(cacheMutex);
@@ -98,7 +99,7 @@ void ResourceManager::CheckHotReload() {
 
 // === Memory Management ===
 
-size_t ResourceManager::GarbageCollect() {
+size_t koilo::ResourceManager::GarbageCollect() {
     std::lock_guard<std::mutex> lock(cacheMutex);
 
     size_t freedMemory = 0;
@@ -133,7 +134,7 @@ size_t ResourceManager::GarbageCollect() {
     return freedMemory;
 }
 
-void ResourceManager::UpdateMemoryTracking() {
+void koilo::ResourceManager::UpdateMemoryTracking() {
     std::lock_guard<std::mutex> lock(cacheMutex);
 
     totalMemoryUsed = 0;
@@ -146,7 +147,7 @@ void ResourceManager::UpdateMemoryTracking() {
 
 // === Statistics ===
 
-size_t ResourceManager::GetCachedResourceCount() const {
+size_t koilo::ResourceManager::GetCachedResourceCount() const {
     std::lock_guard<std::mutex> lock(const_cast<std::mutex&>(cacheMutex));
 
     size_t count = 0;
@@ -156,7 +157,7 @@ size_t ResourceManager::GetCachedResourceCount() const {
     return count;
 }
 
-void ResourceManager::PrintStatistics() {
+void koilo::ResourceManager::PrintStatistics() {
     std::lock_guard<std::mutex> lock(cacheMutex);
 
     std::cout << "\n=== Resource Manager Statistics ===" << std::endl;
@@ -211,4 +212,4 @@ void ResourceManager::PrintStatistics() {
     std::cout << "===================================\n" << std::endl;
 }
 
-} // namespace ptx
+} // namespace koilo

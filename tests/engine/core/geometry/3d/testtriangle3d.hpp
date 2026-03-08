@@ -1,16 +1,17 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testtriangle3d.hpp
  * @brief Unit tests for the Triangle3D class.
  *
  * @date 10/10/2025
  * @version 1.0
- * @author Coela (Auto-Generated)
+ * @author Coela
  */
 
 #pragma once
 
 #include <unity.h>
-#include <ptx/core/geometry/3d/triangle.hpp>
+#include <koilo/core/geometry/3d/triangle.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

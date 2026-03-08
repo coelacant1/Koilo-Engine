@@ -1,12 +1,17 @@
-#include <ptx/core/signal/filter/fftfilter.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/core/signal/filter/fftfilter.hpp>
+#include <cmath>
 
-FFTFilter::FFTFilter() {}
 
-float FFTFilter::GetOutput() {
+namespace koilo {
+
+koilo::FFTFilter::FFTFilter() {}
+
+float koilo::FFTFilter::GetOutput() {
     return outputValue;
 }
 
-float FFTFilter::Filter(float value) {
+float koilo::FFTFilter::Filter(float value) {
     float valueAbs = fabs(value);
     float normalized = valueAbs - minKF.Filter(valueAbs);
     
@@ -14,3 +19,5 @@ float FFTFilter::Filter(float value) {
     
     return outputValue;
 }
+
+} // namespace koilo

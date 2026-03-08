@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testrampfilter.hpp
  * @brief Unit tests for the RampFilter class.
@@ -12,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/core/signal/filter/rampfilter.hpp>
+#include <koilo/core/signal/filter/rampfilter.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

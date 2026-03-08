@@ -1,4 +1,5 @@
-#include <ptx/core/signal/fft.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/core/signal/fft.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -6,6 +7,10 @@
 #include <mutex>
 #include <stdexcept>
 #include <unordered_map>
+#include <cstddef>
+
+
+namespace koilo {
 
 namespace {
 
@@ -13,9 +18,9 @@ constexpr float kTwoPi = 6.28318530717958647692f;
 
 }  // namespace
 
-FFT& FFT::Instance(int fftSize) {
+FFT& koilo::FFT::Instance(int fftSize) {
     if (!IsValidSize(fftSize)) {
-        throw std::invalid_argument("FFT::Instance: size must be >= 2 and a power of two");
+        throw std::invalid_argument("koilo::FFT::Instance: size must be >= 2 and a power of two");
     }
 
     static std::mutex mutex;
@@ -30,9 +35,9 @@ FFT& FFT::Instance(int fftSize) {
     return *it->second;
 }
 
-FFT::FFT(int fftSize) {
+koilo::FFT::FFT(int fftSize) {
     if (!IsValidSize(fftSize)) {
-        throw std::invalid_argument("FFT::FFT: size must be >= 2 and a power of two");
+        throw std::invalid_argument("koilo::FFT::FFT: size must be >= 2 and a power of two");
     }
 
     size_ = fftSize;
@@ -42,11 +47,11 @@ FFT::FFT(int fftSize) {
     bitrevLUT_.resize(static_cast<std::size_t>(size_), 0u);
 }
 
-bool FFT::IsValidSize(int fftSize) noexcept {
+bool koilo::FFT::IsValidSize(int fftSize) noexcept {
     return fftSize >= 2 && (fftSize & (fftSize - 1)) == 0;
 }
 
-void FFT::Forward(float* data) const {
+void koilo::FFT::Forward(float* data) const {
     if (!data) {
         return;
     }
@@ -87,7 +92,7 @@ void FFT::Forward(float* data) const {
     }
 }
 
-void FFT::Inverse(float* data, bool scale) const {
+void koilo::FFT::Inverse(float* data, bool scale) const {
     if (!data) {
         return;
     }
@@ -136,7 +141,7 @@ void FFT::Inverse(float* data, bool scale) const {
     }
 }
 
-void FFT::ComplexMagnitude(const float* complexData, float* magnitude) const {
+void koilo::FFT::ComplexMagnitude(const float* complexData, float* magnitude) const {
     if (!complexData || !magnitude) {
         return;
     }
@@ -148,11 +153,11 @@ void FFT::ComplexMagnitude(const float* complexData, float* magnitude) const {
     }
 }
 
-void FFT::EnsureTables() const {
+void koilo::FFT::EnsureTables() const {
     std::call_once(tablesInitFlag_, [this]() { InitializeTables(); });
 }
 
-void FFT::InitializeTables() const {
+void koilo::FFT::InitializeTables() const {
     const float twoPiOverN = kTwoPi / static_cast<float>(size_);
     for (int k = 0; k < size_ / 2; ++k) {
         cosTable_[static_cast<std::size_t>(k)] = std::cos(twoPiOverN * static_cast<float>(k));
@@ -170,7 +175,7 @@ void FFT::InitializeTables() const {
     }
 }
 
-void FFT::BitReverseOrder(float* data) const {
+void koilo::FFT::BitReverseOrder(float* data) const {
     const auto* lut = bitrevLUT_.data();
     for (int i = 0; i < size_; ++i) {
         const auto j = static_cast<int>(lut[static_cast<std::size_t>(i)]);
@@ -181,7 +186,7 @@ void FFT::BitReverseOrder(float* data) const {
     }
 }
 
-int FFT::ComputeBitCount(int size) {
+int koilo::FFT::ComputeBitCount(int size) {
     int count = 0;
     while (size > 1) {
         size >>= 1;
@@ -189,3 +194,5 @@ int FFT::ComputeBitCount(int size) {
     }
     return count;
 }
+
+} // namespace koilo

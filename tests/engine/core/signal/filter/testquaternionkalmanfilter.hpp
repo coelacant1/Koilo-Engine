@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testquaternionkalmanfilter.hpp
  * @brief Unit tests for the QuaternionKalmanFilter class.
@@ -15,7 +16,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/core/signal/filter/quaternionkalmanfilter.hpp>
+#include <koilo/core/signal/filter/quaternionkalmanfilter.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

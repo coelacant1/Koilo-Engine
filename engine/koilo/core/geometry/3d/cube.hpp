@@ -1,35 +1,35 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
- * @file Cube.h
- * @brief Defines the Cube class for representing and managing axis-aligned bounding cubes.
+ * @file cube.hpp
+ * @brief Defines the Cube geometry primitive.
  *
- * The Cube class provides functionality for collision detection and physics calculations
- * for axis-aligned bounding cubes.
+ * Pure geometric representation of an axis-aligned box (position + extents).
  *
  * @date 22/12/2024
- * @version 1.0
+ * @version 2.0
  * @author Coela Can't
  */
 
 #pragma once
 
-#include "../../math/rotation.hpp"
-#include "../../math/vector3d.hpp"
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/core/math/vector3d.hpp>
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class Cube
- * @brief Represents an axis-aligned bounding cube for collision detection and physics.
+ * @brief Axis-aligned box defined by center position and extents.
  */
 class Cube {
 private:
-    Quaternion previousRotation; ///< Previous rotation of the object.
     Vector3D centerPosition; ///< Center position of the bounding cube.
     Vector3D maximum; ///< Maximum coordinates of the bounding cube.
     Vector3D minimum; ///< Minimum coordinates of the bounding cube.
 
 public:
-    Vector3D velocity = Vector3D(0, 0, 0); ///< Velocity of the cube.
-    Vector3D position = Vector3D(0, 0, 0); ///< Current position of the cube.
+    Vector3D position = Vector3D(0, 0, 0); ///< Mutable position offset (used by colliders).
 
     /**
      * @brief Constructs a Cube object with a specified center and size.
@@ -39,8 +39,8 @@ public:
     Cube(Vector3D centerPosition, Vector3D objectSize);
 
     /**
-     * @brief Retrieves the current position of the cube.
-     * @return The current position as a Vector3D.
+     * @brief Retrieves the center position of the cube.
+     * @return The center position as a Vector3D.
      */
     Vector3D GetPosition();
 
@@ -62,37 +62,21 @@ public:
      */
     Vector3D GetMinimum();
 
-    /**
-     * @brief Updates the cube's state based on time, acceleration, and rotation.
-     * @param dT Time step in seconds.
-     * @param acceleration Acceleration vector applied to the cube.
-     * @param rotation Rotation quaternion applied to the cube.
-     */
-    void Update(float dT, Vector3D acceleration, Quaternion rotation);
+    KL_BEGIN_FIELDS(Cube)
+        KL_FIELD(Cube, position, "Position", 0, 0)
+    KL_END_FIELDS
 
-    /**
-     * @brief Checks for intersection with another Cube.
-     * @param bO Pointer to the other Cube.
-     * @return The intersection vector if intersecting, otherwise zero vector.
-     */
-    Vector3D IsIntersecting(Cube* bO);
+    KL_BEGIN_METHODS(Cube)
+        KL_METHOD_AUTO(Cube, GetPosition, "Get position"),
+        KL_METHOD_AUTO(Cube, GetSize, "Get size"),
+        KL_METHOD_AUTO(Cube, GetMaximum, "Get maximum"),
+        KL_METHOD_AUTO(Cube, GetMinimum, "Get minimum")
+    KL_END_METHODS
 
-    PTX_BEGIN_FIELDS(Cube)
-        PTX_FIELD(Cube, velocity, "Velocity", 0, 0),
-        PTX_FIELD(Cube, position, "Position", 0, 0)
-    PTX_END_FIELDS
-
-    PTX_BEGIN_METHODS(Cube)
-        PTX_METHOD_AUTO(Cube, GetPosition, "Get position"),
-        PTX_METHOD_AUTO(Cube, GetSize, "Get size"),
-        PTX_METHOD_AUTO(Cube, GetMaximum, "Get maximum"),
-        PTX_METHOD_AUTO(Cube, GetMinimum, "Get minimum"),
-        PTX_METHOD_AUTO(Cube, Update, "Update"),
-        PTX_METHOD_AUTO(Cube, IsIntersecting, "Is intersecting")
-    PTX_END_METHODS
-
-    PTX_BEGIN_DESCRIBE(Cube)
-        PTX_CTOR(Cube, Vector3D, Vector3D)
-    PTX_END_DESCRIBE(Cube)
+    KL_BEGIN_DESCRIBE(Cube)
+        KL_CTOR(Cube, Vector3D, Vector3D)
+    KL_END_DESCRIBE(Cube)
 
 };
+
+} // namespace koilo

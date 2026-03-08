@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testrastertriangle2d.hpp
  * @brief Unit tests for the RasterTriangle2D class.
@@ -12,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/systems/render/raster/helpers/rastertriangle2d.hpp>
+#include <koilo/systems/render/raster/helpers/rastertriangle2d.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

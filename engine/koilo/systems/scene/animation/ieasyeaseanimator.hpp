@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file IEasyEaseAnimator.h
  * @brief Declares the IEasyEaseAnimator interface for defining animation behaviors.
@@ -12,9 +13,12 @@
 #pragma once
 
 #include "keyframe.hpp" // Include for keyframe management.
-#include "../../../core/math/mathematics.hpp" // Include for mathematical utilities.
-#include "../../../core/control/dampedspring.hpp" // Include for damped spring physics.
-#include "../../../core/signal/filter/rampfilter.hpp" // Include for ramp filtering utilities.
+#include <koilo/core/math/mathematics.hpp> // Include for mathematical utilities.
+#include <koilo/core/control/dampedspring.hpp> // Include for damped spring physics.
+#include <koilo/core/signal/filter/rampfilter.hpp> // Include for ramp filtering utilities.
+
+
+namespace koilo {
 
 /**
  * @class IEasyEaseAnimator
@@ -107,3 +111,5 @@ public:
     virtual void Update() = 0;
 
 };
+
+} // namespace koilo

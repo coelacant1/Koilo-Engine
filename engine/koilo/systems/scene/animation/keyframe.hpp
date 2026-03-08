@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file KeyFrame.h
  * @brief Declares the KeyFrame class for representing individual animation keyframes.
@@ -11,7 +12,10 @@
 
 #pragma once
 
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
+
+namespace koilo {
+
 /**
  * @class KeyFrame
  * @brief Represents a single keyframe in an animation.
@@ -51,18 +55,20 @@ public:
      */
     void Set(float time, float value);
 
-    PTX_BEGIN_FIELDS(KeyFrame)
-        PTX_FIELD(KeyFrame, Time, "Time", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(KeyFrame, Value, "Value", __FLT_MIN__, __FLT_MAX__)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(KeyFrame)
+        KL_FIELD(KeyFrame, Time, "Time", __FLT_MIN__, __FLT_MAX__),
+        KL_FIELD(KeyFrame, Value, "Value", __FLT_MIN__, __FLT_MAX__)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(KeyFrame)
-        PTX_METHOD_AUTO(KeyFrame, Set, "Set")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(KeyFrame)
+        KL_METHOD_AUTO(KeyFrame, Set, "Set")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(KeyFrame)
-        PTX_CTOR0(KeyFrame),
-        PTX_CTOR(KeyFrame, float, float)
-    PTX_END_DESCRIBE(KeyFrame)
+    KL_BEGIN_DESCRIBE(KeyFrame)
+        KL_CTOR0(KeyFrame),
+        KL_CTOR(KeyFrame, float, float)
+    KL_END_DESCRIBE(KeyFrame)
 
 };
+
+} // namespace koilo

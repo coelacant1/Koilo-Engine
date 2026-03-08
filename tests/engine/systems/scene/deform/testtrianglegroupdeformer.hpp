@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testtrianglegroupdeformer.hpp
  * @brief Unit tests for the TriangleGroupDeformer class.
@@ -12,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/systems/scene/deform/trianglegroupdeformer.hpp>
+#include <koilo/systems/scene/deform/trianglegroupdeformer.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

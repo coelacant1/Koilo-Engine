@@ -1,20 +1,24 @@
-#include <ptx/core/signal/filter/quaternionkalmanfilter.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/core/signal/filter/quaternionkalmanfilter.hpp>
 
 #include <algorithm>
 
-QuaternionKalmanFilter::QuaternionKalmanFilter() {
+
+namespace koilo {
+
+koilo::QuaternionKalmanFilter::QuaternionKalmanFilter() {
     gain = 0.25f;
     memory = 25;
     values.assign(static_cast<size_t>(memory), Quaternion());
 }
 
-QuaternionKalmanFilter::QuaternionKalmanFilter(float gain, int memory) {
+koilo::QuaternionKalmanFilter::QuaternionKalmanFilter(float gain, int memory) {
     this->gain = gain;
     this->memory = std::max(1, memory);
     values.assign(static_cast<size_t>(this->memory), Quaternion());
 }
 
-void QuaternionKalmanFilter::ShiftArray() {
+void koilo::QuaternionKalmanFilter::ShiftArray() {
     if (values.empty()) {
         return;
     }
@@ -23,7 +27,7 @@ void QuaternionKalmanFilter::ShiftArray() {
     values.back() = Quaternion();
 }
 
-Quaternion QuaternionKalmanFilter::Filter(Quaternion value) {
+Quaternion koilo::QuaternionKalmanFilter::Filter(Quaternion value) {
     if (currentAmount < memory) {
         values[currentAmount++] = value;
     } else {
@@ -43,4 +47,6 @@ Quaternion QuaternionKalmanFilter::Filter(Quaternion value) {
 }
 
 // Trivial destructor definition to satisfy linker (was previously only declared)
-QuaternionKalmanFilter::~QuaternionKalmanFilter() = default;
+koilo::QuaternionKalmanFilter::~QuaternionKalmanFilter() = default;
+
+} // namespace koilo

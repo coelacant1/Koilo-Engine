@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file pathfinder.hpp
  * @brief A* pathfinding for grid-based navigation.
@@ -9,15 +10,12 @@
 #pragma once
 
 #include <vector>
-#include <unordered_map>
-#include <unordered_set>
-#include <queue>
 #include <functional>
-#include "../../../core/math/vector3d.hpp"
-#include "../../../core/math/vector2d.hpp"
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/core/math/vector3d.hpp>
+#include <koilo/core/math/vector2d.hpp>
+#include <koilo/registry/reflect_macros.hpp>
 
-namespace ptx {
+namespace koilo {
 
 /**
  * @struct GridNode
@@ -36,20 +34,20 @@ struct GridNode {
         return x == other.x && y == other.y;
     }
 
-    PTX_BEGIN_FIELDS(GridNode)
-        PTX_FIELD(GridNode, x, "X", 0, 0),
-        PTX_FIELD(GridNode, y, "Y", 0, 0),
-        PTX_FIELD(GridNode, walkable, "Walkable", 0, 1),
-        PTX_FIELD(GridNode, cost, "Cost", 0, 0)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(GridNode)
+        KL_FIELD(GridNode, x, "X", 0, 0),
+        KL_FIELD(GridNode, y, "Y", 0, 0),
+        KL_FIELD(GridNode, walkable, "Walkable", 0, 1),
+        KL_FIELD(GridNode, cost, "Cost", 0, 0)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(GridNode)
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(GridNode)
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(GridNode)
-        PTX_CTOR0(GridNode),
-        PTX_CTOR(GridNode, int, int, bool, float)
-    PTX_END_DESCRIBE(GridNode)
+    KL_BEGIN_DESCRIBE(GridNode)
+        KL_CTOR0(GridNode),
+        KL_CTOR(GridNode, int, int, bool, float)
+    KL_END_DESCRIBE(GridNode)
 };
 
 /**
@@ -83,6 +81,20 @@ private:
         bool operator>(const AStarNode& other) const {
             return fCost > other.fCost;
         }
+
+        KL_BEGIN_FIELDS(AStarNode)
+            KL_FIELD(AStarNode, gridNode, "Grid node", 0, 0),
+            KL_FIELD(AStarNode, gCost, "G cost", __FLT_MIN__, __FLT_MAX__)
+        KL_END_FIELDS
+
+        KL_BEGIN_METHODS(AStarNode)
+            /* No reflected methods. */
+        KL_END_METHODS
+
+        KL_BEGIN_DESCRIBE(AStarNode)
+            KL_CTOR0(AStarNode)
+        KL_END_DESCRIBE(AStarNode)
+
     };
 
 public:
@@ -168,32 +180,22 @@ public:
      */
     static float DiagonalDistance(const GridNode& a, const GridNode& b);
 
-    PTX_BEGIN_FIELDS(PathfinderGrid)
-        PTX_FIELD(PathfinderGrid, width, "Width", 0, 0),
-        PTX_FIELD(PathfinderGrid, height, "Height", 0, 0),
-        PTX_FIELD(PathfinderGrid, allowDiagonal, "Allow diagonal", 0, 1)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(PathfinderGrid)
+        KL_FIELD(PathfinderGrid, width, "Width", 0, 0),
+        KL_FIELD(PathfinderGrid, height, "Height", 0, 0),
+        KL_FIELD(PathfinderGrid, allowDiagonal, "Allow diagonal", 0, 1)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(PathfinderGrid)
-        PTX_METHOD_AUTO(PathfinderGrid, SetWalkable, "Set walkable"),
-        PTX_METHOD_AUTO(PathfinderGrid, SetCost, "Set cost"),
-        PTX_METHOD_AUTO(PathfinderGrid, IsInBounds, "Is in bounds"),
-        PTX_METHOD_AUTO(PathfinderGrid, SetAllowDiagonal, "Set allow diagonal")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(PathfinderGrid)
+        KL_METHOD_AUTO(PathfinderGrid, SetWalkable, "Set walkable"),
+        KL_METHOD_AUTO(PathfinderGrid, SetCost, "Set cost"),
+        KL_METHOD_AUTO(PathfinderGrid, IsInBounds, "Is in bounds"),
+        KL_METHOD_AUTO(PathfinderGrid, SetAllowDiagonal, "Set allow diagonal")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(PathfinderGrid)
-        PTX_CTOR(PathfinderGrid, int, int, bool)
-    PTX_END_DESCRIBE(PathfinderGrid)
+    KL_BEGIN_DESCRIBE(PathfinderGrid)
+        KL_CTOR(PathfinderGrid, int, int, bool)
+    KL_END_DESCRIBE(PathfinderGrid)
 };
 
-} // namespace ptx
-
-// Hash function for GridNode (for unordered containers)
-namespace std {
-    template<>
-    struct hash<ptx::GridNode> {
-        size_t operator()(const ptx::GridNode& node) const {
-            return hash<int>()(node.x) ^ (hash<int>()(node.y) << 1);
-        }
-    };
-}
+} // namespace koilo

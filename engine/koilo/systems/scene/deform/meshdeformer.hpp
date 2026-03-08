@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file MeshDeformer.h
  * @brief Defines the `MeshDeformer` class for deforming 3D objects using various transformations.
@@ -14,8 +15,11 @@
 
 #include <vector>
 
-#include "../mesh.hpp"
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/systems/scene/mesh.hpp>
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class MeshDeformer
@@ -39,7 +43,7 @@ public:
 
 private:
     std::vector<Mesh*> objects;   ///< Collection of mesh pointers to be deformed (non-owning).
-    int objectCount = 0;  ///< Number of objects tracked.
+    uint32_t objectCount = 0;  ///< Number of objects tracked.
 
     /**
      * @brief Checks if a given axis value exceeds a clipping threshold.
@@ -65,7 +69,7 @@ public:
      * @param objects Pointer to an array of `Mesh` pointers.
      * @param objectCount Number of objects in the array.
      */
-    MeshDeformer(Mesh** objects, int objectCount);
+    MeshDeformer(Mesh** objects, uint32_t objectCount);
 
     /**
      * @brief Applies a perspective deformation to the object(s).
@@ -121,7 +125,7 @@ public:
      * @param selectionAxis Axis used for selecting points to deform.
      * @param deformAxis Axis along which the deformation is applied.
      */
-    void CosineInterpolationDeformer(float* pointMultiplier, int points, float scale, float minAxis, float maxAxis, Axis selectionAxis, Axis deformAxis);
+    void CosineInterpolationDeformer(float* pointMultiplier, uint32_t points, float scale, float minAxis, float maxAxis, Axis selectionAxis, Axis deformAxis);
 
     /**
      * @brief Clips the object(s) along a specified axis.
@@ -132,22 +136,24 @@ public:
      */
     void AxisZeroClipping(bool positive, Axis clipAxis, Axis valueCheckAxis);
 
-    PTX_BEGIN_FIELDS(MeshDeformer)
+    KL_BEGIN_FIELDS(MeshDeformer)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(MeshDeformer)
-        PTX_METHOD_AUTO(MeshDeformer, PerspectiveDeform, "Perspective deform"),
-        PTX_METHOD_AUTO(MeshDeformer, SinusoidalDeform, "Sinusoidal deform"),
-        PTX_METHOD_AUTO(MeshDeformer, DropwaveDeform, "Dropwave deform"),
-        PTX_METHOD_AUTO(MeshDeformer, SineWaveSurfaceDeform, "Sine wave surface deform"),
-        PTX_METHOD_AUTO(MeshDeformer, CosineInterpolationDeformer, "Cosine interpolation deformer"),
-        PTX_METHOD_AUTO(MeshDeformer, AxisZeroClipping, "Axis zero clipping")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(MeshDeformer)
+        KL_METHOD_AUTO(MeshDeformer, PerspectiveDeform, "Perspective deform"),
+        KL_METHOD_AUTO(MeshDeformer, SinusoidalDeform, "Sinusoidal deform"),
+        KL_METHOD_AUTO(MeshDeformer, DropwaveDeform, "Dropwave deform"),
+        KL_METHOD_AUTO(MeshDeformer, SineWaveSurfaceDeform, "Sine wave surface deform"),
+        KL_METHOD_AUTO(MeshDeformer, CosineInterpolationDeformer, "Cosine interpolation deformer"),
+        KL_METHOD_AUTO(MeshDeformer, AxisZeroClipping, "Axis zero clipping")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(MeshDeformer)
-        PTX_CTOR(MeshDeformer, Mesh *),
-        PTX_CTOR(MeshDeformer, Mesh **, int)
-    PTX_END_DESCRIBE(MeshDeformer)
+    KL_BEGIN_DESCRIBE(MeshDeformer)
+        KL_CTOR(MeshDeformer, Mesh *),
+        KL_CTOR(MeshDeformer, Mesh **, int)
+    KL_END_DESCRIBE(MeshDeformer)
 
 };
+
+} // namespace koilo

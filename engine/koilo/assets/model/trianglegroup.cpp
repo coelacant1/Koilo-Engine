@@ -1,13 +1,17 @@
-#include <ptx/assets/model/trianglegroup.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/assets/model/trianglegroup.hpp>
 #include <algorithm>
 
-TriangleGroup::TriangleGroup(IStaticTriangleGroup* staticTriangleGroup) {
+
+namespace koilo {
+
+koilo::TriangleGroup::TriangleGroup(IStaticTriangleGroup* staticTriangleGroup) {
     if (!staticTriangleGroup) {
         return;
     }
     indexGroup = staticTriangleGroup->GetIndexGroup();
-    const int vCount = staticTriangleGroup->GetVertexCount();
-    const int tCount = staticTriangleGroup->GetTriangleCount();
+    const uint32_t vCount = staticTriangleGroup->GetVertexCount();
+    const uint32_t tCount = staticTriangleGroup->GetTriangleCount();
 
     if (vCount > 0) {
         vertices.resize(static_cast<size_t>(vCount));
@@ -17,7 +21,7 @@ TriangleGroup::TriangleGroup(IStaticTriangleGroup* staticTriangleGroup) {
 
     if (tCount > 0 && indexGroup) {
         triangles.resize(static_cast<size_t>(tCount));
-        for (int i = 0; i < tCount; ++i) {
+        for (uint32_t i = 0; i < tCount; ++i) {
             triangles[static_cast<size_t>(i)].p1 = &vertices[indexGroup[i].A];
             triangles[static_cast<size_t>(i)].p2 = &vertices[indexGroup[i].B];
             triangles[static_cast<size_t>(i)].p3 = &vertices[indexGroup[i].C];
@@ -25,8 +29,10 @@ TriangleGroup::TriangleGroup(IStaticTriangleGroup* staticTriangleGroup) {
     }
 }
 
-const IndexGroup* TriangleGroup::GetIndexGroup() { return indexGroup; }
-int TriangleGroup::GetTriangleCount() { return static_cast<int>(triangles.size()); }
-Vector3D* TriangleGroup::GetVertices() { return vertices.empty() ? nullptr : vertices.data(); }
-int TriangleGroup::GetVertexCount() { return static_cast<int>(vertices.size()); }
-Triangle3D* TriangleGroup::GetTriangles() { return triangles.empty() ? nullptr : triangles.data(); }
+const IndexGroup* koilo::TriangleGroup::GetIndexGroup() { return indexGroup; }
+uint32_t koilo::TriangleGroup::GetTriangleCount() { return static_cast<uint32_t>(triangles.size()); }
+Vector3D* koilo::TriangleGroup::GetVertices() { return vertices.empty() ? nullptr : vertices.data(); }
+uint32_t koilo::TriangleGroup::GetVertexCount() { return static_cast<uint32_t>(vertices.size()); }
+Triangle3D* koilo::TriangleGroup::GetTriangles() { return triangles.empty() ? nullptr : triangles.data(); }
+
+} // namespace koilo

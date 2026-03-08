@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file FunctionGenerator.h
  * @brief Provides a generator for common mathematical wave functions.
@@ -9,9 +10,12 @@
 
 #pragma once
 
-#include "../math/mathematics.hpp"
-#include "../platform/time.hpp"
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/core/math/mathematics.hpp>
+#include <koilo/core/platform/time.hpp>
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class FunctionGenerator
@@ -100,18 +104,20 @@ public:
      */
     float Update();
 
-    PTX_BEGIN_FIELDS(FunctionGenerator)
+    KL_BEGIN_FIELDS(FunctionGenerator)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(FunctionGenerator)
-        PTX_METHOD_AUTO(FunctionGenerator, SetPeriod, "Set period"),
-        PTX_METHOD_AUTO(FunctionGenerator, SetFunction, "Set function"),
-        PTX_METHOD_AUTO(FunctionGenerator, Update, "Update")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(FunctionGenerator)
+        KL_METHOD_AUTO(FunctionGenerator, SetPeriod, "Set period"),
+        KL_METHOD_AUTO(FunctionGenerator, SetFunction, "Set function"),
+        KL_METHOD_AUTO(FunctionGenerator, Update, "Update")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(FunctionGenerator)
-        PTX_CTOR(FunctionGenerator, Function, float, float, float)
-    PTX_END_DESCRIBE(FunctionGenerator)
+    KL_BEGIN_DESCRIBE(FunctionGenerator)
+        KL_CTOR(FunctionGenerator, Function, float, float, float)
+    KL_END_DESCRIBE(FunctionGenerator)
 
 };
+
+} // namespace koilo

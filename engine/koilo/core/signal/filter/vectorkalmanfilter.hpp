@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file VectorKalmanFilter.h
  * @brief Implements a Kalman filter for 3D vector smoothing.
@@ -12,9 +13,12 @@
 
 #pragma once
 
-#include <ptx/core/signal/filter/kalmanfilter.hpp>
-#include <ptx/core/math/vector3d.hpp>
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/core/signal/filter/kalmanfilter.hpp>
+#include <koilo/core/math/vector3d.hpp>
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class VectorKalmanFilter
@@ -55,17 +59,19 @@ public:
 
     void Reset(Vector3D estimation = Vector3D(), float errorCovariance = 1.0f);
 
-    PTX_BEGIN_FIELDS(VectorKalmanFilter)
+    KL_BEGIN_FIELDS(VectorKalmanFilter)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(VectorKalmanFilter)
-        PTX_METHOD_AUTO(VectorKalmanFilter, Filter, "Filter"),
-        PTX_METHOD_AUTO(VectorKalmanFilter, Reset, "Reset")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(VectorKalmanFilter)
+        KL_METHOD_AUTO(VectorKalmanFilter, Filter, "Filter"),
+        KL_METHOD_AUTO(VectorKalmanFilter, Reset, "Reset")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(VectorKalmanFilter)
-        PTX_CTOR(VectorKalmanFilter, float, float, float)
-    PTX_END_DESCRIBE(VectorKalmanFilter)
+    KL_BEGIN_DESCRIBE(VectorKalmanFilter)
+        KL_CTOR(VectorKalmanFilter, float, float, float)
+    KL_END_DESCRIBE(VectorKalmanFilter)
 
 };
+
+} // namespace koilo

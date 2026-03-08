@@ -1,16 +1,17 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testcorners.hpp
  * @brief Unit tests for the Corners class.
  *
  * @date 10/10/2025
  * @version 1.0
- * @author Coela (Auto-Generated)
+ * @author Coela
  */
 
 #pragma once
 
 #include <unity.h>
-#include <ptx/core/geometry/2d/rectangle.hpp>
+#include <koilo/core/geometry/2d/rectangle.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file YawPitchRoll.h
  * @brief Represents an orientation using yaw, pitch, and roll angles.
@@ -11,7 +12,10 @@
 
 #include "vector3d.hpp"
 #include "mathematics.hpp"
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class YawPitchRoll
@@ -52,23 +56,25 @@ public:
      * @brief Converts the yaw, pitch, and roll angles to a string representation.
      * @return A string representation of the YawPitchRoll object.
      */
-    ptx::UString ToString() const;
+    koilo::UString ToString() const;
 
-    PTX_BEGIN_FIELDS(YawPitchRoll)
-        PTX_FIELD(YawPitchRoll, Yaw, "Yaw", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(YawPitchRoll, Pitch, "Pitch", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(YawPitchRoll, Roll, "Roll", __FLT_MIN__, __FLT_MAX__)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(YawPitchRoll)
+        KL_FIELD(YawPitchRoll, Yaw, "Yaw", __FLT_MIN__, __FLT_MAX__),
+        KL_FIELD(YawPitchRoll, Pitch, "Pitch", __FLT_MIN__, __FLT_MAX__),
+        KL_FIELD(YawPitchRoll, Roll, "Roll", __FLT_MIN__, __FLT_MAX__)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(YawPitchRoll)
-        PTX_METHOD_AUTO(YawPitchRoll, ToString, "To string")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(YawPitchRoll)
+        KL_METHOD_AUTO(YawPitchRoll, ToString, "To string")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(YawPitchRoll)
-        PTX_CTOR0(YawPitchRoll),
-        PTX_CTOR(YawPitchRoll, Vector3D),
-        PTX_CTOR(YawPitchRoll, const YawPitchRoll &),
-        PTX_CTOR(YawPitchRoll, float, float, float)
-    PTX_END_DESCRIBE(YawPitchRoll)
+    KL_BEGIN_DESCRIBE(YawPitchRoll)
+        KL_CTOR0(YawPitchRoll),
+        KL_CTOR(YawPitchRoll, Vector3D),
+        KL_CTOR(YawPitchRoll, const YawPitchRoll &),
+        KL_CTOR(YawPitchRoll, float, float, float)
+    KL_END_DESCRIBE(YawPitchRoll)
 
 };
+
+} // namespace koilo

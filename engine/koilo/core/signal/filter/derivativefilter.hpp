@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file DerivativeFilter.h
  * @brief Provides a `DerivativeFilter` class for calculating the rate of change of input values.
@@ -14,8 +15,11 @@
 
 #include "runningaveragefilter.hpp" // Includes the running average filter utility.
 #include "minfilter.hpp" // Includes the minimum filter utility.
-#include "../../math/mathematics.hpp" // Includes mathematical utilities for constraints and operations.
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/core/math/mathematics.hpp> // Includes mathematical utilities for constraints and operations.
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class DerivativeFilter
@@ -52,17 +56,19 @@ public:
      */
     float Filter(float value);
 
-    PTX_BEGIN_FIELDS(DerivativeFilter)
+    KL_BEGIN_FIELDS(DerivativeFilter)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(DerivativeFilter)
-        PTX_METHOD_AUTO(DerivativeFilter, GetOutput, "Get output"),
-        PTX_METHOD_AUTO(DerivativeFilter, Filter, "Filter")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(DerivativeFilter)
+        KL_METHOD_AUTO(DerivativeFilter, GetOutput, "Get output"),
+        KL_METHOD_AUTO(DerivativeFilter, Filter, "Filter")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(DerivativeFilter)
-        PTX_CTOR0(DerivativeFilter)
-    PTX_END_DESCRIBE(DerivativeFilter)
+    KL_BEGIN_DESCRIBE(DerivativeFilter)
+        KL_CTOR0(DerivativeFilter)
+    KL_END_DESCRIBE(DerivativeFilter)
 
 };
+
+} // namespace koilo

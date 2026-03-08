@@ -1,8 +1,12 @@
-#include <ptx/core/geometry/spatial/quadtree.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/core/geometry/spatial/quadtree.hpp>
+#include <koilo/core/geometry/2d/shape.hpp>
+#include <cstddef>
 
-#include <utility>
 
-QuadTree::Node::Node(const Rectangle2D& boundsValue,
+namespace koilo {
+
+koilo::QuadTree::Node::Node(const Rectangle2D& boundsValue,
                      OverlapsCallback overlapsCallback,
                      unsigned char depthValue)
     : bounds(boundsValue),
@@ -12,15 +16,15 @@ QuadTree::Node::Node(const Rectangle2D& boundsValue,
       overlaps(overlapsCallback),
       depth(depthValue) {}
 
-QuadTree::Node::~Node() = default;
+koilo::QuadTree::Node::~Node() = default;
 
-void QuadTree::Node::EnsureCapacity(unsigned short newCap) {
+void koilo::QuadTree::Node::EnsureCapacity(unsigned short newCap) {
     if (items.capacity() < newCap) {
         items.reserve(newCap);
     }
 }
 
-void QuadTree::Node::CreateChildren() {
+void koilo::QuadTree::Node::CreateChildren() {
     if (!IsLeaf()) {
         return;
     }
@@ -29,51 +33,49 @@ void QuadTree::Node::CreateChildren() {
     const Vector2D min = bounds.GetMinimum();
     const Vector2D max = bounds.GetMaximum();
 
-    children[0] = std::make_unique<Node>(Rectangle2D(min, center), overlaps, static_cast<unsigned char>(depth + 1));
-    children[1] = std::make_unique<Node>(
-        Rectangle2D(Vector2D(center.X, min.Y), Vector2D(max.X, center.Y)),
-        overlaps,
-        static_cast<unsigned char>(depth + 1));
-    children[2] = std::make_unique<Node>(
-        Rectangle2D(Vector2D(min.X, center.Y), Vector2D(center.X, max.Y)),
-        overlaps,
-        static_cast<unsigned char>(depth + 1));
-    children[3] = std::make_unique<Node>(Rectangle2D(center, max), overlaps, static_cast<unsigned char>(depth + 1));
+    // Create children using Bounds constructor (min/max), not center/size constructor
+    Shape::Bounds bounds0, bounds1, bounds2, bounds3;
+    
+    bounds0.minV = min;
+    bounds0.maxV = center;
+    children[0] = std::make_unique<Node>(Rectangle2D(bounds0), overlaps, static_cast<unsigned char>(depth + 1));
+    
+    bounds1.minV = Vector2D(center.X, min.Y);
+    bounds1.maxV = Vector2D(max.X, center.Y);
+    children[1] = std::make_unique<Node>(Rectangle2D(bounds1), overlaps, static_cast<unsigned char>(depth + 1));
+    
+    bounds2.minV = Vector2D(min.X, center.Y);
+    bounds2.maxV = Vector2D(center.X, max.Y);
+    children[2] = std::make_unique<Node>(Rectangle2D(bounds2), overlaps, static_cast<unsigned char>(depth + 1));
+    
+    bounds3.minV = center;
+    bounds3.maxV = max;
+    children[3] = std::make_unique<Node>(Rectangle2D(bounds3), overlaps, static_cast<unsigned char>(depth + 1));
 }
 
-unsigned short QuadTree::Node::Distribute() {
+unsigned short koilo::QuadTree::Node::Distribute() {
     unsigned short movedCount = 0;
     if (IsLeaf() || itemCount == 0) {
         return movedCount;
     }
 
-    std::size_t i = 0;
-    while (i < items.size()) {
-        bool movedToChild = false;
+    // Try inserting each item into ALL overlapping children (ProtoTracer approach)
+    for (std::size_t i = 0; i < itemCount; ++i) {
         for (auto& child : children) {
-            if (!child) {
-                continue;
-            }
-
-            if (child->Insert(items[i])) {
-                movedToChild = true;
+            if (child && child->Insert(items[i])) {
                 ++movedCount;
-                items[i] = items.back();
-                items.pop_back();
-                break;
             }
-        }
-
-        if (!movedToChild) {
-            ++i;
         }
     }
 
-    itemCount = static_cast<unsigned short>(items.size());
+    // Clear parent's items after distributing to children
+    items.clear();
+    itemCount = 0;
+    
     return movedCount;
 }
 
-bool QuadTree::Node::Insert(ItemPtr item) {
+bool koilo::QuadTree::Node::Insert(ItemPtr item) {
     if (item == nullptr || overlaps == nullptr) {
         return false;
     }
@@ -82,19 +84,37 @@ bool QuadTree::Node::Insert(ItemPtr item) {
         return false;
     }
 
-    if (IsLeaf() && itemCount >= kMaxItems) {
-        Subdivide();
-    }
-
+    // If we have children, try inserting into them
     if (!IsLeaf()) {
+        bool insertedIntoChild = false;
         for (auto& child : children) {
             if (child && child->Insert(item)) {
-                return true;
+                insertedIntoChild = true;
+                // Keep trying other children - item may overlap multiple
             }
+        }
+        // If successfully inserted into at least one child, we're done
+        return insertedIntoChild;
+    }
+
+    // We're a leaf - subdivide if needed
+    if (itemCount >= kMaxItems) {
+        Subdivide();
+        // After subdividing, try inserting into children
+        if (!IsLeaf()) {
+            bool insertedIntoChild = false;
+            for (auto& child : children) {
+                if (child && child->Insert(item)) {
+                    insertedIntoChild = true;
+                }
+            }
+            return insertedIntoChild;
         }
     }
 
-    EnsureCapacity(itemCount > 0 ? static_cast<unsigned short>(itemCount * 2) : static_cast<unsigned short>(4));
+    // Add to this leaf node
+    EnsureCapacity(itemCount > 0 ? static_cast<unsigned short>(itemCount * 2)
+                                 : static_cast<unsigned short>(4));
 
     if (itemCount < items.size()) {
         items[itemCount] = item;
@@ -106,7 +126,7 @@ bool QuadTree::Node::Insert(ItemPtr item) {
     return true;
 }
 
-void QuadTree::Node::Subdivide() {
+void koilo::QuadTree::Node::Subdivide() {
     if (depth >= kMaxDepth || !IsLeaf()) {
         return;
     }
@@ -118,7 +138,7 @@ void QuadTree::Node::Subdivide() {
     }
 }
 
-QuadTree::Node* QuadTree::Node::FindLeaf(const Vector2D& point) {
+koilo::QuadTree::Node* koilo::QuadTree::Node::FindLeaf(const Vector2D& point) {
     if (!bounds.Contains(point)) {
         return nullptr;
     }
@@ -139,38 +159,38 @@ QuadTree::Node* QuadTree::Node::FindLeaf(const Vector2D& point) {
     return this;
 }
 
-bool QuadTree::Node::IsLeaf() const {
+bool koilo::QuadTree::Node::IsLeaf() const {
     return children[0] == nullptr;
 }
 
-unsigned short QuadTree::Node::GetItemCount() const {
+unsigned short koilo::QuadTree::Node::GetItemCount() const {
     return itemCount;
 }
 
-unsigned short QuadTree::Node::GetCapacity() const {
+unsigned short koilo::QuadTree::Node::GetCapacity() const {
     return static_cast<unsigned short>(items.capacity());
 }
 
-const Rectangle2D& QuadTree::Node::GetBounds() const {
+const Rectangle2D& koilo::QuadTree::Node::GetBounds() const {
     return bounds;
 }
 
-QuadTree::ItemPtr* QuadTree::Node::GetItemsRaw() {
+koilo::QuadTree::ItemPtr* koilo::QuadTree::Node::GetItemsRaw() {
     return items.empty() ? nullptr : items.data();
 }
 
-QuadTree::ItemPtr const* QuadTree::Node::GetItemsRaw() const {
+koilo::QuadTree::ItemPtr const* koilo::QuadTree::Node::GetItemsRaw() const {
     return items.empty() ? nullptr : items.data();
 }
 
-QuadTree::QuadTree(const Rectangle2D& bounds, OverlapsCallback overlapsCallback)
+koilo::QuadTree::QuadTree(const Rectangle2D& bounds, OverlapsCallback overlapsCallback)
     : root(std::make_unique<Node>(bounds, overlapsCallback, 0)),
       totalItems(0),
       overlaps(overlapsCallback) {}
 
-QuadTree::~QuadTree() = default;
+koilo::QuadTree::~QuadTree() = default;
 
-bool QuadTree::Insert(ItemPtr item) {
+bool koilo::QuadTree::Insert(ItemPtr item) {
     if (!root || overlaps == nullptr || item == nullptr) {
         return false;
     }
@@ -183,7 +203,7 @@ bool QuadTree::Insert(ItemPtr item) {
     return false;
 }
 
-QuadTree::ItemPtr* QuadTree::QueryPointRaw(const Vector2D& point, unsigned short& countOut) {
+koilo::QuadTree::ItemPtr* koilo::QuadTree::QueryPointRaw(const Vector2D& point, unsigned short& countOut) {
     if (!root) {
         countOut = 0;
         return nullptr;
@@ -199,7 +219,7 @@ QuadTree::ItemPtr* QuadTree::QueryPointRaw(const Vector2D& point, unsigned short
     return leaf->GetItemsRaw();
 }
 
-void QuadTree::Rebuild() {
+void koilo::QuadTree::Rebuild() {
     if (!root) {
         return;
     }
@@ -209,10 +229,12 @@ void QuadTree::Rebuild() {
     totalItems = 0;
 }
 
-QuadTree::Node* QuadTree::GetRoot() {
+koilo::QuadTree::Node* koilo::QuadTree::GetRoot() {
     return root.get();
 }
 
-const QuadTree::Node* QuadTree::GetRoot() const {
+const koilo::QuadTree::Node* koilo::QuadTree::GetRoot() const {
     return root.get();
 }
+
+} // namespace koilo

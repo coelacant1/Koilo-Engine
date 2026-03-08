@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testpixel.cpp
  * @brief Implementation of Pixel unit tests.
@@ -5,6 +6,7 @@
 
 #include "testpixel.hpp"
 
+using namespace koilo;
 // ========== Constructor Tests ==========
 
 void TestPixel::TestDefaultConstructor() {

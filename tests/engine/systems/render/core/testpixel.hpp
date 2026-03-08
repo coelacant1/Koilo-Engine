@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testpixel.hpp
  * @brief Unit tests for the Pixel class.
@@ -12,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/systems/render/core/pixel.hpp>
+#include <koilo/systems/render/core/pixel.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

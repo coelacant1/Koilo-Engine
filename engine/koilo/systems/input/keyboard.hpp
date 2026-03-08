@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file keyboard.hpp
  * @brief Keyboard input handling and key state tracking.
@@ -11,9 +12,9 @@
 #include <array>
 #include <string>
 #include "keycodes.hpp"
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
 
-namespace ptx {
+namespace koilo {
 
 /**
  * @class Keyboard
@@ -112,22 +113,22 @@ public:
      */
     bool IsMetaPressed() const { return metaPressed; }
 
-    PTX_BEGIN_FIELDS(Keyboard)
+    KL_BEGIN_FIELDS(Keyboard)
         /* No reflected fields */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(Keyboard)
-        PTX_METHOD_AUTO(Keyboard, Update, "Update"),
-        PTX_METHOD_AUTO(Keyboard, IsKeyPressed, "Is key pressed"),
-        PTX_METHOD_AUTO(Keyboard, IsKeyHeld, "Is key held"),
-        PTX_METHOD_AUTO(Keyboard, IsKeyReleased, "Is key released"),
-        PTX_METHOD_AUTO(Keyboard, GetTextInput, "Get text input"),
-        PTX_METHOD_AUTO(Keyboard, ClearTextInput, "Clear text input")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(Keyboard)
+        KL_METHOD_AUTO(Keyboard, Update, "Update"),
+        KL_METHOD_AUTO(Keyboard, IsKeyPressed, "Is key pressed"),
+        KL_METHOD_AUTO(Keyboard, IsKeyHeld, "Is key held"),
+        KL_METHOD_AUTO(Keyboard, IsKeyReleased, "Is key released"),
+        KL_METHOD_AUTO(Keyboard, GetTextInput, "Get text input"),
+        KL_METHOD_AUTO(Keyboard, ClearTextInput, "Clear text input")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(Keyboard)
-        PTX_CTOR0(Keyboard)
-    PTX_END_DESCRIBE(Keyboard)
+    KL_BEGIN_DESCRIBE(Keyboard)
+        KL_CTOR0(Keyboard)
+    KL_END_DESCRIBE(Keyboard)
 };
 
-} // namespace ptx
+} // namespace koilo

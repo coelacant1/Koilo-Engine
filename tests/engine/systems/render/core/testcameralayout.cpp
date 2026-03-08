@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testcameralayout.cpp
  * @brief Implementation of CameraLayout unit tests.
@@ -5,6 +6,7 @@
 
 #include "testcameralayout.hpp"
 
+using namespace koilo;
 // ========== Constructor Tests ==========
 
 void TestCameraLayout::TestDefaultConstructor() {

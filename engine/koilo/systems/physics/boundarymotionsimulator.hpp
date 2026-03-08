@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file BoundaryMotionSimulator.h
  * @brief Defines the BoundaryMotionSimulator class for simulating motion and collisions of boundary objects.
@@ -22,6 +23,8 @@
 #include "../../core/geometry/3d/sphere.hpp"
 #include "../../core/platform/random.hpp"
 #include "../../registry/reflect_macros.hpp"
+
+namespace koilo {
 
 /**
  * @class BoundaryMotionSimulator
@@ -66,18 +69,21 @@ public:
      */
     void Update(float dT, Vector3D acceleration, Quaternion rotation);
 
-    PTX_BEGIN_FIELDS(BoundaryMotionSimulator)
+
+
+
+    KL_BEGIN_FIELDS(BoundaryMotionSimulator)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(BoundaryMotionSimulator)
-        PTX_METHOD_AUTO(BoundaryMotionSimulator, Randomize, "Randomize"),
-        PTX_METHOD_AUTO(BoundaryMotionSimulator, RandomRatio, "Random ratio"),
-        PTX_METHOD_AUTO(BoundaryMotionSimulator, Update, "Update")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(BoundaryMotionSimulator)
+        /* No reflected methods. */
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(BoundaryMotionSimulator)
-        PTX_CTOR(BoundaryMotionSimulator, Mesh **, int, Cube *, float, float)
-    PTX_END_DESCRIBE(BoundaryMotionSimulator)
+    KL_BEGIN_DESCRIBE(BoundaryMotionSimulator)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(BoundaryMotionSimulator)
 
 };
+
+} // namespace koilo

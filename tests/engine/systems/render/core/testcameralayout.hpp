@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testcameralayout.hpp
  * @brief Unit tests for the CameraLayout class.
@@ -12,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/systems/render/core/cameralayout.hpp>
+#include <koilo/systems/scene/camera/cameralayout.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

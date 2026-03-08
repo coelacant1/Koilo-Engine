@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 #pragma once
 
 #if defined(ARDUINO)
@@ -7,9 +8,9 @@
     #include <cstdint>
 #endif
 
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
 
-namespace ptx {
+namespace koilo {
 namespace Time {
 
 inline uint32_t Millis() {
@@ -34,20 +35,20 @@ inline uint32_t Micros() {
 #endif
 }
     struct Reflection {
-        static uint32_t Millis() { return ::ptx::Time::Millis(); }
-        static uint32_t Micros() { return ::ptx::Time::Micros(); }
+        static uint32_t Millis() { return ::koilo::Time::Millis(); }
+        static uint32_t Micros() { return ::koilo::Time::Micros(); }
 
-        PTX_BEGIN_FIELDS(Reflection)
+        KL_BEGIN_FIELDS(Reflection)
             /* No reflected fields. */
-        PTX_END_FIELDS
+        KL_END_FIELDS
 
-        PTX_BEGIN_METHODS(Reflection)
-            PTX_SMETHOD_OVLD0(Reflection, Millis, uint32_t),
-            PTX_SMETHOD_OVLD0(Reflection, Micros, uint32_t)
-        PTX_END_METHODS
+        KL_BEGIN_METHODS(Reflection)
+            KL_SMETHOD_OVLD0(Reflection, Millis, uint32_t),
+            KL_SMETHOD_OVLD0(Reflection, Micros, uint32_t)
+        KL_END_METHODS
 
-        PTX_BEGIN_DESCRIBE(Reflection)
-        PTX_END_DESCRIBE(Reflection)
+        KL_BEGIN_DESCRIBE(Reflection)
+        KL_END_DESCRIBE(Reflection)
     };
 } // namespace Time 
-} // namespace ptx
+} // namespace koilo

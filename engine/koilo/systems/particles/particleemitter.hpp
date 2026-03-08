@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file particleemitter.hpp
  * @brief Particle emitter for spawning and managing particles.
@@ -11,10 +12,11 @@
 #include <vector>
 #include <functional>
 #include "particle.hpp"
-#include "../../core/math/transform.hpp"
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/core/color/color888.hpp>
+#include <koilo/core/math/transform.hpp>
+#include <koilo/registry/reflect_macros.hpp>
 
-namespace ptx {
+namespace koilo {
 
 /**
  * @enum EmitterShape
@@ -84,26 +86,26 @@ struct ParticleEmitterConfig {
           rotationSpeedMin(0.0f), rotationSpeedMax(0.0f),
           gravity(0, -9.8f, 0) {}
 
-    PTX_BEGIN_FIELDS(ParticleEmitterConfig)
-        PTX_FIELD(ParticleEmitterConfig, emissionRate, "Emission rate", 0, 0),
-        PTX_FIELD(ParticleEmitterConfig, maxParticles, "Max particles", 0, 0),
-        PTX_FIELD(ParticleEmitterConfig, looping, "Looping", 0, 1),
-        PTX_FIELD(ParticleEmitterConfig, duration, "Duration", 0, 0),
-        PTX_FIELD(ParticleEmitterConfig, lifetimeMin, "Lifetime min", 0, 0),
-        PTX_FIELD(ParticleEmitterConfig, lifetimeMax, "Lifetime max", 0, 0),
-        PTX_FIELD(ParticleEmitterConfig, sizeStart, "Size start", 0, 0),
-        PTX_FIELD(ParticleEmitterConfig, sizeEnd, "Size end", 0, 0),
-        PTX_FIELD(ParticleEmitterConfig, colorStart, "Color start", 0, 0),
-        PTX_FIELD(ParticleEmitterConfig, colorEnd, "Color end", 0, 0),
-        PTX_FIELD(ParticleEmitterConfig, gravity, "Gravity", 0, 0)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(ParticleEmitterConfig)
+        KL_FIELD(ParticleEmitterConfig, emissionRate, "Emission rate", 0, 0),
+        KL_FIELD(ParticleEmitterConfig, maxParticles, "Max particles", 0, 0),
+        KL_FIELD(ParticleEmitterConfig, looping, "Looping", 0, 1),
+        KL_FIELD(ParticleEmitterConfig, duration, "Duration", 0, 0),
+        KL_FIELD(ParticleEmitterConfig, lifetimeMin, "Lifetime min", 0, 0),
+        KL_FIELD(ParticleEmitterConfig, lifetimeMax, "Lifetime max", 0, 0),
+        KL_FIELD(ParticleEmitterConfig, sizeStart, "Size start", 0, 0),
+        KL_FIELD(ParticleEmitterConfig, sizeEnd, "Size end", 0, 0),
+        KL_FIELD(ParticleEmitterConfig, colorStart, "Color start", 0, 0),
+        KL_FIELD(ParticleEmitterConfig, colorEnd, "Color end", 0, 0),
+        KL_FIELD(ParticleEmitterConfig, gravity, "Gravity", 0, 0)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(ParticleEmitterConfig)
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(ParticleEmitterConfig)
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(ParticleEmitterConfig)
-        PTX_CTOR0(ParticleEmitterConfig)
-    PTX_END_DESCRIBE(ParticleEmitterConfig)
+    KL_BEGIN_DESCRIBE(ParticleEmitterConfig)
+        KL_CTOR0(ParticleEmitterConfig)
+    KL_END_DESCRIBE(ParticleEmitterConfig)
 };
 
 /**
@@ -125,6 +127,7 @@ private:
     float emissionTimer;                      ///< Time since last emission
     float durationTimer;                      ///< Time since emission started
     bool isPlaying;                           ///< Is emitter playing?
+    int renderSize_;                          ///< Pixel size for rendering (1 = single pixel)
 
     std::vector<ParticleUpdateCallback> updateCallbacks;  ///< Custom update functions
 
@@ -170,9 +173,8 @@ public:
 
     /**
      * @brief Updates all particles.
-     * @param deltaTime Time since last update (seconds).
      */
-    void Update(float deltaTime);
+    void Update();
 
     // === Configuration ===
 
@@ -212,6 +214,30 @@ public:
      * @brief Clears all particles.
      */
     void Clear();
+
+    // === Rendering ===
+
+    /**
+     * @brief Render all active particles into a rectangular Color888 buffer.
+     * Particle positions are interpreted as screen-space (x,y).
+     * @param buffer Row-major Color888 array (width * height).
+     * @param width  Buffer width in pixels.
+     * @param height Buffer height in pixels.
+     */
+    void Render(Color888* buffer, int width, int height);
+
+    // === Script-friendly setters ===
+
+    void SetPosition(float x, float y, float z);
+    void SetEmissionRate(float rate);
+    void SetLifetime(float minL, float maxL);
+    void SetVelocityRange(float vxMin, float vyMin, float vzMin, float vxMax, float vyMax, float vzMax);
+    void SetGravity(float gx, float gy, float gz);
+    void SetStartColor(float r, float g, float b);
+    void SetEndColor(float r, float g, float b);
+    void SetSizeRange(float start, float end);
+    void SetParticleSize(int pixels);
+    int GetParticleSize() const;
 
     // === Custom Updates ===
 
@@ -259,30 +285,39 @@ private:
      */
     Particle* GetInactiveParticle();
 
-    PTX_BEGIN_FIELDS(ParticleEmitter)
-        PTX_FIELD(ParticleEmitter, transform, "Transform", 0, 0),
-        PTX_FIELD(ParticleEmitter, config, "Config", 0, 0),
-        PTX_FIELD(ParticleEmitter, isPlaying, "Is playing", 0, 1)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(ParticleEmitter)
+        KL_FIELD(ParticleEmitter, transform, "Transform", 0, 0),
+        KL_FIELD(ParticleEmitter, config, "Config", 0, 0),
+        KL_FIELD(ParticleEmitter, isPlaying, "Is playing", 0, 1)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(ParticleEmitter)
-        PTX_METHOD_AUTO(ParticleEmitter, Play, "Play"),
-        PTX_METHOD_AUTO(ParticleEmitter, Stop, "Stop"),
-        PTX_METHOD_AUTO(ParticleEmitter, Pause, "Pause"),
-        PTX_METHOD_AUTO(ParticleEmitter, IsPlaying, "Is playing"),
-        PTX_METHOD_AUTO(ParticleEmitter, Update, "Update"),
-        PTX_METHOD_AUTO(ParticleEmitter, GetConfig, "Get config"),
-        PTX_METHOD_AUTO(ParticleEmitter, SetConfig, "Set config"),
-        PTX_METHOD_AUTO(ParticleEmitter, GetActiveParticleCount, "Get active particle count"),
-        PTX_METHOD_AUTO(ParticleEmitter, Clear, "Clear"),
-        PTX_METHOD_AUTO(ParticleEmitter, Emit, "Emit"),
-        PTX_METHOD_AUTO(ParticleEmitter, EmitBurst, "Emit burst")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(ParticleEmitter)
+        KL_METHOD_AUTO(ParticleEmitter, Play, "Play"),
+        KL_METHOD_AUTO(ParticleEmitter, Stop, "Stop"),
+        KL_METHOD_AUTO(ParticleEmitter, Pause, "Pause"),
+        KL_METHOD_AUTO(ParticleEmitter, IsPlaying, "Is playing"),
+        KL_METHOD_AUTO(ParticleEmitter, Update, "Update"),
+        KL_METHOD_AUTO(ParticleEmitter, GetActiveParticleCount, "Get active particle count"),
+        KL_METHOD_AUTO(ParticleEmitter, Clear, "Clear"),
+        KL_METHOD_AUTO(ParticleEmitter, Emit, "Emit"),
+        KL_METHOD_AUTO(ParticleEmitter, EmitBurst, "Emit burst"),
+        KL_METHOD_AUTO(ParticleEmitter, SetPosition, "Set position"),
+        KL_METHOD_AUTO(ParticleEmitter, SetEmissionRate, "Set emission rate"),
+        KL_METHOD_AUTO(ParticleEmitter, SetLifetime, "Set lifetime range"),
+        KL_METHOD_AUTO(ParticleEmitter, SetVelocityRange, "Set velocity range"),
+        KL_METHOD_AUTO(ParticleEmitter, SetGravity, "Set gravity"),
+        KL_METHOD_AUTO(ParticleEmitter, SetStartColor, "Set start color"),
+        KL_METHOD_AUTO(ParticleEmitter, SetEndColor, "Set end color"),
+        KL_METHOD_AUTO(ParticleEmitter, SetSizeRange, "Set size range"),
+        KL_METHOD_AUTO(ParticleEmitter, SetParticleSize, "Set render size"),
+        KL_METHOD_AUTO(ParticleEmitter, GetParticleSize, "Get render size"),
+        KL_METHOD_AUTO(ParticleEmitter, Render, "Render to buffer")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(ParticleEmitter)
-        PTX_CTOR0(ParticleEmitter),
-        PTX_CTOR(ParticleEmitter, ParticleEmitterConfig)
-    PTX_END_DESCRIBE(ParticleEmitter)
+    KL_BEGIN_DESCRIBE(ParticleEmitter)
+        KL_CTOR0(ParticleEmitter),
+        KL_CTOR(ParticleEmitter, ParticleEmitterConfig)
+    KL_END_DESCRIBE(ParticleEmitter)
 };
 
-} // namespace ptx
+} // namespace koilo

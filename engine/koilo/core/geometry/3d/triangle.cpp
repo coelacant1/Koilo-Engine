@@ -1,30 +1,38 @@
-#include <ptx/core/geometry/3d/triangle.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/core/geometry/3d/triangle.hpp>
 
-Triangle3D::Triangle3D() : p1(), p2(), p3() {}
 
-Triangle3D::Triangle3D(const Vector3D& v1, const Vector3D& v2, const Vector3D& v3)
+namespace koilo {
+
+koilo::Triangle3D::Triangle3D() : p1(nullptr), p2(nullptr), p3(nullptr) {}
+
+koilo::Triangle3D::Triangle3D(Vector3D* v1, Vector3D* v2, Vector3D* v3)
     : p1(v1), p2(v2), p3(v3) {}
 
-float Triangle3D::GetArea() const {
+float koilo::Triangle3D::GetArea() const {
+    if (!p1 || !p2 || !p3) return 0.0f;
     // The magnitude of the cross product of two edge vectors is twice the area.
-    return 0.5f * (p2 - p1).CrossProduct(p3 - p1).Magnitude();
+    return 0.5f * (*p2 - *p1).CrossProduct(*p3 - *p1).Magnitude();
 }
 
-Vector3D Triangle3D::GetNormal() const {
-    Vector3D edge1 = p2 - p1;
-    Vector3D edge2 = p3 - p1;
+Vector3D koilo::Triangle3D::GetNormal() const {
+    if (!p1 || !p2 || !p3) return Vector3D();
+    Vector3D edge1 = *p2 - *p1;
+    Vector3D edge2 = *p3 - *p1;
     return edge1.CrossProduct(edge2).UnitSphere();
 }
 
-Vector3D Triangle3D::GetCentroid() const {
-    return (p1 + p2 + p3) / 3.0f;
+Vector3D koilo::Triangle3D::GetCentroid() const {
+    if (!p1 || !p2 || !p3) return Vector3D();
+    return (*p1 + *p2 + *p3) / 3.0f;
 }
 
-Vector3D Triangle3D::ClosestPoint(const Vector3D& p) const {
+Vector3D koilo::Triangle3D::ClosestPoint(const Vector3D& p) const {
+    if (!p1 || !p2 || !p3) return Vector3D();
     // Implementation of "Real-Time Collision Detection" by Christer Ericson, chapter 5.1.5
-    Vector3D edge0 = p2 - p1;
-    Vector3D edge1 = p3 - p1;
-    Vector3D v0 = p1 - p;
+    Vector3D edge0 = *p2 - *p1;
+    Vector3D edge1 = *p3 - *p1;
+    Vector3D v0 = *p1 - p;
 
     float a = edge0.DotProduct(edge0);
     float b = edge0.DotProduct(edge1);
@@ -94,5 +102,7 @@ Vector3D Triangle3D::ClosestPoint(const Vector3D& p) const {
             t = 1.0f - s;
         }
     }
-    return p1 + edge0 * s + edge1 * t;
+    return *p1 + edge0 * s + edge1 * t;
 }
+
+} // namespace koilo

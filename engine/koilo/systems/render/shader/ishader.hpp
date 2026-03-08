@@ -1,10 +1,13 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 #pragma once
 
-#include <type_traits>
-#include "../../../core/color/rgbcolor.hpp"
-#include "../../../core/math/vector2d.hpp"
-#include "../../../core/math/vector3d.hpp"
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/core/color/color888.hpp>
+#include <koilo/core/math/vector2d.hpp>
+#include <koilo/core/math/vector3d.hpp>
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @file ishader.hpp
@@ -23,6 +26,9 @@ struct SurfaceProperties {
     const Vector3D& position;   ///< Position in object or world space
     const Vector3D& normal;     ///< Interpolated normal (same space as lighting)
     const Vector3D& uvw;        ///< UV or barycentric coordinates
+    Vector3D viewDirection;     ///< Normalized camera->surface direction
+    Vector3D tangent;           ///< Surface tangent (for normal mapping)
+    Vector3D bitangent;         ///< Surface bitangent (for normal mapping)
 
     /**
      * @brief Construct from explicit position/normal/uvw references.
@@ -30,42 +36,40 @@ struct SurfaceProperties {
     SurfaceProperties(const Vector3D& p,
                       const Vector3D& n,
                       const Vector3D& t)
-        : position(p), normal(n), uvw(t) {}
+        : position(p), normal(n), uvw(t),
+          viewDirection(0, 0, 0), tangent(0, 0, 0), bitangent(0, 0, 0) {}
+
+    /**
+     * @brief Full construction with view direction and TBN basis.
+     */
+    SurfaceProperties(const Vector3D& p,
+                      const Vector3D& n,
+                      const Vector3D& t,
+                      const Vector3D& viewDir,
+                      const Vector3D& tan,
+                      const Vector3D& bitan)
+        : position(p), normal(n), uvw(t),
+          viewDirection(viewDir), tangent(tan), bitangent(bitan) {}
 
     SurfaceProperties(Vector3D&&, const Vector3D&, const Vector3D&) = delete;
     SurfaceProperties(const Vector3D&, Vector3D&&, const Vector3D&) = delete;
     SurfaceProperties(const Vector3D&, const Vector3D&, Vector3D&&) = delete;
 
-    /**
-     * @brief Helper to create from 2D UV (w = 0).
-     * @param p  Position reference.
-     * @param n  Normal reference.
-     * @param uv 2D UV; Z is taken as 0.
-     * @return SurfaceProperties holding references to inputs.
-     */
-    static SurfaceProperties FromUV(const Vector3D& p,
-                                    const Vector3D& n,
-                                    const Vector2D& uv) {
-        const Vector3D& uvw_storage = Vector3D(uv.X, uv.Y, 0.0f);
-        return SurfaceProperties(p, n, uvw_storage);
-    }
+    KL_BEGIN_FIELDS(SurfaceProperties)
+        KL_FIELD(SurfaceProperties, position, "Position", 0, 0),
+        KL_FIELD(SurfaceProperties, normal, "Normal", 0, 0),
+        KL_FIELD(SurfaceProperties, uvw, "Uvw", 0, 0),
+        KL_FIELD(SurfaceProperties, viewDirection, "View direction", 0, 0),
+        KL_FIELD(SurfaceProperties, tangent, "Tangent", 0, 0),
+        KL_FIELD(SurfaceProperties, bitangent, "Bitangent", 0, 0)
+    KL_END_FIELDS
 
-    PTX_BEGIN_FIELDS(SurfaceProperties)
-        PTX_FIELD(SurfaceProperties, position, "Position", 0, 0),
-        PTX_FIELD(SurfaceProperties, normal, "Normal", 0, 0),
-        PTX_FIELD(SurfaceProperties, uvw, "Uvw", 0, 0)
-    PTX_END_FIELDS
+    KL_BEGIN_METHODS(SurfaceProperties)
+    KL_END_METHODS
 
-    PTX_BEGIN_METHODS(SurfaceProperties)
-        PTX_SMETHOD_AUTO(SurfaceProperties::FromUV, "From uv")
-    PTX_END_METHODS
-
-    PTX_BEGIN_DESCRIBE(SurfaceProperties)
-        PTX_CTOR(SurfaceProperties, const Vector3D &, const Vector3D &, const Vector3D &),
-        PTX_CTOR(SurfaceProperties, Vector3D &&, const Vector3D &, const Vector3D &),
-        PTX_CTOR(SurfaceProperties, const Vector3D &, Vector3D &&, const Vector3D &),
-        PTX_CTOR(SurfaceProperties, const Vector3D &, const Vector3D &, Vector3D &&)
-    PTX_END_DESCRIBE(SurfaceProperties)
+    KL_BEGIN_DESCRIBE(SurfaceProperties)
+        KL_CTOR(SurfaceProperties, const Vector3D &, const Vector3D &, const Vector3D &)
+    KL_END_DESCRIBE(SurfaceProperties)
 
 };
 
@@ -86,7 +90,9 @@ public:
      * @param mat  Parameter provider (concrete material).
      * @return Linear-space RGB colour.
      */
-    virtual RGBColor Shade(const SurfaceProperties& surf,
+    virtual Color888 Shade(const SurfaceProperties& surf,
                            const IMaterial&         mat) const = 0;
 
 };
+
+} // namespace koilo

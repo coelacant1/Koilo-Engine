@@ -1,31 +1,30 @@
-#include <ptx/systems/physics/spherecollider.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/systems/physics/spherecollider.hpp>
 #include <cmath>
-#include <algorithm>
 
-namespace ptx {
+namespace koilo {
 
-SphereCollider::SphereCollider()
+koilo::SphereCollider::SphereCollider()
     : Collider(ColliderType::Sphere), Sphere(Vector3D(0, 0, 0), 1.0f) {
 }
 
-SphereCollider::SphereCollider(const Vector3D& position, float radius)
+koilo::SphereCollider::SphereCollider(const Vector3D& position, float radius)
     : Collider(ColliderType::Sphere), Sphere(position, radius) {
 }
 
-SphereCollider::~SphereCollider() {
+koilo::SphereCollider::~SphereCollider() {
 }
 
-bool SphereCollider::Raycast(const Vector3D& origin, const Vector3D& direction,
-                              RaycastHit& hit, float maxDistance) {
+bool koilo::SphereCollider::Raycast(const Ray& ray, RaycastHit& hit, float maxDistance) {
     // Ray-sphere intersection using quadratic formula
     // Ray: P(t) = origin + t * direction
     // Sphere: |P - center|^2 = radius^2
 
-    Vector3D oc = origin - position;
-    float a = direction.dot(direction);
-    float b = 2.0f * oc.dot(direction);
+    Vector3D oc = ray.origin - position;
+    float a = ray.direction.DotProduct(ray.direction);
+    float b = 2.0f * oc.DotProduct(ray.direction);
     float radius = GetRadius();
-    float c = oc.dot(oc) - radius * radius;
+    float c = oc.DotProduct(oc) - radius * radius;
     float discriminant = b * b - 4 * a * c;
 
     if (discriminant < 0) {
@@ -45,23 +44,23 @@ bool SphereCollider::Raycast(const Vector3D& origin, const Vector3D& direction,
 
     // Fill hit information
     hit.distance = t;
-    hit.point = origin + direction * t;
-    hit.normal = (hit.point - position);
-    hit.normal.normalize();
+    hit.point = ray.GetPoint(t);
+    hit.normal = (hit.point - position).Normal();
     hit.collider = this;
 
     return true;
 }
 
-bool SphereCollider::ContainsPoint(const Vector3D& point) {
+bool koilo::SphereCollider::ContainsPoint(const Vector3D& point) {
     float radius = GetRadius();
-    float distSquared = (point - position).lengthSquared();
+    Vector3D delta = point - position;
+    float distSquared = delta.DotProduct(delta);
     return distSquared <= (radius * radius);
 }
 
-Vector3D SphereCollider::ClosestPoint(const Vector3D& point) {
+Vector3D koilo::SphereCollider::ClosestPoint(const Vector3D& point) {
     Vector3D dir = point - position;
-    float dist = dir.length();
+    float dist = dir.Magnitude();
     float radius = GetRadius();
 
     if (dist <= radius) {
@@ -70,16 +69,16 @@ Vector3D SphereCollider::ClosestPoint(const Vector3D& point) {
     }
 
     // Point is outside, project to surface
-    dir.normalize();
+    dir = dir.Normal();
     return position + dir * radius;
 }
 
-Vector3D SphereCollider::GetPosition() const {
+Vector3D koilo::SphereCollider::GetPosition() const {
     return position;
 }
 
-void SphereCollider::SetPosition(const Vector3D& pos) {
+void koilo::SphereCollider::SetPosition(const Vector3D& pos) {
     position = pos;
 }
 
-} // namespace ptx
+} // namespace koilo

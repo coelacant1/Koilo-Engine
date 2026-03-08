@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testpeakdetection.cpp
  * @brief Implementation of PeakDetection unit tests.
@@ -6,6 +7,7 @@
 #include "testpeakdetection.hpp"
 #include <vector>
 
+using namespace koilo;
 // ========== Constructor Tests ==========
 
 void TestPeakDetection::TestDefaultConstructor() {
@@ -36,18 +38,18 @@ void TestPeakDetection::TestParameterizedConstructor() {
 // ========== Method Tests ==========
 
 void TestPeakDetection::TestCalculate() {
-    PeakDetection detector(20);
+    // lag must be much smaller than sample size
+    PeakDetection detector(100, 5, 0.75f, 0.5f);
     
     // Create test data with a clear peak
-    std::vector<float> data(20, 10.0f);
-    data[10] = 50.0f;  // Peak in the middle
+    std::vector<float> data(100, 10.0f);
+    data[50] = 100.0f;  // Strong peak in the middle
     
     std::vector<bool> peaks;
     detector.Calculate(data.data(), peaks);
     
-    // Should detect the peak
-    TEST_ASSERT_EQUAL(20, peaks.size());
-    TEST_ASSERT_TRUE(peaks[10] == true);
+    TEST_ASSERT_EQUAL(100, peaks.size());
+    TEST_ASSERT_TRUE(peaks[50] == true);
 }
 
 void TestPeakDetection::TestReset() {

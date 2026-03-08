@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file AxisAngle.h
  * @brief Represents a rotation defined by an axis and an angle.
@@ -13,7 +14,10 @@
 
 #include "mathematics.hpp"
 #include "vector3d.hpp"
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class AxisAngle
@@ -52,20 +56,22 @@ public:
      *
      * @return A string representing the `AxisAngle` in the format "(rotation: X, axis: [X, Y, Z])".
      */
-    ptx::UString ToString();
+    koilo::UString ToString();
 
-    PTX_BEGIN_FIELDS(AxisAngle)
-        PTX_FIELD(AxisAngle, Rotation, "Rotation", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(AxisAngle, Axis, "Axis", 0, 0)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(AxisAngle)
+        KL_FIELD(AxisAngle, Rotation, "Rotation", __FLT_MIN__, __FLT_MAX__),
+        KL_FIELD(AxisAngle, Axis, "Axis", 0, 0)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(AxisAngle)
-        PTX_METHOD_AUTO(AxisAngle, ToString, "To string")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(AxisAngle)
+        KL_METHOD_AUTO(AxisAngle, ToString, "To string")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(AxisAngle)
-        PTX_CTOR(AxisAngle, float, float, float, float),
-        PTX_CTOR(AxisAngle, float, Vector3D)
-    PTX_END_DESCRIBE(AxisAngle)
+    KL_BEGIN_DESCRIBE(AxisAngle)
+        KL_CTOR(AxisAngle, float, float, float, float),
+        KL_CTOR(AxisAngle, float, Vector3D)
+    KL_END_DESCRIBE(AxisAngle)
 
 };
+
+} // namespace koilo

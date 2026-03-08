@@ -1,60 +1,61 @@
-#include <ptx/systems/input/gamepad.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/systems/input/gamepad.hpp>
 #include <cmath>
 
-namespace ptx {
+namespace koilo {
 
-Gamepad::Gamepad() : id(-1), connected(false) {
+koilo::Gamepad::Gamepad() : id(-1), connected(false) {
     currentButtons.fill(false);
     previousButtons.fill(false);
     axes.fill(0.0f);
 }
 
-Gamepad::Gamepad(int id) : id(id), connected(false) {
+koilo::Gamepad::Gamepad(int id) : id(id), connected(false) {
     currentButtons.fill(false);
     previousButtons.fill(false);
     axes.fill(0.0f);
 }
 
-void Gamepad::Update() {
+void koilo::Gamepad::Update() {
     previousButtons = currentButtons;
 }
 
-void Gamepad::SetButtonState(GamepadButton button, bool pressed) {
+void koilo::Gamepad::SetButtonState(GamepadButton button, bool pressed) {
     size_t index = static_cast<size_t>(button);
     if (index < currentButtons.size()) {
         currentButtons[index] = pressed;
     }
 }
 
-void Gamepad::SetAxisValue(GamepadAxis axis, float value) {
+void koilo::Gamepad::SetAxisValue(GamepadAxis axis, float value) {
     size_t index = static_cast<size_t>(axis);
     if (index < axes.size()) {
         axes[index] = value;
     }
 }
 
-bool Gamepad::IsButtonPressed(GamepadButton button) const {
+bool koilo::Gamepad::IsButtonPressed(GamepadButton button) const {
     size_t index = static_cast<size_t>(button);
     if (index >= currentButtons.size()) return false;
 
     return currentButtons[index] && !previousButtons[index];
 }
 
-bool Gamepad::IsButtonHeld(GamepadButton button) const {
+bool koilo::Gamepad::IsButtonHeld(GamepadButton button) const {
     size_t index = static_cast<size_t>(button);
     if (index >= currentButtons.size()) return false;
 
     return currentButtons[index];
 }
 
-bool Gamepad::IsButtonReleased(GamepadButton button) const {
+bool koilo::Gamepad::IsButtonReleased(GamepadButton button) const {
     size_t index = static_cast<size_t>(button);
     if (index >= currentButtons.size()) return false;
 
     return !currentButtons[index] && previousButtons[index];
 }
 
-float Gamepad::GetAxisValue(GamepadAxis axis) const {
+float koilo::Gamepad::GetAxisValue(GamepadAxis axis) const {
     size_t index = static_cast<size_t>(axis);
     if (index >= axes.size()) return 0.0f;
 
@@ -77,4 +78,4 @@ float Gamepad::GetAxisValue(GamepadAxis axis) const {
     return value;
 }
 
-} // namespace ptx
+} // namespace koilo

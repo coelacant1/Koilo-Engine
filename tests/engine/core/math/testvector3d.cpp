@@ -1,5 +1,7 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 #include "testvector3d.hpp"
 
+using namespace koilo;
 void TestVector3D::TestAbsolute() {
     Vector3D v(-3.0, -4.0, -5.0);
     Vector3D absV = v.Absolute();
@@ -78,60 +80,106 @@ void TestVector3D::TestIsEqual() {
 
 void TestVector3D::TestToString() {
     Vector3D v(1.0, 2.0, 3.0);
-    ptx::UString str = v.ToString();
+    koilo::UString str = v.ToString();
     TEST_ASSERT_EQUAL_STRING("[1.000, 2.000, 3.000]", str.CStr());
 }
 
 void TestVector3D::TestAverageHighestTwoComponents() {
-    // TODO: Implement test for AverageHighestTwoComponents()
-    // Vector3D obj; // Requires constructor parameters
-    TEST_ASSERT_TRUE(false);  // Not implemented
+    Vector3D v(1.0, 5.0, 3.0);
+    float avg = v.AverageHighestTwoComponents();
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 4.0, avg);
+    
+    Vector3D v2(10.0, 2.0, 8.0);
+    float avg2 = v2.AverageHighestTwoComponents();
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 9.0, avg2);
 }
 
 void TestVector3D::TestDefaultConstructor() {
-    // TODO: Implement test for default constructor
-    // Vector3D obj; // Requires constructor parameters
-    TEST_ASSERT_TRUE(false);  // Not implemented
+    Vector3D v;
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 0.0, v.X);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 0.0, v.Y);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 0.0, v.Z);
 }
 
 void TestVector3D::TestDivide() {
-    // TODO: Implement test for Divide()
-    // Vector3D obj; // Requires constructor parameters
-    TEST_ASSERT_TRUE(false);  // Not implemented
+    Vector3D v1(8.0, 15.0, 20.0);
+    Vector3D v2(2.0, 3.0, 4.0);
+    Vector3D result = v1.Divide(v2);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 4.0, result.X);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 5.0, result.Y);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 5.0, result.Z);
+    
+    Vector3D scalar_result = v1.Divide(2.0f);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 4.0, scalar_result.X);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 7.5, scalar_result.Y);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 10.0, scalar_result.Z);
 }
 
 void TestVector3D::TestEdgeCases() {
-    // TODO: Test edge cases (null, boundaries, extreme values)
-    TEST_ASSERT_TRUE(false);  // Not implemented
+    Vector3D zero(0.0, 0.0, 0.0);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 0.0, zero.Magnitude());
+    
+    Vector3D normalized_zero = zero.UnitSphere();
+    TEST_ASSERT_FALSE(isnan(normalized_zero.X) && isnan(normalized_zero.Y) && isnan(normalized_zero.Z));
+    
+    Vector3D large(1e6, 1e6, 1e6);
+    Vector3D large_add = large.Add(Vector3D(1.0, 1.0, 1.0));
+    TEST_ASSERT_FLOAT_WITHIN(1.0, 1e6 + 1.0, large_add.X);
+    
+    Vector3D negative(-5.0, -10.0, -15.0);
+    Vector3D abs_neg = negative.Absolute();
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 5.0, abs_neg.X);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 10.0, abs_neg.Y);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 15.0, abs_neg.Z);
 }
 
 void TestVector3D::TestMax() {
-    // TODO: Implement test for Max()
-    // Vector3D obj; // Requires constructor parameters
-    TEST_ASSERT_TRUE(false);  // Not implemented
+    Vector3D v(3.0, 1.5, 7.0);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 7.0, v.Max());
+    
+    Vector3D negative(-5.0, -2.0, -10.0);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, -2.0, negative.Max());
 }
 
 void TestVector3D::TestMin() {
-    // TODO: Implement test for Min()
-    // Vector3D obj; // Requires constructor parameters
-    TEST_ASSERT_TRUE(false);  // Not implemented
+    Vector3D v(3.0, 1.5, 7.0);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 1.5, v.Min());
+    
+    Vector3D negative(-5.0, -2.0, -10.0);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, -10.0, negative.Min());
 }
 
 void TestVector3D::TestMultiply() {
-    // TODO: Implement test for Multiply()
-    // Vector3D obj; // Requires constructor parameters
-    TEST_ASSERT_TRUE(false);  // Not implemented
+    Vector3D v1(2.0, 3.0, 4.0);
+    Vector3D v2(4.0, 5.0, 6.0);
+    Vector3D result = v1.Multiply(v2);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 8.0, result.X);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 15.0, result.Y);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 24.0, result.Z);
+    
+    Vector3D scalar_result = v1.Multiply(2.5f);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 5.0, scalar_result.X);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 7.5, scalar_result.Y);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 10.0, scalar_result.Z);
 }
 
 void TestVector3D::TestParameterizedConstructor() {
-    // TODO: Implement test for parameterized constructor
-    TEST_ASSERT_TRUE(false);  // Not implemented
+    Vector3D v(3.5, 7.2, 9.1);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 3.5, v.X);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 7.2, v.Y);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 9.1, v.Z);
+    
+    Vector3D copy(v);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 3.5, copy.X);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 7.2, copy.Y);
+    TEST_ASSERT_FLOAT_WITHIN(0.01, 9.1, copy.Z);
 }
 
 void TestVector3D::TestPermutate() {
-    // TODO: Implement test for Permutate()
-    // Vector3D obj; // Requires constructor parameters
-    TEST_ASSERT_TRUE(false);  // Not implemented
+    Vector3D v(1.0, 2.0, 3.0);
+    Vector3D perm(0.0, 2.0, 1.0);
+    Vector3D result = v.Permutate(perm);
+    TEST_ASSERT_FALSE(isnan(result.X) && isnan(result.Y) && isnan(result.Z));
 }
 
 void TestVector3D::RunAllTests() {

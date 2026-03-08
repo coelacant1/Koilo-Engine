@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file TestRotation.h
  * @brief Provides unit tests for the Rotation class.
@@ -13,7 +14,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/core/math/rotation.hpp>
+#include <koilo/core/math/rotation.hpp>
 
 /**
  * @class TestRotation
@@ -30,7 +31,7 @@ private:
      * @param xyz The Euler angles in XYZ order.
      * @param q The expected quaternion after conversion.
      */
-    static void TestEulerAngleConversionXYZ(Vector3D xyz, Quaternion q);
+    static void TestEulerAngleConversionXYZ(koilo::Vector3D xyz, koilo::Quaternion q);
 
 public:
     static void TestDefaultConstructor(); ///< Tests the default constructor of the Rotation class.

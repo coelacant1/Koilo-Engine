@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file MinFilter.h
  * @brief Implements a moving minimum filter for processing data streams.
@@ -15,7 +16,10 @@
 #include <cstddef>
 #include <cstdint>
 #include <vector>
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class MinFilter
@@ -66,18 +70,20 @@ public:
      */
     size_t GetCapacity() const { return capacity; }
 
-    PTX_BEGIN_FIELDS(MinFilter)
+    KL_BEGIN_FIELDS(MinFilter)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(MinFilter)
-        PTX_METHOD_AUTO(MinFilter, Filter, "Filter"),
-        PTX_METHOD_AUTO(MinFilter, Reset, "Reset"),
-        PTX_METHOD_AUTO(MinFilter, GetCapacity, "Get capacity")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(MinFilter)
+        KL_METHOD_AUTO(MinFilter, Filter, "Filter"),
+        KL_METHOD_AUTO(MinFilter, Reset, "Reset"),
+        KL_METHOD_AUTO(MinFilter, GetCapacity, "Get capacity")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(MinFilter)
-        PTX_CTOR(MinFilter, int, bool)
-    PTX_END_DESCRIBE(MinFilter)
+    KL_BEGIN_DESCRIBE(MinFilter)
+        KL_CTOR(MinFilter, int, bool)
+    KL_END_DESCRIBE(MinFilter)
 
 };
+
+} // namespace koilo

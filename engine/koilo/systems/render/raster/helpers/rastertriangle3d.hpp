@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file rastertriangle3d.hpp
  * @brief A lightweight, pointer-based 3D triangle for rendering pipelines.
@@ -6,9 +7,12 @@
  */
 #pragma once
 
-#include "../../../../core/math/vector3d.hpp"
-#include "../../../../core/math/vector2d.hpp"
-#include "../../../../registry/reflect_macros.hpp"
+#include <koilo/core/math/vector3d.hpp>
+#include <koilo/core/math/vector2d.hpp>
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class RasterTriangle3D
@@ -69,28 +73,30 @@ public:
     /** @brief Returns a pointer to the pre-calculated normal vector. */
     const Vector3D& GetNormal() const;
 
-    PTX_BEGIN_FIELDS(RasterTriangle3D)
-        PTX_FIELD(RasterTriangle3D, p1, "P1", 0, 0),
-        PTX_FIELD(RasterTriangle3D, p2, "P2", 0, 0),
-        PTX_FIELD(RasterTriangle3D, p3, "P3", 0, 0),
-        PTX_FIELD(RasterTriangle3D, uv1, "Uv1", 0, 0),
-        PTX_FIELD(RasterTriangle3D, uv2, "Uv2", 0, 0),
-        PTX_FIELD(RasterTriangle3D, uv3, "Uv3", 0, 0),
-        PTX_FIELD(RasterTriangle3D, edge1, "Edge1", 0, 0),
-        PTX_FIELD(RasterTriangle3D, edge2, "Edge2", 0, 0),
-        PTX_FIELD(RasterTriangle3D, normal, "Normal", 0, 0),
-        PTX_FIELD(RasterTriangle3D, hasUV, "Has uv", 0, 1)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(RasterTriangle3D)
+        KL_FIELD(RasterTriangle3D, p1, "P1", 0, 0),
+        KL_FIELD(RasterTriangle3D, p2, "P2", 0, 0),
+        KL_FIELD(RasterTriangle3D, p3, "P3", 0, 0),
+        KL_FIELD(RasterTriangle3D, uv1, "Uv1", 0, 0),
+        KL_FIELD(RasterTriangle3D, uv2, "Uv2", 0, 0),
+        KL_FIELD(RasterTriangle3D, uv3, "Uv3", 0, 0),
+        KL_FIELD(RasterTriangle3D, edge1, "Edge1", 0, 0),
+        KL_FIELD(RasterTriangle3D, edge2, "Edge2", 0, 0),
+        KL_FIELD(RasterTriangle3D, normal, "Normal", 0, 0),
+        KL_FIELD(RasterTriangle3D, hasUV, "Has uv", 0, 1)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(RasterTriangle3D)
-        PTX_METHOD_AUTO(RasterTriangle3D, IntersectsRay, "Intersects ray"),
-        PTX_METHOD_AUTO(RasterTriangle3D, GetNormal, "Get normal")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(RasterTriangle3D)
+        KL_METHOD_AUTO(RasterTriangle3D, IntersectsRay, "Intersects ray"),
+        KL_METHOD_AUTO(RasterTriangle3D, GetNormal, "Get normal")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(RasterTriangle3D)
-        PTX_CTOR0(RasterTriangle3D),
-        PTX_CTOR(RasterTriangle3D, const Vector3D *, const Vector3D *, const Vector3D *),
-        PTX_CTOR(RasterTriangle3D, const Vector3D *, const Vector3D *, const Vector3D *, const Vector2D *, const Vector2D *, const Vector2D *)
-    PTX_END_DESCRIBE(RasterTriangle3D)
+    KL_BEGIN_DESCRIBE(RasterTriangle3D)
+        KL_CTOR0(RasterTriangle3D),
+        KL_CTOR(RasterTriangle3D, const Vector3D *, const Vector3D *, const Vector3D *),
+        KL_CTOR(RasterTriangle3D, const Vector3D *, const Vector3D *, const Vector3D *, const Vector2D *, const Vector2D *, const Vector2D *)
+    KL_END_DESCRIBE(RasterTriangle3D)
 
 };
+
+} // namespace koilo

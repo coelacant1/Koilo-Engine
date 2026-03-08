@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file TestRotationMatrix.h
  * @brief Provides unit tests for the RotationMatrix class.
@@ -13,7 +14,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/core/math/rotationmatrix.hpp>
+#include <koilo/core/math/rotationmatrix.hpp>
 
 /**
  * @class TestRotationMatrix

@@ -1,10 +1,13 @@
-#include <ptx/core/signal/fftvoicedetection.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/core/signal/fftvoicedetection.hpp>
 
 #include <algorithm>
-#include <cmath>
 #include <limits>
 
-FFTVoiceDetection::FFTVoiceDetection(size_t peakCountValue, uint8_t bandwidthValue)
+
+namespace koilo {
+
+koilo::FFTVoiceDetection::FFTVoiceDetection(size_t peakCountValue, uint8_t bandwidthValue)
     : peakCount(std::max<size_t>(1, peakCountValue)),
       bandwidth(std::max<uint8_t>(1, bandwidthValue)),
       peakDetection(peakCount, 8, 2.0f, 0.5f),
@@ -12,11 +15,11 @@ FFTVoiceDetection::FFTVoiceDetection(size_t peakCountValue, uint8_t bandwidthVal
       peaksBinary(peakCount, false),
       peakDensity(peakCount, 0.0f) {}
 
-void FFTVoiceDetection::SetThreshold(float thresholdValue) {
+void koilo::FFTVoiceDetection::SetThreshold(float thresholdValue) {
     threshold = thresholdValue;
 }
 
-float FFTVoiceDetection::GetViseme(MouthShape viseme) const {
+float koilo::FFTVoiceDetection::GetViseme(MouthShape viseme) const {
     const size_t index = static_cast<size_t>(viseme);
     if (index >= visRatios.size()) {
         return 0.0f;
@@ -25,10 +28,10 @@ float FFTVoiceDetection::GetViseme(MouthShape viseme) const {
     return *visRatios[index];
 }
 
-ptx::UString FFTVoiceDetection::ToString() const {
+koilo::UString koilo::FFTVoiceDetection::ToString() const {
     float maxRatio = 0.0f;
     size_t winningIndex = std::numeric_limits<size_t>::max();
-    ptx::UString output;
+    koilo::UString output;
 
     for (size_t i = 0; i < kVisemeCount; ++i) {
         if (maxRatio < *visRatios[i]) {
@@ -38,9 +41,9 @@ ptx::UString FFTVoiceDetection::ToString() const {
     }
 
     if (winningIndex < kVisemeCount) {
-        output += ptx::UString::FromFloat(f1);
+        output += koilo::UString::FromFloat(f1);
         output += ",";
-        output += ptx::UString::FromFloat(f2);
+        output += koilo::UString::FromFloat(f2);
         output += ",";
     }
 
@@ -76,7 +79,7 @@ ptx::UString FFTVoiceDetection::ToString() const {
     return output;
 }
 
-void FFTVoiceDetection::ResetVisemes() {
+void koilo::FFTVoiceDetection::ResetVisemes() {
     for (auto* ratio : visRatios) {
         *ratio = 0.0f;
     }
@@ -89,7 +92,7 @@ void FFTVoiceDetection::ResetVisemes() {
     peakDetection.Reset();
 }
 
-void FFTVoiceDetection::Update(const float* peaks, float maxFrequency) {
+void koilo::FFTVoiceDetection::Update(const float* peaks, float maxFrequency) {
     if (peaks == nullptr || peakCount == 0) {
         return;
     }
@@ -103,7 +106,7 @@ void FFTVoiceDetection::Update(const float* peaks, float maxFrequency) {
     CalculateVisemeGroup();
 }
 
-void FFTVoiceDetection::CalculateFormants(const float* peaks) {
+void koilo::FFTVoiceDetection::CalculateFormants(const float* peaks) {
     if (peaks == nullptr || peakCount == 0) {
         f1 = 0.0f;
         f2 = 0.0f;
@@ -209,7 +212,7 @@ void FFTVoiceDetection::CalculateFormants(const float* peaks) {
     }
 }
 
-void FFTVoiceDetection::CalculateVisemeGroup() {
+void koilo::FFTVoiceDetection::CalculateVisemeGroup() {
     for (auto* ratio : visRatios) {
         *ratio = 0.0f;
     }
@@ -230,3 +233,5 @@ void FFTVoiceDetection::CalculateVisemeGroup() {
         *visRatios[firstClosest] = 1.0f;
     }
 }
+
+} // namespace koilo

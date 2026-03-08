@@ -1,16 +1,17 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testrenderingengine.hpp
  * @brief Unit tests for the RenderingEngine class.
  *
  * @date 10/10/2025
  * @version 1.0
- * @author Coela (Auto-Generated)
+ * @author Coela
  */
 
 #pragma once
 
 #include <unity.h>
-#include <ptx/systems/render/engine/renderer.hpp>
+#include <koilo/systems/render/renderer.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

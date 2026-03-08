@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file Scene.h
  * @brief Defines the `Scene` class for managing meshes and effects in a 3D environment.
@@ -13,9 +14,15 @@
 #pragma once
 
 #include <vector>
+#include <map>
+#include <string>
 
 #include "mesh.hpp"
-#include "../../registry/reflect_macros.hpp"
+#include "scenenode.hpp"
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class Scene
@@ -26,85 +33,57 @@
  */
 class Scene {
 private:
-    const int maxMeshes; ///< Maximum number of meshes allowed in the scene.
     std::vector<Mesh*> meshes; ///< Collection of mesh pointers managed by the scene.
     unsigned int numMeshes = 0; ///< Current number of meshes in the scene.
     bool doesUseEffect = false; ///< Flag indicating whether the effect is enabled.
 
-    /**
-     * @brief Removes an object from the scene by its index.
-     *
-     * This method adjusts the internal array to maintain order.
-     *
-     * @param element Index of the object to remove.
-     */
+    // Scene graph nodes (owned by scene)
+    std::map<std::string, SceneNode*> nodesByName_;
+    std::vector<SceneNode*> ownedNodes_;
+
     void RemoveElement(unsigned int element);
 
 public:
     /**
      * @brief Constructs a `Scene` instance.
-     * 
-     * @param maxMeshes Maximum number of meshes the scene can hold.
      */
-    Scene(unsigned int maxMeshes);
+    Scene();
+    ~Scene();
 
-    /**
-     * @brief Adds a 3D object to the scene.
-     * 
-     * @param object Pointer to the `Mesh` to add.
-     */
+    // --- Mesh management (flat list for rendering) ---
     void AddMesh(Mesh* object);
-
-    /**
-     * @brief Removes a 3D object from the scene by its index.
-     * 
-     * @param i Index of the object to remove.
-     */
     void RemoveMesh(unsigned int i);
-
-    /**
-     * @brief Removes a specific 3D object from the scene.
-     * 
-     * @param object Pointer to the `Mesh` to remove.
-     */
     void RemoveMesh(Mesh* object);
-
-    /**
-     * @brief Retrieves all meshes in the scene.
-     * 
-     * @return Pointer to the array of `Mesh` pointers.
-     */
     Mesh** GetMeshes();
-
-    /**
-     * @brief Retrieves the current number of meshes in the scene.
-     * 
-     * @return Number of meshes in the scene.
-     */
-    uint8_t GetMeshCount();
-
-    /**
-     * @brief Retrieves the current number of triangles in the scene
-     * 
-     * @return Number of triangles in the scene.
-     */
+    unsigned int GetMeshCount();
+    Mesh* GetMesh(unsigned int index);
     uint32_t GetTotalTriangleCount() const;
 
-    PTX_BEGIN_FIELDS(Scene)
-        /* No reflected fields. */
-    PTX_END_FIELDS
+    // --- Scene graph node management ---
+    SceneNode* CreateObject(const std::string& name);
+    SceneNode* Find(const std::string& name);
+    std::size_t GetNodeCount() const;
 
-    PTX_BEGIN_METHODS(Scene)
-        PTX_METHOD_AUTO(Scene, AddMesh, "Add mesh"),
-        /* Remove mesh */ PTX_METHOD_OVLD(Scene, RemoveMesh, void, unsigned int),
-        /* Remove mesh */ PTX_METHOD_OVLD(Scene, RemoveMesh, void, Mesh *),
-        PTX_METHOD_AUTO(Scene, GetMeshes, "Get meshes"),
-        PTX_METHOD_AUTO(Scene, GetMeshCount, "Get mesh count"),
-        PTX_METHOD_AUTO(Scene, GetTotalTriangleCount, "Get total triangle count")
-    PTX_END_METHODS
+    KL_BEGIN_FIELDS(Scene)
+    KL_END_FIELDS
 
-    PTX_BEGIN_DESCRIBE(Scene)
-        PTX_CTOR(Scene, unsigned int)
-    PTX_END_DESCRIBE(Scene)
+    KL_BEGIN_METHODS(Scene)
+        KL_METHOD_AUTO(Scene, AddMesh, "Add mesh"),
+        /* Remove mesh */ KL_METHOD_OVLD(Scene, RemoveMesh, void, unsigned int),
+        /* Remove mesh */ KL_METHOD_OVLD(Scene, RemoveMesh, void, Mesh *),
+        KL_METHOD_AUTO(Scene, GetMeshes, "Get meshes"),
+        KL_METHOD_AUTO(Scene, GetMeshCount, "Get mesh count"),
+        KL_METHOD_AUTO(Scene, GetMesh, "Get mesh by index"),
+        KL_METHOD_AUTO(Scene, GetTotalTriangleCount, "Get total triangle count"),
+        KL_METHOD_AUTO(Scene, CreateObject, "Create a named scene node"),
+        KL_METHOD_AUTO(Scene, Find, "Find scene node by name"),
+        KL_METHOD_AUTO(Scene, GetNodeCount, "Get number of scene nodes"),
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(Scene)
+        KL_CTOR0(Scene)
+    KL_END_DESCRIBE(Scene)
 
 };
+
+} // namespace koilo

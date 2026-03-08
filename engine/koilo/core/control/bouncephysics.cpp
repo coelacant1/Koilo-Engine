@@ -1,6 +1,10 @@
-#include <ptx/core/control/bouncephysics.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/core/control/bouncephysics.hpp>
 
-BouncePhysics::BouncePhysics(float gravity, float velocityRatio) :
+
+namespace koilo {
+
+koilo::BouncePhysics::BouncePhysics(float gravity, float velocityRatio) :
     velocityFilter(10, 0.4f),
     currentVelocity(0.0f),
     currentPosition(0.0f),
@@ -10,7 +14,7 @@ BouncePhysics::BouncePhysics(float gravity, float velocityRatio) :
     previousVelocity(0.0f) {
 }
 
-float BouncePhysics::Calculate(float velocity, uint32_t currentMillis) {
+float koilo::BouncePhysics::Calculate(float velocity, uint32_t currentMillis) {
     float dT = ((float)(currentMillis - previousMillis)) / 1000.0f;
 
     if (dT > 0.1f && dT < 2.0f) {
@@ -23,7 +27,7 @@ float BouncePhysics::Calculate(float velocity, uint32_t currentMillis) {
     return currentPosition;
 }
 
-float BouncePhysics::Calculate(float velocity, float dT) {
+float koilo::BouncePhysics::Calculate(float velocity, float dT) {
     velocity = velocityFilter.Filter(velocity);
     float changeRate = (velocity - previousVelocity) / dT;
 
@@ -45,3 +49,5 @@ float BouncePhysics::Calculate(float velocity, float dT) {
 
     return currentPosition + velocity;
 }
+
+} // namespace koilo

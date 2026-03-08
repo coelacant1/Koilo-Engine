@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file canvas.hpp
  * @brief Root UI container that handles rendering and input for UI hierarchy.
@@ -11,10 +12,11 @@
 #include <memory>
 #include <vector>
 #include "uielement.hpp"
-#include "../../core/mathematics/vector2d.hpp"
-#include "../../../registry/reflect_macros.hpp"
+#include "../../core/math/vector2d.hpp"
+#include "../../registry/reflect_macros.hpp"
 
-namespace ptx {
+namespace koilo {
+
 
 /**
  * @enum RenderMode
@@ -219,28 +221,29 @@ private:
      */
     void SortByZIndex(std::vector<std::shared_ptr<UIElement>>& elements);
 
-    PTX_BEGIN_FIELDS(Canvas)
-        PTX_FIELD(Canvas, sortOrder, "Sort order", -100, 100),
-        PTX_FIELD(Canvas, scaleFactor, "Scale factor", 0.1f, 10.0f),
-        PTX_FIELD(Canvas, matchWidthOrHeight, "Match width or height", 0.0f, 1.0f)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(Canvas)
+        KL_FIELD(Canvas, sortOrder, "Sort order", -100, 100),
+        KL_FIELD(Canvas, scaleFactor, "Scale factor", 0.1f, 10.0f),
+        KL_FIELD(Canvas, matchWidthOrHeight, "Match width or height", 0.0f, 1.0f)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(Canvas)
-        PTX_METHOD_AUTO(Canvas, SetRenderMode, "Set render mode"),
-        PTX_METHOD_AUTO(Canvas, GetRenderMode, "Get render mode"),
-        PTX_METHOD_AUTO(Canvas, SetSortOrder, "Set sort order"),
-        PTX_METHOD_AUTO(Canvas, GetSortOrder, "Get sort order"),
-        PTX_METHOD_AUTO(Canvas, SetScaleMode, "Set scale mode"),
-        PTX_METHOD_AUTO(Canvas, GetScaleMode, "Get scale mode"),
-        PTX_METHOD_AUTO(Canvas, SetScreenSize, "Set screen size"),
-        PTX_METHOD_AUTO(Canvas, GetScreenSize, "Get screen size"),
-        PTX_METHOD_AUTO(Canvas, Update, "Update"),
-        PTX_METHOD_AUTO(Canvas, Render, "Render")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(Canvas)
+        KL_METHOD_AUTO(Canvas, SetRenderMode, "Set render mode"),
+        KL_METHOD_AUTO(Canvas, GetRenderMode, "Get render mode"),
+        KL_METHOD_AUTO(Canvas, SetSortOrder, "Set sort order"),
+        KL_METHOD_AUTO(Canvas, GetSortOrder, "Get sort order"),
+        KL_METHOD_AUTO(Canvas, SetScaleMode, "Set scale mode"),
+        KL_METHOD_AUTO(Canvas, GetScaleMode, "Get scale mode"),
+        KL_METHOD_AUTO(Canvas, SetScreenSize, "Set screen size"),
+        KL_METHOD_AUTO(Canvas, GetScreenSize, "Get screen size"),
+        KL_METHOD_AUTO(Canvas, Update, "Update"),
+        KL_METHOD_AUTO(Canvas, Render, "Render")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(Canvas)
-        PTX_CTOR0(Canvas)
-    PTX_END_DESCRIBE(Canvas)
+    KL_BEGIN_DESCRIBE(Canvas)
+        KL_CTOR0(Canvas)
+    KL_END_DESCRIBE(Canvas)
 };
 
-} // namespace ptx
+
+} // namespace koilo

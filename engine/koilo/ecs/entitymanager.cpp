@@ -1,16 +1,17 @@
-#include <ptx/ecs/entitymanager.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/ecs/entitymanager.hpp>
 
-namespace ptx {
+namespace koilo {
 
-EntityManager::EntityManager()
+koilo::EntityManager::EntityManager()
     : entityCount(0) {
 }
 
-EntityManager::~EntityManager() {
+koilo::EntityManager::~EntityManager() {
     Clear();
 }
 
-Entity EntityManager::CreateEntity() {
+Entity koilo::EntityManager::CreateEntity() {
     uint32_t index;
     uint32_t generation;
 
@@ -45,7 +46,7 @@ Entity EntityManager::CreateEntity() {
     return Entity(Entity::MakeID(index, generation));
 }
 
-void EntityManager::DestroyEntity(Entity entity) {
+void koilo::EntityManager::DestroyEntity(Entity entity) {
     if (!IsEntityValid(entity)) {
         return;
     }
@@ -62,11 +63,14 @@ void EntityManager::DestroyEntity(Entity entity) {
         componentMasks[index].reset();
     }
 
-    // Mark index as free
+    // Mark index as free (increment generation to invalidate old handles)
+    if (index < generations.size()) {
+        generations[index]++;
+    }
     freeIndices.push(index);
 }
 
-bool EntityManager::IsEntityValid(Entity entity) const {
+bool koilo::EntityManager::IsEntityValid(Entity entity) const {
     uint32_t index = entity.GetIndex();
     uint32_t generation = entity.GetGeneration();
 
@@ -77,11 +81,11 @@ bool EntityManager::IsEntityValid(Entity entity) const {
     return generations[index] == generation && generation > 0;
 }
 
-size_t EntityManager::GetEntityCount() const {
+size_t koilo::EntityManager::GetEntityCount() const {
     return entityCount - freeIndices.size();
 }
 
-const ComponentMask& EntityManager::GetComponentMask(Entity entity) const {
+const ComponentMask& koilo::EntityManager::GetComponentMask(Entity entity) const {
     static ComponentMask emptyMask;
 
     if (!IsEntityValid(entity)) {
@@ -96,7 +100,7 @@ const ComponentMask& EntityManager::GetComponentMask(Entity entity) const {
     return componentMasks[index];
 }
 
-void EntityManager::Clear() {
+void koilo::EntityManager::Clear() {
     // Clear all component arrays
     for (auto& pair : componentArrays) {
         pair.second->Clear();
@@ -112,4 +116,4 @@ void EntityManager::Clear() {
     entityCount = 0;
 }
 
-} // namespace ptx
+} // namespace koilo

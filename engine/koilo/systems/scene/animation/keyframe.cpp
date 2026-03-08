@@ -1,13 +1,19 @@
-#include <ptx/systems/scene/animation/keyframe.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/systems/scene/animation/keyframe.hpp>
 
-KeyFrame::KeyFrame() {}
 
-KeyFrame::KeyFrame(float time, float value) {
+namespace koilo {
+
+koilo::KeyFrame::KeyFrame() {}
+
+koilo::KeyFrame::KeyFrame(float time, float value) {
     this->Time = time;
     this->Value = value;
 }
 
-void KeyFrame::Set(float time, float value) {
+void koilo::KeyFrame::Set(float time, float value) {
     this->Time = time;
     this->Value = value;
 }
+
+} // namespace koilo

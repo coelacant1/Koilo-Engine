@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testkeyframe.hpp
  * @brief Unit tests for the KeyFrame class.
@@ -12,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/systems/scene/animation/keyframe.hpp>
+#include <koilo/systems/scene/animation/keyframe.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

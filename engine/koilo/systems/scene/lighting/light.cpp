@@ -1,14 +1,19 @@
-#include <ptx/systems/scene/lighting/light.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <cmath>
+#include <koilo/systems/scene/lighting/light.hpp>
 
-Light::Light() {
+
+namespace koilo {
+
+koilo::Light::Light() {
     // Default constructor
 }
 
-Light::Light(Vector3D p, Vector3D intensity, float falloff, float a, float b)
+koilo::Light::Light(Vector3D p, Vector3D intensity, float falloff, float a, float b)
     : p(p), intensity(intensity), falloff(falloff), a(a), b(b) {
 }
 
-void Light::Set(Vector3D p, Vector3D intensity, float falloff, float a, float b) {
+void koilo::Light::Set(Vector3D p, Vector3D intensity, float falloff, float a, float b) {
     this->p = p;
     this->intensity = intensity;
     this->falloff = falloff;
@@ -16,50 +21,52 @@ void Light::Set(Vector3D p, Vector3D intensity, float falloff, float a, float b)
     this->b = b;
 }
 
-void Light::SetIntensity(Vector3D intensity) {
+void koilo::Light::SetIntensity(Vector3D intensity) {
     this->intensity = intensity;
 }
 
-void Light::SetFalloff(float falloff, float a, float b) {
+void koilo::Light::SetFalloff(float falloff, float a, float b) {
     this->falloff = falloff;
     this->a = a;
     this->b = b;
 }
 
-void Light::MoveTo(Vector3D p) {
+void koilo::Light::MoveTo(Vector3D p) {
     this->p = p;
 }
 
-void Light::Translate(Vector3D p) {
+void koilo::Light::Translate(Vector3D p) {
     this->p = this->p + p;
 }
 
-void Light::SetFalloff(float falloff) {
+void koilo::Light::SetFalloff(float falloff) {
     this->falloff = fabs(falloff);
 }
 
-void Light::SetCurve(float a, float b) {
+void koilo::Light::SetCurve(float a, float b) {
     this->a = a;
     this->b = b;
 }
 
 
-Vector3D Light::GetPosition(){
+Vector3D koilo::Light::GetPosition(){
     return p;
 }
 
-Vector3D Light::GetIntensity(){
+Vector3D koilo::Light::GetIntensity(){
     return intensity;
 }
 
-float Light::GetFalloff(){
+float koilo::Light::GetFalloff(){
     return falloff;
 }
 
-float Light::GetCurveA(){
+float koilo::Light::GetCurveA(){
     return a;
 }
 
-float Light::GetCurveB(){
+float koilo::Light::GetCurveB(){
     return b;
 }
+
+} // namespace koilo

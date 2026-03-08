@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testrastertriangle3d.cpp
  * @brief Implementation of RasterTriangle3D unit tests.
@@ -5,6 +6,7 @@
 
 #include "testrastertriangle3d.hpp"
 
+using namespace koilo;
 // ========== Constructor Tests ==========
 
 void TestRasterTriangle3D::TestDefaultConstructor() {

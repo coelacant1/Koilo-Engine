@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file EasyEaseAnimator.h
  * @brief Declares the EasyEaseAnimator template class for advanced animation easing.
@@ -15,9 +16,12 @@
 #include <cstddef>
 #include <cstdint>
 #include <vector>
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
 
 #include "ieasyeaseanimator.hpp"
+
+
+namespace koilo {
 
 /**
  * @class EasyEaseAnimator
@@ -47,6 +51,7 @@ public:
     float GetValue(uint16_t dictionaryValue) const override;
     float GetTarget(uint16_t dictionaryValue) const override;
     void AddParameter(float* parameter, uint16_t dictionaryValue, uint16_t frames, float basis, float goal) override;
+    void AddParameterByIndex(uint16_t dictionaryValue, uint16_t frames, float basis, float goal);
     void AddParameterFrame(uint16_t dictionaryValue, float value) override;
     void SetInterpolationMethod(uint16_t dictionaryValue, InterpolationMethod interpMethod) override;
     void Reset() override;
@@ -85,30 +90,34 @@ private:
     std::vector<float>              goal_;
     std::vector<InterpolationMethod> interpolationMethods_;
     std::vector<uint16_t>           dictionary_;
+    std::vector<float>              internalValues_;
     bool                            isActive_ = true;
 
-    PTX_BEGIN_FIELDS(EasyEaseAnimator)
+    KL_BEGIN_FIELDS(EasyEaseAnimator)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(EasyEaseAnimator)
-        PTX_METHOD_AUTO(EasyEaseAnimator, SetConstants, "Set constants"),
-        PTX_METHOD_AUTO(EasyEaseAnimator, GetValue, "Get value"),
-        PTX_METHOD_AUTO(EasyEaseAnimator, GetTarget, "Get target"),
-        PTX_METHOD_AUTO(EasyEaseAnimator, AddParameter, "Add parameter"),
-        PTX_METHOD_AUTO(EasyEaseAnimator, AddParameterFrame, "Add parameter frame"),
-        PTX_METHOD_AUTO(EasyEaseAnimator, SetInterpolationMethod, "Set interpolation method"),
-        PTX_METHOD_AUTO(EasyEaseAnimator, Reset, "Reset"),
-        PTX_METHOD_AUTO(EasyEaseAnimator, SetParameters, "Set parameters"),
-        PTX_METHOD_AUTO(EasyEaseAnimator, Update, "Update"),
-        PTX_METHOD_AUTO(EasyEaseAnimator, GetCapacity, "Get capacity"),
-        PTX_METHOD_AUTO(EasyEaseAnimator, GetParameterCount, "Get parameter count"),
-        PTX_METHOD_AUTO(EasyEaseAnimator, IsActive, "Is active"),
-        PTX_METHOD_AUTO(EasyEaseAnimator, SetActive, "Set active")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(EasyEaseAnimator)
+        KL_METHOD_AUTO(EasyEaseAnimator, SetConstants, "Set constants"),
+        KL_METHOD_AUTO(EasyEaseAnimator, GetValue, "Get value"),
+        KL_METHOD_AUTO(EasyEaseAnimator, GetTarget, "Get target"),
+        koilo::make::MakeMethod<EasyEaseAnimator, &EasyEaseAnimator::AddParameterByIndex>("AddParameterByIndex", "Add parameter by index"),
+        KL_METHOD_AUTO(EasyEaseAnimator, AddParameterFrame, "Add parameter frame"),
+        KL_METHOD_AUTO(EasyEaseAnimator, SetInterpolationMethod, "Set interpolation method"),
+        KL_METHOD_AUTO(EasyEaseAnimator, Reset, "Reset"),
+        KL_METHOD_AUTO(EasyEaseAnimator, SetParameters, "Set parameters"),
+        KL_METHOD_AUTO(EasyEaseAnimator, Update, "Update"),
+        KL_METHOD_AUTO(EasyEaseAnimator, GetCapacity, "Get capacity"),
+        KL_METHOD_AUTO(EasyEaseAnimator, GetParameterCount, "Get parameter count"),
+        KL_METHOD_AUTO(EasyEaseAnimator, IsActive, "Is active"),
+        KL_METHOD_AUTO(EasyEaseAnimator, SetActive, "Set active")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(EasyEaseAnimator)
-        PTX_CTOR(EasyEaseAnimator, std::size_t, InterpolationMethod, float, float)
-    PTX_END_DESCRIBE(EasyEaseAnimator)
+    KL_BEGIN_DESCRIBE(EasyEaseAnimator)
+        KL_CTOR(EasyEaseAnimator, std::size_t),
+        KL_CTOR(EasyEaseAnimator, std::size_t, InterpolationMethod, float, float)
+    KL_END_DESCRIBE(EasyEaseAnimator)
 
 };
+
+} // namespace koilo

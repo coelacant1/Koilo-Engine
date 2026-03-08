@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file StaticTriangleGroup.h
  * @brief Defines the StaticTriangleGroup class for managing 3D triangle geometry.
@@ -15,10 +16,13 @@
 
 #pragma once
 
-#include "../../core/geometry/3d/triangle.hpp"
+#include <koilo/core/geometry/3d/triangle.hpp>
 #include "indexgroup.hpp"
 #include "istatictrianglegroup.hpp"
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class StaticTriangleGroup
@@ -34,8 +38,8 @@ private:
     const IndexGroup* uvIndexGroup; ///< Index group for UV coordinates (if available).
     const Vector2D* uvVertices; ///< Array of UV coordinates for texture mapping.
     const bool hasUV; ///< Indicates whether the group contains UV data.
-    const int vertexCount; ///< Number of vertices in the group.
-    const int triangleCount; ///< Number of triangles in the group.
+    const uint32_t vertexCount; ///< Number of vertices in the group.
+    const uint32_t triangleCount; ///< Number of triangles in the group.
 
 public:
     /**
@@ -43,7 +47,7 @@ public:
      * @param vertices Array of vertex positions.
      * @param indexGroup Index group defining triangle vertex indices.
      */
-    StaticTriangleGroup(Vector3D* vertices, const IndexGroup* indexGroup, int vertexCount, int triangleCount);
+    StaticTriangleGroup(Vector3D* vertices, const IndexGroup* indexGroup, uint32_t vertexCount, uint32_t triangleCount);
 
     /**
      * @brief Constructor for a group with UV data.
@@ -52,7 +56,7 @@ public:
      * @param uvIndexGroup Index group for UV coordinates.
      * @param uvVertices Array of UV coordinates for texture mapping.
      */
-    StaticTriangleGroup(Vector3D* vertices, const IndexGroup* indexGroup, const IndexGroup* uvIndexGroup, const Vector2D* uvVertices, int vertexCount, int triangleCount);
+    StaticTriangleGroup(Vector3D* vertices, const IndexGroup* indexGroup, const IndexGroup* uvIndexGroup, const Vector2D* uvVertices, uint32_t vertexCount, uint32_t triangleCount);
 
     /**
      * @brief Checks if the group has UV data.
@@ -70,7 +74,7 @@ public:
      * @brief Gets the total number of triangles in the group.
      * @return The number of triangles.
      */
-    int GetTriangleCount() override;
+    uint32_t GetTriangleCount() override;
 
     /**
      * @brief Retrieves the array of vertex positions.
@@ -82,7 +86,7 @@ public:
      * @brief Gets the total number of vertices in the group.
      * @return The number of vertices.
      */
-    int GetVertexCount() override;
+    uint32_t GetVertexCount() override;
 
     /**
      * @brief Retrieves the array of triangles in the group.
@@ -102,24 +106,26 @@ public:
      */
     const IndexGroup* GetUVIndexGroup() override;
 
-    PTX_BEGIN_FIELDS(StaticTriangleGroup)
+    KL_BEGIN_FIELDS(StaticTriangleGroup)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(StaticTriangleGroup)
-        PTX_METHOD_AUTO(StaticTriangleGroup, HasUV, "Has uv"),
-        PTX_METHOD_AUTO(StaticTriangleGroup, GetIndexGroup, "Get index group"),
-        PTX_METHOD_AUTO(StaticTriangleGroup, GetTriangleCount, "Get triangle count"),
-        PTX_METHOD_AUTO(StaticTriangleGroup, GetVertices, "Get vertices"),
-        PTX_METHOD_AUTO(StaticTriangleGroup, GetVertexCount, "Get vertex count"),
-        PTX_METHOD_AUTO(StaticTriangleGroup, GetTriangles, "Get triangles"),
-        PTX_METHOD_AUTO(StaticTriangleGroup, GetUVVertices, "Get uvvertices"),
-        PTX_METHOD_AUTO(StaticTriangleGroup, GetUVIndexGroup, "Get uvindex group")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(StaticTriangleGroup)
+        KL_METHOD_AUTO(StaticTriangleGroup, HasUV, "Has uv"),
+        KL_METHOD_AUTO(StaticTriangleGroup, GetIndexGroup, "Get index group"),
+        KL_METHOD_AUTO(StaticTriangleGroup, GetTriangleCount, "Get triangle count"),
+        KL_METHOD_AUTO(StaticTriangleGroup, GetVertices, "Get vertices"),
+        KL_METHOD_AUTO(StaticTriangleGroup, GetVertexCount, "Get vertex count"),
+        KL_METHOD_AUTO(StaticTriangleGroup, GetTriangles, "Get triangles"),
+        KL_METHOD_AUTO(StaticTriangleGroup, GetUVVertices, "Get uvvertices"),
+        KL_METHOD_AUTO(StaticTriangleGroup, GetUVIndexGroup, "Get uvindex group")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(StaticTriangleGroup)
-        PTX_CTOR(StaticTriangleGroup, Vector3D *, const IndexGroup *, int, int),
-        PTX_CTOR(StaticTriangleGroup, Vector3D *, const IndexGroup *, const IndexGroup *, const Vector2D *, int, int)
-    PTX_END_DESCRIBE(StaticTriangleGroup)
+    KL_BEGIN_DESCRIBE(StaticTriangleGroup)
+        KL_CTOR(StaticTriangleGroup, Vector3D *, const IndexGroup *, uint32_t, uint32_t),
+        KL_CTOR(StaticTriangleGroup, Vector3D *, const IndexGroup *, const IndexGroup *, const Vector2D *, uint32_t, uint32_t)
+    KL_END_DESCRIBE(StaticTriangleGroup)
 
 };
+
+} // namespace koilo

@@ -1,5 +1,6 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 """
-Shared console output formatting for PTX Engine scripts.
+Shared console output formatting for Koilo Engine scripts.
 Matches CMake build output style: [XX%] message in green
 """
 

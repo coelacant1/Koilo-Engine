@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testsimplexnoise.hpp
  * @brief Unit tests for the SimplexNoise class.
@@ -12,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/core/signal/noise/simplexnoise.hpp>
+#include <koilo/core/signal/noise/simplexnoise.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

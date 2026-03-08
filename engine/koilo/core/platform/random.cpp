@@ -1,4 +1,5 @@
-#include <ptx/core/platform/random.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/core/platform/random.hpp>
 
 #if defined(ARDUINO)
   #include <Arduino.h>   // For random() and randomSeed()
@@ -6,7 +7,7 @@
   #include <cstdlib>     // For std::rand() and std::srand()
 #endif
 
-namespace ptx::Random {
+namespace koilo::Random {
 
 void Seed(std::uint32_t seed) {
 #if defined(ARDUINO)
@@ -40,4 +41,4 @@ float Float(float min, float max) {
     return min + (max - min) * norm;
 }
 
-} // namespace ptx::Random
+} // namespace koilo::Random

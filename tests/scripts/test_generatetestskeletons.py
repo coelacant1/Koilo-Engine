@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
 """
 Unit tests for GenerateTestSkeletons.py
 
 Tests the test skeleton generation and validation system, including:
 - Reflected class discovery
 - Header file location
-- Method extraction from PTX_METHODS blocks
+- Method extraction from KL_METHODS blocks
 - Test file generation
 - Test validation and synchronization
 - Cache management
@@ -21,7 +22,8 @@ from datetime import datetime
 import sys
 
 # Add scripts directory to path
-SCRIPT_DIR = Path(__file__).resolve().parent.parent
+REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+SCRIPT_DIR = REPO_ROOT / "scripts"
 sys.path.insert(0, str(SCRIPT_DIR))
 
 from generatetestskeletons import (
@@ -164,7 +166,7 @@ class TestMethodParsing(unittest.TestCase):
         self.addCleanup(shutil.rmtree, self.temp_dir)
 
     def test_parse_class_methods_simple(self):
-        """Test parsing simple PTX_METHODS block"""
+        """Test parsing simple KL_METHODS block"""
         header = Path(self.temp_dir) / "simple.hpp"
         header.write_text("""
 class SimpleClass {
@@ -172,9 +174,9 @@ public:
     SimpleClass();
     int GetValue() const;
 
-    PTX_BEGIN_METHODS(SimpleClass)
-        PTX_METHOD_AUTO(SimpleClass, GetValue, "Get value")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(SimpleClass)
+        KL_METHOD_AUTO(SimpleClass, GetValue, "Get value")
+    KL_END_METHODS
 };
 """)
 
@@ -195,11 +197,11 @@ public:
     void Remove(int x);
     int Count();
 
-    PTX_BEGIN_METHODS(MultiClass)
-        PTX_METHOD_AUTO(MultiClass, Add, "Add element")
-        PTX_METHOD_AUTO(MultiClass, Remove, "Remove element")
-        PTX_METHOD_AUTO(MultiClass, Count, "Get count")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(MultiClass)
+        KL_METHOD_AUTO(MultiClass, Add, "Add element")
+        KL_METHOD_AUTO(MultiClass, Remove, "Remove element")
+        KL_METHOD_AUTO(MultiClass, Count, "Get count")
+    KL_END_METHODS
 };
 """)
 
@@ -220,10 +222,10 @@ public:
     static int GetCount();
     void DoWork();
 
-    PTX_BEGIN_METHODS(StaticClass)
-        PTX_SMETHOD_AUTO(StaticClass, GetCount, "Get count")
-        PTX_METHOD_AUTO(StaticClass, DoWork, "Do work")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(StaticClass)
+        KL_SMETHOD_AUTO(StaticClass, GetCount, "Get count")
+        KL_METHOD_AUTO(StaticClass, DoWork, "Do work")
+    KL_END_METHODS
 };
 """)
 
@@ -248,10 +250,10 @@ public:
     void Set(int x);
     void Set(float x);
 
-    PTX_BEGIN_METHODS(OverloadClass)
-        PTX_METHOD_OVLD(OverloadClass, Set, "Set int", int)
-        PTX_METHOD_OVLD(OverloadClass, Set, "Set float", float)
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(OverloadClass)
+        KL_METHOD_OVLD(OverloadClass, Set, "Set int", int)
+        KL_METHOD_OVLD(OverloadClass, Set, "Set float", float)
+    KL_END_METHODS
 };
 """)
 
@@ -262,7 +264,7 @@ public:
         self.assertEqual(methods[0].name, "Set")
 
     def test_parse_class_methods_no_block(self):
-        """Test class without PTX_METHODS block"""
+        """Test class without KL_METHODS block"""
         header = Path(self.temp_dir) / "noblock.hpp"
         header.write_text("""
 class NoBlockClass {
@@ -283,8 +285,8 @@ class NoDefaultClass {
 public:
     NoDefaultClass(int x);  // Only parameterized
 
-    PTX_BEGIN_METHODS(NoDefaultClass)
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(NoDefaultClass)
+    KL_END_METHODS
 };
 """)
 
@@ -393,7 +395,7 @@ class TestFileGeneration(unittest.TestCase):
         class_info = ClassInfo(
             name="Vector3D",
             qualified_name="Vector3D",
-            header_path=Path("/engine/include/ptx/core/math/vector3d.hpp"),
+            header_path=Path("/engine/koilo/core/math/vector3d.hpp"),
             methods=[
                 MethodInfo(name="Add", return_type="Vector3D", is_static=False),
                 MethodInfo(name="Magnitude", return_type="float", is_static=False)
@@ -430,7 +432,7 @@ class TestFileGeneration(unittest.TestCase):
         class_info = ClassInfo(
             name="Vector3D",
             qualified_name="Vector3D",
-            header_path=Path("/engine/include/ptx/core/math/vector3d.hpp"),
+            header_path=Path("/engine/koilo/core/math/vector3d.hpp"),
             methods=[
                 MethodInfo(name="Add", return_type="Vector3D", is_static=False)
             ],
@@ -478,7 +480,7 @@ class TestCategoryDetection(unittest.TestCase):
         self.addCleanup(shutil.rmtree, self.temp_dir)
 
         # Create fake engine structure
-        self.engine_include = Path(self.temp_dir) / "engine" / "include" / "ptx"
+        self.engine_include = Path(self.temp_dir) / "engine" / "include" / "koiloscript"
         self.engine_include.mkdir(parents=True, exist_ok=True)
 
     def test_determine_category_core_math(self):
@@ -542,7 +544,7 @@ class TestHeaderFileDiscovery(unittest.TestCase):
         self.addCleanup(shutil.rmtree, self.temp_dir)
 
         # Create fake engine structure
-        self.engine_include = Path(self.temp_dir) / "engine" / "include" / "ptx"
+        self.engine_include = Path(self.temp_dir) / "engine" / "include" / "koiloscript"
         self.engine_include.mkdir(parents=True, exist_ok=True)
 
     def test_find_header_file_simple_match(self):
@@ -664,7 +666,7 @@ class TestEndToEndGeneration(unittest.TestCase):
         self.addCleanup(shutil.rmtree, self.temp_dir)
 
         # Create fake project structure
-        self.engine_include = Path(self.temp_dir) / "engine" / "include" / "ptx"
+        self.engine_include = Path(self.temp_dir) / "engine" / "include" / "koiloscript"
         self.engine_include.mkdir(parents=True, exist_ok=True)
 
         self.tests_engine = Path(self.temp_dir) / "tests" / "engine"
@@ -684,10 +686,10 @@ public:
     int GetValue() const;
     void SetValue(int v);
 
-    PTX_BEGIN_METHODS(SimpleClass)
-        PTX_METHOD_AUTO(SimpleClass, GetValue, "Get value")
-        PTX_METHOD_AUTO(SimpleClass, SetValue, "Set value")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(SimpleClass)
+        KL_METHOD_AUTO(SimpleClass, GetValue, "Get value")
+        KL_METHOD_AUTO(SimpleClass, SetValue, "Set value")
+    KL_END_METHODS
 };
 """)
 

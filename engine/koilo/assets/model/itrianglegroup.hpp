@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file ITriangleGroup.h
  * @brief Defines the ITriangleGroup interface for managing a collection of mutable 3D triangles.
@@ -12,9 +13,12 @@
 
 #pragma once
 
-#include "../../core/geometry/3d/triangle.hpp"
+#include <koilo/core/geometry/3d/triangle.hpp>
 #include "indexgroup.hpp"
 #include "istatictrianglegroup.hpp"
+
+
+namespace koilo {
 
 /**
  * @class ITriangleGroup
@@ -33,7 +37,7 @@ public:
      * @brief Retrieves the total number of triangles in the group.
      * @return The number of triangles.
      */
-    virtual int GetTriangleCount() = 0;
+    virtual uint32_t GetTriangleCount() = 0;
 
     /**
      * @brief Retrieves the array of mutable vertices in the triangle group.
@@ -45,7 +49,7 @@ public:
      * @brief Retrieves the total number of vertices in the group.
      * @return The number of vertices.
      */
-    virtual int GetVertexCount() = 0;
+    virtual uint32_t GetVertexCount() = 0;
 
     /**
      * @brief Retrieves the array of Triangle3D objects representing the triangles.
@@ -54,3 +58,5 @@ public:
     virtual Triangle3D* GetTriangles() = 0;
 
 };
+
+} // namespace koilo

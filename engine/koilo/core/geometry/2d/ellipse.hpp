@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file Ellipse.h
  * @brief Defines the Ellipse class for representing elliptical shapes in 2D space.
@@ -13,7 +14,10 @@
 #pragma once
 
 #include "shape.hpp"
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class Ellipse
@@ -43,17 +47,19 @@ public:
      */
     bool IsInShape(Vector2D point) override;
 
-    PTX_BEGIN_FIELDS(Ellipse2D)
+    KL_BEGIN_FIELDS(Ellipse2D)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(Ellipse2D)
-        PTX_METHOD_AUTO(Ellipse2D, IsInShape, "Is in shape")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(Ellipse2D)
+        KL_METHOD_AUTO(Ellipse2D, IsInShape, "Is in shape")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(Ellipse2D)
-        PTX_CTOR(Ellipse2D, Vector2D, Vector2D, float),
-        PTX_CTOR(Ellipse2D, Bounds, float)
-    PTX_END_DESCRIBE(Ellipse2D)
+    KL_BEGIN_DESCRIBE(Ellipse2D)
+        KL_CTOR(Ellipse2D, Vector2D, Vector2D, float),
+        KL_CTOR(Ellipse2D, Bounds, float)
+    KL_END_DESCRIBE(Ellipse2D)
 
 };
+
+} // namespace koilo

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testfft.cpp
  * @brief Implementation of FFT unit tests.
@@ -5,6 +6,7 @@
 
 #include "testfft.hpp"
 
+using namespace koilo;
 // ========== Constructor Tests ==========
 
 void TestFFT::TestDefaultConstructor() {

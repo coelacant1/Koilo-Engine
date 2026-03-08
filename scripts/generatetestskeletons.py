@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
 """
-Generate and validate test skeleton files for PTX Engine classes.
+Generate and validate test skeleton files for Koilo Engine classes.
 
 This script:
 1. Only generates test files for classes that don't have tests yet
@@ -41,7 +42,7 @@ from consoleoutput import print_progress, print_status, print_section, print_war
 
 # Project paths
 REPO_ROOT = Path(__file__).resolve().parents[1]
-ENGINE_INCLUDE = REPO_ROOT / "engine" / "include" / "ptx"
+ENGINE_INCLUDE = REPO_ROOT / "engine" / "include" / "koiloscript"
 TESTS_ENGINE = REPO_ROOT / "tests" / "engine"
 REFLECTION_GEN = REPO_ROOT / "build" / "generated" / "reflection_entry_gen.cpp"
 
@@ -165,7 +166,7 @@ def find_header_file(class_name: str, qualified_name: str = None) -> Optional[Pa
 
     Args:
         class_name: Simple class name (e.g., "Triangle2D")
-        qualified_name: Fully qualified name (e.g., "ptx::Triangle2D")
+        qualified_name: Fully qualified name (e.g., "koilo::Triangle2D")
 
     Returns:
         Path to header file containing the class, or None if not found
@@ -228,7 +229,7 @@ def determine_category(header_path: Path) -> str:
 
 def parse_class_methods(header_path: Path, class_name: str) -> Tuple[List[MethodInfo], bool]:
     """
-    Parse header file to extract public method names from PTX_METHODS block.
+    Parse header file to extract public method names from KL_METHODS block.
     
     Returns:
         Tuple of (methods list, has_default_constructor)
@@ -238,9 +239,9 @@ def parse_class_methods(header_path: Path, class_name: str) -> Tuple[List[Method
     # Check for default constructor
     has_default_ctor = bool(re.search(rf'\b{class_name}\s*\(\s*\)', content))
     
-    # Find PTX_BEGIN_METHODS block
+    # Find KL_BEGIN_METHODS block
     methods_pattern = re.compile(
-        rf'PTX_BEGIN_METHODS\({class_name}\)(.*?)PTX_END_METHODS',
+        rf'KL_BEGIN_METHODS\({class_name}\)(.*?)KL_END_METHODS',
         re.DOTALL
     )
     match = methods_pattern.search(content)
@@ -251,10 +252,10 @@ def parse_class_methods(header_path: Path, class_name: str) -> Tuple[List[Method
     methods_block = match.group(1)
     methods = []
     
-    # Extract method names from various PTX_METHOD macros
-    # PTX_METHOD_AUTO, PTX_SMETHOD_AUTO, PTX_METHOD_OVLD, etc.
+    # Extract method names from various KL_METHOD macros
+    # KL_METHOD_AUTO, KL_SMETHOD_AUTO, KL_METHOD_OVLD, etc.
     method_pattern = re.compile(
-        r'PTX_(?:S)?METHOD_(?:AUTO|OVLD|MANUAL)\s*\(\s*' +
+        r'KL_(?:S)?METHOD_(?:AUTO|OVLD|MANUAL)\s*\(\s*' +
         re.escape(class_name) + r'\s*,\s*([A-Za-z_][A-Za-z0-9_]*)'
     )
     
@@ -263,7 +264,7 @@ def parse_class_methods(header_path: Path, class_name: str) -> Tuple[List[Method
         method_name = m.group(1)
         if method_name not in seen:
             seen.add(method_name)
-            # Determine if static (PTX_SMETHOD)
+            # Determine if static (KL_SMETHOD)
             is_static = 'SMETHOD' in m.group(0)
             methods.append(MethodInfo(
                 name=method_name,
@@ -372,7 +373,7 @@ def generate_test_header_content(class_info: ClassInfo, test_methods: List[str])
     test_class_name = f"Test{class_info.name}"
     filename_lower = class_info.name.lower()
     
-    # Get header path relative to engine/include/ptx
+    # Get header path relative to engine/koilo
     try:
         header_rel = class_info.header_path.relative_to(ENGINE_INCLUDE)
     except ValueError:
@@ -408,13 +409,13 @@ def generate_test_header_content(class_info: ClassInfo, test_methods: List[str])
  *
  * @date {today}
  * @version 1.0
- * @author Coela (Auto-Generated)
+ * @author Coela
  */
 
 #pragma once
 
 #include <unity.h>
-#include <ptx/{header_rel}>
+#include <koilo/{header_rel}>
 #include <utils/testhelpers.hpp>
 
 /**
@@ -510,6 +511,8 @@ def generate_test_impl_content(class_info: ClassInfo, test_methods: List[str]) -
  */
 
 #include "test{filename_lower}.hpp"
+
+using namespace koilo;
 
 {chr(10).join(impls)}
 '''
@@ -753,7 +756,7 @@ int main(int /*argc*/, char ** /*argv*/) {{
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Generate and validate test skeleton files for PTX classes"
+        description="Generate and validate test skeleton files for Koilo classes"
     )
     parser.add_argument("--class", dest="class_name", 
                        help="Process specific class")

@@ -1,159 +1,172 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file blendshapecontroller.hpp
- * @brief Declares the runtime BlendshapeController class for handling 3D transformations.
+ * @brief Controller for managing and applying multiple vertex-based blendshapes (morph targets).
  *
- * This file defines the BlendshapeController class, which manages position, scale, and
- * rotation offsets for 3D transformations using a dictionary-based approach and
- * an animation controller.
+ * This file defines the BlendshapeController class, which manages a collection of Blendshape
+ * objects and their weights, integrating with the animation system to apply vertex morphing
+ * to meshes.
  *
- * @author Coela Can't
- * @date 22/12/2024
+ * @author Coela
+ * @date TBD
  */
 
 #pragma once
 
 #include <cstddef>
 #include <cstdint>
-#include <limits>
 #include <vector>
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
 
-#include "../animation/easyeaseanimator.hpp" // Include for animation controller interface.
-#include "../../../core/math/vector3d.hpp" // Include for 3D vector operations.
+#include "blendshape.hpp"
+#include <koilo/systems/scene/animation/ieasyeaseanimator.hpp>
+#include <koilo/systems/scene/mesh.hpp>
+
+
+namespace koilo {
 
 /**
  * @class BlendshapeController
- * @brief Runtime-managed blendshape controller with a fixed capacity supplied at construction.
-
- * The BlendshapeController class allows the definition of multiple blendshape targets with position,
- * scale, and rotation offsets. It integrates with an animation controller to dynamically
- * calculate the resulting transformation based on animation values.
+ * @brief Manages multiple vertex-based blendshapes (morph targets) for a mesh.
+ *
+ * The BlendshapeController class provides centralized management of Blendshape objects,
+ * handling their weights through an animation system and applying all active morphs
+ * to mesh geometry in a single update call.
+ *
+ * Typical workflow:
+ * 1. Create controller with animator
+ * 2. Add blendshapes with IDs
+ * 3. Animator drives weights via dictionary IDs
+ * 4. Call Update() to apply all weighted blendshapes to mesh
  */
 class BlendshapeController {
 private:
-    using Index = std::size_t;
+    IEasyEaseAnimator* animator_; ///< Animation system for driving weights
+    std::vector<Blendshape*> blendshapes_; ///< Collection of blendshape objects (non-owning)
+    std::vector<uint16_t> dictionaryIds_; ///< Animation dictionary IDs for each blendshape
+    std::size_t capacity_; ///< Maximum number of blendshapes
 
 public:
-    /// Sentinel value indicating no matching blendshape.
-    static constexpr Index kInvalidIndex = std::numeric_limits<Index>::max();
+    /**
+     * @brief Constructs a BlendshapeController.
+     *
+     * @param animator Pointer to the IEasyEaseAnimator for weight management (can be nullptr)
+     * @param capacity Maximum number of blendshapes to support
+     */
+    explicit BlendshapeController(IEasyEaseAnimator* animator = nullptr, std::size_t capacity = 16);
 
     /**
-     * @brief Constructs a BlendshapeController object with an animation controller.
-     *
-     * @param eEA Pointer to the IEasyEaseAnimator instance.
-     * @param maxBlendshapes Maximum number of blendshape targets that can be registered.
+     * @brief Destructor.
      */
-    explicit BlendshapeController(IEasyEaseAnimator* eEA, std::size_t maxBlendshapes = 16);
-
-    /** @return Number of currently registered blendshape targets. */
-    [[nodiscard]] std::size_t GetBlendshapeCount() const { return currentBlendshapes_; }
-
-    /** @return Maximum number of blendshape targets supported. */
-    [[nodiscard]] std::size_t GetCapacity() const { return capacity_; }
+    ~BlendshapeController() = default;
 
     /**
-     * @brief Adds a blendshape target with a position offset.
+     * @brief Sets the animation controller.
      *
-     * @param dictionaryValue The identifier for the blendshape target.
-     * @param positionOffset The position offset for the blendshape target.
+     * @param animator Pointer to the IEasyEaseAnimator instance
      */
-    void AddBlendshape(uint16_t dictionaryValue, Vector3D positionOffset);
+    void SetAnimator(IEasyEaseAnimator* animator);
 
     /**
-     * @brief Adds a blendshape target with position and scale offsets.
+     * @brief Adds a blendshape to the controller.
      *
-     * @param dictionaryValue The identifier for the blendshape target.
-     * @param positionOffset The position offset for the blendshape target.
-     * @param scaleOffset The scale offset for the blendshape target.
+     * @param dictionaryId Animation dictionary ID for weight control
+     * @param blendshape Pointer to the Blendshape object (non-owning)
+     * @return True if added successfully, false if capacity reached or nullptr
      */
-    void AddBlendshape(uint16_t dictionaryValue, Vector3D positionOffset, Vector3D scaleOffset);
+    bool AddBlendshape(uint16_t dictionaryId, Blendshape* blendshape);
 
     /**
-     * @brief Adds a blendshape target with position, scale, and rotation offsets.
+     * @brief Removes a blendshape by dictionary ID.
      *
-     * @param dictionaryValue The identifier for the blendshape target.
-     * @param positionOffset The position offset for the blendshape target.
-     * @param scaleOffset The scale offset for the blendshape target.
-     * @param rotationOffset The rotation offset for the blendshape target.
+     * @param dictionaryId The dictionary ID of the blendshape to remove
+     * @return True if removed successfully, false if not found
      */
-    void AddBlendshape(uint16_t dictionaryValue, Vector3D positionOffset, Vector3D scaleOffset, Vector3D rotationOffset);
+    bool RemoveBlendshape(uint16_t dictionaryId);
 
     /**
-     * @brief Sets the position offset for a specific blendshape target.
+     * @brief Gets the number of registered blendshapes.
      *
-     * @param dictionaryValue The identifier for the blendshape target.
-     * @param positionOffset The new position offset.
+     * @return Number of blendshapes currently registered
      */
-    void SetBlendshapePositionOffset(uint16_t dictionaryValue, Vector3D positionOffset);
+    std::size_t GetBlendshapeCount() const;
 
     /**
-     * @brief Sets the scale offset for a specific blendshape target.
+     * @brief Gets the maximum capacity.
      *
-     * @param dictionaryValue The identifier for the blendshape target.
-     * @param scaleOffset The new scale offset.
+     * @return Maximum number of blendshapes supported
      */
-    void SetBlendshapeScaleOffset(uint16_t dictionaryValue, Vector3D scaleOffset);
+    std::size_t GetCapacity() const;
 
     /**
-     * @brief Sets the rotation offset for a specific blendshape target.
+     * @brief Manually sets the weight for a blendshape.
      *
-     * @param dictionaryValue The identifier for the blendshape target.
-     * @param rotationOffset The new rotation offset.
+     * @param dictionaryId The dictionary ID of the blendshape
+     * @param weight The weight value to set (typically 0.0 to 1.0)
      */
-    void SetBlendshapeRotationOffset(uint16_t dictionaryValue, Vector3D rotationOffset);
+    void SetWeight(uint16_t dictionaryId, float weight);
 
     /**
-     * @brief Retrieves the combined position offset for all active blendshape targets.
+     * @brief Gets the current weight for a blendshape.
      *
-     * @return The cumulative position offset.
+     * @param dictionaryId The dictionary ID of the blendshape
+     * @return The current weight (from animator if available, else from Blendshape.Weight)
      */
-    Vector3D GetPositionOffset();
+    float GetWeight(uint16_t dictionaryId) const;
 
     /**
-     * @brief Retrieves the combined scale offset for all active blendshape targets.
-     *
-     * @return The cumulative scale offset.
+     * @brief Resets all blendshape weights to 0.
      */
-    Vector3D GetScaleOffset();
+    void ResetWeights();
 
     /**
-     * @brief Retrieves the combined rotation offset for all active blendshape targets.
+     * @brief Updates and applies all blendshapes to a mesh.
      *
-     * @return The cumulative rotation offset.
+     * This method:
+     * 1. Resets the mesh vertices to original state
+     * 2. Gets weights from animator (if set) or uses Blendshape.Weight
+     * 3. Applies each blendshape with its weight to the mesh geometry
+     *
+     * @param mesh Pointer to the Mesh to apply blendshapes to
      */
-    Vector3D GetRotationOffset();
+    void Update(Mesh* mesh);
+
+    /**
+     * @brief Applies all blendshapes to a triangle group directly.
+     *
+     * @param triangleGroup Pointer to the ITriangleGroup to apply blendshapes to
+     */
+    void ApplyTo(ITriangleGroup* triangleGroup);
 
 private:
-    [[nodiscard]] Index FindIndex(uint16_t dictionaryValue) const;
+    /**
+     * @brief Finds the index of a blendshape by dictionary ID.
+     *
+     * @param dictionaryId The dictionary ID to search for
+     * @return Index if found, -1 if not found
+     */
+    int FindIndex(uint16_t dictionaryId) const;
 
-    IEasyEaseAnimator* eEA_; ///< Pointer to the animation controller.
-    std::size_t        capacity_; ///< Maximum number of blendshape targets.
-    std::size_t        currentBlendshapes_ = 0; ///< Current number of blendshape targets.
-    std::vector<uint16_t> dictionary_; ///< Dictionary mapping blendshape targets to identifiers.
-    std::vector<Vector3D> positionOffsets_; ///< Array of position offsets for blendshape targets.
-    std::vector<Vector3D> scaleOffsets_; ///< Array of scale offsets for blendshape targets.
-    std::vector<Vector3D> rotationOffsets_; ///< Array of rotation offsets for blendshape targets.
-
-    PTX_BEGIN_FIELDS(BlendshapeController)
+    KL_BEGIN_FIELDS(BlendshapeController)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(BlendshapeController)
-        PTX_METHOD_AUTO(BlendshapeController, GetBlendshapeCount, "Get blendshape count"),
-        PTX_METHOD_AUTO(BlendshapeController, GetCapacity, "Get capacity"),
-        /* Add blendshape */ PTX_METHOD_OVLD(BlendshapeController, AddBlendshape, void, uint16_t, Vector3D),
-        /* Add blendshape */ PTX_METHOD_OVLD(BlendshapeController, AddBlendshape, void, uint16_t, Vector3D, Vector3D),
-        /* Add blendshape */ PTX_METHOD_OVLD(BlendshapeController, AddBlendshape, void, uint16_t, Vector3D, Vector3D, Vector3D),
-        PTX_METHOD_AUTO(BlendshapeController, SetBlendshapePositionOffset, "Set blendshape position offset"),
-        PTX_METHOD_AUTO(BlendshapeController, SetBlendshapeScaleOffset, "Set blendshape scale offset"),
-        PTX_METHOD_AUTO(BlendshapeController, SetBlendshapeRotationOffset, "Set blendshape rotation offset"),
-        PTX_METHOD_AUTO(BlendshapeController, GetPositionOffset, "Get position offset"),
-        PTX_METHOD_AUTO(BlendshapeController, GetScaleOffset, "Get scale offset"),
-        PTX_METHOD_AUTO(BlendshapeController, GetRotationOffset, "Get rotation offset")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(BlendshapeController)
+        KL_METHOD_AUTO(BlendshapeController, SetAnimator, "Set animator"),
+        KL_METHOD_AUTO(BlendshapeController, AddBlendshape, "Add blendshape"),
+        KL_METHOD_AUTO(BlendshapeController, RemoveBlendshape, "Remove blendshape"),
+        KL_METHOD_AUTO(BlendshapeController, GetBlendshapeCount, "Get blendshape count"),
+        KL_METHOD_AUTO(BlendshapeController, GetCapacity, "Get capacity"),
+        KL_METHOD_AUTO(BlendshapeController, SetWeight, "Set weight"),
+        KL_METHOD_AUTO(BlendshapeController, GetWeight, "Get weight"),
+        KL_METHOD_AUTO(BlendshapeController, ResetWeights, "Reset weights"),
+        KL_METHOD_AUTO(BlendshapeController, Update, "Update"),
+        KL_METHOD_AUTO(BlendshapeController, ApplyTo, "Apply to")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(BlendshapeController)
-        PTX_CTOR(BlendshapeController, IEasyEaseAnimator *, std::size_t)
-    PTX_END_DESCRIBE(BlendshapeController)
-
+    KL_BEGIN_DESCRIBE(BlendshapeController)
+        KL_CTOR(BlendshapeController, IEasyEaseAnimator *, std::size_t)
+    KL_END_DESCRIBE(BlendshapeController)
 };
+
+} // namespace koilo

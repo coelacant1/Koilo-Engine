@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file uielement.hpp
  * @brief Base class for all UI elements in the user interface system.
@@ -12,10 +13,11 @@
 #include <memory>
 #include <string>
 #include <functional>
-#include "../../core/mathematics/vector2d.hpp"
-#include "../../../registry/reflect_macros.hpp"
+#include "../../core/math/vector2d.hpp"
+#include "../../registry/reflect_macros.hpp"
 
-namespace ptx {
+namespace koilo {
+
 
 // Forward declarations
 class Canvas;
@@ -36,7 +38,7 @@ struct Rect {
     }
 
     bool Contains(const Vector2D& point) const {
-        return Contains(point.x, point.y);
+        return Contains(point.X, point.Y);
     }
 };
 
@@ -366,34 +368,35 @@ protected:
      */
     void MarkRectDirty() { rectDirty = true; }
 
-    PTX_BEGIN_FIELDS(UIElement)
-        PTX_FIELD(UIElement, position, "Position", 0, 0),
-        PTX_FIELD(UIElement, size, "Size", 0, 0),
-        PTX_FIELD(UIElement, rotation, "Rotation", 0.0f, 360.0f),
-        PTX_FIELD(UIElement, scale, "Scale", 0, 0),
-        PTX_FIELD(UIElement, visible, "Visible", 0, 1),
-        PTX_FIELD(UIElement, enabled, "Enabled", 0, 1),
-        PTX_FIELD(UIElement, interactable, "Interactable", 0, 1),
-        PTX_FIELD(UIElement, zIndex, "Z index", -100, 100),
-        PTX_FIELD(UIElement, alpha, "Alpha", 0.0f, 1.0f)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(UIElement)
+        KL_FIELD(UIElement, position, "Position", 0, 0),
+        KL_FIELD(UIElement, size, "Size", 0, 0),
+        KL_FIELD(UIElement, rotation, "Rotation", 0.0f, 360.0f),
+        KL_FIELD(UIElement, scale, "Scale", 0, 0),
+        KL_FIELD(UIElement, visible, "Visible", 0, 1),
+        KL_FIELD(UIElement, enabled, "Enabled", 0, 1),
+        KL_FIELD(UIElement, interactable, "Interactable", 0, 1),
+        KL_FIELD(UIElement, zIndex, "Z index", -100, 100),
+        KL_FIELD(UIElement, alpha, "Alpha", 0.0f, 1.0f)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(UIElement)
-        PTX_METHOD_AUTO(UIElement, SetPosition, "Set position"),
-        PTX_METHOD_AUTO(UIElement, GetPosition, "Get position"),
-        PTX_METHOD_AUTO(UIElement, SetSize, "Set size"),
-        PTX_METHOD_AUTO(UIElement, GetSize, "Get size"),
-        PTX_METHOD_AUTO(UIElement, SetVisible, "Set visible"),
-        PTX_METHOD_AUTO(UIElement, IsVisible, "Is visible"),
-        PTX_METHOD_AUTO(UIElement, SetEnabled, "Set enabled"),
-        PTX_METHOD_AUTO(UIElement, IsEnabled, "Is enabled"),
-        PTX_METHOD_AUTO(UIElement, Update, "Update"),
-        PTX_METHOD_AUTO(UIElement, Render, "Render")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(UIElement)
+        KL_METHOD_AUTO(UIElement, SetPosition, "Set position"),
+        KL_METHOD_AUTO(UIElement, GetPosition, "Get position"),
+        KL_METHOD_AUTO(UIElement, SetSize, "Set size"),
+        KL_METHOD_AUTO(UIElement, GetSize, "Get size"),
+        KL_METHOD_AUTO(UIElement, SetVisible, "Set visible"),
+        KL_METHOD_AUTO(UIElement, IsVisible, "Is visible"),
+        KL_METHOD_AUTO(UIElement, SetEnabled, "Set enabled"),
+        KL_METHOD_AUTO(UIElement, IsEnabled, "Is enabled"),
+        KL_METHOD_AUTO(UIElement, Update, "Update"),
+        KL_METHOD_AUTO(UIElement, Render, "Render")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(UIElement)
-        PTX_CTOR0(UIElement)
-    PTX_END_DESCRIBE(UIElement)
+    KL_BEGIN_DESCRIBE(UIElement)
+        KL_CTOR0(UIElement)
+    KL_END_DESCRIBE(UIElement)
 };
 
-} // namespace ptx
+
+} // namespace koilo

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file TestQuaternion.h
  * @brief Provides unit tests for the Quaternion class.
@@ -13,7 +14,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/core/math/quaternion.hpp>
+#include <koilo/core/math/quaternion.hpp>
 
 /**
  * @class TestQuaternion
@@ -31,7 +32,7 @@ private:
      * @param v The vector to be rotated.
      * @param e The expected result after rotation.
      */
-    static void TestRotateVector(Quaternion q, Vector3D v, Vector3D e);
+    static void TestRotateVector(koilo::Quaternion q, koilo::Vector3D v, koilo::Vector3D e);
 
 public:
     static void TestRotateVectorCase1(); ///< Tests vector rotation using a specific quaternion (Case 1).

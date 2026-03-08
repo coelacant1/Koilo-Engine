@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file RunningAverageFilter.h
  * @brief Implements a running average filter for smoothing data.
@@ -15,7 +16,10 @@
 #include <cstddef>
 #include <cstdint>
 #include <vector>
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class RunningAverageFilter
@@ -75,20 +79,22 @@ public:
      */
     float GetGain() const { return gain; }
 
-    PTX_BEGIN_FIELDS(RunningAverageFilter)
+    KL_BEGIN_FIELDS(RunningAverageFilter)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(RunningAverageFilter)
-        PTX_METHOD_AUTO(RunningAverageFilter, SetGain, "Set gain"),
-        PTX_METHOD_AUTO(RunningAverageFilter, Filter, "Filter"),
-        PTX_METHOD_AUTO(RunningAverageFilter, Reset, "Reset"),
-        PTX_METHOD_AUTO(RunningAverageFilter, GetCapacity, "Get capacity"),
-        PTX_METHOD_AUTO(RunningAverageFilter, GetGain, "Get gain")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(RunningAverageFilter)
+        KL_METHOD_AUTO(RunningAverageFilter, SetGain, "Set gain"),
+        KL_METHOD_AUTO(RunningAverageFilter, Filter, "Filter"),
+        KL_METHOD_AUTO(RunningAverageFilter, Reset, "Reset"),
+        KL_METHOD_AUTO(RunningAverageFilter, GetCapacity, "Get capacity"),
+        KL_METHOD_AUTO(RunningAverageFilter, GetGain, "Get gain")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(RunningAverageFilter)
-        PTX_CTOR(RunningAverageFilter, int, float)
-    PTX_END_DESCRIBE(RunningAverageFilter)
+    KL_BEGIN_DESCRIBE(RunningAverageFilter)
+        KL_CTOR(RunningAverageFilter, int, float)
+    KL_END_DESCRIBE(RunningAverageFilter)
 
 };
+
+} // namespace koilo

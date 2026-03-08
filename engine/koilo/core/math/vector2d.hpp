@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file Vector2D.h
  * @brief Defines a 2D vector and various related operations.
@@ -13,7 +14,10 @@
 #pragma once
 
 #include "mathematics.hpp"
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class Vector2D
@@ -206,7 +210,7 @@ public:
      * @brief Converts the vector to a string representation.
      * @return A `String` in the format "(X, Y)".
      */
-    ptx::UString ToString() const;
+    koilo::UString ToString() const;
 
     // --- Static function declarations ---
 
@@ -376,6 +380,12 @@ public:
     bool operator !=(const Vector2D& vector) const;
 
     /**
+     * @brief Unary negation operator. Returns the negated vector.
+     * @return A new `Vector2D` with all components negated.
+     */
+    Vector2D operator -() const;
+
+    /**
      * @brief Assignment operator. Copies another `Vector2D` into this one.
      * @param vector The vector to copy.
      * @return A reference to this `Vector2D`.
@@ -424,59 +434,75 @@ public:
      */
     Vector2D operator /(const float& value) const;
 
-    PTX_BEGIN_FIELDS(Vector2D)
-        PTX_FIELD(Vector2D, X, "X", __FLT_MIN__, __FLT_MAX__),
-        PTX_FIELD(Vector2D, Y, "Y", __FLT_MIN__, __FLT_MAX__)
-    PTX_END_FIELDS
+    /**
+     * @brief Addition operator with a float scalar. Adds the scalar to each component.
+     * @param value The scalar to add.
+     * @return A new `Vector2D` incremented by `value`.
+     */
+    Vector2D operator +(const float& value) const;
 
-    PTX_BEGIN_METHODS(Vector2D)
-        PTX_METHOD_AUTO(Vector2D, Absolute, "Absolute"),
-        /* Normal */ PTX_METHOD_OVLD_CONST0(Vector2D, Normal, Vector2D),
-        /* Add */ PTX_METHOD_OVLD_CONST(Vector2D, Add, Vector2D, const Vector2D &),
-        /* Subtract */ PTX_METHOD_OVLD_CONST(Vector2D, Subtract, Vector2D, const Vector2D &),
-        /* Multiply */ PTX_METHOD_OVLD_CONST(Vector2D, Multiply, Vector2D, const Vector2D &),
-        /* Divide */ PTX_METHOD_OVLD_CONST(Vector2D, Divide, Vector2D, const Vector2D &),
-        /* Multiply */ PTX_METHOD_OVLD_CONST(Vector2D, Multiply, Vector2D, const float &),
-        /* Divide */ PTX_METHOD_OVLD_CONST(Vector2D, Divide, Vector2D, const float &),
-        /* Cross product */ PTX_METHOD_OVLD_CONST(Vector2D, CrossProduct, float, const Vector2D &),
-        PTX_METHOD_AUTO(Vector2D, UnitCircle, "Unit circle"),
-        /* Constrain */ PTX_METHOD_OVLD_CONST(Vector2D, Constrain, Vector2D, const float &, const float &),
-        /* Constrain */ PTX_METHOD_OVLD_CONST(Vector2D, Constrain, Vector2D, const Vector2D &, const Vector2D &),
-        /* Minimum */ PTX_METHOD_OVLD_CONST(Vector2D, Minimum, Vector2D, const Vector2D &),
-        /* Maximum */ PTX_METHOD_OVLD_CONST(Vector2D, Maximum, Vector2D, const Vector2D &),
-        PTX_METHOD_AUTO(Vector2D, Rotate, "Rotate"),
-        PTX_METHOD_AUTO(Vector2D, CheckBounds, "Check bounds"),
-        PTX_METHOD_AUTO(Vector2D, Magnitude, "Magnitude"),
-        /* Dot product */ PTX_METHOD_OVLD_CONST(Vector2D, DotProduct, float, const Vector2D &),
-        /* Calculate euclidean distance */ PTX_METHOD_OVLD_CONST(Vector2D, CalculateEuclideanDistance, float, const Vector2D &),
-        PTX_METHOD_AUTO(Vector2D, Perpendicular, "Perpendicular"),
-        PTX_METHOD_AUTO(Vector2D, RightPerpendicular, "Right perpendicular"),
-        /* Is equal */ PTX_METHOD_OVLD_CONST(Vector2D, IsEqual, bool, const Vector2D &),
-        PTX_METHOD_AUTO(Vector2D, ToString, "To string"),
-        /* Normal */ PTX_SMETHOD_OVLD(Vector2D, Normal, Vector2D, const Vector2D &),
-        /* Add */ PTX_SMETHOD_OVLD(Vector2D, Add, Vector2D, const Vector2D &, const Vector2D &),
-        /* Subtract */ PTX_SMETHOD_OVLD(Vector2D, Subtract, Vector2D, const Vector2D &, const Vector2D &),
-        /* Multiply */ PTX_SMETHOD_OVLD(Vector2D, Multiply, Vector2D, const Vector2D &, const Vector2D &),
-        /* Divide */ PTX_SMETHOD_OVLD(Vector2D, Divide, Vector2D, const Vector2D &, const Vector2D &),
-        /* Multiply */ PTX_SMETHOD_OVLD(Vector2D, Multiply, Vector2D, const Vector2D &, const float &),
-        /* Multiply */ PTX_SMETHOD_OVLD(Vector2D, Multiply, Vector2D, const float &, const Vector2D &),
-        /* Divide */ PTX_SMETHOD_OVLD(Vector2D, Divide, Vector2D, const Vector2D &, const float &),
-        /* Cross product */ PTX_SMETHOD_OVLD(Vector2D, CrossProduct, float, const Vector2D &, const Vector2D &),
-        /* Dot product */ PTX_SMETHOD_OVLD(Vector2D, DotProduct, float, const Vector2D &, const Vector2D &),
-        /* Calculate euclidean distance */ PTX_SMETHOD_OVLD(Vector2D, CalculateEuclideanDistance, float, const Vector2D &, const Vector2D &),
-        /* Is equal */ PTX_SMETHOD_OVLD(Vector2D, IsEqual, bool, const Vector2D &, const Vector2D &),
-        /* Minimum */ PTX_SMETHOD_OVLD(Vector2D, Minimum, Vector2D, const Vector2D &, const Vector2D &),
-        /* Maximum */ PTX_SMETHOD_OVLD(Vector2D, Maximum, Vector2D, const Vector2D &, const Vector2D &),
-        PTX_SMETHOD_AUTO(Vector2D::LERP, "Lerp"),
-        PTX_SMETHOD_AUTO(Vector2D::DegreesToRadians, "Degrees to radians"),
-        PTX_SMETHOD_AUTO(Vector2D::RadiansToDegrees, "Radians to degrees"),
-        PTX_SMETHOD_AUTO(Vector2D::LineSegmentsIntersect, "Line segments intersect")
-    PTX_END_METHODS
+    /**
+     * @brief Subtraction operator with a float scalar. Subtracts the scalar from each component.
+     * @param value The scalar to subtract.
+     * @return A new `Vector2D` decremented by `value`.
+     */
+    Vector2D operator -(const float& value) const;
 
-    PTX_BEGIN_DESCRIBE(Vector2D)
-        PTX_CTOR0(Vector2D),
-        PTX_CTOR(Vector2D, const Vector2D &),
-        PTX_CTOR(Vector2D, const float &, const float &)
-    PTX_END_DESCRIBE(Vector2D)
+    KL_BEGIN_FIELDS(Vector2D)
+        KL_FIELD(Vector2D, X, "X", __FLT_MIN__, __FLT_MAX__),
+        KL_FIELD(Vector2D, Y, "Y", __FLT_MIN__, __FLT_MAX__)
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(Vector2D)
+        KL_METHOD_AUTO(Vector2D, Absolute, "Absolute"),
+        /* Normal */ KL_METHOD_OVLD_CONST0(Vector2D, Normal, Vector2D),
+        /* Add */ KL_METHOD_OVLD_CONST(Vector2D, Add, Vector2D, const Vector2D &),
+        /* Subtract */ KL_METHOD_OVLD_CONST(Vector2D, Subtract, Vector2D, const Vector2D &),
+        /* Multiply */ KL_METHOD_OVLD_CONST(Vector2D, Multiply, Vector2D, const Vector2D &),
+        /* Divide */ KL_METHOD_OVLD_CONST(Vector2D, Divide, Vector2D, const Vector2D &),
+        /* Multiply */ KL_METHOD_OVLD_CONST(Vector2D, Multiply, Vector2D, const float &),
+        /* Divide */ KL_METHOD_OVLD_CONST(Vector2D, Divide, Vector2D, const float &),
+        /* Cross product */ KL_METHOD_OVLD_CONST(Vector2D, CrossProduct, float, const Vector2D &),
+        KL_METHOD_AUTO(Vector2D, UnitCircle, "Unit circle"),
+        /* Constrain */ KL_METHOD_OVLD_CONST(Vector2D, Constrain, Vector2D, const float &, const float &),
+        /* Constrain */ KL_METHOD_OVLD_CONST(Vector2D, Constrain, Vector2D, const Vector2D &, const Vector2D &),
+        /* Minimum */ KL_METHOD_OVLD_CONST(Vector2D, Minimum, Vector2D, const Vector2D &),
+        /* Maximum */ KL_METHOD_OVLD_CONST(Vector2D, Maximum, Vector2D, const Vector2D &),
+        KL_METHOD_AUTO(Vector2D, Rotate, "Rotate"),
+        KL_METHOD_AUTO(Vector2D, CheckBounds, "Check bounds"),
+        KL_METHOD_AUTO(Vector2D, Magnitude, "Magnitude"),
+        /* Dot product */ KL_METHOD_OVLD_CONST(Vector2D, DotProduct, float, const Vector2D &),
+        /* Calculate euclidean distance */ KL_METHOD_OVLD_CONST(Vector2D, CalculateEuclideanDistance, float, const Vector2D &),
+        KL_METHOD_AUTO(Vector2D, Perpendicular, "Perpendicular"),
+        KL_METHOD_AUTO(Vector2D, RightPerpendicular, "Right perpendicular"),
+        /* Is equal */ KL_METHOD_OVLD_CONST(Vector2D, IsEqual, bool, const Vector2D &),
+        KL_METHOD_AUTO(Vector2D, ToString, "To string"),
+        /* Normal */ KL_SMETHOD_OVLD(Vector2D, Normal, Vector2D, const Vector2D &),
+        /* Add */ KL_SMETHOD_OVLD(Vector2D, Add, Vector2D, const Vector2D &, const Vector2D &),
+        /* Subtract */ KL_SMETHOD_OVLD(Vector2D, Subtract, Vector2D, const Vector2D &, const Vector2D &),
+        /* Multiply */ KL_SMETHOD_OVLD(Vector2D, Multiply, Vector2D, const Vector2D &, const Vector2D &),
+        /* Divide */ KL_SMETHOD_OVLD(Vector2D, Divide, Vector2D, const Vector2D &, const Vector2D &),
+        /* Multiply */ KL_SMETHOD_OVLD(Vector2D, Multiply, Vector2D, const Vector2D &, const float &),
+        /* Multiply */ KL_SMETHOD_OVLD(Vector2D, Multiply, Vector2D, const float &, const Vector2D &),
+        /* Divide */ KL_SMETHOD_OVLD(Vector2D, Divide, Vector2D, const Vector2D &, const float &),
+        /* Cross product */ KL_SMETHOD_OVLD(Vector2D, CrossProduct, float, const Vector2D &, const Vector2D &),
+        /* Dot product */ KL_SMETHOD_OVLD(Vector2D, DotProduct, float, const Vector2D &, const Vector2D &),
+        /* Calculate euclidean distance */ KL_SMETHOD_OVLD(Vector2D, CalculateEuclideanDistance, float, const Vector2D &, const Vector2D &),
+        /* Is equal */ KL_SMETHOD_OVLD(Vector2D, IsEqual, bool, const Vector2D &, const Vector2D &),
+        /* Minimum */ KL_SMETHOD_OVLD(Vector2D, Minimum, Vector2D, const Vector2D &, const Vector2D &),
+        /* Maximum */ KL_SMETHOD_OVLD(Vector2D, Maximum, Vector2D, const Vector2D &, const Vector2D &),
+        KL_SMETHOD_AUTO(Vector2D::LERP, "Lerp"),
+        KL_SMETHOD_AUTO(Vector2D::DegreesToRadians, "Degrees to radians"),
+        KL_SMETHOD_AUTO(Vector2D::RadiansToDegrees, "Radians to degrees"),
+        KL_SMETHOD_AUTO(Vector2D::LineSegmentsIntersect, "Line segments intersect")
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(Vector2D)
+        KL_CTOR0(Vector2D),
+        KL_CTOR(Vector2D, const Vector2D &),
+        KL_CTOR(Vector2D, const float &, const float &)
+    KL_END_DESCRIBE(Vector2D)
 
 };
+
+} // namespace koilo

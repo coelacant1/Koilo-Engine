@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testeulerangles.hpp
  * @brief Unit tests for the EulerAngles class.
@@ -12,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/core/math/eulerangles.hpp>
+#include <koilo/core/math/eulerangles.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

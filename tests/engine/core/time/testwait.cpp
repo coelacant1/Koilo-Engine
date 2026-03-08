@@ -1,42 +1,50 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testwait.cpp
  * @brief Implementation of Wait unit tests.
  */
 
 #include "testwait.hpp"
+#include <unistd.h>
 
+using namespace koilo;
 // ========== Constructor Tests ==========
 
 void TestWait::TestDefaultConstructor() {
-    // Wait obj; // Requires constructor parameters
-    TEST_ASSERT_TRUE(false);  // Placeholder
+    Wait wait(0);
+    TEST_ASSERT_TRUE(wait.IsFinished());
 }
 
 // ========== Method Tests ==========
 void TestWait::TestReset() {
-    // Wait obj; // Requires constructor parameters
-    TEST_ASSERT_TRUE(false);  // Placeholder
+    Wait wait(100);
+    wait.Reset();
+    TEST_ASSERT_FALSE(wait.IsFinished());
 }
+
 void TestWait::TestIsFinished() {
-    // Wait obj; // Requires constructor parameters
-    TEST_ASSERT_TRUE(false);  // Placeholder
+    Wait wait(1);
+    TEST_ASSERT_FALSE(wait.IsFinished());
+    // After sufficient time, should finish (use usleep for desktop)
+    usleep(50000);  // 50ms
+    TEST_ASSERT_TRUE(wait.IsFinished());
 }
+
 // ========== Edge Cases ==========
 
 // ========== Test Runner ==========
 
 void TestWait::TestParameterizedConstructor() {
-    // Wait obj; // Requires constructor parameters
-    
-    // Test method functionality
-    TEST_ASSERT_TRUE(false);
+    Wait wait(100);
+    TEST_ASSERT_FALSE(wait.IsFinished());
 }
 
 void TestWait::TestEdgeCases() {
-    // Wait obj; // Requires constructor parameters
+    Wait zeroWait(0);
+    TEST_ASSERT_TRUE(zeroWait.IsFinished());
     
-    // Test method functionality
-    TEST_ASSERT_TRUE(false);
+    Wait longWait(10000);
+    TEST_ASSERT_FALSE(longWait.IsFinished());
 }
 
 void TestWait::RunAllTests() {

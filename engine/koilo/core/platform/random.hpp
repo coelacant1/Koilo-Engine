@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 #pragma once
 
 #include <cstdint> // For std::uint32_t
 
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
 
 /**
  * @file Random.hpp
@@ -12,10 +13,10 @@
  */
 
 /**
- * @namespace ptx::Random
+ * @namespace koilo::Random
  * @brief Unifies random number generation between Arduino and native C++.
  */
-namespace ptx {
+namespace koilo {
 namespace Random {
 
     /**
@@ -41,22 +42,22 @@ namespace Random {
     float Float(float min, float max);
 
     struct Reflection {
-        static void Seed(std::uint32_t seed) { ::ptx::Random::Seed(seed); }
-        static int Int(int min, int max) { return ::ptx::Random::Int(min, max); }
-        static float Float(float min, float max) { return ::ptx::Random::Float(min, max); }
+        static void Seed(std::uint32_t seed) { ::koilo::Random::Seed(seed); }
+        static int Int(int min, int max) { return ::koilo::Random::Int(min, max); }
+        static float Float(float min, float max) { return ::koilo::Random::Float(min, max); }
 
-        PTX_BEGIN_FIELDS(Reflection)
+        KL_BEGIN_FIELDS(Reflection)
             /* No reflected fields. */
-        PTX_END_FIELDS
+        KL_END_FIELDS
 
-        PTX_BEGIN_METHODS(Reflection)
-            PTX_SMETHOD_OVLD(Reflection, Seed, void, std::uint32_t),
-            PTX_SMETHOD_OVLD(Reflection, Int, int, int, int),
-            PTX_SMETHOD_OVLD(Reflection, Float, float, float, float)
-        PTX_END_METHODS
+        KL_BEGIN_METHODS(Reflection)
+            KL_SMETHOD_OVLD(Reflection, Seed, void, std::uint32_t),
+            KL_SMETHOD_OVLD(Reflection, Int, int, int, int),
+            KL_SMETHOD_OVLD(Reflection, Float, float, float, float)
+        KL_END_METHODS
 
-        PTX_BEGIN_DESCRIBE(Reflection)
-        PTX_END_DESCRIBE(Reflection)
+        KL_BEGIN_DESCRIBE(Reflection)
+        KL_END_DESCRIBE(Reflection)
     };
 } // namespace Random
-} // namespace ptx
+} // namespace koilo

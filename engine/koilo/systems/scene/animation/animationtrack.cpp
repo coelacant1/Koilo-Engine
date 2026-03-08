@@ -1,4 +1,7 @@
-#include <ptx/systems/scene/animation/animationtrack.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/systems/scene/animation/animationtrack.hpp>
+
+namespace koilo {
 
 AnimationTrack::AnimationTrack(float min,
                                float max,
@@ -98,3 +101,5 @@ void AnimationTrack::SetInterpolationMethod(KeyFrameInterpolation::Interpolation
 KeyFrameInterpolation::InterpolationMethod AnimationTrack::GetInterpolationMethod() const {
     return track.GetInterpolationMethod();
 }
+
+} // namespace koilo

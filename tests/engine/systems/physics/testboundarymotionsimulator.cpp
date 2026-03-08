@@ -1,9 +1,11 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testboundarymotionsimulator.cpp
  * @brief Implementation of BoundaryMotionSimulator unit tests.
  */
 
 #include "testboundarymotionsimulator.hpp"
+using namespace koilo;
 
 // ========== Constructor Tests ==========
 

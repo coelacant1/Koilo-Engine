@@ -1,12 +1,16 @@
-#include <ptx/systems/render/material/materialanimator.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/systems/render/material/materialanimator.hpp>
 
 #include <algorithm>
 #include <cstdint>
 
-#include <ptx/core/math/mathematics.hpp>
-#include <ptx/core/math/vector3d.hpp>
+#include <koilo/core/math/mathematics.hpp>
+#include <koilo/core/math/vector3d.hpp>
 
-RGBColor MaterialAnimatorShader::Shade(const SurfaceProperties& sp, const IMaterial& m) const {
+
+namespace koilo {
+
+Color888 MaterialAnimatorShader::Shade(const SurfaceProperties& sp, const IMaterial& m) const {
     const auto& animator = static_cast<const MaterialAnimator&>(m);
 
     Vector3D rgb { 0.0f, 0.0f, 0.0f };
@@ -23,31 +27,31 @@ RGBColor MaterialAnimatorShader::Shade(const SurfaceProperties& sp, const IMater
             continue;
         }
 
-        const RGBColor src = child->GetShader()->Shade(sp, *child);
-        Vector3D s { float(src.R), float(src.G), float(src.B) };
+        const Color888 src = child->GetShader()->Shade(sp, *child);
+        Vector3D s(float(src.R), float(src.G), float(src.B));
         Vector3D t;
 
         switch (animator.layers_[i].method) {
-            case MaterialAnimator::Method::Base: {
+            case koilo::MaterialAnimator::Method::Base: {
                 rgb = s * opacity;
             } break;
 
-            case MaterialAnimator::Method::Add: {
+            case koilo::MaterialAnimator::Method::Add: {
                 t = Vector3D(rgb.X + s.X, rgb.Y + s.Y, rgb.Z + s.Z);
                 rgb = Vector3D::LERP(rgb, t, opacity);
             } break;
 
-            case MaterialAnimator::Method::Subtract: {
+            case koilo::MaterialAnimator::Method::Subtract: {
                 t = Vector3D(rgb.X - s.X, rgb.Y - s.Y, rgb.Z - s.Z);
                 rgb = Vector3D::LERP(rgb, t, opacity);
             } break;
 
-            case MaterialAnimator::Method::Multiply: {
+            case koilo::MaterialAnimator::Method::Multiply: {
                 t = Vector3D(rgb.X * s.X, rgb.Y * s.Y, rgb.Z * s.Z);
                 rgb = Vector3D::LERP(rgb, t, opacity);
             } break;
 
-            case MaterialAnimator::Method::Divide: {
+            case koilo::MaterialAnimator::Method::Divide: {
                 auto safeDiv = [](float x, float y) {
                     return y != 0.0f ? (x / y) : x;
                 };
@@ -55,24 +59,24 @@ RGBColor MaterialAnimatorShader::Shade(const SurfaceProperties& sp, const IMater
                 rgb = Vector3D::LERP(rgb, t, opacity);
             } break;
 
-            case MaterialAnimator::Method::Darken: {
+            case koilo::MaterialAnimator::Method::Darken: {
                 t = Vector3D::Min(s, rgb);
                 rgb = Vector3D::LERP(rgb, t, opacity);
             } break;
 
-            case MaterialAnimator::Method::Lighten: {
+            case koilo::MaterialAnimator::Method::Lighten: {
                 t = Vector3D::Max(s, rgb);
                 rgb = Vector3D::LERP(rgb, t, opacity);
             } break;
 
-            case MaterialAnimator::Method::Screen: {
+            case koilo::MaterialAnimator::Method::Screen: {
                 t.X = 255.0f - (255.0f - rgb.X) * (255.0f - s.X) / 255.0f;
                 t.Y = 255.0f - (255.0f - rgb.Y) * (255.0f - s.Y) / 255.0f;
                 t.Z = 255.0f - (255.0f - rgb.Z) * (255.0f - s.Z) / 255.0f;
                 rgb = Vector3D::LERP(rgb, t, opacity);
             } break;
 
-            case MaterialAnimator::Method::Overlay: {
+            case koilo::MaterialAnimator::Method::Overlay: {
                 auto ov = [](float aC, float bC) {
                     return (aC < 128.0f)
                         ? (2.0f * aC * bC / 255.0f)
@@ -84,7 +88,7 @@ RGBColor MaterialAnimatorShader::Shade(const SurfaceProperties& sp, const IMater
                 rgb = Vector3D::LERP(rgb, t, opacity);
             } break;
 
-            case MaterialAnimator::Method::SoftLight: {
+            case koilo::MaterialAnimator::Method::SoftLight: {
                 auto sl = [](float aC, float bC) {
                     const float A = aC / 255.0f;
                     const float B = bC / 255.0f;
@@ -96,19 +100,19 @@ RGBColor MaterialAnimatorShader::Shade(const SurfaceProperties& sp, const IMater
                 rgb = Vector3D::LERP(rgb, t, opacity);
             } break;
 
-            case MaterialAnimator::Method::Replace: {
+            case koilo::MaterialAnimator::Method::Replace: {
                 t = s;
                 rgb = Vector3D::LERP(rgb, t, opacity);
             } break;
 
-            case MaterialAnimator::Method::EfficientMask:
+            case koilo::MaterialAnimator::Method::EfficientMask:
                 if (src.R > 128 && src.G > 128 && src.B > 128) {
                     rgb = s * opacity;
                     i = layerCount;
                 }
                 continue;
 
-            case MaterialAnimator::Method::Bypass:
+            case koilo::MaterialAnimator::Method::Bypass:
                 // Evaluate child but ignore result.
                 continue;
 
@@ -118,15 +122,15 @@ RGBColor MaterialAnimatorShader::Shade(const SurfaceProperties& sp, const IMater
     }
 
     rgb = rgb.Constrain(0.0f, 255.0f);
-    return RGBColor(uint8_t(rgb.X), uint8_t(rgb.Y), uint8_t(rgb.Z));
+    return Color888(uint8_t(rgb.X), uint8_t(rgb.Y), uint8_t(rgb.Z));
 }
 
-const IShader* MaterialAnimator::ShaderPtr() {
+const IShader* koilo::MaterialAnimator::ShaderPtr() {
     static const MaterialAnimatorShader kInstance{};
     return &kInstance;
 }
 
-MaterialAnimator::MaterialAnimator(std::size_t maxLayers,
+koilo::MaterialAnimator::MaterialAnimator(std::size_t maxLayers,
                                    IEasyEaseAnimator::InterpolationMethod defaultMethod)
     : IMaterial(ShaderPtr()),
       capacity_(std::max<std::size_t>(1, maxLayers)),
@@ -135,10 +139,7 @@ MaterialAnimator::MaterialAnimator(std::size_t maxLayers,
       materialRatios_(capacity_, 0.0f),
       opacities_(capacity_, 0.0f) {}
 
-MaterialAnimator::MaterialAnimator(std::nullptr_t)
-    : MaterialAnimator(kDefaultLayerCapacity) {}
-
-void MaterialAnimator::SetBaseMaterial(Method method, IMaterial* material) {
+void koilo::MaterialAnimator::SetBaseMaterial(Method method, IMaterial* material) {
     if (!material) {
         return;
     }
@@ -154,7 +155,11 @@ void MaterialAnimator::SetBaseMaterial(Method method, IMaterial* material) {
     }
 }
 
-void MaterialAnimator::AddMaterial(Method method,
+void koilo::MaterialAnimator::SetBaseMaterial(IMaterial* material) {
+    SetBaseMaterial(Method::Base, material);
+}
+
+void koilo::MaterialAnimator::AddMaterial(Method method,
                                    IMaterial* material,
                                    uint16_t frames,
                                    float minOpacity,
@@ -185,7 +190,11 @@ void MaterialAnimator::AddMaterial(Method method,
     ++currentLayers_;
 }
 
-void MaterialAnimator::AddMaterialFrame(IMaterial& material, float opacity) {
+void koilo::MaterialAnimator::AddMaterial(IMaterial* material, float maxOpacity) {
+    AddMaterial(Method::Replace, material, 40, 0.0f, maxOpacity);
+}
+
+void koilo::MaterialAnimator::AddMaterialFrame(IMaterial* material, float opacity) {
     const std::size_t index = FindLayerIndex(material);
     if (index == kInvalidIndex || index == 0) {
         return;
@@ -194,7 +203,7 @@ void MaterialAnimator::AddMaterialFrame(IMaterial& material, float opacity) {
     animator_.AddParameterFrame(static_cast<uint16_t>(index), Mathematics::Constrain(opacity, 0.0f, 1.0f));
 }
 
-float MaterialAnimator::GetMaterialOpacity(IMaterial& material) const {
+float koilo::MaterialAnimator::GetMaterialOpacity(IMaterial* material) const {
     const std::size_t index = FindLayerIndex(material);
     if (index == kInvalidIndex) {
         return 0.0f;
@@ -206,7 +215,8 @@ float MaterialAnimator::GetMaterialOpacity(IMaterial& material) const {
 
     return animator_.GetValue(static_cast<uint16_t>(index));
 }
-void MaterialAnimator::Update() {
+
+void koilo::MaterialAnimator::Update() {
     if (!baseMaterialSet_) {
         return;
     }
@@ -221,7 +231,7 @@ void MaterialAnimator::Update() {
     }
 }
 
-std::size_t MaterialAnimator::FindLayerIndex(const IMaterial* material) const {
+std::size_t koilo::MaterialAnimator::FindLayerIndex(const IMaterial* material) const {
     if (!material) {
         return kInvalidIndex;
     }
@@ -235,6 +245,4 @@ std::size_t MaterialAnimator::FindLayerIndex(const IMaterial* material) const {
     return kInvalidIndex;
 }
 
-std::size_t MaterialAnimator::FindLayerIndex(const IMaterial& material) const {
-    return FindLayerIndex(&material);
-}
+} // namespace koilo

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file RotationMatrix.h
  * @brief Defines the RotationMatrix class for representing and manipulating 3D rotation matrices.
@@ -15,7 +16,10 @@
 
 #include "mathematics.hpp"
 #include "vector3d.hpp"
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class RotationMatrix
@@ -156,7 +160,7 @@ public:
      * @brief Converts the rotation matrix to a string representation.
      * @return A string representing the matrix.
      */
-    ptx::UString ToString();
+    koilo::UString ToString();
 
     /**
      * @brief Assignment operator for rotation matrices.
@@ -165,35 +169,37 @@ public:
      */
     RotationMatrix operator =(RotationMatrix rM);
 
-    PTX_BEGIN_FIELDS(RotationMatrix)
-        PTX_FIELD(RotationMatrix, XAxis, "Xaxis", 0, 0),
-        PTX_FIELD(RotationMatrix, YAxis, "Yaxis", 0, 0),
-        PTX_FIELD(RotationMatrix, ZAxis, "Zaxis", 0, 0)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(RotationMatrix)
+        KL_FIELD(RotationMatrix, XAxis, "Xaxis", 0, 0),
+        KL_FIELD(RotationMatrix, YAxis, "Yaxis", 0, 0),
+        KL_FIELD(RotationMatrix, ZAxis, "Zaxis", 0, 0)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(RotationMatrix)
-        PTX_METHOD_AUTO(RotationMatrix, ConvertCoordinateToVector, "Convert coordinate to vector"),
-        PTX_METHOD_AUTO(RotationMatrix, ReadjustMatrix, "Readjust matrix"),
-        PTX_METHOD_AUTO(RotationMatrix, Rotate, "Rotate"),
-        PTX_METHOD_AUTO(RotationMatrix, RotateX, "Rotate x"),
-        PTX_METHOD_AUTO(RotationMatrix, RotateY, "Rotate y"),
-        PTX_METHOD_AUTO(RotationMatrix, RotateZ, "Rotate z"),
-        PTX_METHOD_AUTO(RotationMatrix, RotateRelative, "Rotate relative"),
-        /* Multiply */ PTX_METHOD_OVLD(RotationMatrix, Multiply, RotationMatrix, float),
-        /* Multiply */ PTX_METHOD_OVLD(RotationMatrix, Multiply, RotationMatrix, RotationMatrix),
-        PTX_METHOD_AUTO(RotationMatrix, Normalize, "Normalize"),
-        PTX_METHOD_AUTO(RotationMatrix, Transpose, "Transpose"),
-        PTX_METHOD_AUTO(RotationMatrix, Inverse, "Inverse"),
-        PTX_METHOD_AUTO(RotationMatrix, IsEqual, "Is equal"),
-        PTX_METHOD_AUTO(RotationMatrix, Determinant, "Determinant"),
-        PTX_SMETHOD_AUTO(RotationMatrix::RotateVector, "Rotate vector"),
-        PTX_METHOD_AUTO(RotationMatrix, ToString, "To string")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(RotationMatrix)
+        KL_METHOD_AUTO(RotationMatrix, ConvertCoordinateToVector, "Convert coordinate to vector"),
+        KL_METHOD_AUTO(RotationMatrix, ReadjustMatrix, "Readjust matrix"),
+        KL_METHOD_AUTO(RotationMatrix, Rotate, "Rotate"),
+        KL_METHOD_AUTO(RotationMatrix, RotateX, "Rotate x"),
+        KL_METHOD_AUTO(RotationMatrix, RotateY, "Rotate y"),
+        KL_METHOD_AUTO(RotationMatrix, RotateZ, "Rotate z"),
+        KL_METHOD_AUTO(RotationMatrix, RotateRelative, "Rotate relative"),
+        /* Multiply */ KL_METHOD_OVLD(RotationMatrix, Multiply, RotationMatrix, float),
+        /* Multiply */ KL_METHOD_OVLD(RotationMatrix, Multiply, RotationMatrix, RotationMatrix),
+        KL_METHOD_AUTO(RotationMatrix, Normalize, "Normalize"),
+        KL_METHOD_AUTO(RotationMatrix, Transpose, "Transpose"),
+        KL_METHOD_AUTO(RotationMatrix, Inverse, "Inverse"),
+        KL_METHOD_AUTO(RotationMatrix, IsEqual, "Is equal"),
+        KL_METHOD_AUTO(RotationMatrix, Determinant, "Determinant"),
+        KL_SMETHOD_AUTO(RotationMatrix::RotateVector, "Rotate vector"),
+        KL_METHOD_AUTO(RotationMatrix, ToString, "To string")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(RotationMatrix)
-        PTX_CTOR0(RotationMatrix),
-        PTX_CTOR(RotationMatrix, Vector3D),
-        PTX_CTOR(RotationMatrix, Vector3D, Vector3D, Vector3D)
-    PTX_END_DESCRIBE(RotationMatrix)
+    KL_BEGIN_DESCRIBE(RotationMatrix)
+        KL_CTOR0(RotationMatrix),
+        KL_CTOR(RotationMatrix, Vector3D),
+        KL_CTOR(RotationMatrix, Vector3D, Vector3D, Vector3D)
+    KL_END_DESCRIBE(RotationMatrix)
 
 };
+
+} // namespace koilo

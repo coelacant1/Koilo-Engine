@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testaxisangle.hpp
  * @brief Unit tests for the AxisAngle class.
@@ -12,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/core/math/axisangle.hpp>
+#include <koilo/core/math/axisangle.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

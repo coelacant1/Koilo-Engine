@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file TestVector2D.h
  * @brief Provides unit tests for the Vector2D class.
@@ -13,7 +14,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/core/math/vector2d.hpp>
+#include <koilo/core/math/vector2d.hpp>
 
 /**
  * @class TestVector2D

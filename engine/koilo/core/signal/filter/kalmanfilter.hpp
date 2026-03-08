@@ -1,9 +1,7 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file KalmanFilter.h
- * @brief Provides a template-based implementation of a Kalman Filter.
- *
- * The Kalman Filter is used for estimating the state of a system in the presence
- * of noise. It is widely used in signal processing, control systems, and navigation.
+ * @brief Provides an implementation of a Kalman Filter.
  *
  * @date 22/12/2024
  * @version 1.0
@@ -12,13 +10,13 @@
 
 #pragma once
 
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
+
+namespace koilo {
+
 /**
  * @class KalmanFilter
  * @brief Implements a 1D Kalman Filter with runtime-configurable parameters.
- *
- * The runtime version mirrors the original template behaviour but stores state
- * using single-precision floats to keep the implementation in a translation unit.
  */
 class KalmanFilter {
 private:
@@ -49,24 +47,26 @@ public:
     void SetSensorNoise(float value) { sensorNoise = value; }
     void SetErrorCovariance(float value) { errorCovariance = value; }
 
-    PTX_BEGIN_FIELDS(KalmanFilter)
+    KL_BEGIN_FIELDS(KalmanFilter)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(KalmanFilter)
-        PTX_METHOD_AUTO(KalmanFilter, Reset, "Reset"),
-        PTX_METHOD_AUTO(KalmanFilter, Filter, "Filter"),
-        PTX_METHOD_AUTO(KalmanFilter, GetEstimation, "Get estimation"),
-        PTX_METHOD_AUTO(KalmanFilter, GetProcessNoise, "Get process noise"),
-        PTX_METHOD_AUTO(KalmanFilter, GetSensorNoise, "Get sensor noise"),
-        PTX_METHOD_AUTO(KalmanFilter, GetErrorCovariance, "Get error covariance"),
-        PTX_METHOD_AUTO(KalmanFilter, SetProcessNoise, "Set process noise"),
-        PTX_METHOD_AUTO(KalmanFilter, SetSensorNoise, "Set sensor noise"),
-        PTX_METHOD_AUTO(KalmanFilter, SetErrorCovariance, "Set error covariance")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(KalmanFilter)
+        KL_METHOD_AUTO(KalmanFilter, Reset, "Reset"),
+        KL_METHOD_AUTO(KalmanFilter, Filter, "Filter"),
+        KL_METHOD_AUTO(KalmanFilter, GetEstimation, "Get estimation"),
+        KL_METHOD_AUTO(KalmanFilter, GetProcessNoise, "Get process noise"),
+        KL_METHOD_AUTO(KalmanFilter, GetSensorNoise, "Get sensor noise"),
+        KL_METHOD_AUTO(KalmanFilter, GetErrorCovariance, "Get error covariance"),
+        KL_METHOD_AUTO(KalmanFilter, SetProcessNoise, "Set process noise"),
+        KL_METHOD_AUTO(KalmanFilter, SetSensorNoise, "Set sensor noise"),
+        KL_METHOD_AUTO(KalmanFilter, SetErrorCovariance, "Set error covariance")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(KalmanFilter)
-        PTX_CTOR(KalmanFilter, float, float, float)
-    PTX_END_DESCRIBE(KalmanFilter)
+    KL_BEGIN_DESCRIBE(KalmanFilter)
+        KL_CTOR(KalmanFilter, float, float, float)
+    KL_END_DESCRIBE(KalmanFilter)
 
 };
+
+} // namespace koilo

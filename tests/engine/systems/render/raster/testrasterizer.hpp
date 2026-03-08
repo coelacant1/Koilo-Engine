@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testrasterizer.hpp
  * @brief Unit tests for the Rasterizer class.
@@ -12,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/systems/render/raster/rasterizer.hpp>
+#include <koilo/systems/render/raster/rasterizer.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

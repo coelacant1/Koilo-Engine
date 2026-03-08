@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file MaxFilter.h
  * @brief Implements a moving maximum filter for processing data streams.
@@ -14,7 +15,10 @@
 
 #include <cstddef>
 #include <vector>
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class MaxFilter
@@ -63,18 +67,20 @@ public:
      */
     size_t GetCapacity() const { return capacity; }
 
-    PTX_BEGIN_FIELDS(MaxFilter)
+    KL_BEGIN_FIELDS(MaxFilter)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(MaxFilter)
-        PTX_METHOD_AUTO(MaxFilter, Filter, "Filter"),
-        PTX_METHOD_AUTO(MaxFilter, Reset, "Reset"),
-        PTX_METHOD_AUTO(MaxFilter, GetCapacity, "Get capacity")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(MaxFilter)
+        KL_METHOD_AUTO(MaxFilter, Filter, "Filter"),
+        KL_METHOD_AUTO(MaxFilter, Reset, "Reset"),
+        KL_METHOD_AUTO(MaxFilter, GetCapacity, "Get capacity")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(MaxFilter)
-        PTX_CTOR(MaxFilter, int)
-    PTX_END_DESCRIBE(MaxFilter)
+    KL_BEGIN_DESCRIBE(MaxFilter)
+        KL_CTOR(MaxFilter, int)
+    KL_END_DESCRIBE(MaxFilter)
 
 };
+
+} // namespace koilo

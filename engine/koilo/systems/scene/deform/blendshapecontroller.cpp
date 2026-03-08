@@ -1,131 +1,127 @@
-#include <ptx/systems/scene/deform/blendshapecontroller.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/systems/scene/deform/blendshapecontroller.hpp>
 
-#include <utility>
 
-BlendshapeController::BlendshapeController(IEasyEaseAnimator* eEA, std::size_t maxBlendshapes)
-: eEA_(eEA)
-, capacity_(maxBlendshapes)
-, dictionary_(maxBlendshapes, 0)
-, positionOffsets_(maxBlendshapes)
-, scaleOffsets_(maxBlendshapes)
-, rotationOffsets_(maxBlendshapes) {
+namespace koilo {
+
+koilo::BlendshapeController::BlendshapeController(IEasyEaseAnimator* animator, std::size_t capacity)
+    : animator_(animator)
+    , capacity_(capacity) {
+    blendshapes_.reserve(capacity);
+    dictionaryIds_.reserve(capacity);
 }
 
-BlendshapeController::Index BlendshapeController::FindIndex(uint16_t dictionaryValue) const {
-    for (Index i = 0; i < currentBlendshapes_; ++i) {
-        if (dictionary_[i] == dictionaryValue) {
-            return i;
+void koilo::BlendshapeController::SetAnimator(IEasyEaseAnimator* animator) {
+    animator_ = animator;
+}
+
+bool koilo::BlendshapeController::AddBlendshape(uint16_t dictionaryId, Blendshape* blendshape) {
+    if (!blendshape || blendshapes_.size() >= capacity_) {
+        return false;
+    }
+
+    // Check if dictionary ID already exists
+    if (FindIndex(dictionaryId) != -1) {
+        return false;
+    }
+
+    blendshapes_.push_back(blendshape);
+    dictionaryIds_.push_back(dictionaryId);
+    return true;
+}
+
+bool koilo::BlendshapeController::RemoveBlendshape(uint16_t dictionaryId) {
+    int index = FindIndex(dictionaryId);
+    if (index == -1) {
+        return false;
+    }
+
+    blendshapes_.erase(blendshapes_.begin() + index);
+    dictionaryIds_.erase(dictionaryIds_.begin() + index);
+    return true;
+}
+
+std::size_t koilo::BlendshapeController::GetBlendshapeCount() const {
+    return blendshapes_.size();
+}
+
+std::size_t koilo::BlendshapeController::GetCapacity() const {
+    return capacity_;
+}
+
+void koilo::BlendshapeController::SetWeight(uint16_t dictionaryId, float weight) {
+    int index = FindIndex(dictionaryId);
+    if (index != -1) {
+        blendshapes_[index]->Weight = weight;
+    }
+}
+
+float koilo::BlendshapeController::GetWeight(uint16_t dictionaryId) const {
+    int index = FindIndex(dictionaryId);
+    if (index == -1) {
+        return 0.0f;
+    }
+
+    // Prefer animator weight if available
+    if (animator_) {
+        return animator_->GetValue(dictionaryId);
+    }
+
+    return blendshapes_[index]->Weight;
+}
+
+void koilo::BlendshapeController::ResetWeights() {
+    for (auto* blendshape : blendshapes_) {
+        if (blendshape) {
+            blendshape->Weight = 0.0f;
         }
     }
-    return kInvalidIndex;
 }
 
-void BlendshapeController::AddBlendshape(uint16_t dictionaryValue, Vector3D positionOffset) {
-    AddBlendshape(dictionaryValue, std::move(positionOffset), Vector3D(1.0f, 1.0f, 1.0f), Vector3D());
-}
-
-void BlendshapeController::AddBlendshape(uint16_t dictionaryValue, Vector3D positionOffset, Vector3D scaleOffset) {
-    AddBlendshape(dictionaryValue, std::move(positionOffset), std::move(scaleOffset), Vector3D());
-}
-
-void BlendshapeController::AddBlendshape(uint16_t dictionaryValue,
-                                         Vector3D positionOffset,
-                                         Vector3D scaleOffset,
-                                         Vector3D rotationOffset) {
-    if (capacity_ == 0 || currentBlendshapes_ >= capacity_) {
+void koilo::BlendshapeController::Update(Mesh* mesh) {
+    if (!mesh) {
         return;
     }
 
-    if (FindIndex(dictionaryValue) != kInvalidIndex) {
+    // Reset mesh to original vertices
+    mesh->ResetVertices();
+
+    // Apply all blendshapes
+    ApplyTo(mesh->GetTriangleGroup());
+}
+
+void koilo::BlendshapeController::ApplyTo(ITriangleGroup* triangleGroup) {
+    if (!triangleGroup) {
         return;
     }
 
-    const Index idx = currentBlendshapes_;
-    dictionary_[idx]       = dictionaryValue;
-    positionOffsets_[idx]  = std::move(positionOffset);
-    scaleOffsets_[idx]     = std::move(scaleOffset);
-    rotationOffsets_[idx]  = std::move(rotationOffset);
-    ++currentBlendshapes_;
-}
+    for (std::size_t i = 0; i < blendshapes_.size(); ++i) {
+        Blendshape* blendshape = blendshapes_[i];
+        if (!blendshape) {
+            continue;
+        }
 
-void BlendshapeController::SetBlendshapePositionOffset(uint16_t dictionaryValue, Vector3D positionOffset) {
-    const Index index = FindIndex(dictionaryValue);
-    if (index == kInvalidIndex) {
-        return;
-    }
-    positionOffsets_[index] = std::move(positionOffset);
-}
+        // Get weight from animator if available, otherwise use blendshape's weight
+        float weight = animator_ ? animator_->GetValue(dictionaryIds_[i]) : blendshape->Weight;
 
-void BlendshapeController::SetBlendshapeScaleOffset(uint16_t dictionaryValue, Vector3D scaleOffset) {
-    const Index index = FindIndex(dictionaryValue);
-    if (index == kInvalidIndex) {
-        return;
-    }
-    scaleOffsets_[index] = std::move(scaleOffset);
-}
-
-void BlendshapeController::SetBlendshapeRotationOffset(uint16_t dictionaryValue, Vector3D rotationOffset) {
-    const Index index = FindIndex(dictionaryValue);
-    if (index == kInvalidIndex) {
-        return;
-    }
-    rotationOffsets_[index] = std::move(rotationOffset);
-}
-
-Vector3D BlendshapeController::GetPositionOffset() {
-    Vector3D positionOffset;
-
-    if (!eEA_) {
-        return positionOffset;
-    }
-
-    for (Index i = 0; i < currentBlendshapes_; ++i) {
-        const float weight = eEA_->GetValue(dictionary_[i]);
-        if (weight > 0.0f) {
-            positionOffset += positionOffsets_[i] * weight;
+        // Only apply if weight is non-zero
+        if (weight != 0.0f) {
+            // Temporarily set the weight and apply
+            float originalWeight = blendshape->Weight;
+            blendshape->Weight = weight;
+            blendshape->BlendObject3D(triangleGroup);
+            blendshape->Weight = originalWeight;
         }
     }
-
-    return positionOffset;
 }
 
-Vector3D BlendshapeController::GetScaleOffset() {
-    Vector3D scaleOffset(1.0f, 1.0f, 1.0f);
-
-    if (!eEA_) {
-        return scaleOffset;
-    }
-
-    std::size_t count = 0;
-
-    for (Index i = 0; i < currentBlendshapes_; ++i) {
-        const float weight = eEA_->GetValue(dictionary_[i]);
-        if (weight > 0.0f) {
-            scaleOffset = scaleOffset * Vector3D::LERP(Vector3D(1.0f, 1.0f, 1.0f), scaleOffsets_[i], weight);
-            ++count;
+int koilo::BlendshapeController::FindIndex(uint16_t dictionaryId) const {
+    for (std::size_t i = 0; i < dictionaryIds_.size(); ++i) {
+        if (dictionaryIds_[i] == dictionaryId) {
+            return static_cast<int>(i);
         }
     }
-
-    if (count == 0) {
-        return Vector3D(1.0f, 1.0f, 1.0f);
-    }
-
-    return scaleOffset;
+    return -1;
 }
 
-Vector3D BlendshapeController::GetRotationOffset() {
-    Vector3D rotationOffset;
-
-    if (!eEA_) {
-        return rotationOffset;
-    }
-
-    for (Index i = 0; i < currentBlendshapes_; ++i) {
-        const float weight = eEA_->GetValue(dictionary_[i]);
-        if (weight > 0.0f) {
-            rotationOffset += rotationOffsets_[i] * weight;
-        }
-    }
-
-    return rotationOffset;
-}
+} // namespace koilo

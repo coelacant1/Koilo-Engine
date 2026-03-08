@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file inputmanager.hpp
  * @brief Central input management system for keyboard, mouse, and gamepad input.
@@ -10,13 +11,12 @@
 
 #include <unordered_map>
 #include <string>
-#include <functional>
 #include "keyboard.hpp"
 #include "mouse.hpp"
 #include "gamepad.hpp"
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
 
-namespace ptx {
+namespace koilo {
 
 /**
  * @class InputManager
@@ -204,26 +204,26 @@ public:
      */
     float GetAxis(const std::string& axis, int gamepadId = 0) const;
 
-    PTX_BEGIN_FIELDS(InputManager)
+    KL_BEGIN_FIELDS(InputManager)
         /* No reflected fields */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(InputManager)
-        PTX_METHOD_AUTO(InputManager, Update, "Update"),
-        PTX_METHOD_AUTO(InputManager, IsKeyPressed, "Is key pressed"),
-        PTX_METHOD_AUTO(InputManager, IsKeyHeld, "Is key held"),
-        PTX_METHOD_AUTO(InputManager, GetMousePosition, "Get mouse position"),
-        PTX_METHOD_AUTO(InputManager, GetMouseDelta, "Get mouse delta"),
-        PTX_METHOD_AUTO(InputManager, IsMouseButtonPressed, "Is mouse button pressed"),
-        PTX_METHOD_AUTO(InputManager, IsGamepadConnected, "Is gamepad connected"),
-        PTX_METHOD_AUTO(InputManager, IsActionPressed, "Is action pressed"),
-        PTX_METHOD_AUTO(InputManager, IsActionHeld, "Is action held"),
-        PTX_METHOD_AUTO(InputManager, GetAxis, "Get axis")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(InputManager)
+        KL_METHOD_AUTO(InputManager, Update, "Update"),
+        KL_METHOD_AUTO(InputManager, IsKeyPressed, "Is key pressed"),
+        KL_METHOD_AUTO(InputManager, IsKeyHeld, "Is key held"),
+        KL_METHOD_AUTO(InputManager, GetMousePosition, "Get mouse position"),
+        KL_METHOD_AUTO(InputManager, GetMouseDelta, "Get mouse delta"),
+        KL_METHOD_AUTO(InputManager, IsMouseButtonPressed, "Is mouse button pressed"),
+        KL_METHOD_AUTO(InputManager, IsGamepadConnected, "Is gamepad connected"),
+        KL_METHOD_AUTO(InputManager, IsActionPressed, "Is action pressed"),
+        KL_METHOD_AUTO(InputManager, IsActionHeld, "Is action held"),
+        KL_METHOD_AUTO(InputManager, GetAxis, "Get axis")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(InputManager)
-        PTX_CTOR0(InputManager)
-    PTX_END_DESCRIBE(InputManager)
+    KL_BEGIN_DESCRIBE(InputManager)
+        KL_CTOR0(InputManager)
+    KL_END_DESCRIBE(InputManager)
 };
 
-} // namespace ptx
+} // namespace koilo

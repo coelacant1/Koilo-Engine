@@ -1,14 +1,21 @@
-#include <ptx/core/time/wait.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/core/time/wait.hpp>
 
 
-Wait::Wait(uint32_t millisToWait) {
+
+namespace koilo {
+
+koilo::Wait::Wait(uint32_t millisToWait) {
     this->millisToWait = millisToWait;
+    Reset();
 }
 
-void Wait::Reset() {
-    previousMillis = ptx::Time::Millis();
+void koilo::Wait::Reset() {
+    previousMillis = koilo::Time::Millis();
 }
 
-bool Wait::IsFinished() {
-    return ptx::Time::Millis() - previousMillis >= millisToWait;
+bool koilo::Wait::IsFinished() {
+    return koilo::Time::Millis() - previousMillis >= millisToWait;
 }
+
+} // namespace koilo

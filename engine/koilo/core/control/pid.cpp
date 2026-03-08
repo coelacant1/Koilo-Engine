@@ -1,6 +1,10 @@
-#include <ptx/core/control/pid.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/core/control/pid.hpp>
 
-PID::PID() :
+
+namespace koilo {
+
+koilo::PID::PID() :
     integral(0.0f),
     error(0.0f),
     previousError(0.0f),
@@ -10,7 +14,7 @@ PID::PID() :
     kd(0.0f),
     previousSeconds(0.0f) {}
 
-PID::PID(float kp, float ki, float kd) :
+koilo::PID::PID(float kp, float ki, float kd) :
     integral(0.0f),
     error(0.0f),
     previousError(0.0f),
@@ -20,9 +24,9 @@ PID::PID(float kp, float ki, float kd) :
     kd(kd),
     previousSeconds(0.0f) {}
 
-PID::~PID() {}
+koilo::PID::~PID() {}
 
-float PID::Calculate(float setpoint, float processVariable, uint32_t currentMillis) {
+float koilo::PID::Calculate(float setpoint, float processVariable, uint32_t currentMillis) {
     float POut, IOut, DOut;
 
     float currentSeconds = currentMillis / 1000.0f;
@@ -43,7 +47,7 @@ float PID::Calculate(float setpoint, float processVariable, uint32_t currentMill
     return output;
 }
 
-float PID::Calculate(float setpoint, float processVariable, float dT) {
+float koilo::PID::Calculate(float setpoint, float processVariable, float dT) {
     float POut, IOut, DOut;
 
     error = setpoint - processVariable;
@@ -58,3 +62,5 @@ float PID::Calculate(float setpoint, float processVariable, float dT) {
 
     return output;
 }
+
+} // namespace koilo

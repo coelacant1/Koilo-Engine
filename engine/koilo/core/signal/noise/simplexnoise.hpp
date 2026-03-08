@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file SimplexNoise.h
  * @brief A material class that generates and applies Simplex Noise.
@@ -12,22 +13,25 @@
 #pragma once
 
 #include <cstdint>
-#include "../../platform/random.hpp"
-#include "../../math/mathematics.hpp"
-#include "../../math/vector3d.hpp"
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/core/platform/random.hpp>
+#include <koilo/core/math/mathematics.hpp>
+#include <koilo/core/math/vector3d.hpp>
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 /**
  * @class SimplexNoise
  * @brief A material class for rendering Simplex Noise.
  *
- * This template-based class generates noise values using the Simplex Noise algorithm.
+ * This class generates noise values using the Simplex Noise algorithm.
  */
 class SimplexNoise {
 private:
     Vector3D noiseScale = Vector3D(1, 1, 1); ///< Scaling factor for the noise generation.
-    const float F2 = 0.5f * (sqrtf(3.0f) - 1.0f); ///< Simplex Noise constants for 2D.
-    const float G2 = (3.0f - sqrtf(3.0f)) / 6.0f; ///< Simplex Noise constants for 2D.
+    const float F2 = 0.5f * (Mathematics::FSqrt(3.0f) - 1.0f); ///< Simplex Noise constants for 2D.
+    const float G2 = (3.0f - Mathematics::FSqrt(3.0f)) / 6.0f; ///< Simplex Noise constants for 2D.
     const float F3 = 1.0f / 3.0f; ///< Simplex Noise constants for 3D.
     const float G3 = 1.0f / 6.0f; ///< Simplex Noise constants for 3D.
     float zPosition = 0.0f; ///< Z-position for 3D noise.
@@ -125,20 +129,22 @@ public:
      */
     float GetNoise(Vector3D position) const;
 
-    PTX_BEGIN_FIELDS(SimplexNoise)
+    KL_BEGIN_FIELDS(SimplexNoise)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(SimplexNoise)
-        /* Noise */ PTX_METHOD_OVLD_CONST(SimplexNoise, Noise, float, float, float),
-        /* Noise */ PTX_METHOD_OVLD_CONST(SimplexNoise, Noise, float, float, float, float),
-        PTX_METHOD_AUTO(SimplexNoise, SetScale, "Set scale"),
-        PTX_METHOD_AUTO(SimplexNoise, SetZPosition, "Set zposition"),
-        PTX_METHOD_AUTO(SimplexNoise, GetNoise, "Get noise")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(SimplexNoise)
+        /* Noise */ KL_METHOD_OVLD_CONST(SimplexNoise, Noise, float, float, float),
+        /* Noise */ KL_METHOD_OVLD_CONST(SimplexNoise, Noise, float, float, float, float),
+        KL_METHOD_AUTO(SimplexNoise, SetScale, "Set scale"),
+        KL_METHOD_AUTO(SimplexNoise, SetZPosition, "Set zposition"),
+        KL_METHOD_AUTO(SimplexNoise, GetNoise, "Get noise")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(SimplexNoise)
-        PTX_CTOR(SimplexNoise, int)
-    PTX_END_DESCRIBE(SimplexNoise)
+    KL_BEGIN_DESCRIBE(SimplexNoise)
+        KL_CTOR(SimplexNoise, int)
+    KL_END_DESCRIBE(SimplexNoise)
 
 };
+
+} // namespace koilo

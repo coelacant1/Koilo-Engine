@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
 """
-Unit tests for generateptxall.py
+Unit tests for generatekoiloall.py
 
-Tests the PTX umbrella header generation system, including:
+Tests the Koilo umbrella header generation system, including:
 - Header file discovery
 - Template and virtual file filtering
 - Output file generation
@@ -16,10 +17,11 @@ from pathlib import Path
 import sys
 
 # Add scripts directory to path
-SCRIPT_DIR = Path(__file__).resolve().parent.parent
+REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+SCRIPT_DIR = REPO_ROOT / "scripts"
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from generateptxall import gather_headers, generate
+from generatekoiloall import gather_headers, generate
 
 
 # ============================================================================
@@ -41,7 +43,7 @@ class TestHeaderDiscovery(unittest.TestCase):
         (self.include_root / "vector.hpp").write_text("class Vector {};")
         (self.include_root / "matrix.hpp").write_text("class Matrix {};")
 
-        headers = gather_headers(self.include_root, "ptxall.hpp")
+        headers = gather_headers(self.include_root, "koiloall.hpp")
 
         self.assertEqual(len(headers), 2)
         self.assertIn("vector.hpp", headers)
@@ -58,7 +60,7 @@ class TestHeaderDiscovery(unittest.TestCase):
         math_dir.mkdir(parents=True, exist_ok=True)
         (math_dir / "vector.hpp").write_text("class Vector {};")
 
-        headers = gather_headers(self.include_root, "ptxall.hpp")
+        headers = gather_headers(self.include_root, "koiloall.hpp")
 
         self.assertEqual(len(headers), 2)
         self.assertIn("core/engine.hpp", headers)
@@ -74,7 +76,7 @@ class TemplateClass {
 };
 """)
 
-        headers = gather_headers(self.include_root, "ptxall.hpp")
+        headers = gather_headers(self.include_root, "koiloall.hpp")
 
         self.assertEqual(len(headers), 1)
         self.assertIn("regular.hpp", headers)
@@ -90,7 +92,7 @@ public:
 };
 """)
 
-        headers = gather_headers(self.include_root, "ptxall.hpp")
+        headers = gather_headers(self.include_root, "koiloall.hpp")
 
         self.assertEqual(len(headers), 1)
         self.assertIn("concrete.hpp", headers)
@@ -99,13 +101,13 @@ public:
     def test_gather_headers_excludes_output_file(self):
         """Test that the output file itself is excluded"""
         (self.include_root / "vector.hpp").write_text("class Vector {};")
-        (self.include_root / "ptxall.hpp").write_text("#include <vector.hpp>")
+        (self.include_root / "koiloall.hpp").write_text("#include <vector.hpp>")
 
-        headers = gather_headers(self.include_root, "ptxall.hpp")
+        headers = gather_headers(self.include_root, "koiloall.hpp")
 
         self.assertEqual(len(headers), 1)
         self.assertIn("vector.hpp", headers)
-        self.assertNotIn("ptxall.hpp", headers)
+        self.assertNotIn("koiloall.hpp", headers)
 
     def test_gather_headers_ignores_non_hpp(self):
         """Test that non-.hpp files are ignored"""
@@ -114,7 +116,7 @@ public:
         (self.include_root / "readme.txt").write_text("Documentation")
         (self.include_root / "config.h").write_text("#define MACRO 1")
 
-        headers = gather_headers(self.include_root, "ptxall.hpp")
+        headers = gather_headers(self.include_root, "koiloall.hpp")
 
         self.assertEqual(len(headers), 1)
         self.assertIn("header.hpp", headers)
@@ -125,7 +127,7 @@ public:
         (self.include_root / "alpha.hpp").write_text("class Alpha {};")
         (self.include_root / "beta.hpp").write_text("class Beta {};")
 
-        headers = gather_headers(self.include_root, "ptxall.hpp")
+        headers = gather_headers(self.include_root, "koiloall.hpp")
 
         self.assertEqual(headers[0], "alpha.hpp")
         self.assertEqual(headers[1], "beta.hpp")
@@ -133,7 +135,7 @@ public:
 
     def test_gather_headers_empty_directory(self):
         """Test behavior with empty directory"""
-        headers = gather_headers(self.include_root, "ptxall.hpp")
+        headers = gather_headers(self.include_root, "koiloall.hpp")
         self.assertEqual(len(headers), 0)
 
 
@@ -156,7 +158,7 @@ class TestOutputGeneration(unittest.TestCase):
         (self.include_root / "vector.hpp").write_text("class Vector {};")
         (self.include_root / "matrix.hpp").write_text("class Matrix {};")
 
-        output_file = self.include_root / "ptxall.hpp"
+        output_file = self.include_root / "koiloall.hpp"
         result = generate(self.include_root, output_file)
 
         self.assertEqual(result, 0)
@@ -164,7 +166,7 @@ class TestOutputGeneration(unittest.TestCase):
 
         content = output_file.read_text()
         self.assertIn("#pragma once", content)
-        self.assertIn("@file ptxall.hpp", content)
+        self.assertIn("@file koiloall.hpp", content)
         self.assertIn("DO NOT EDIT BY HAND", content)
         self.assertIn('#include "matrix.hpp"', content)
         self.assertIn('#include "vector.hpp"', content)
@@ -179,7 +181,7 @@ class TestOutputGeneration(unittest.TestCase):
         math_dir.mkdir(parents=True, exist_ok=True)
         (math_dir / "vector.hpp").write_text("class Vector {};")
 
-        output_file = self.include_root / "ptxall.hpp"
+        output_file = self.include_root / "koiloall.hpp"
         result = generate(self.include_root, output_file)
 
         self.assertEqual(result, 0)
@@ -193,7 +195,7 @@ class TestOutputGeneration(unittest.TestCase):
         """Test that generate creates parent directories if needed"""
         (self.include_root / "vector.hpp").write_text("class Vector {};")
 
-        output_file = Path(self.temp_dir) / "build" / "generated" / "ptxall.hpp"
+        output_file = Path(self.temp_dir) / "build" / "generated" / "koiloall.hpp"
         result = generate(self.include_root, output_file)
 
         self.assertEqual(result, 0)
@@ -202,14 +204,14 @@ class TestOutputGeneration(unittest.TestCase):
 
     def test_generate_empty_headers(self):
         """Test generating umbrella with no headers"""
-        output_file = self.include_root / "ptxall.hpp"
+        output_file = self.include_root / "koiloall.hpp"
         result = generate(self.include_root, output_file)
 
         self.assertEqual(result, 0)
         content = output_file.read_text()
 
         self.assertIn("#pragma once", content)
-        self.assertIn("@file ptxall.hpp", content)
+        self.assertIn("@file koiloall.hpp", content)
         # Should have header but no includes
         self.assertEqual(content.count('#include'), 0)
 
@@ -219,7 +221,7 @@ class TestOutputGeneration(unittest.TestCase):
         (self.include_root / "template.hpp").write_text("template<typename T> class Foo {};")
         (self.include_root / "abstract.hpp").write_text("class Abstract { virtual void f() = 0; };")
 
-        output_file = self.include_root / "ptxall.hpp"
+        output_file = self.include_root / "koiloall.hpp"
         result = generate(self.include_root, output_file)
 
         self.assertEqual(result, 0)
@@ -233,19 +235,19 @@ class TestOutputGeneration(unittest.TestCase):
         """Test that umbrella header doesn't include itself"""
         (self.include_root / "vector.hpp").write_text("class Vector {};")
 
-        output_file = self.include_root / "ptxall.hpp"
+        output_file = self.include_root / "koiloall.hpp"
 
         # Generate once
         generate(self.include_root, output_file)
 
-        # Generate again (ptxall.hpp now exists)
+        # Generate again (koiloall.hpp now exists)
         result = generate(self.include_root, output_file)
 
         self.assertEqual(result, 0)
         content = output_file.read_text()
 
         # Should not include itself
-        self.assertNotIn('#include "ptxall.hpp"', content)
+        self.assertNotIn('#include "koiloall.hpp"', content)
 
 
 # ============================================================================
@@ -267,7 +269,7 @@ class TestPathHandling(unittest.TestCase):
         subdir.mkdir(parents=True, exist_ok=True)
         (subdir / "deep.hpp").write_text("class Deep {};")
 
-        output_file = self.include_root / "ptxall.hpp"
+        output_file = self.include_root / "koiloall.hpp"
         generate(self.include_root, output_file)
 
         content = output_file.read_text()
@@ -283,7 +285,7 @@ class TestPathHandling(unittest.TestCase):
         subdir.mkdir(parents=True, exist_ok=True)
         (subdir / "nested.hpp").write_text("class Nested {};")
 
-        output_file = self.include_root / "ptxall.hpp"
+        output_file = self.include_root / "koiloall.hpp"
         generate(self.include_root, output_file)
 
         content = output_file.read_text()
@@ -313,7 +315,7 @@ class TestEdgeCases(unittest.TestCase):
 
         # gather_headers tries to read files to filter templates/virtual
         # but if it fails, it includes the file anyway
-        headers = gather_headers(self.include_root, "ptxall.hpp")
+        headers = gather_headers(self.include_root, "koiloall.hpp")
 
         self.assertIn("unreadable.hpp", headers)
 
@@ -323,7 +325,7 @@ class TestEdgeCases(unittest.TestCase):
         (self.include_root / "class-name.hpp").write_text("class ClassName {};")
         (self.include_root / "class_name.hpp").write_text("class ClassName2 {};")
 
-        headers = gather_headers(self.include_root, "ptxall.hpp")
+        headers = gather_headers(self.include_root, "koiloall.hpp")
 
         self.assertEqual(len(headers), 2)
 
@@ -340,7 +342,7 @@ class TemplateClass {
 };
 """)
 
-        headers = gather_headers(self.include_root, "ptxall.hpp")
+        headers = gather_headers(self.include_root, "koiloall.hpp")
 
         # File contains template, so should be excluded
         self.assertEqual(len(headers), 0)

@@ -1,6 +1,7 @@
-#include <ptx/core/math/eulerconstants.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/core/math/eulerconstants.hpp>
 
-namespace EulerConstants {
+namespace koilo::EulerConstants {
 
 // Static frame of reference, inertial reference frame
 const EulerOrder EulerOrderXYZS{EulerOrder::Axis::XYZ, EulerOrder::AxisFrame::Static, Vector3D(0, 1, 2)};
@@ -18,4 +19,4 @@ const EulerOrder EulerOrderZXYR{EulerOrder::Axis::YZX, EulerOrder::AxisFrame::Ro
 const EulerOrder EulerOrderYXZR{EulerOrder::Axis::ZXY, EulerOrder::AxisFrame::Rotating, Vector3D(2, 0, 1)};
 const EulerOrder EulerOrderXYZR{EulerOrder::Axis::ZYX, EulerOrder::AxisFrame::Rotating, Vector3D(2, 1, 0)};
 
-} // namespace EulerConstants
+} // namespace koilo::EulerConstants

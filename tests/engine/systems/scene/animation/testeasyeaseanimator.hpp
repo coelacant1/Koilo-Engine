@@ -1,10 +1,9 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testeasyeaseanimator.hpp
  * @brief Unit tests for the EasyEaseAnimator class.
  *
- * TODO: Add detailed description of what this test suite covers.
- *
- * @date 10/10/2025
+ * @date 16/02/2026
  * @version 1.0
  * @author Coela
  */
@@ -12,7 +11,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/systems/scene/animation/easyeaseanimator.hpp>
+#include <koilo/systems/scene/animation/easyeaseanimator.hpp>
 #include <utils/testhelpers.hpp>
 
 /**
@@ -29,16 +28,16 @@ public:
     static void TestSetConstants();
     static void TestGetValue();
     static void TestGetTarget();
-    static void TestAddParameter();
+
     static void TestAddParameterFrame();
     static void TestSetInterpolationMethod();
     static void TestReset();
     static void TestSetParameters();
     static void TestUpdate();
     static void TestGetCapacity();
-    // ... add tests for remaining 3 methods
-
-    // Functionality tests
+    static void TestGetParameterCount();
+    static void TestIsActive();
+    static void TestSetActive();
 
     // Edge case & integration tests
     static void TestEdgeCases();
@@ -46,8 +45,6 @@ public:
     /**
      * @brief Runs all test methods.
      */
-    static void TestGetParameterCount();
-    static void TestIsActive();
-    static void TestSetActive();
+
     static void RunAllTests();
 };

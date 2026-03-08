@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file resourcehandle.hpp
  * @brief Type-safe handle for referencing loaded resources.
@@ -11,9 +12,9 @@
 #include <memory>
 #include <string>
 #include <cstdint>
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
 
-namespace ptx {
+namespace koilo {
 
 /**
  * @class Resource
@@ -95,24 +96,24 @@ public:
         return Load();
     }
 
-    PTX_BEGIN_FIELDS(Resource)
-        PTX_FIELD(Resource, path, "Path", 0, 0),
-        PTX_FIELD(Resource, id, "ID", 0, 0),
-        PTX_FIELD(Resource, loaded, "Loaded", 0, 1),
-        PTX_FIELD(Resource, memorySize, "Memory size", 0, 0)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(Resource)
+        KL_FIELD(Resource, path, "Path", 0, 0),
+        KL_FIELD(Resource, id, "ID", 0, 0),
+        KL_FIELD(Resource, loaded, "Loaded", 0, 1),
+        KL_FIELD(Resource, memorySize, "Memory size", 0, 0)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(Resource)
-        PTX_METHOD_AUTO(Resource, GetPath, "Get path"),
-        PTX_METHOD_AUTO(Resource, IsLoaded, "Is loaded"),
-        PTX_METHOD_AUTO(Resource, Load, "Load"),
-        PTX_METHOD_AUTO(Resource, Unload, "Unload"),
-        PTX_METHOD_AUTO(Resource, Reload, "Reload")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(Resource)
+        KL_METHOD_AUTO(Resource, GetPath, "Get path"),
+        KL_METHOD_AUTO(Resource, IsLoaded, "Is loaded"),
+        KL_METHOD_AUTO(Resource, Load, "Load"),
+        KL_METHOD_AUTO(Resource, Unload, "Unload"),
+        KL_METHOD_AUTO(Resource, Reload, "Reload")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(Resource)
-        PTX_CTOR0(Resource)
-    PTX_END_DESCRIBE(Resource)
+    KL_BEGIN_DESCRIBE(Resource)
+        KL_CTOR0(Resource)
+    KL_END_DESCRIBE(Resource)
 };
 
 /**
@@ -295,4 +296,4 @@ public:
     }
 };
 
-} // namespace ptx
+} // namespace koilo

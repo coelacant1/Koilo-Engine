@@ -1,13 +1,13 @@
 # Contributing Guide
 
-Thank you for considering a contribution to **PTX Engine**.
+Thank you for considering a contribution to **Koilo Engine**.
 This document explains the rules every pull-request must follow.
 
 ---
 
 ## 1. Project Scope
 
-PTX Engine is a **header / source** c++17 library that targets
+Koilo Engine is a **header / source** c++17 library that targets
 
 * Arduino-class mcus (avr, cortex-m, esp32)
 * Bare-metal embedded c++
@@ -21,17 +21,16 @@ PTX Engine is a **header / source** c++17 library that targets
 
 Install the following tooling before you begin:
 
-* **CMake 3.20+** and a C++17 compiler (clang, gcc, or msvc)
+* **CMake 3.21+** and a C++17 compiler (clang, gcc, or msvc)
 * **Python 3.10+** for code generation scripts under `scripts/`
-* **PlatformIO CLI** *(optional but recommended)* for embedded/unit builds
 
 ### 2.2 Workflow
 
 1. **Fork & Clone**
 
     ```bash
-    git clone https://github.com/coelacant1/ptxengine.git
-    cd ptxengine
+    git clone https://github.com/coelacant1/koiloengine.git
+    cd koiloengine
     ```
 
 2. **Create a Topic Branch**: `git checkout -b feat/<short-topic>` (use prefixes `feat/`, `fix/`, `docs/`, or `refactor/`).
@@ -48,16 +47,9 @@ Install the following tooling before you begin:
 4. **Run Tests**
 
     ```bash
-    cmake --build build -j --target ptx_tests
+    cmake --build build -j --target koilo_tests
     cd build
     ctest --output-on-failure
-    ```
-
-    Optional PlatformIO suite (native + teensy) when your change touches embedded code:
-
-    ```bash
-    pio test                 # native
-    pio test -e teensy40     # teensy40
     ```
 
 5. **Make Changes**
@@ -66,7 +58,7 @@ Install the following tooling before you begin:
     * Regenerate reflection bindings if you touched registry descriptors:
 
       ```bash
-      python scripts/GeneratePTXAll.py
+      python scripts/generatekoiloall.py
       ```
 
 6. **Commit & Push**
@@ -172,7 +164,28 @@ Use this skeleton as the baseline for new files and when refactoring existing on
 * Only `<stdint.h>`, `<stddef.h>`, `<math.h>`, and other c++17 headers.
 * **Never** `Arduino.h` in public headers. Use it only inside `#if defined(ARDUINO)` guards in `.cpp`.
 
-### 3.6 Memory & Containers
+### 3.6 Reflection Compatibility
+
+Headers under `engine/koilo/` are automatically scanned by the code-generation
+scripts (`scripts/generatekoiloall.py`, `scripts/generatereflectionentry.py`).
+Files that contain certain C++ constructs are **silently excluded** from reflection.
+
+**The following rules apply to any `.hpp` that should be accessible from KoiloScript:**
+
+| Construct | Effect | Workaround |
+|-----------|--------|------------|
+| `template<...>` anywhere in the file | **Excluded** - even in comments, `using` aliases, or unused specializations | Move template code to a separate non-reflected header, or refactor to runtime sizing |
+| `virtual` keyword anywhere in the file | **Excluded** - even in comments (`// virtual dispatch`) | Use "polymorphic" or "overridable" in comments; remove virtual methods from script-facing classes |
+
+**The filter uses word-boundary regex** (`\btemplate\s*<` and `\bvirtual\b`), so:
+* `// This replaces the old virtual interface` -> **triggers filter** (use "polymorphic" instead)
+* `template <size_t N> using Alias = Concrete;` -> **triggers filter** (remove the alias)
+* `std::vector<Color888>` -> safe (no `template` keyword)
+
+**Quick check:** Run `python3 scripts/validate_reflection_headers.py` to see which files
+are currently excluded and why.
+
+### 3.7 Memory & Containers
 
 * Prefer stack allocation and deterministic lifetimes. Avoid heap churn inside real-time loops.
 * `std::vector` and `std::string` are allowed when they meaningfully reduce complexity, but:
@@ -182,31 +195,30 @@ Use this skeleton as the baseline for new files and when refactoring existing on
 * For predictable workloads (tight MCU loops, DSP kernels), favour fixed-size containers or caller-supplied buffers.
 * Never leak ownership; pair each `new` with strict RAII wrappers or smart pointers. Raw `new/delete` should be avoided outside low-level allocators.
 
-### 3.7 Formatting Helper
+### 3.8 Formatting
 
-Run `clang-format -style=file` (a .clang-format is provided).
+Format your code before committing:
+
+```bash
+clang-format -i path/to/your/file.cpp
+```
+
+A `.clang-format` file is provided at the repository root. Most IDEs can auto-format on save.
 
 ---
 
 ## 4. Tests
 
-* Every feature or bug fix must include coverage in either the desktop suite (`ptx_tests`) or the PlatformIO suites (native/teensy) when embedded behaviour is affected.
+* Every feature or bug fix must include coverage in the desktop suite (`koilo_tests`) or KoiloScript language tests (`koilo_script_language_tests`).
 * **Desktop workflow**
 
   ```bash
-  cmake --build build -j --target ptx_tests
+  cmake --build build -j --target koilo_tests
   cd build
   ctest --output-on-failure
   ```
 
-* **Embedded/PlatformIO workflow (optional / whenever MCU code changes)**
-
-  ```bash
-  pio test                 # native host simulation
-  pio test -e teensy40     # teensy40 target
-  ```
-
-* Add or update tests under `tests/` (unity-based) or `engine/src/...` integration harnesses as appropriate. Tests should be deterministic and avoid timing-based assertions.
+* Add or update tests under `tests/` (Unity-based) as appropriate. Tests should be deterministic and avoid timing-based assertions.
 
 ---
 
@@ -239,8 +251,8 @@ Before marking a PR ready for review, confirm the following:
 - [ ] `cmake --build build -j` succeeds without warnings introduced by your change.
 - [ ] `ctest --output-on-failure` (and, if applicable, relevant `pio test` invocations) pass.
 - [ ] Doxygen headers/classes/methods are present and updated; no documentation removed.
-- [ ] Reflection/code generation scripts (`scripts/GeneratePTXAll.py`, etc.) have been run when registry descriptors changed.
-- [ ] `clang-format -style=file` has been applied to touched files.
+- [ ] Reflection/code generation scripts (`scripts/generatekoiloall.py`, etc.) have been run when registry descriptors changed.
+- [ ] `clang-format -i` has been applied to touched C++ files.
 - [ ] CHANGELOG entries, README snippets, and sample code updated when behaviour changes.
 - [ ] New files follow the canonical skeleton from section 3.4.
 - [ ] No stray debugging output, TODOs, or commented-out code remain.

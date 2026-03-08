@@ -1,0 +1,207 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "KoiloScript",
+  "scopeName": "source.koiloscript",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#numbers" },
+    { "include": "#function-def" },
+    { "include": "#keywords" },
+    { "include": "#constants" },
+    { "include": "#types" },
+    { "include": "#builtins" },
+    { "include": "#method-call" },
+    { "include": "#function-call" },
+    { "include": "#table-key" },
+    { "include": "#operators" },
+    { "include": "#punctuation" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.koiloscript",
+          "match": "//.*$"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.koiloscript",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.koiloscript",
+              "match": "\\\\."
+            }
+          ]
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.float.koiloscript",
+          "match": "\\b[0-9]+\\.[0-9]+\\b"
+        },
+        {
+          "name": "constant.numeric.integer.koiloscript",
+          "match": "\\b[0-9]+\\b"
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.koiloscript",
+          "match": "\\b(if|else|elseif|while|for|in|return|break|continue|yield)\\b"
+        },
+        {
+          "name": "storage.type.koiloscript",
+          "match": "\\b(var|fn|function|class|new|auto|import)\\b"
+        },
+        {
+          "name": "keyword.operator.logical.koiloscript",
+          "match": "\\b(and|or|not)\\b"
+        },
+        {
+          "name": "keyword.other.signal.koiloscript",
+          "match": "\\b(signal|emit|set_state)\\b"
+        },
+        {
+          "name": "keyword.other.section.koiloscript",
+          "match": "\\b(DISPLAY|SCENE|ASSETS|FUNCTIONS|CONTROLS|UPDATE|STATES|STATE|CAMERA|MATERIAL|MODEL|OBJECT|TEXTURE|AUDIO|ANIMATIONS|TRANSITION|KEY)\\b"
+        }
+      ]
+    },
+    "builtins": {
+      "patterns": [
+        {
+          "name": "support.function.koiloscript",
+          "match": "\\b(print|debug|random|abs|ceil|floor|round|sqrt|sin|cos|tan|min|max|clamp|lerp|map|degrees|radians|type|str|num|length|format|contains|connect|disconnect|connect_once|start_coroutine|stop_coroutine|stop_all_coroutines|profiler_fps|profiler_time|profiler_enable|has_module|list_modules)(?=\\s*\\()"
+        },
+        {
+          "name": "variable.language.koiloscript",
+          "match": "\\b(self|display|scene|physics|input|ui|effects|particles|debug|audio|camera|material)\\b"
+        }
+      ]
+    },
+    "types": {
+      "patterns": [
+        {
+          "comment": "Constructor call: TypeName(...)",
+          "match": "\\b([A-Z][A-Za-z0-9_]*)\\s*\\(",
+          "captures": {
+            "1": { "name": "entity.name.type.koiloscript" }
+          }
+        }
+      ]
+    },
+    "function-def": {
+      "patterns": [
+        {
+          "match": "\\b(fn|function)\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*\\(",
+          "captures": {
+            "1": { "name": "storage.type.koiloscript" },
+            "2": { "name": "entity.name.function.definition.koiloscript" }
+          }
+        }
+      ]
+    },
+    "method-call": {
+      "patterns": [
+        {
+          "comment": "obj.Method(...) - highlight the method name",
+          "match": "\\.\\s*([A-Za-z_][A-Za-z0-9_]*)\\s*\\(",
+          "captures": {
+            "1": { "name": "entity.name.function.method.koiloscript" }
+          }
+        },
+        {
+          "comment": "obj.property - highlight the property name",
+          "match": "\\.\\s*([a-z_][A-Za-z0-9_]*)\\b(?!\\s*\\()",
+          "captures": {
+            "1": { "name": "variable.other.property.koiloscript" }
+          }
+        }
+      ]
+    },
+    "function-call": {
+      "patterns": [
+        {
+          "comment": "Standalone function call: name(...)",
+          "match": "\\b([a-z_][A-Za-z0-9_]*)\\s*\\(",
+          "captures": {
+            "1": { "name": "entity.name.function.call.koiloscript" }
+          }
+        }
+      ]
+    },
+    "table-key": {
+      "patterns": [
+        {
+          "comment": "Table literal key: { key: value }",
+          "match": "\\b([A-Za-z_][A-Za-z0-9_]*)\\s*:",
+          "captures": {
+            "1": { "name": "variable.other.property.koiloscript" }
+          }
+        }
+      ]
+    },
+    "constants": {
+      "patterns": [
+        {
+          "name": "constant.language.koiloscript",
+          "match": "\\b(true|false|null)\\b"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.comparison.koiloscript",
+          "match": "(==|!=|<=|>=|<|>)"
+        },
+        {
+          "name": "keyword.operator.arrow.koiloscript",
+          "match": "->"
+        },
+        {
+          "name": "keyword.operator.ternary.koiloscript",
+          "match": "\\?"
+        },
+        {
+          "name": "keyword.operator.assignment.koiloscript",
+          "match": "="
+        },
+        {
+          "name": "keyword.operator.arithmetic.koiloscript",
+          "match": "(\\+|-|\\*|/|%)"
+        }
+      ]
+    },
+    "punctuation": {
+      "patterns": [
+        {
+          "name": "punctuation.separator.koiloscript",
+          "match": "[;,]"
+        },
+        {
+          "name": "punctuation.definition.block.koiloscript",
+          "match": "[{}]"
+        },
+        {
+          "name": "punctuation.definition.parameters.koiloscript",
+          "match": "[()]"
+        },
+        {
+          "name": "punctuation.definition.bracket.koiloscript",
+          "match": "[\\[\\]]"
+        }
+      ]
+    }
+  }
+}

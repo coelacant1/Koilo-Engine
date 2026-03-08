@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testindexgroup.hpp
  * @brief Unit tests for the IndexGroup class.
@@ -12,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/assets/model/indexgroup.hpp>
+#include <koilo/assets/model/indexgroup.hpp>
 #include <utils/testhelpers.hpp>
 
 /**
@@ -40,5 +41,6 @@ public:
     /**
      * @brief Runs all test methods.
      */
+    static void TestGetIndex();
     static void RunAllTests();
 };

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testrastertriangle2d.cpp
  * @brief Implementation of RasterTriangle2D unit tests.
@@ -5,18 +6,17 @@
 
 #include "testrastertriangle2d.hpp"
 
+using namespace koilo;
 // ========== Constructor Tests ==========
 
 void TestRasterTriangle2D::TestDefaultConstructor() {
     RasterTriangle2D triangle;
 
-    // Verify default construction initializes pointers to nullptr
-    TEST_ASSERT_NULL(triangle.t3p1);
-    TEST_ASSERT_NULL(triangle.t3p2);
-    TEST_ASSERT_NULL(triangle.t3p3);
-    TEST_ASSERT_NULL(triangle.normal);
+    // Verify default construction initializes values
+    TEST_ASSERT_EQUAL(triangle.wp1.X, 0.0f);
+    TEST_ASSERT_EQUAL(triangle.wp2.X, 0.0f);
+    TEST_ASSERT_EQUAL(triangle.wp3.X, 0.0f);
     TEST_ASSERT_NULL(triangle.material);
-    TEST_ASSERT_FALSE(triangle.hasUV);
 }
 
 // ========== Method Tests ==========
@@ -46,16 +46,17 @@ void TestRasterTriangle2D::TestGetBarycentricCoords() {
 void TestRasterTriangle2D::TestOverlaps() {
     RasterTriangle2D triangle;
 
-    // Set bounds manually
-    triangle.bounds = Rectangle2D(Vector2D(0.0f, 0.0f), Vector2D(10.0f, 10.0f), 0.0f);
+    // Set AABB bounds directly
+    triangle.boundsMinX = -5.0f;
+    triangle.boundsMinY = -5.0f;
+    triangle.boundsMaxX = 5.0f;
+    triangle.boundsMaxY = 5.0f;
 
-    // Test overlapping rectangle
-    Rectangle2D overlapping(Vector2D(5.0f, 5.0f), Vector2D(15.0f, 15.0f), 0.0f);
-    TEST_ASSERT_TRUE(triangle.Overlaps(overlapping));
+    // Test overlapping region
+    TEST_ASSERT_TRUE(triangle.Overlaps(0.0f, 0.0f, 10.0f, 10.0f));
 
-    // Test non-overlapping rectangle
-    Rectangle2D notOverlapping(Vector2D(20.0f, 20.0f), Vector2D(30.0f, 30.0f), 0.0f);
-    TEST_ASSERT_FALSE(triangle.Overlaps(notOverlapping));
+    // Test non-overlapping region
+    TEST_ASSERT_FALSE(triangle.Overlaps(20.0f, 20.0f, 30.0f, 30.0f));
 }
 void TestRasterTriangle2D::TestGetMaterial() {
     RasterTriangle2D triangle;
@@ -74,7 +75,7 @@ void TestRasterTriangle2D::TestToString() {
     triangle.p2 = Vector2D(1.0f, 0.0f);
     triangle.p3 = Vector2D(0.0f, 1.0f);
 
-    ptx::UString str = triangle.ToString();
+    koilo::UString str = triangle.ToString();
 
     // Verify we got a string back (even if empty)
     TEST_ASSERT_TRUE(true);
@@ -102,11 +103,11 @@ void TestRasterTriangle2D::TestParameterizedConstructor() {
     // Create 2D triangle from 3D triangle
     RasterTriangle2D triangle2D(camTransform, lookDirection, triangle3D, nullptr);
 
-    // Verify pointers were set
-    TEST_ASSERT_NOT_NULL(triangle2D.t3p1);
-    TEST_ASSERT_NOT_NULL(triangle2D.t3p2);
-    TEST_ASSERT_NOT_NULL(triangle2D.t3p3);
-    TEST_ASSERT_NOT_NULL(triangle2D.normal);
+    // Verify values were copied (inline, not pointers)
+    TEST_ASSERT_EQUAL(triangle2D.wp1.X, 0.0f);
+    TEST_ASSERT_EQUAL(triangle2D.wp2.X, 1.0f);
+    TEST_ASSERT_EQUAL(triangle2D.wp3.Y, 1.0f);
+    TEST_ASSERT_TRUE(true);
 }
 
 void TestRasterTriangle2D::TestEdgeCases() {

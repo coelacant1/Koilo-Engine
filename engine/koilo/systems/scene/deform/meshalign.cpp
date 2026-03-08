@@ -1,13 +1,17 @@
-#include <ptx/systems/scene/deform/meshalign.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/systems/scene/deform/meshalign.hpp>
 
 #include <array>
 
-Vector3D MeshAlign::GetCentroid(Mesh* obj) {
+
+namespace koilo {
+
+Vector3D koilo::MeshAlign::GetCentroid(Mesh* obj) {
     std::array<Mesh*, 1> objs{obj};
     return GetCentroid(objs.data(), static_cast<uint8_t>(objs.size()));
 }
 
-Vector3D MeshAlign::GetCentroid(Mesh** objs, uint8_t numObjects) {
+Vector3D koilo::MeshAlign::GetCentroid(Mesh** objs, uint8_t numObjects) {
     Vector3D centroid;
     uint16_t vertexCount = 0;
 
@@ -23,12 +27,12 @@ Vector3D MeshAlign::GetCentroid(Mesh** objs, uint8_t numObjects) {
     return centroid;
 }
 
-Vector3D MeshAlign::GetObjectCenter(Mesh* obj) {
+Vector3D koilo::MeshAlign::GetObjectCenter(Mesh* obj) {
     std::array<Mesh*, 1> objs{obj};
     return GetObjectCenter(objs.data(), static_cast<uint8_t>(objs.size()));
 }
 
-Vector3D MeshAlign::GetObjectCenter(Mesh** objs, uint8_t numObjects) {
+Vector3D koilo::MeshAlign::GetObjectCenter(Mesh** objs, uint8_t numObjects) {
     Vector3D min = Vector3D(100000.0f, 100000.0f, 100000.0f), max = Vector3D(-100000.0f, -100000.0f, -100000.0f);
 
     for (uint8_t i = 0; i < numObjects; i++) {
@@ -43,12 +47,12 @@ Vector3D MeshAlign::GetObjectCenter(Mesh** objs, uint8_t numObjects) {
     return (max + min) / 2.0f;
 }
 
-Vector3D MeshAlign::GetObjectSize(Mesh* obj) {
+Vector3D koilo::MeshAlign::GetObjectSize(Mesh* obj) {
     std::array<Mesh*, 1> objs{obj};
     return GetObjectSize(objs.data(), static_cast<uint8_t>(objs.size()));
 }
 
-Vector3D MeshAlign::GetObjectSize(Mesh** objs, uint8_t numObjects) {
+Vector3D koilo::MeshAlign::GetObjectSize(Mesh** objs, uint8_t numObjects) {
     Vector3D min = Vector3D(100000.0f, 100000.0f, 100000.0f), max = Vector3D(-100000.0f, -100000.0f, -100000.0f);
 
     for (uint8_t i = 0; i < numObjects; i++) {
@@ -65,7 +69,7 @@ Vector3D MeshAlign::GetObjectSize(Mesh** objs, uint8_t numObjects) {
     return max - min;
 }
 
-void MeshAlign::NormalizeObjectPlane(Mesh** objs, uint8_t numObjects, Vector3D center, Quaternion planeOrientation) {
+void koilo::MeshAlign::NormalizeObjectPlane(Mesh** objs, uint8_t numObjects, Vector3D center, Quaternion planeOrientation) {
     for (uint8_t i = 0; i < numObjects; i++) {
         for (uint16_t j = 0; j < objs[i]->GetTriangleGroup()->GetVertexCount(); j++) {
             Vector3D modifiedVector = objs[i]->GetTriangleGroup()->GetVertices()[j];
@@ -78,7 +82,7 @@ void MeshAlign::NormalizeObjectPlane(Mesh** objs, uint8_t numObjects, Vector3D c
     }
 }
 
-void MeshAlign::NormalizeObjectCenter(Mesh** objs, uint8_t numObjects, Vector3D center) {
+void koilo::MeshAlign::NormalizeObjectCenter(Mesh** objs, uint8_t numObjects, Vector3D center) {
     for (uint8_t i = 0; i < numObjects; i++) {
         for (uint16_t j = 0; j < objs[i]->GetTriangleGroup()->GetVertexCount(); j++) {
             Vector3D modifiedVector = objs[i]->GetTriangleGroup()->GetVertices()[j];
@@ -90,13 +94,13 @@ void MeshAlign::NormalizeObjectCenter(Mesh** objs, uint8_t numObjects, Vector3D 
     }
 }
 
-float MeshAlign::GetObjectPlanarityRatio(Mesh* obj) {
+float koilo::MeshAlign::GetObjectPlanarityRatio(Mesh* obj) {
     std::array<Mesh*, 1> objs{obj};
     return GetObjectPlanarityRatio(objs.data(), static_cast<uint8_t>(objs.size()));
 }
 
 // Main function to check planarity of objects
-float MeshAlign::GetObjectPlanarityRatio(Mesh** objs, uint8_t numObjects) {
+float koilo::MeshAlign::GetObjectPlanarityRatio(Mesh** objs, uint8_t numObjects) {
     // Calculate centroid and plane orientation
     Vector3D centroid = GetCentroid(objs, numObjects);
     Quaternion planeOrientation = GetPlaneOrientation(objs, numObjects, centroid);
@@ -122,12 +126,12 @@ float MeshAlign::GetObjectPlanarityRatio(Mesh** objs, uint8_t numObjects) {
     return 1.0f - 1.0f / (diffSum / Mathematics::Min(diffSum.X, diffSum.Y, diffSum.Z)).AverageHighestTwoComponents();
 }
 
-Quaternion MeshAlign::GetPlaneNormal(Mesh* obj) {
+Quaternion koilo::MeshAlign::GetPlaneNormal(Mesh* obj) {
     std::array<Mesh*, 1> objs{obj};
     return GetPlaneNormal(objs.data(), static_cast<uint8_t>(objs.size()));
 }
 
-Quaternion MeshAlign::GetPlaneNormal(Mesh** objs, uint8_t numObjects) {
+Quaternion koilo::MeshAlign::GetPlaneNormal(Mesh** objs, uint8_t numObjects) {
     Vector3D normal;
     uint16_t count = 0;
 
@@ -149,12 +153,12 @@ Quaternion MeshAlign::GetPlaneNormal(Mesh** objs, uint8_t numObjects) {
     return rotation;
 }
 
-Quaternion MeshAlign::GetPlaneOrientation(Mesh* obj, Vector3D centroid) {
+Quaternion koilo::MeshAlign::GetPlaneOrientation(Mesh* obj, Vector3D centroid) {
     std::array<Mesh*, 1> objs{obj};
     return GetPlaneOrientation(objs.data(), static_cast<uint8_t>(objs.size()), centroid);
 }
 
-Quaternion MeshAlign::GetPlaneOrientation(Mesh** objs, uint8_t numObjects, Vector3D centroid) {
+Quaternion koilo::MeshAlign::GetPlaneOrientation(Mesh** objs, uint8_t numObjects, Vector3D centroid) {
     float xx = 0.0f, xy = 0.0f, xz = 0.0f, yy = 0.0f, yz = 0.0f, zz = 0.0f;
     uint16_t count = 0;
 
@@ -208,59 +212,59 @@ Quaternion MeshAlign::GetPlaneOrientation(Mesh** objs, uint8_t numObjects, Vecto
     return Rotation(Vector3D(0.0f, 0.0f, 1.0f), dir).GetQuaternion() * Rotation(EulerAngles(Vector3D(0.0f, 0.0f, offsetPlaneAngle), EulerConstants::EulerOrderXYZS)).GetQuaternion();
 }
 
-MeshAlign::MeshAlign(Vector2D camMin, Vector2D camMax, Quaternion targetOrientation) {
+koilo::MeshAlign::MeshAlign(Vector2D camMin, Vector2D camMax, Quaternion targetOrientation) {
     this->camMin = camMin;
     this->camMax = camMax;
     this->cameraCenter = (camMin + camMax) / 2.0f;
     this->targetOrientation = targetOrientation;
 }
 
-void MeshAlign::SetPlaneOffsetAngle(float offsetPlaneAngle) {
+void koilo::MeshAlign::SetPlaneOffsetAngle(float offsetPlaneAngle) {
     this->offsetPlaneAngle = offsetPlaneAngle;
 }
 
-void MeshAlign::SetEdgeMargin(float edgeMargin) {
+void koilo::MeshAlign::SetEdgeMargin(float edgeMargin) {
     this->edgeMargin = edgeMargin * 2.0f;
 }
 
-void MeshAlign::SetForwardVector(Vector3D forwardVector) {
+void koilo::MeshAlign::SetForwardVector(Vector3D forwardVector) {
     this->forwardVector = forwardVector;
 }
 
-void MeshAlign::SetCameraMin(Vector2D camMin) {
+void koilo::MeshAlign::SetCameraMin(Vector2D camMin) {
     this->camMin = camMin;
     this->cameraCenter = (camMin + camMax) / 2.0f;
 }
 
-void MeshAlign::SetCameraMax(Vector2D camMax) {
+void koilo::MeshAlign::SetCameraMax(Vector2D camMax) {
     this->camMax = camMax;
     this->cameraCenter = (camMin + camMax) / 2.0f;
 }
 
-void MeshAlign::SetMirrorX(bool mirrorX) {
+void koilo::MeshAlign::SetMirrorX(bool mirrorX) {
     this->mirrorX = mirrorX;
 }
 
-void MeshAlign::SetMirrorY(bool mirrorY) {
+void koilo::MeshAlign::SetMirrorY(bool mirrorY) {
     this->mirrorY = mirrorY;
 }
 
-void MeshAlign::SetJustification(Justification jst) {
+void koilo::MeshAlign::SetJustification(Justification jst) {
     this->jst = jst;
 }
 
-void MeshAlign::SetScale(float scaleX, float scaleY) {
+void koilo::MeshAlign::SetScale(float scaleX, float scaleY) {
     this->scaleX = scaleX;
     this->scaleY = scaleY;
 }
 
 //Aligns object, does not move or scale object
-Transform MeshAlign::GetTransform(Mesh* obj){
+Transform koilo::MeshAlign::GetTransform(Mesh* obj){
     std::array<Mesh*, 1> objs{obj};
     return GetTransform(objs.data(), static_cast<uint8_t>(objs.size()));
 }
 
-Transform MeshAlign::GetTransform(Mesh** objs, uint8_t numObjects){
+Transform koilo::MeshAlign::GetTransform(Mesh** objs, uint8_t numObjects){
     Transform newTransform;
     // calculate planes, assume flat object (largest axes are axis), best fit plane i.e. centroid + direction/normal
     Vector3D centroid = GetCentroid(objs, numObjects);
@@ -329,12 +333,12 @@ Transform MeshAlign::GetTransform(Mesh** objs, uint8_t numObjects){
     return newTransform;
 }
 
-void MeshAlign::AlignObjectNoScale(Mesh* obj) {
+void koilo::MeshAlign::AlignObjectNoScale(Mesh* obj) {
     std::array<Mesh*, 1> objs{obj};
     AlignObjectsNoScale(objs.data(), static_cast<uint8_t>(objs.size()));
 }
 
-void MeshAlign::AlignObjectsNoScale(Mesh** objs, uint8_t numObjects) {
+void koilo::MeshAlign::AlignObjectsNoScale(Mesh** objs, uint8_t numObjects) {
     Vector3D centroid = GetCentroid(objs, numObjects);
     Quaternion planeOrientation = GetPlaneNormal(objs, numObjects);
     Vector3D objectCenter = GetObjectCenter(objs, numObjects);
@@ -353,12 +357,12 @@ void MeshAlign::AlignObjectsNoScale(Mesh** objs, uint8_t numObjects) {
     }
 }
 
-void MeshAlign::AlignObject(Mesh* obj) {
+void koilo::MeshAlign::AlignObject(Mesh* obj) {
     std::array<Mesh*, 1> objs{obj};
     AlignObjects(objs.data(), static_cast<uint8_t>(objs.size()));
 }
 
-void MeshAlign::AlignObjects(Mesh** objs, uint8_t numObjects) {
+void koilo::MeshAlign::AlignObjects(Mesh** objs, uint8_t numObjects) {
     // calculate planes, assume flat object (largest axes are axis), best fit plane i.e. centroid + direction/normal
     Vector3D centroid = GetCentroid(objs, numObjects);
     Quaternion planeOrientation = GetPlaneOrientation(objs, numObjects, centroid);
@@ -444,3 +448,5 @@ void MeshAlign::AlignObjects(Mesh** objs, uint8_t numObjects) {
         }
     }
 }
+
+} // namespace koilo

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file Camera.h
  * @brief Declares the Camera template class for managing camera behavior and pixel groups.
@@ -12,7 +13,10 @@
 #pragma once
 
 #include "camerabase.hpp" // Include for base camera functionality.
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
+
+
+namespace koilo {
 
 class IPixelGroup;
 
@@ -27,8 +31,8 @@ class IPixelGroup;
 class Camera : public CameraBase {
 private:
     IPixelGroup* pixelGroup = nullptr; ///< Pointer to the associated PixelGroup instance.
-    Vector2D maxC; ///< Cached maximum coordinate of the camera.
-    Vector2D minC; ///< Cached minimum coordinate of the camera.
+    Vector2D maxC{-1e30f, -1e30f}; ///< Cached maximum coordinate of the camera.
+    Vector2D minC{1e30f, 1e30f}; ///< Cached minimum coordinate of the camera.
     bool calculatedMax = false; ///< Indicates if the maximum coordinate has been calculated.
     bool calculatedMin = false; ///< Indicates if the minimum coordinate has been calculated.
 
@@ -104,23 +108,32 @@ public:
      */
     Vector3D GetCameraTransformCenter() override;
 
-    PTX_BEGIN_FIELDS(Camera)
+    KL_BEGIN_FIELDS(Camera)
         /* No reflected fields. */
-    PTX_END_FIELDS
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(Camera)
-        PTX_METHOD_AUTO(Camera, GetPixelGroup, "Get pixel group"),
-        PTX_METHOD_AUTO(Camera, GetCameraMinCoordinate, "Get camera min coordinate"),
-        PTX_METHOD_AUTO(Camera, GetCameraMaxCoordinate, "Get camera max coordinate"),
-        PTX_METHOD_AUTO(Camera, GetCameraCenterCoordinate, "Get camera center coordinate"),
-        PTX_METHOD_AUTO(Camera, GetCameraTransformMin, "Get camera transform min"),
-        PTX_METHOD_AUTO(Camera, GetCameraTransformMax, "Get camera transform max"),
-        PTX_METHOD_AUTO(Camera, GetCameraTransformCenter, "Get camera transform center")
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(Camera)
+        KL_METHOD_AUTO(Camera, GetPixelGroup, "Get pixel group"),
+        KL_METHOD_AUTO(Camera, GetCameraMinCoordinate, "Get camera min coordinate"),
+        KL_METHOD_AUTO(Camera, GetCameraMaxCoordinate, "Get camera max coordinate"),
+        KL_METHOD_AUTO(Camera, GetCameraCenterCoordinate, "Get camera center coordinate"),
+        KL_METHOD_AUTO(Camera, GetCameraTransformMin, "Get camera transform min"),
+        KL_METHOD_AUTO(Camera, GetCameraTransformMax, "Get camera transform max"),
+        KL_METHOD_AUTO(Camera, GetCameraTransformCenter, "Get camera transform center"),
+        KL_METHOD_AUTO(CameraBase, GetTransform, "Get transform"),
+        KL_METHOD_AUTO(CameraBase, SetBackfaceCulling, "Set backface culling"),
+        KL_METHOD_AUTO(CameraBase, GetBackfaceCulling, "Get backface culling"),
+        KL_METHOD_AUTO(CameraBase, SetPerspective, "Set perspective"),
+        KL_METHOD_AUTO(CameraBase, IsPerspective, "Is perspective"),
+        KL_METHOD_AUTO(CameraBase, SetSkyGradient, "Set sky gradient"),
+        KL_METHOD_AUTO(CameraBase, ClearSkyGradient, "Clear sky gradient")
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(Camera)
-        PTX_CTOR(Camera, Transform *, IPixelGroup *),
-        PTX_CTOR(Camera, Transform *, CameraLayout *, IPixelGroup *)
-    PTX_END_DESCRIBE(Camera)
+    KL_BEGIN_DESCRIBE(Camera)
+        KL_CTOR(Camera, Transform *, IPixelGroup *),
+        KL_CTOR(Camera, Transform *, CameraLayout *, IPixelGroup *)
+    KL_END_DESCRIBE(Camera)
 
 };
+
+} // namespace koilo

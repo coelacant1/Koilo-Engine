@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testdampedspring.hpp
  * @brief Unit tests for the DampedSpring class.
@@ -12,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/core/control/dampedspring.hpp>
+#include <koilo/core/control/dampedspring.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

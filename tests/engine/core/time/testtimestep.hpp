@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testtimestep.hpp
  * @brief Unit tests for the TimeStep class.
@@ -12,7 +13,7 @@
 #pragma once
 
 #include <unity.h>
-#include <ptx/core/time/timestep.hpp>
+#include <koilo/core/time/timestep.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

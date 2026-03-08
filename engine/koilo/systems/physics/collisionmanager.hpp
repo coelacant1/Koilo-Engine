@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file collisionmanager.hpp
  * @brief Collision detection and management system.
@@ -15,9 +16,9 @@
 #include "spherecollider.hpp"
 #include "boxcollider.hpp"
 #include "capsulecollider.hpp"
-#include "../../registry/reflect_macros.hpp"
+#include <koilo/registry/reflect_macros.hpp>
 
-namespace ptx {
+namespace koilo {
 
 /**
  * @struct CollisionInfo
@@ -37,18 +38,18 @@ struct CollisionInfo {
         : colliderA(nullptr), colliderB(nullptr),
           contactPoint(0, 0, 0), normal(0, 1, 0), penetrationDepth(0.0f) {}
 
-    PTX_BEGIN_FIELDS(CollisionInfo)
-        PTX_FIELD(CollisionInfo, contactPoint, "Contact point", 0, 0),
-        PTX_FIELD(CollisionInfo, normal, "Normal", 0, 0),
-        PTX_FIELD(CollisionInfo, penetrationDepth, "Penetration depth", 0, 0)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(CollisionInfo)
+        KL_FIELD(CollisionInfo, contactPoint, "Contact point", 0, 0),
+        KL_FIELD(CollisionInfo, normal, "Normal", 0, 0),
+        KL_FIELD(CollisionInfo, penetrationDepth, "Penetration depth", 0, 0)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(CollisionInfo)
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(CollisionInfo)
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(CollisionInfo)
-        PTX_CTOR0(CollisionInfo)
-    PTX_END_DESCRIBE(CollisionInfo)
+    KL_BEGIN_DESCRIBE(CollisionInfo)
+        KL_CTOR0(CollisionInfo)
+    KL_END_DESCRIBE(CollisionInfo)
 };
 
 /**
@@ -263,23 +264,43 @@ private:
      */
     bool TestBoxBox(BoxCollider* a, BoxCollider* b, CollisionInfo& info);
 
-    PTX_BEGIN_FIELDS(CollisionManager)
-    PTX_END_FIELDS
+    /**
+     * @brief Tests capsule-sphere collision.
+     */
+    bool TestCapsuleSphere(CapsuleCollider* capsule, SphereCollider* sphere, CollisionInfo& info);
 
-    PTX_BEGIN_METHODS(CollisionManager)
-        PTX_METHOD_AUTO(CollisionManager, RegisterCollider, "Register collider"),
-        PTX_METHOD_AUTO(CollisionManager, UnregisterCollider, "Unregister collider"),
-        PTX_METHOD_AUTO(CollisionManager, UnregisterAllColliders, "Unregister all colliders"),
-        PTX_METHOD_AUTO(CollisionManager, SetLayerCollision, "Set layer collision"),
-        PTX_METHOD_AUTO(CollisionManager, CanLayersCollide, "Can layers collide"),
-        PTX_METHOD_AUTO(CollisionManager, SetDefaultCollisionMatrix, "Set default collision matrix"),
-        PTX_METHOD_AUTO(CollisionManager, Update, "Update"),
-        PTX_METHOD_AUTO(CollisionManager, ClearCallbacks, "Clear callbacks")
-    PTX_END_METHODS
+    /**
+     * @brief Tests capsule-capsule collision.
+     */
+    bool TestCapsuleCapsule(CapsuleCollider* a, CapsuleCollider* b, CollisionInfo& info);
 
-    PTX_BEGIN_DESCRIBE(CollisionManager)
-        PTX_CTOR0(CollisionManager)
-    PTX_END_DESCRIBE(CollisionManager)
+    /**
+     * @brief Tests capsule-box collision.
+     */
+    bool TestCapsuleBox(CapsuleCollider* capsule, BoxCollider* box, CollisionInfo& info);
+
+    /**
+     * @brief Returns closest point on line segment ab to point p.
+     */
+    static Vector3D ClosestPointOnSegment(const Vector3D& p, const Vector3D& a, const Vector3D& b);
+
+    KL_BEGIN_FIELDS(CollisionManager)
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(CollisionManager)
+        KL_METHOD_AUTO(CollisionManager, RegisterCollider, "Register collider"),
+        KL_METHOD_AUTO(CollisionManager, UnregisterCollider, "Unregister collider"),
+        KL_METHOD_AUTO(CollisionManager, UnregisterAllColliders, "Unregister all colliders"),
+        KL_METHOD_AUTO(CollisionManager, SetLayerCollision, "Set layer collision"),
+        KL_METHOD_AUTO(CollisionManager, CanLayersCollide, "Can layers collide"),
+        KL_METHOD_AUTO(CollisionManager, SetDefaultCollisionMatrix, "Set default collision matrix"),
+        KL_METHOD_AUTO(CollisionManager, Update, "Update"),
+        KL_METHOD_AUTO(CollisionManager, ClearCallbacks, "Clear callbacks")
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(CollisionManager)
+        KL_CTOR0(CollisionManager)
+    KL_END_DESCRIBE(CollisionManager)
 };
 
-} // namespace ptx
+} // namespace koilo

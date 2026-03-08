@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file velocitycomponent.hpp
  * @brief Velocity component for ECS (linear and angular velocity).
@@ -8,10 +9,10 @@
 
 #pragma once
 
-#include "../../../core/math/vector3d.hpp"
-#include "../../../registry/reflect_macros.hpp"
+#include <koilo/core/math/vector3d.hpp>
+#include <koilo/registry/reflect_macros.hpp>
 
-namespace ptx {
+namespace koilo {
 
 /**
  * @struct VelocityComponent
@@ -39,19 +40,19 @@ struct VelocityComponent {
     VelocityComponent(const Vector3D& lin, const Vector3D& ang)
         : linear(lin), angular(ang) {}
 
-    PTX_BEGIN_FIELDS(VelocityComponent)
-        PTX_FIELD(VelocityComponent, linear, "Linear", 0, 0),
-        PTX_FIELD(VelocityComponent, angular, "Angular", 0, 0)
-    PTX_END_FIELDS
+    KL_BEGIN_FIELDS(VelocityComponent)
+        KL_FIELD(VelocityComponent, linear, "Linear", 0, 0),
+        KL_FIELD(VelocityComponent, angular, "Angular", 0, 0)
+    KL_END_FIELDS
 
-    PTX_BEGIN_METHODS(VelocityComponent)
-    PTX_END_METHODS
+    KL_BEGIN_METHODS(VelocityComponent)
+    KL_END_METHODS
 
-    PTX_BEGIN_DESCRIBE(VelocityComponent)
-        PTX_CTOR0(VelocityComponent),
-        PTX_CTOR(VelocityComponent, Vector3D),
-        PTX_CTOR(VelocityComponent, Vector3D, Vector3D)
-    PTX_END_DESCRIBE(VelocityComponent)
+    KL_BEGIN_DESCRIBE(VelocityComponent)
+        KL_CTOR0(VelocityComponent),
+        KL_CTOR(VelocityComponent, Vector3D),
+        KL_CTOR(VelocityComponent, Vector3D, Vector3D)
+    KL_END_DESCRIBE(VelocityComponent)
 };
 
-} // namespace ptx
+} // namespace koilo

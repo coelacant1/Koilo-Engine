@@ -1,33 +1,34 @@
-#include <ptx/systems/ai/behaviortree/behaviortreenode.hpp>
+// SPDX-License-Identifier: GPL-3.0-or-later
+#include <koilo/systems/ai/behaviortree/behaviortreenode.hpp>
 
-namespace ptx {
+namespace koilo {
 
 // === BehaviorTreeNode ===
 
-BehaviorTreeNode::BehaviorTreeNode(const std::string& name)
+koilo::BehaviorTreeNode::BehaviorTreeNode(const std::string& name)
     : name(name) {
 }
 
-BehaviorTreeNode::~BehaviorTreeNode() {
+koilo::BehaviorTreeNode::~BehaviorTreeNode() {
 }
 
-void BehaviorTreeNode::Reset() {
+void koilo::BehaviorTreeNode::Reset() {
     for (auto& child : children) {
         child->Reset();
     }
 }
 
-void BehaviorTreeNode::AddChild(std::shared_ptr<BehaviorTreeNode> child) {
+void koilo::BehaviorTreeNode::AddChild(std::shared_ptr<BehaviorTreeNode> child) {
     children.push_back(child);
 }
 
 // === SequenceNode ===
 
-SequenceNode::SequenceNode(const std::string& name)
+koilo::SequenceNode::SequenceNode(const std::string& name)
     : BehaviorTreeNode(name), currentChildIndex(0) {
 }
 
-NodeStatus SequenceNode::Execute() {
+NodeStatus koilo::SequenceNode::Execute() {
     // Execute children in sequence until one fails
     while (currentChildIndex < children.size()) {
         NodeStatus status = children[currentChildIndex]->Execute();
@@ -50,18 +51,18 @@ NodeStatus SequenceNode::Execute() {
     return NodeStatus::Success;
 }
 
-void SequenceNode::Reset() {
-    BehaviorTreeNode::Reset();
+void koilo::SequenceNode::Reset() {
+    koilo::BehaviorTreeNode::Reset();
     currentChildIndex = 0;
 }
 
 // === SelectorNode ===
 
-SelectorNode::SelectorNode(const std::string& name)
+koilo::SelectorNode::SelectorNode(const std::string& name)
     : BehaviorTreeNode(name), currentChildIndex(0) {
 }
 
-NodeStatus SelectorNode::Execute() {
+NodeStatus koilo::SelectorNode::Execute() {
     // Execute children in sequence until one succeeds
     while (currentChildIndex < children.size()) {
         NodeStatus status = children[currentChildIndex]->Execute();
@@ -84,18 +85,18 @@ NodeStatus SelectorNode::Execute() {
     return NodeStatus::Failure;
 }
 
-void SelectorNode::Reset() {
-    BehaviorTreeNode::Reset();
+void koilo::SelectorNode::Reset() {
+    koilo::BehaviorTreeNode::Reset();
     currentChildIndex = 0;
 }
 
 // === ParallelNode ===
 
-ParallelNode::ParallelNode(int successThreshold, int failureThreshold, const std::string& name)
+koilo::ParallelNode::ParallelNode(int successThreshold, int failureThreshold, const std::string& name)
     : BehaviorTreeNode(name), successThreshold(successThreshold), failureThreshold(failureThreshold) {
 }
 
-NodeStatus ParallelNode::Execute() {
+NodeStatus koilo::ParallelNode::Execute() {
     int successCount = 0;
     int failureCount = 0;
 
@@ -124,11 +125,11 @@ NodeStatus ParallelNode::Execute() {
 
 // === InverterNode ===
 
-InverterNode::InverterNode(const std::string& name)
+koilo::InverterNode::InverterNode(const std::string& name)
     : BehaviorTreeNode(name) {
 }
 
-NodeStatus InverterNode::Execute() {
+NodeStatus koilo::InverterNode::Execute() {
     if (children.empty()) {
         return NodeStatus::Failure;
     }
@@ -146,11 +147,11 @@ NodeStatus InverterNode::Execute() {
 
 // === RepeaterNode ===
 
-RepeaterNode::RepeaterNode(int repeatCount, const std::string& name)
+koilo::RepeaterNode::RepeaterNode(int repeatCount, const std::string& name)
     : BehaviorTreeNode(name), repeatCount(repeatCount), currentCount(0) {
 }
 
-NodeStatus RepeaterNode::Execute() {
+NodeStatus koilo::RepeaterNode::Execute() {
     if (children.empty()) {
         return NodeStatus::Failure;
     }
@@ -184,18 +185,18 @@ NodeStatus RepeaterNode::Execute() {
     return NodeStatus::Success;
 }
 
-void RepeaterNode::Reset() {
-    BehaviorTreeNode::Reset();
+void koilo::RepeaterNode::Reset() {
+    koilo::BehaviorTreeNode::Reset();
     currentCount = 0;
 }
 
 // === SucceederNode ===
 
-SucceederNode::SucceederNode(const std::string& name)
+koilo::SucceederNode::SucceederNode(const std::string& name)
     : BehaviorTreeNode(name) {
 }
 
-NodeStatus SucceederNode::Execute() {
+NodeStatus koilo::SucceederNode::Execute() {
     if (children.empty()) {
         return NodeStatus::Success;
     }
@@ -204,4 +205,4 @@ NodeStatus SucceederNode::Execute() {
     return NodeStatus::Success;
 }
 
-} // namespace ptx
+} // namespace koilo
