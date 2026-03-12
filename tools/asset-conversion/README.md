@@ -6,7 +6,7 @@ Convert 3D models to KoiloMesh (`.kmesh`) format.
 
 | Script | Purpose |
 |--------|---------|
-| `convert_to_kmesh.py` | FBX/OBJ → `.kmesh` (binary or ASCII) |
+| `convert_to_kmesh.py` | FBX/OBJ -> `.kmesh` (binary or ASCII) |
 | `FBXReader.py` | FBX parser (used by convert_to_kmesh) |
 
 ## Usage

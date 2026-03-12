@@ -1,12 +1,11 @@
 # Display System Library
 
 # Find dependencies
-find_package(SDL2 QUIET)
+find_package(SDL3 QUIET)
 find_package(OpenGL QUIET)
 
-if(UNIX AND NOT APPLE)
-    find_package(GLEW QUIET)
-endif()
+# glad (GL loader, replaces GLEW - works on both GLX and EGL/Wayland)
+set(GLAD_DIR ${CMAKE_SOURCE_DIR}/external/glad)
 
 # Source files
 set(DISPLAY_SOURCES
@@ -23,19 +22,19 @@ set(DISPLAY_HEADERS
     ${CMAKE_SOURCE_DIR}/engine/koilo/systems/display/backends/nullbackend.hpp
 )
 
-# Add SDL2 software backend if available
-if(SDL2_FOUND)
-    message(STATUS "SDL2 software backend enabled")
-    list(APPEND DISPLAY_SOURCES backends/gpu/sdl2backend.cpp)
-    list(APPEND DISPLAY_HEADERS ${CMAKE_SOURCE_DIR}/engine/koilo/systems/display/backends/gpu/sdl2backend.hpp)
-    set(HAVE_SDL2_BACKEND ON)
+# Add SDL3 software backend if available
+if(SDL3_FOUND)
+    message(STATUS "SDL3 software backend enabled")
+    list(APPEND DISPLAY_SOURCES backends/gpu/sdl3backend.cpp)
+    list(APPEND DISPLAY_HEADERS ${CMAKE_SOURCE_DIR}/engine/koilo/systems/display/backends/gpu/sdl3backend.hpp)
+    set(HAVE_SDL3_BACKEND ON)
 else()
-    message(STATUS "SDL2 software backend disabled (SDL2 not found)")
-    set(HAVE_SDL2_BACKEND OFF)
+    message(STATUS "SDL3 software backend disabled (SDL3 not found)")
+    set(HAVE_SDL3_BACKEND OFF)
 endif()
 
 # Add OpenGL backend if available
-if(SDL2_FOUND AND OPENGL_FOUND)
+if(SDL3_FOUND AND OPENGL_FOUND)
     message(STATUS "OpenGL backend enabled")
     list(APPEND DISPLAY_SOURCES backends/gpu/openglbackend.cpp)
     list(APPEND DISPLAY_HEADERS ${CMAKE_SOURCE_DIR}/engine/koilo/systems/display/backends/gpu/openglbackend.hpp)
@@ -47,7 +46,7 @@ if(SDL2_FOUND AND OPENGL_FOUND)
     list(APPEND DISPLAY_HEADERS ${CMAKE_SOURCE_DIR}/engine/koilo/systems/render/gl/render_backend_factory.hpp)
     set(HAVE_OPENGL_BACKEND ON)
 else()
-    message(STATUS "OpenGL backend disabled (SDL2 or OpenGL not found)")
+    message(STATUS "OpenGL backend disabled (SDL3 or OpenGL not found)")
     set(HAVE_OPENGL_BACKEND OFF)
 endif()
 
@@ -69,34 +68,24 @@ target_include_directories(koiloengine_display PUBLIC
 # Link dependencies
 target_link_libraries(koiloengine_display PUBLIC koilo_core)
 
-if(HAVE_SDL2_BACKEND)
-    target_include_directories(koiloengine_display PRIVATE
-        ${SDL2_INCLUDE_DIRS}
-    )
+if(HAVE_SDL3_BACKEND)
     target_link_libraries(koiloengine_display PUBLIC
-        ${SDL2_LIBRARIES}
+        SDL3::SDL3
     )
-    target_compile_definitions(koiloengine_display PUBLIC KL_HAVE_SDL2_BACKEND)
+    target_compile_definitions(koiloengine_display PUBLIC KL_HAVE_SDL3_BACKEND)
 endif()
 
 if(HAVE_OPENGL_BACKEND)
     target_include_directories(koiloengine_display PRIVATE
-        ${SDL2_INCLUDE_DIRS}
         ${OPENGL_INCLUDE_DIR}
+        ${GLAD_DIR}/include
     )
-    
-    if(UNIX AND NOT APPLE)
-        target_link_libraries(koiloengine_display PUBLIC
-            ${SDL2_LIBRARIES}
-            ${OPENGL_LIBRARIES}
-            GLEW::GLEW
-        )
-    else()
-        target_link_libraries(koiloengine_display PUBLIC
-            ${SDL2_LIBRARIES}
-            ${OPENGL_LIBRARIES}
-        )
-    endif()
+    target_sources(koiloengine_display PRIVATE ${GLAD_DIR}/src/glad.c)
+
+    target_link_libraries(koiloengine_display PUBLIC
+        SDL3::SDL3
+        ${OPENGL_LIBRARIES}
+    )
     
     target_compile_definitions(koiloengine_display PUBLIC KL_HAVE_OPENGL_BACKEND KL_HAVE_FILESYSTEM)
 

@@ -1,57 +1,82 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testwidget.hpp
- * @brief Unit tests for the Widget class.
+ * @brief Unit tests for the ui::Widget system.
  *
- * @date 22/02/2026
- * @version 1.0
+ * @date 03/08/2026
  * @author Coela
  */
 
 #pragma once
 
 #include <unity.h>
-#include <koilo/systems/ui/widget.hpp>
+#include <koilo/systems/ui/ui_context.hpp>
 #include <utils/testhelpers.hpp>
 
-/**
- * @class TestWidget
- * @brief Contains static test methods for the Widget class.
- */
 class TestWidget {
 public:
-    // Constructor & lifecycle tests
-    static void TestDefaultConstructor();
-    static void TestParameterizedConstructor();
+    // String interning
+    static void TestStringInternBasic();
+    static void TestStringInternDuplicate();
+    static void TestStringInternEmpty();
 
-    // Method tests
-    static void TestSetPosition();
-    static void TestSetSize();
-    static void TestSetVisible();
-    static void TestSetEnabled();
-    static void TestSetFocusable();
+    // Widget pool
+    static void TestPoolAllocate();
+    static void TestPoolFree();
+    static void TestPoolCapacity();
+    static void TestPoolFreeReuse();
+
+    // Widget creation via UIContext
+    static void TestCreatePanel();
+    static void TestCreateLabel();
+    static void TestCreateButton();
+    static void TestCreateSlider();
+    static void TestCreateCheckbox();
+    static void TestCreateTextField();
+    static void TestCreateSeparator();
+
+    // Widget tree
+    static void TestSetParent();
+    static void TestDestroyWidget();
+    static void TestDestroyWidgetRecursive();
+    static void TestReparent();
+
+    // Layout
+    static void TestLayoutRootFillsViewport();
+    static void TestLayoutColumn();
+    static void TestLayoutRow();
+    static void TestLayoutPercentSize();
+    static void TestLayoutFillRemaining();
+    static void TestLayoutPadding();
+    static void TestLayoutCenterAlignment();
+
+    // Events
+    static void TestHitTest();
+    static void TestHitTestNested();
+    static void TestClickCallback();
+    static void TestSliderDrag();
+    static void TestCheckboxToggle();
+    static void TestFocusTab();
+
+    // Styling
+    static void TestThemeDefaults();
+    static void TestThemeResolve();
+    static void TestPseudoStateHovered();
+
+    // UIContext
+    static void TestSetViewport();
+    static void TestFindWidget();
     static void TestSetText();
-    static void TestSetTextColor();
-    static void TestSetTextScale();
-    static void TestSetBackgroundColor();
-    static void TestSetBorderColor();
-    static void TestSetBorderWidth();
-    static void TestSetOnActivate();
-    static void TestSetName();
-    static void TestGetText();
-    static void TestGetName();
-    static void TestIsVisible();
-    static void TestIsEnabled();
-    static void TestIsFocused();
-    static void TestAddChild();
-    static void TestGetChildCount();
-    static void TestContains();
+    static void TestSetVisible();
 
-    // Edge case & integration tests
-    static void TestEdgeCases();
+    // New widget types
+    static void TestCreateProgressBar();
+    static void TestCreateToggleSwitch();
+    static void TestCreateRadioButton();
+    static void TestCreateNumberSpinner();
+    static void TestToggleSwitchToggle();
+    static void TestRadioGroupExclusion();
+    static void TestSpinnerClamp();
 
-    /**
-     * @brief Runs all test methods.
-     */
     static void RunAllTests();
 };

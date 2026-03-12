@@ -22,6 +22,20 @@ enum class FieldKind : uint8_t {
     Complex  // Requires ClassDesc lookup for sub-object navigation
 };
 
+/// Hint for auto-UI generation - drives widget selection in inspectors.
+enum class FieldHint : uint8_t {
+    None,          ///< Default - infer widget from FieldKind + min/max
+    Slider,        ///< Force slider widget (requires min/max)
+    ColorPicker,   ///< Color picker (expects 3-4 component field)
+    FilePath,      ///< File browser dialog
+    TextArea,      ///< Multi-line text editor
+    Hidden,        ///< Exclude from inspector
+    ReadOnly,      ///< Display but disable editing
+    Angle,         ///< Angle dial widget (degrees)
+    Normalized,    ///< 0..1 range slider
+    Dropdown       ///< Dropdown from enum values
+};
+
 // Map C++ type -> FieldKind at compile time.
 template<typename T> struct FieldKindOf { static constexpr FieldKind value = FieldKind::Complex; };
 template<> struct FieldKindOf<float>       { static constexpr FieldKind value = FieldKind::Float; };
@@ -65,6 +79,8 @@ struct FieldDecl {
     double                    min_value;
     double                    max_value;
     FieldKind                 kind;       ///< Compile-time type tag for fast dispatch
+    FieldHint                 hint;       ///< UI generation hint
+    const char*               category;   ///< Inspector grouping (e.g. "Transform")
 };
 
 struct MethodDesc {

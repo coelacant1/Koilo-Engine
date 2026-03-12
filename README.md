@@ -1,6 +1,6 @@
 # Koilo Engine
 
-[![Build/Test Validation](https://github.com/coelacant1/KoiloEngine/actions/workflows/ci.yml/badge.svg)](https://github.com/coelacant1/KoiloEngine/actions/workflows/ci.yml)
+[![KoiloEngine CI](https://github.com/coelacant1/Koilo-Engine/actions/workflows/ci.yml/badge.svg)](https://github.com/coelacant1/Koilo-Engine/actions/workflows/ci.yml)
 
 C++17 game engine targeting desktop and embedded platforms. Scenes and game logic are written in KoiloScript (`.ks`), a custom bytecode-compiled scripting language with full access to engine internals through a runtime reflection system. No recompilation needed to change content.
 
@@ -10,6 +10,7 @@ C++17 game engine targeting desktop and embedded platforms. Scenes and game logi
 
 
 ![OBJ Scene](assets/screenshots/obj_scene_1.png)
+![UI Demo](assets/screenshots/ui_demo_1.png)
 
 > [!WARNING]
 > This is heavily work-in-progress and still is ridden with bugs. I will be rolling out more features and changes and the backend is not yet stable. If you decide to use this to make a game you will find limitations in the scripting engine, I will be implementing a runtime testing suite to test more functionality.

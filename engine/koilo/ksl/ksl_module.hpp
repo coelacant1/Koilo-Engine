@@ -10,7 +10,7 @@
 #include <vector>
 
 #ifdef KL_HAVE_OPENGL_BACKEND
-#include <GL/glew.h>
+#include <glad/glad.h>
 #endif
 
 namespace ksl {
@@ -236,3 +236,4 @@ private:
 };
 
 } // namespace ksl
+

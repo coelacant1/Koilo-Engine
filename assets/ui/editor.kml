@@ -1,0 +1,336 @@
+<!-- Koilo Engine - Editor Layout (KML) -->
+
+<dock id="editor-root">
+
+  <!-- ═══════════ Menu Bar ═══════════ -->
+  <panel id="menu-bar" class="toolbar">
+    <panel class="menu-group">
+      <button id="btn-file" class="menu-btn" onclick="OnMenuFile" title="Open file menu">File</button>
+      <button id="btn-edit" class="menu-btn" onclick="OnMenuEdit" title="Edit operations">Edit</button>
+      <button id="btn-view" class="menu-btn" onclick="OnMenuView" title="View options">View</button>
+      <button id="btn-tools" class="menu-btn" onclick="OnMenuTools" title="Engine tools">Tools</button>
+      <button id="btn-help" class="menu-btn" onclick="OnMenuHelp" title="Help and docs">Help</button>
+    </panel>
+    <panel class="toolbar-spacer"/>
+    <panel class="transport-group">
+      <button id="btn-play" class="transport play" onclick="OnPlay" title="Play the scene">▶ Play</button>
+      <button id="btn-pause" class="transport" onclick="OnPause" title="Pause execution">⏸ Pause</button>
+      <button id="btn-stop" class="transport stop" onclick="OnStop" title="Stop and reset">⏹ Stop</button>
+    </panel>
+    <panel class="toolbar-spacer"/>
+    <label id="project-name" class="project-badge">Koilo Engine</label>
+  </panel>
+
+  <!-- ═══════════ Tool Bar ═══════════ -->
+  <panel id="tool-bar" class="toolbar secondary">
+    <panel class="tool-group">
+      <button id="btn-select" class="tool-btn active" onclick="OnToolSelect" title="Select objects (Q)">Select</button>
+      <button id="btn-move" class="tool-btn" onclick="OnToolMove" title="Move tool (W)">Move</button>
+      <button id="btn-rotate" class="tool-btn" onclick="OnToolRotate" title="Rotate tool (E)">Rotate</button>
+      <button id="btn-scale" class="tool-btn" onclick="OnToolScale" title="Scale tool (R)">Scale</button>
+    </panel>
+    <separator class="vsep"/>
+    <panel class="tool-group">
+      <button class="tool-btn" onclick="OnToolTerrain">Terrain</button>
+      <button class="tool-btn" onclick="OnToolPaint">Paint</button>
+    </panel>
+    <separator class="vsep"/>
+    <panel class="snap-controls">
+      <checkbox id="snap-toggle" checked="true" title="Toggle grid snapping"/>
+      <label class="snap-label">Snap</label>
+      <textfield id="snap-value" placeholder="1.0" style="width: 48px" title="Snap grid size"/>
+    </panel>
+  </panel>
+
+  <!-- ═══════════ Main Content ═══════════ -->
+  <splitpane id="main-hsplit" horizontal="true">
+
+    <!-- --- Left: Hierarchy --- -->
+    <panel id="hierarchy-panel" class="side-panel left">
+      <panel class="panel-header">
+        <label class="panel-title">Hierarchy</label>
+        <button class="icon-btn" onclick="OnAddNode" title="Add new node">+</button>
+      </panel>
+      <textfield id="hierarchy-search" class="search-field" placeholder="Search nodes..."/>
+      <scrollview id="hierarchy-scroll">
+        <treenode id="node-scene" text="Scene" depth="0" has-children="true" expanded="true"/>
+        <treenode id="node-camera" text="MainCamera" depth="1"/>
+        <treenode id="node-light" text="DirectionalLight" depth="1" has-children="true" expanded="true"/>
+        <treenode id="node-light-shadow" text="ShadowMap" depth="2"/>
+        <treenode id="node-light-flare" text="LensFlare" depth="2"/>
+        <treenode id="node-player" text="Player" depth="1" has-children="true" expanded="true"/>
+        <treenode id="node-mesh" text="PlayerMesh" depth="2" has-children="true" expanded="true"/>
+        <treenode id="node-mesh-lod0" text="LOD0_High" depth="3"/>
+        <treenode id="node-mesh-lod1" text="LOD1_Low" depth="3"/>
+        <treenode id="node-collider" text="Collider" depth="2"/>
+        <treenode id="node-player-script" text="PlayerController" depth="2"/>
+        <treenode id="node-ground" text="Ground" depth="1" has-children="true" expanded="true"/>
+        <treenode id="node-ground-mesh" text="TerrainMesh" depth="2"/>
+        <treenode id="node-ground-col" text="TerrainCollider" depth="2"/>
+        <treenode id="node-skybox" text="Skybox" depth="1"/>
+        <treenode id="node-env" text="Environment" depth="1" has-children="true" expanded="true"/>
+        <treenode id="node-fog" text="FogVolume" depth="2"/>
+        <treenode id="node-wind" text="WindZone" depth="2"/>
+        <treenode id="node-ambient" text="AmbientProbe" depth="2"/>
+        <treenode id="node-particles" text="ParticleSystem" depth="1"/>
+        <treenode id="node-audio" text="AudioSource" depth="1"/>
+        <treenode id="node-ui-canvas" text="UICanvas" depth="1"/>
+      </scrollview>
+      <panel class="panel-footer">
+        <label class="item-count">22 nodes</label>
+      </panel>
+    </panel>
+
+    <!-- --- Center + Right --- -->
+    <splitpane id="main-vsplit" horizontal="true">
+
+      <!-- --- Center Column --- -->
+      <panel id="center-column" class="center-area">
+
+        <!-- Viewport with overlay controls -->
+        <panel id="viewport-container" class="viewport-wrap">
+          <viewport id="game-viewport"/>
+          <!-- Overlay: positioned absolute over viewport -->
+          <panel id="viewport-overlay" class="viewport-overlay" style="pointer-events: none">
+            <panel class="gizmo-controls" style="pointer-events: auto">
+              <button class="gizmo-btn active">Local</button>
+              <button class="gizmo-btn">World</button>
+            </panel>
+            <panel class="view-controls" style="pointer-events: auto">
+              <button class="gizmo-btn">Persp</button>
+              <button class="gizmo-btn">Ortho</button>
+            </panel>
+          </panel>
+          <!-- Camera info badge -->
+          <panel id="camera-badge" class="camera-badge">
+            <label class="badge-text">cam: MainCamera  |  fov: 60°</label>
+          </panel>
+        </panel>
+
+        <!-- Tabbed bottom panel -->
+        <panel id="bottom-tabs" class="bottom-panel">
+          <panel class="tab-header">
+            <button class="tab-btn active">Console</button>
+            <button class="tab-btn">Assets</button>
+            <button class="tab-btn">Animation</button>
+            <button class="tab-btn">Profiler</button>
+            <panel class="tab-spacer"/>
+            <button class="icon-btn small">⚙</button>
+          </panel>
+          <panel id="console-panel" class="tab-content">
+            <scrollview id="console-scroll">
+              <label class="log-info">[Info] Scene loaded: 10 nodes, 4 materials</label>
+              <label class="log-info">[Info] Renderer: OpenGL 4.6 (NVIDIA)</label>
+              <label class="log-warn">[Warn] Texture 'ground_diffuse' not found, using fallback</label>
+              <label class="log-info">[Info] Physics: 60Hz fixed step, 0 collisions</label>
+              <label class="log-error">[Error] Script 'enemy_ai.ks' line 42: undefined variable 'target'</label>
+              <label class="log-info">[Info] Audio: 2 active sources, master volume 0.8</label>
+            </scrollview>
+          </panel>
+          <panel class="console-input-row">
+            <label class="prompt">&gt;</label>
+            <textfield id="console-input" class="console-input" placeholder="Enter command..."/>
+          </panel>
+        </panel>
+      </panel>
+
+      <!-- --- Right: Inspector --- -->
+      <panel id="inspector-panel" class="side-panel right">
+        <panel class="panel-header">
+          <label class="panel-title">Inspector</label>
+          <dropdown id="component-add" class="add-dropdown"/>
+        </panel>
+
+        <scrollview id="inspector-scroll">
+          <!-- Object header -->
+          <panel class="object-header">
+            <checkbox id="obj-active" checked="true"/>
+            <textfield id="obj-name" class="object-name" text="Player"/>
+            <label class="tag-badge">Player</label>
+          </panel>
+
+          <separator/>
+
+          <!-- Transform Section -->
+          <panel id="transform-section" class="inspector-section">
+            <panel class="section-header-row">
+              <treenode id="transform-fold" text="Transform" expanded="true"/>
+              <button class="icon-btn small">⋯</button>
+            </panel>
+            <panel class="property-grid">
+              <panel class="property-row">
+                <label class="prop-label">Position</label>
+                <panel class="vec3-row">
+                  <label class="axis-label x">X</label>
+                  <textfield id="pos-x" class="vec-field" placeholder="0.0"/>
+                  <label class="axis-label y">Y</label>
+                  <textfield id="pos-y" class="vec-field" placeholder="1.5"/>
+                  <label class="axis-label z">Z</label>
+                  <textfield id="pos-z" class="vec-field" placeholder="0.0"/>
+                </panel>
+              </panel>
+              <panel class="property-row">
+                <label class="prop-label">Rotation</label>
+                <panel class="vec3-row">
+                  <label class="axis-label x">X</label>
+                  <textfield id="rot-x" class="vec-field" placeholder="0.0"/>
+                  <label class="axis-label y">Y</label>
+                  <textfield id="rot-y" class="vec-field" placeholder="45.0"/>
+                  <label class="axis-label z">Z</label>
+                  <textfield id="rot-z" class="vec-field" placeholder="0.0"/>
+                </panel>
+              </panel>
+              <panel class="property-row">
+                <label class="prop-label">Scale</label>
+                <panel class="vec3-row">
+                  <label class="axis-label x">X</label>
+                  <textfield id="scl-x" class="vec-field" placeholder="1.0"/>
+                  <label class="axis-label y">Y</label>
+                  <textfield id="scl-y" class="vec-field" placeholder="1.0"/>
+                  <label class="axis-label z">Z</label>
+                  <textfield id="scl-z" class="vec-field" placeholder="1.0"/>
+                </panel>
+              </panel>
+            </panel>
+          </panel>
+
+          <separator class="section-sep"/>
+
+          <!-- Material Section -->
+          <panel id="material-section" class="inspector-section">
+            <panel class="section-header-row">
+              <treenode id="material-fold" text="Material" expanded="true"/>
+              <button class="icon-btn small">⋯</button>
+            </panel>
+            <panel class="property-grid">
+              <panel class="property-row">
+                <label class="prop-label">Shader</label>
+                <dropdown id="mat-shader" class="prop-dropdown"/>
+              </panel>
+              <panel class="property-row">
+                <label class="prop-label">Albedo</label>
+                <colorfield id="mat-color"/>
+                <textfield class="color-hex" placeholder="#FFFFFF"/>
+              </panel>
+              <panel class="property-row">
+                <label class="prop-label">Metallic</label>
+                <slider id="mat-metallic" min="0" max="1" value="0"/>
+                <label class="slider-val">0.00</label>
+              </panel>
+              <panel class="property-row">
+                <label class="prop-label">Roughness</label>
+                <slider id="mat-roughness" min="0" max="1" value="0.5"/>
+                <label class="slider-val">0.50</label>
+              </panel>
+              <panel class="property-row">
+                <label class="prop-label">Emission</label>
+                <colorfield id="mat-emission"/>
+                <slider id="mat-emission-str" min="0" max="10" value="0"/>
+              </panel>
+            </panel>
+          </panel>
+
+          <separator class="section-sep"/>
+
+          <!-- Light Section -->
+          <panel id="light-section" class="inspector-section">
+            <panel class="section-header-row">
+              <treenode id="light-fold" text="Light" expanded="true"/>
+              <button class="icon-btn small">⋯</button>
+            </panel>
+            <panel class="property-grid">
+              <panel class="property-row">
+                <label class="prop-label">Type</label>
+                <panel class="radio-group">
+                  <radio id="light-point" group="light-type" checked="true"/>
+                  <label class="radio-label">Point</label>
+                  <radio id="light-spot" group="light-type"/>
+                  <label class="radio-label">Spot</label>
+                  <radio id="light-dir" group="light-type"/>
+                  <label class="radio-label">Dir</label>
+                </panel>
+              </panel>
+              <panel class="property-row">
+                <label class="prop-label">Intensity</label>
+                <slider id="light-intensity" min="0" max="10" value="1"/>
+                <label class="slider-val">1.00</label>
+              </panel>
+              <panel class="property-row">
+                <label class="prop-label">Color</label>
+                <colorfield id="light-color"/>
+              </panel>
+              <panel class="property-row">
+                <label class="prop-label">Shadows</label>
+                <toggle id="light-shadows" checked="true"/>
+              </panel>
+              <panel class="property-row">
+                <label class="prop-label">Range</label>
+                <slider id="light-range" min="0" max="100" value="20"/>
+                <label class="slider-val">20.0</label>
+              </panel>
+            </panel>
+          </panel>
+
+          <separator class="section-sep"/>
+
+          <!-- Script Section -->
+          <panel id="script-section" class="inspector-section">
+            <panel class="section-header-row">
+              <treenode id="script-fold" text="Script: player_controller" expanded="true"/>
+              <button class="icon-btn small">⋯</button>
+            </panel>
+            <panel class="property-grid">
+              <panel class="property-row">
+                <label class="prop-label">Speed</label>
+                <spinner id="script-speed" min="0" max="50" value="5" step="0.5"/>
+              </panel>
+              <panel class="property-row">
+                <label class="prop-label">Jump Force</label>
+                <spinner id="script-jump" min="0" max="30" value="8" step="1"/>
+              </panel>
+              <panel class="property-row">
+                <label class="prop-label">Grounded</label>
+                <checkbox id="script-grounded" checked="true"/>
+              </panel>
+            </panel>
+          </panel>
+        </scrollview>
+
+        <!-- Add Component button -->
+        <panel class="add-component-row">
+          <button id="btn-add-component" class="add-component-btn" onclick="OnAddComponent">+ Add Component</button>
+        </panel>
+      </panel>
+
+    </splitpane>
+  </splitpane>
+
+  <!-- ═══════════ Status Bar ═══════════ -->
+  <panel id="status-bar" class="toolbar status">
+    <panel class="status-left">
+      <label class="status-indicator online"/>
+      <label id="status-text" class="status-msg">Ready</label>
+    </panel>
+    <panel class="status-center">
+      <label class="status-info">Objects: 10  |  Tris: 24.6k  |  Draw Calls: 42</label>
+      <progress id="build-progress" class="status-progress" value="0.72"/>
+    </panel>
+    <panel class="status-right">
+      <label id="fps-counter" class="fps-badge">60 FPS</label>
+    </panel>
+  </panel>
+
+  <!-- ═══════════ Floating Panel Demo ═══════════ -->
+  <floatingpanel id="float-console" title="Console Output">
+    <panel class="panel-header">
+      <label class="panel-title">Console</label>
+    </panel>
+    <scrollview>
+      <label>[info] Engine initialized</label>
+      <label>[info] Scene loaded: MainScene</label>
+      <label>[warn] Missing texture: ground_normal.png</label>
+      <label>[info] Compiled 12 shaders</label>
+    </scrollview>
+  </floatingpanel>
+
+</dock>

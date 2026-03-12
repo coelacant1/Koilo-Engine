@@ -4,7 +4,7 @@
  * @brief Audio backend for desktop playback.
  *
  * Owns the audio device, mixes active sources, and sends PCM to speakers.
- * Uses SDL2 audio when available, otherwise stubs out device init.
+ * Uses SDL3 audio when available, otherwise stubs out device init.
  * Not reflected (internal implementation detail).
  *
  * @date 02/22/2026
@@ -27,7 +27,7 @@ class AudioListener;
 
 /**
  * @class AudioBackend
- * @brief Low-level audio device management via SDL2.
+ * @brief Low-level audio device management via SDL3.
  */
 class AudioBackend {
 public:
@@ -81,7 +81,7 @@ private:
     bool initialized_ = false;
     int sampleRate_ = 44100;
     int channels_ = 2;
-    unsigned int deviceId_ = 0;  // SDL_AudioDeviceID (0 = no device)
+    void* audioStream_ = nullptr;  // SDL_AudioStream* (nullptr = no device)
 
     std::mutex sourceMutex_;
     std::vector<PlayingSource> playingSources_;

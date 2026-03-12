@@ -34,7 +34,19 @@ namespace koilo::detail {
             +[](const void* obj)->const void* { return static_cast<const void*>(&static_cast<const CLASS*>(obj)->MEMBER); } \
         }, \
         DESC, double(MINv), double(MAXv), \
-        koilo::FieldKindOf<std::remove_cv_t<decltype(std::declval<CLASS>().MEMBER)>>::value }
+        koilo::FieldKindOf<std::remove_cv_t<decltype(std::declval<CLASS>().MEMBER)>>::value, \
+        koilo::FieldHint::None, nullptr }
+
+#define KL_FIELD_EX(CLASS, MEMBER, DESC, MINv, MAXv, HINT, CATEGORY) \
+    {   #MEMBER, &typeid(decltype(std::declval<CLASS>().MEMBER)), \
+        sizeof(decltype(std::declval<CLASS>().MEMBER)), \
+        koilo::FieldAccess{ \
+            +[](void* obj)->void* { return const_cast<void*>(static_cast<const void*>(&static_cast<CLASS*>(obj)->MEMBER)); }, \
+            +[](const void* obj)->const void* { return static_cast<const void*>(&static_cast<const CLASS*>(obj)->MEMBER); } \
+        }, \
+        DESC, double(MINv), double(MAXv), \
+        koilo::FieldKindOf<std::remove_cv_t<decltype(std::declval<CLASS>().MEMBER)>>::value, \
+        koilo::FieldHint::HINT, CATEGORY }
 #else
 #define KL_FIELD(CLASS, MEMBER, DESC, MINv, MAXv) \
     {   #MEMBER, nullptr, \
@@ -44,7 +56,19 @@ namespace koilo::detail {
             +[](const void* obj)->const void* { return static_cast<const void*>(&static_cast<const CLASS*>(obj)->MEMBER); } \
         }, \
         DESC, double(MINv), double(MAXv), \
-        koilo::FieldKindOf<std::remove_cv_t<decltype(std::declval<CLASS>().MEMBER)>>::value }
+        koilo::FieldKindOf<std::remove_cv_t<decltype(std::declval<CLASS>().MEMBER)>>::value, \
+        koilo::FieldHint::None, nullptr }
+
+#define KL_FIELD_EX(CLASS, MEMBER, DESC, MINv, MAXv, HINT, CATEGORY) \
+    {   #MEMBER, nullptr, \
+        sizeof(decltype(std::declval<CLASS>().MEMBER)), \
+        koilo::FieldAccess{ \
+            +[](void* obj)->void* { return const_cast<void*>(static_cast<const void*>(&static_cast<CLASS*>(obj)->MEMBER)); }, \
+            +[](const void* obj)->const void* { return static_cast<const void*>(&static_cast<const CLASS*>(obj)->MEMBER); } \
+        }, \
+        DESC, double(MINv), double(MAXv), \
+        koilo::FieldKindOf<std::remove_cv_t<decltype(std::declval<CLASS>().MEMBER)>>::value, \
+        koilo::FieldHint::HINT, CATEGORY }
 #endif
 
 #define KL_BEGIN_FIELDS(CLASS) \

@@ -1,315 +1,203 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file ui.hpp
- * @brief UI manager - focus navigation, pointer hit-testing, and overlay rendering.
+ * @brief Scripting-facing UI wrapper around UIContext.
  *
- * Owns a flat list of widgets and manages focus traversal across focusable
- * widgets. Renders the entire UI tree into a Color888 pixel buffer as a
- * 2D overlay on top of the 3D scene.
+ * Provides the registered "UI" type for KoiloScript. Delegates to the
+ * retained-mode UIContext widget system for all operations.
  *
- * @date 01/25/2026
+ * @date 03/08/2026
  * @author Coela
  */
 
 #pragma once
 
-#include <vector>
-#include <string>
-#include "widget.hpp"
-#include <koilo/systems/input/inputmanager.hpp>
+#include "ui_context.hpp"
+#include "ui_animation.hpp"
+#include "localization.hpp"
+#include "render/draw_list.hpp"
+#include "render/ui_gl_renderer.hpp"
+#include "render/ui_sw_renderer.hpp"
+#include "markup/kml_loader.hpp"
+#include <koilo/systems/font/font.hpp>
+#include <koilo/core/color/color888.hpp>
+#include <koilo/registry/reflect_macros.hpp>
+#include <chrono>
 
 namespace koilo {
 
 /**
  * @class UI
- * @brief Root UI manager - no vtable, reflection-safe.
- *
- * Provides:
- * - Widget ownership and tree management
- * - Focus traversal (NextFocus, PrevFocus, ActivateFocus)
- * - Pointer hit-testing
- * - Overlay rendering to pixel buffer
+ * @brief Scripting-facing UI manager wrapping ui::UIContext.
  */
 class UI {
-private:
-    std::vector<Widget*> widgets_;       // All owned widgets
-    std::vector<Widget*> focusList_;     // Focusable widgets in tab order
-    int focusIndex_ = -1;               // Current focused widget index (-1 = none)
-
-    std::string activateResult_;        // Last activation callback name
-
 public:
-    UI() = default;
+    UI();
+    ~UI() = default;
 
-    ~UI() {
-        for (Widget* w : widgets_) {
-            delete w;
-        }
-        widgets_.clear();
-        focusList_.clear();
-    }
+    /// Access the underlying UIContext.
+    ui::UIContext& Context() { return ctx_; }
+    const ui::UIContext& Context() const { return ctx_; }
 
-    // === Widget Management ===
+    // -- Viewport & layout ---------------------------------------
+    void SetViewport(float w, float h);
+    void UpdateLayout();
 
-    /**
-     * @brief Creates a generic widget and adds it to the UI.
-     * @return Pointer to the new widget (owned by UI).
-     */
-    Widget* CreateWidget() {
-        Widget* w = new Widget();
-        widgets_.push_back(w);
-        return w;
-    }
+    // -- Widget creation -----------------------------------------
+    int CreatePanel(const char* id);
+    int CreateLabel(const char* id, const char* text);
+    int CreateButton(const char* id, const char* text);
+    int CreateSlider(const char* id, float min, float max, float value);
+    int CreateCheckbox(const char* id, bool checked);
+    int CreateTextField(const char* id, const char* placeholder);
+    int CreateSeparator(const char* id);
+    int CreateScrollView(const char* id);
+    int CreateTreeNode(const char* id, const char* text);
+    int CreateDockContainer(const char* id);
+    int CreateSplitPane(const char* id, bool vertical);
+    int CreateTabBar(const char* id);
+    int CreatePopupMenu(const char* id);
+    int CreateMenuItem(const char* id, const char* text);
 
-    /**
-     * @brief Creates a Label widget.
-     */
-    Widget* CreateLabel(const std::string& text, float x, float y) {
-        Widget* w = koilo::CreateLabel(text, x, y);
-        widgets_.push_back(w);
-        return w;
-    }
+    // -- Widget tree ---------------------------------------------
+    bool SetParent(int child, int parent);
+    void DestroyWidget(int idx);
+    int FindWidget(const char* id);
+    int GetRoot();
+    int GetWidgetCount();
 
-    /**
-     * @brief Creates a Panel widget.
-     */
-    Widget* CreatePanel(float x, float y, float w, float h) {
-        Widget* widget = koilo::CreatePanel(x, y, w, h);
-        widgets_.push_back(widget);
-        return widget;
-    }
+    // -- Properties ----------------------------------------------
+    void SetText(int idx, const char* text);
+    const char* GetText(int idx);
+    void SetVisible(int idx, bool v);
+    void SetEnabled(int idx, bool e);
+    void SetSize(int idx, float w, float h);
+    void SetPosition(int idx, float x, float y);
+    void SetPadding(int idx, float top, float right, float bottom, float left);
+    void SetMargin(int idx, float top, float right, float bottom, float left);
 
-    /**
-     * @brief Creates a Button widget.
-     */
-    Widget* CreateButton(const std::string& text, float x, float y,
-                         float w, float h) {
-        Widget* widget = koilo::CreateButton(text, x, y, w, h);
-        widgets_.push_back(widget);
-        return widget;
-    }
+    // -- Layout --------------------------------------------------
+    void SetLayoutColumn(int idx, float spacing);
+    void SetLayoutRow(int idx, float spacing);
+    void SetFillWidth(int idx);
+    void SetFillHeight(int idx);
 
-    /**
-     * @brief Adds an externally created widget to the UI.
-     * UI takes ownership and will delete it on destruction.
-     */
-    void AddWidget(Widget* w) {
-        if (w) widgets_.push_back(w);
-    }
+    // -- Events (script callbacks) -------------------------------
+    void SetOnClick(int idx, const char* fnName);
+    void SetOnChange(int idx, const char* fnName);
 
-    /**
-     * @brief Gets the number of widgets.
-     */
-    int GetWidgetCount() const { return static_cast<int>(widgets_.size()); }
+    // -- Inspector -----------------------------------------------
+    /// Auto-generate inspector UI for a registered type by class name.
+    /// Returns root widget index or -1 on failure.
+    int InspectType(const char* className, int parentIdx);
 
-    /**
-     * @brief Gets a widget by index.
-     */
-    Widget* GetWidget(int index) {
-        if (index >= 0 && index < static_cast<int>(widgets_.size()))
-            return widgets_[index];
-        return nullptr;
-    }
+    // -- Theme ---------------------------------------------------
+    void SetThemeColor(const char* element, int r, int g, int b, int a);
 
-    // === Focus Management ===
+    // -- Query ---------------------------------------------------
+    float GetSliderValue(int idx);
+    bool GetChecked(int idx);
+    float GetViewportWidth();
+    float GetViewportHeight();
 
-    /**
-     * @brief Rebuilds the focus list from all focusable+visible+enabled widgets.
-     * Call after adding/removing widgets or changing focusable state.
-     */
-    void RebuildFocusList() {
-        focusList_.clear();
-        CollectFocusable(widgets_);
-        focusIndex_ = focusList_.empty() ? -1 : 0;
-        UpdateFocusState();
-    }
+    /// Render UI to a Color888 buffer (software path).
+    void RenderToBuffer(Color888* buffer, int width, int height);
 
-    /**
-     * @brief Move focus to the next focusable widget.
-     */
-    void NextFocus() {
-        if (focusList_.empty()) return;
-        focusIndex_ = (focusIndex_ + 1) % static_cast<int>(focusList_.size());
-        UpdateFocusState();
-    }
+    /// Initialize GPU UI rendering (OpenGL). Call once after GL context is ready.
+    bool InitializeGPU();
 
-    /**
-     * @brief Move focus to the previous focusable widget.
-     */
-    void PrevFocus() {
-        if (focusList_.empty()) return;
-        focusIndex_ = (focusIndex_ - 1 + static_cast<int>(focusList_.size()))
-                      % static_cast<int>(focusList_.size());
-        UpdateFocusState();
-    }
+    /// Render UI overlay via OpenGL. Call after scene rendering, before swap.
+    void RenderGPU(int viewportW, int viewportH);
 
-    /**
-     * @brief Activate the currently focused widget.
-     * @return The onActivate callback name (empty if none).
-     */
-    std::string ActivateFocus() {
-        if (focusIndex_ < 0 || focusIndex_ >= static_cast<int>(focusList_.size()))
-            return "";
-        Widget* w = focusList_[focusIndex_];
-        if (w && w->enabled) {
-            activateResult_ = w->onActivate;
-            return w->onActivate;
-        }
-        return "";
-    }
+    /// Load a TTF font for UI text rendering.
+    bool LoadFont(const char* path, float pixelSize);
 
-    /**
-     * @brief Gets the currently focused widget.
-     */
-    Widget* GetFocusedWidget() {
-        if (focusIndex_ >= 0 && focusIndex_ < static_cast<int>(focusList_.size()))
-            return focusList_[focusIndex_];
-        return nullptr;
-    }
+    /// Check if a font is loaded.
+    bool HasFont() const;
 
-    /**
-     * @brief Gets the focus list size.
-     */
-    int GetFocusCount() const { return static_cast<int>(focusList_.size()); }
+    /// Remove all widgets and reset state.
+    void Clear();
 
-    /**
-     * @brief Gets the last activation callback name.
-     */
-    const std::string& GetLastActivation() const { return activateResult_; }
+    // -- Markup loading (KML + KSS) ----------------------------
 
-    // === Pointer Hit Testing ===
+    /// Load a UI layout from KML markup + optional KSS stylesheet.
+    /// Returns root widget index, or -1 on failure.
+    int LoadMarkup(const char* kmlPath, const char* kssPath);
 
-    /**
-     * @brief Find the topmost visible widget at the given point.
-     * Searches in reverse order (last added = on top).
-     */
-    Widget* HitTest(float px, float py) {
-        // Check children depth-first, reverse order
-        for (int i = static_cast<int>(widgets_.size()) - 1; i >= 0; i--) {
-            Widget* hit = HitTestRecursive(widgets_[i], px, py);
-            if (hit) return hit;
-        }
-        return nullptr;
-    }
+    /// Load a UI layout from KML/KSS strings (in-memory).
+    int LoadMarkupString(const char* kml, const char* kss);
 
-    /**
-     * @brief Focus the widget at the given point (pointer click).
-     * @return The widget that received focus, or nullptr.
-     */
-    Widget* FocusAtPoint(float px, float py) {
-        Widget* hit = HitTest(px, py);
-        if (hit && hit->focusable && hit->enabled) {
-            // Find in focus list
-            for (int i = 0; i < static_cast<int>(focusList_.size()); i++) {
-                if (focusList_[i] == hit) {
-                    focusIndex_ = i;
-                    UpdateFocusState();
-                    return hit;
-                }
-            }
-        }
-        return nullptr;
-    }
+    // -- Input events (from host) --------------------------------
+    /// Forward a pointer (mouse) event to the UI for hit testing and dispatch.
+    /// button: 0=left, 1=right, 2=middle
+    void HandlePointerDown(float x, float y, uint8_t button = 0);
+    void HandlePointerUp(float x, float y, uint8_t button = 0);
+    void HandlePointerMove(float x, float y);
+    void HandleScroll(float x, float y, float delta);
 
-    // === Rendering ===
+    /// Get the cursor type requested by the currently hovered widget.
+    ui::CursorType GetRequestedCursor() const;
 
-    /**
-     * @brief Render all widgets into a pixel buffer.
-     * @param buffer Row-major Color888 buffer.
-     * @param width Buffer width.
-     * @param height Buffer height.
-     */
-    void RenderToBuffer(Color888* buffer, int width, int height) {
-        if (!buffer || width <= 0 || height <= 0) return;
+    // -- Animation -----------------------------------------------
+    /// Start a tween. Returns tween index.
+    int Animate(int widgetIdx, const char* property, float from, float to,
+                float duration, const char* easing);
 
-        // Render root-level widgets (they render their children)
-        for (Widget* w : widgets_) {
-            if (w->parent == nullptr) { // only render root widgets
-                w->Render(buffer, width, height);
-            }
-        }
-    }
+    /// Cancel a tween by index.
+    void CancelAnimation(int tweenIdx);
 
-    // === Input Processing ===
+    /// Cancel all tweens on a widget.
+    void CancelAllAnimations(int widgetIdx);
 
-    /**
-     * @brief Process input actions for UI navigation.
-     * Maps: ui_next -> NextFocus, ui_prev -> PrevFocus, ui_activate -> ActivateFocus
-     * @param input InputManager reference.
-     * @return Non-empty string if an activation occurred.
-     */
-    std::string ProcessInput(InputManager& input) {
-        if (input.IsActionPressed("ui_next") ||
-            input.IsKeyPressed(KeyCode::Tab) ||
-            input.IsKeyPressed(KeyCode::Down)) {
-            NextFocus();
-        }
+    /// Update all active animations. Call once per frame.
+    void UpdateAnimations(float dt);
 
-        if (input.IsActionPressed("ui_prev") ||
-            input.IsKeyPressed(KeyCode::Up)) {
-            PrevFocus();
-        }
+    // -- Localization --------------------------------------------
+    /// Set active locale string (e.g., "en", "ja").
+    void SetLocale(const char* locale);
 
-        if (input.IsActionPressed("ui_activate") ||
-            input.IsKeyPressed(KeyCode::Return) ||
-            input.IsKeyPressed(KeyCode::Space)) {
-            return ActivateFocus();
-        }
+    /// Look up a localized string by key.
+    const char* L(const char* key);
 
-        return "";
-    }
+    /// Add a localized string entry.
+    void SetLocalizedString(const char* key, const char* value);
 
-    // === Cleanup ===
+    // -- Accessibility -------------------------------------------
+    /// Set screen reader label for a widget.
+    void SetAriaLabel(int idx, const char* label);
 
-    /**
-     * @brief Remove all widgets and reset state.
-     */
-    void Clear() {
-        for (Widget* w : widgets_) delete w;
-        widgets_.clear();
-        focusList_.clear();
-        focusIndex_ = -1;
-        activateResult_.clear();
-    }
+    /// Get screen reader label for a widget.
+    const char* GetAriaLabel(int idx);
+
+    /// Set global font scale multiplier.
+    void SetFontScale(float scale);
+
+    /// Get global font scale multiplier.
+    float GetFontScale();
 
 private:
-    void CollectFocusable(const std::vector<Widget*>& list) {
-        for (Widget* w : list) {
-            if (w->focusable && w->visible && w->enabled) {
-                focusList_.push_back(w);
-            }
-            // Also collect from children
-            if (!w->children.empty()) {
-                CollectFocusable(w->children);
-            }
-        }
-    }
+    ui::UIContext ctx_;
+    ui::TweenPool tweenPool_{256};
+    Localization localization_;
+    ui::UIDrawList drawList_;
+    ui::UIGLRenderer glRenderer_;
+    ui::UISWRenderer swRenderer_;
+    font::Font font_;
+    uint32_t fontAtlasTexture_ = 0;
+    bool gpuInitialized_ = false;
+    std::chrono::steady_clock::time_point lastFrameTime_ = std::chrono::steady_clock::now();
 
-    void UpdateFocusState() {
-        for (Widget* w : focusList_) {
-            w->focused = false;
-        }
-        if (focusIndex_ >= 0 && focusIndex_ < static_cast<int>(focusList_.size())) {
-            focusList_[focusIndex_]->focused = true;
-        }
-    }
+    /// Apply tween value to the target widget property.
+    static void ApplyTween(int widgetIdx, ui::TweenProperty prop,
+                           float value, void* userData);
 
-    Widget* HitTestRecursive(Widget* w, float px, float py) {
-        if (!w || !w->visible) return nullptr;
-        // Check children first (depth-first, reverse for topmost)
-        for (int i = static_cast<int>(w->children.size()) - 1; i >= 0; i--) {
-            Widget* hit = HitTestRecursive(w->children[i], px, py);
-            if (hit) return hit;
-        }
-        if (w->Contains(px, py)) return w;
-        return nullptr;
-    }
+    /// Pre-layout pass: auto-size text widgets that haven't been given explicit sizes.
+    void AutoSizeTextWidgets();
 
-public:
-    // === Reflection ===
     KL_DECLARE_FIELDS(UI)
     KL_DECLARE_METHODS(UI)
     KL_DECLARE_DESCRIBE(UI)
+
 };
 
 } // namespace koilo

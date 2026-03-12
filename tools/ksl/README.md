@@ -6,8 +6,8 @@ KoiloEngine Shader Language toolchain.
 
 | Script | Purpose |
 |--------|---------|
-| `ksl_codegen.py` | Transpile `.ksl.hpp` → `.glsl` (GPU rendering) |
-| `ksl_compiler.py` | Compile `.ksl.hpp` → `.kso` ELF (CPU rasterizer) |
+| `ksl_codegen.py` | Transpile `.ksl.hpp` -> `.glsl` (GPU rendering) |
+| `ksl_compiler.py` | Compile `.ksl.hpp` -> `.kso` ELF (CPU rasterizer) |
 
 Both are called automatically by CMake during the build (`engine/src/systems/display/CMakeLists.txt`).
 

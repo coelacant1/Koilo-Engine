@@ -4,6 +4,7 @@
 #include <cmath>
 #include "../registry/reflect_macros.hpp"
 
+
 namespace ksl {
 
 struct vec2;
@@ -169,3 +170,4 @@ struct vec4 {
 inline vec4 operator*(float s, const vec4& v) { return {s * v.x, s * v.y, s * v.z, s * v.w}; }
 
 } // namespace ksl
+

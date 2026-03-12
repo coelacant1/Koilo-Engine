@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 
+
 namespace ksl {
 
 // --- Texture Sampling (opaque on CPU, maps to sampler2D on GPU) ---
@@ -141,3 +142,4 @@ using KSLInfoFn       = const KSLShaderInfo* (*)();
 using KSLParamsFn     = const ParamDecl* (*)(int*);
 
 } // namespace ksl
+

@@ -20,9 +20,17 @@ from consoleoutput import print_progress, print_status, print_section, print_war
 repo = Path(__file__).resolve().parents[1]
 
 def find_candidates(root: Path):
+    # Directories to exclude from reflection generation (not included in umbrella header)
+    EXCLUDED_PREFIXES = ['systems/ui/', 'systems/font/', 'platform/']
+
     pattern = re.compile(r'KL_(?:BEGIN|DECLARE)_DESCRIBE\s*\(\s*([A-Za-z_][A-Za-z0-9_:]*)\s*\)')
     candidates = []
     for p in root.rglob('*.hpp'):
+        # Skip excluded directories
+        rel = p.relative_to(root).as_posix()
+        if any(rel.startswith(prefix) for prefix in EXCLUDED_PREFIXES):
+            continue
+
         try:
             txt = p.read_text(encoding='utf-8')
         except Exception:

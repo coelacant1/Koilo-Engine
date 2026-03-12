@@ -3,12 +3,12 @@
  * @file audiobackend.cpp
  * @brief Audio backend implementation - device init, PCM mixing, 3D audio.
  *
- * Uses SDL2 audio when available (KL_AUDIO_SDL2), otherwise stubs out
+ * Uses SDL3 audio when available (KL_AUDIO_SDL3), otherwise stubs out
  * device init so the engine builds headless without any audio library.
  */
 
-#ifdef KL_AUDIO_SDL2
-#include <SDL2/SDL.h>
+#ifdef KL_AUDIO_SDL3
+#include <SDL3/SDL.h>
 #endif
 
 #include <koilo/systems/audio/audiobackend.hpp>
@@ -17,14 +17,31 @@
 
 namespace koilo {
 
-#ifdef KL_AUDIO_SDL2
-// SDL2 audio callback - fills output buffer with mixed PCM
-static void SDLAudioCallback(void* userdata, Uint8* stream, int len) {
+#ifdef KL_AUDIO_SDL3
+// SDL3 audio stream callback - fills output buffer with mixed PCM
+static void SDLCALL SDLAudioStreamCallback(void* userdata, SDL_AudioStream* stream,
+                                           int additional_amount, int /*total_amount*/) {
+    if (additional_amount <= 0) return;
+
     auto* self = static_cast<AudioBackend*>(userdata);
     auto channels = static_cast<unsigned int>(self->GetChannels());
-    unsigned int frameCount = static_cast<unsigned int>(len) / (channels * sizeof(float));
-    std::memset(stream, 0, static_cast<size_t>(len));
-    self->MixFrames(reinterpret_cast<float*>(stream), frameCount);
+    unsigned int frameCount = static_cast<unsigned int>(additional_amount) / (channels * sizeof(float));
+
+    // Use a stack buffer for small amounts, heap for large
+    constexpr int kStackLimit = 16384;
+    float stackBuf[kStackLimit / sizeof(float)];
+    float* buf = stackBuf;
+    bool heapAlloc = false;
+    if (additional_amount > kStackLimit) {
+        buf = new float[additional_amount / sizeof(float)];
+        heapAlloc = true;
+    }
+
+    std::memset(buf, 0, static_cast<size_t>(additional_amount));
+    self->MixFrames(buf, frameCount);
+    SDL_PutAudioStreamData(stream, buf, additional_amount);
+
+    if (heapAlloc) delete[] buf;
 }
 #endif
 
@@ -40,29 +57,27 @@ bool AudioBackend::Initialize(int sampleRate, int channels) {
     sampleRate_ = sampleRate;
     channels_ = channels;
 
-#ifdef KL_AUDIO_SDL2
-    if (SDL_WasInit(SDL_INIT_AUDIO) == 0) {
-        if (SDL_InitSubSystem(SDL_INIT_AUDIO) < 0) {
+#ifdef KL_AUDIO_SDL3
+    if (!SDL_WasInit(SDL_INIT_AUDIO)) {
+        if (!SDL_InitSubSystem(SDL_INIT_AUDIO)) {
             return false;
         }
     }
 
-    SDL_AudioSpec desired{};
-    desired.freq     = sampleRate;
-    desired.format   = AUDIO_F32SYS;
-    desired.channels = static_cast<Uint8>(channels);
-    desired.samples  = 1024;
-    desired.callback = SDLAudioCallback;
-    desired.userdata = this;
+    SDL_AudioSpec spec{};
+    spec.format   = SDL_AUDIO_F32;
+    spec.channels = channels;
+    spec.freq     = sampleRate;
 
-    SDL_AudioSpec obtained{};
-    SDL_AudioDeviceID devId = SDL_OpenAudioDevice(nullptr, 0, &desired, &obtained, 0);
-    if (devId == 0) {
+    SDL_AudioStream* stream = SDL_OpenAudioDeviceStream(
+        SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec,
+        SDLAudioStreamCallback, this);
+    if (!stream) {
         return false;
     }
 
-    deviceId_ = static_cast<unsigned int>(devId);
-    SDL_PauseAudioDevice(devId, 0); // start playback
+    audioStream_ = stream;
+    SDL_ResumeAudioStreamDevice(stream);
 #endif
 
     initialized_ = true;
@@ -72,12 +87,12 @@ bool AudioBackend::Initialize(int sampleRate, int channels) {
 void AudioBackend::Shutdown() {
     if (!initialized_) return;
 
-#ifdef KL_AUDIO_SDL2
-    if (deviceId_ != 0) {
-        auto devId = static_cast<SDL_AudioDeviceID>(deviceId_);
-        SDL_PauseAudioDevice(devId, 1);
-        SDL_CloseAudioDevice(devId);
-        deviceId_ = 0;
+#ifdef KL_AUDIO_SDL3
+    if (audioStream_) {
+        auto* stream = static_cast<SDL_AudioStream*>(audioStream_);
+        SDL_PauseAudioStreamDevice(stream);
+        SDL_DestroyAudioStream(stream);
+        audioStream_ = nullptr;
     }
 #endif
 

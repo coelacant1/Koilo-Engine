@@ -64,6 +64,17 @@ KNOWN_EXCLUSIONS = {
     "quadtree.hpp",
     "koilo_shm.hpp",
     "scenedata.hpp",
+    # Render / KSL internals (virtual or template by design)
+    "irenderbackend.hpp",
+    "opengl_render_backend.hpp",
+    "ksl_elf_loader.hpp",
+    "ksl_shader.hpp",
+    "module_api.hpp",
+    "animationtrack.hpp",
+    # UI internals
+    "undo_stack.hpp",
+    # Scripting internals (inner struct with nullptr member init breaks regex parser)
+    "bytecode_vm.hpp",
 }
 
 

@@ -18,7 +18,6 @@
 #include <koilo/systems/scene/sprite.hpp>
 #include <koilo/systems/physics/rigidbody.hpp>
 #include <koilo/systems/physics/physicsworld.hpp>
-#include <koilo/systems/ui/widget.hpp>
 #include <koilo/systems/ui/ui.hpp>
 #include <koilo/systems/physics/capsulecollider.hpp>
 #include <koilo/systems/physics/spherecollider.hpp>

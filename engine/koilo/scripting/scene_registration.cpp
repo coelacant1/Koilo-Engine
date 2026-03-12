@@ -73,8 +73,12 @@ void KoiloScriptEngine::RegisterDefaultModules() {
         CallFunction("OnCollisionExit");
     });
 
-    // UI (always on)
+    // UI (always on) - ensure reflection is registered before creating globals
+    (void)UI::Describe();
     ui_ = new UI();
+    ui_->Context().SetScriptCallback([this](const char* fnName) {
+        CallFunction(std::string(fnName));
+    });
     RegisterGlobal("ui", "UI", ui_);
 
     // Particles

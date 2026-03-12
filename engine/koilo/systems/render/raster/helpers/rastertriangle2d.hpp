@@ -39,7 +39,7 @@ struct RasterTriangle2D {
     // --- Material (kept for reflection/scripting) ---
     IMaterial* material;
 
-    // --- Direct shade pointers (hot-path, skip virtual dispatch) ---
+    // --- Direct shade pointers (hot-path, skip vtable dispatch) ---
     ksl::KSLShadeFn shadeFn = nullptr;
     void* shaderInstance = nullptr;
     const ksl::FrameContext* frameCtx = nullptr;

@@ -55,6 +55,7 @@
 #include "core/platform/testrandom.hpp"
 #include "core/platform/testreflection.hpp"
 #include "core/platform/testustring.hpp"
+#include "core/platform/testfilewatcher.hpp"
 #include "core/signal/filter/testderivativefilter.hpp"
 #include "core/signal/filter/testfftfilter.hpp"
 #include "core/signal/filter/testkalmanfilter.hpp"
@@ -153,7 +154,7 @@
 #endif
 #include "systems/display/backends/embedded/testhub75backend.hpp"
 #include "systems/display/backends/gpu/testopenglbackend.hpp"
-#include "systems/display/backends/gpu/testsdl2backend.hpp"
+#include "systems/display/backends/gpu/testsdl3backend.hpp"
 #include "systems/display/backends/testnullbackend.hpp"
 #include "systems/display/testdisplayinfo.hpp"
 #include "systems/display/testdisplaymanager.hpp"
@@ -246,8 +247,17 @@
 #include "systems/scene/testscenenode.hpp"
 #include "systems/scene/testskindata.hpp"
 #include "systems/scene/testsprite.hpp"
+#include "systems/font/testfont.hpp"
 #include "systems/ui/testui.hpp"
 #include "systems/ui/testwidget.hpp"
+#include "systems/ui/testautoinspector.hpp"
+#include "systems/ui/testruntimecontext.hpp"
+#include "systems/ui/testundostack.hpp"
+#include "systems/ui/testselection.hpp"
+#include "systems/ui/testlogbuffer.hpp"
+#include "systems/ui/testeditorapp.hpp"
+#include "systems/ui/testanimation.hpp"
+#include "systems/ui/testlocalization.hpp"
 #include "systems/world/testcomponentserializerentry.hpp"
 #include "systems/world/testlevel.hpp"
 #include "systems/world/testlevelserializer.hpp"
@@ -262,6 +272,19 @@ void tearDown() {}
 
 int main(int /*argc*/, char ** /*argv*/) {
     UNITY_BEGIN();
+
+    // Run UI/font tests first (before display tests that segfault)
+    RunFontTests();
+    TestUI::RunAllTests();
+    TestWidget::RunAllTests();
+    TestAutoInspector::RunAllTests();
+    TestRuntimeContext::RunAllTests();
+    TestUndoStack::RunAllTests();
+    TestSelection::RunAllTests();
+    TestLogBuffer::RunAllTests();
+    TestEditorApp::RunAllTests();
+    TestAnimation::RunAllTests();
+    TestLocalization::RunAllTests();
 
     TestCharacters::RunAllTests();
     TestImage::RunAllTests();
@@ -318,6 +341,7 @@ int main(int /*argc*/, char ** /*argv*/) {
     TestRandom::RunAllTests();
     TestReflection::RunAllTests();
     TestUString::RunAllTests();
+    TestFileWatcher::RunAllTests();
     TestDerivativeFilter::RunAllTests();
     TestFFTFilter::RunAllTests();
     TestKalmanFilter::RunAllTests();
@@ -416,7 +440,7 @@ int main(int /*argc*/, char ** /*argv*/) {
 #endif
     TestHUB75Backend::RunAllTests();
     TestOpenGLBackend::RunAllTests();
-    TestSDL2Backend::RunAllTests();
+    TestSDL3Backend::RunAllTests();
     TestNullBackend::RunAllTests();
     TestDisplayInfo::RunAllTests();
     TestDisplayManager::RunAllTests();
@@ -509,8 +533,6 @@ int main(int /*argc*/, char ** /*argv*/) {
     TestSceneNode::RunAllTests();
     TestSkinData::RunAllTests();
     TestSprite::RunAllTests();
-    TestUI::RunAllTests();
-    TestWidget::RunAllTests();
     TestComponentSerializerEntry::RunAllTests();
     TestLevel::RunAllTests();
     TestLevelSerializer::RunAllTests();

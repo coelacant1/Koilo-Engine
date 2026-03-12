@@ -69,7 +69,7 @@ public:
      * @param value The float to convert.
      * @return A \c koilo::UString without unnecessary trailing zeros.
      */
-    static koilo::UString DoubleToCleanString(float value);
+    static UString DoubleToCleanString(float value);
 
     /**
      * @brief Checks if a floating-point value is NaN (Not a Number).

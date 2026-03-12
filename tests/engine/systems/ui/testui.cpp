@@ -1,138 +1,46 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file testui.cpp
- * @brief Implementation of UI unit tests.
+ * @brief Implementation of UI wrapper unit tests.
  */
 
 #include "testui.hpp"
 
 using namespace koilo;
 
-// ========== Constructor Tests ==========
-
 void TestUI::TestDefaultConstructor() {
-    // TODO: Implement test for default constructor
-    UI obj;
-    TEST_IGNORE_MESSAGE("Stub");
-}
-
-void TestUI::TestParameterizedConstructor() {
-    // TODO: Implement test for parameterized constructor
-    TEST_IGNORE_MESSAGE("Stub");
-}
-
-// ========== Method Tests ==========
-
-void TestUI::TestCreateWidget() {
-    // TODO: Implement test for CreateWidget()
-    UI obj;
-    TEST_IGNORE_MESSAGE("Stub");
-}
-
-void TestUI::TestCreateLabel() {
-    // TODO: Implement test for CreateLabel()
-    UI obj;
-    TEST_IGNORE_MESSAGE("Stub");
-}
-
-void TestUI::TestCreatePanel() {
-    // TODO: Implement test for CreatePanel()
-    UI obj;
-    TEST_IGNORE_MESSAGE("Stub");
-}
-
-void TestUI::TestCreateButton() {
-    // TODO: Implement test for CreateButton()
-    UI obj;
-    TEST_IGNORE_MESSAGE("Stub");
-}
-
-void TestUI::TestGetWidgetCount() {
-    // TODO: Implement test for GetWidgetCount()
-    UI obj;
-    TEST_IGNORE_MESSAGE("Stub");
-}
-
-void TestUI::TestGetWidget() {
-    // TODO: Implement test for GetWidget()
-    UI obj;
-    TEST_IGNORE_MESSAGE("Stub");
-}
-
-void TestUI::TestRebuildFocusList() {
-    // TODO: Implement test for RebuildFocusList()
-    UI obj;
-    TEST_IGNORE_MESSAGE("Stub");
-}
-
-void TestUI::TestNextFocus() {
-    // TODO: Implement test for NextFocus()
-    UI obj;
-    TEST_IGNORE_MESSAGE("Stub");
-}
-
-void TestUI::TestPrevFocus() {
-    // TODO: Implement test for PrevFocus()
-    UI obj;
-    TEST_IGNORE_MESSAGE("Stub");
-}
-
-void TestUI::TestActivateFocus() {
-    // TODO: Implement test for ActivateFocus()
-    UI obj;
-    TEST_IGNORE_MESSAGE("Stub");
-}
-
-void TestUI::TestGetFocusedWidget() {
-    // TODO: Implement test for GetFocusedWidget()
-    UI obj;
-    TEST_IGNORE_MESSAGE("Stub");
+    UI ui;
+    // Root widget should exist
+    TEST_ASSERT_GREATER_OR_EQUAL(0, ui.Context().Root());
 }
 
 void TestUI::TestClear() {
-    // TODO: Implement test for Clear()
-    UI obj;
-    TEST_IGNORE_MESSAGE("Stub");
+    UI ui;
+    int btn = ui.Context().CreateButton("btn", "Test");
+    ui.Context().SetParent(btn, ui.Context().Root());
+    ui.Clear();
+    // After clear, root should still exist but no user widgets
+    TEST_ASSERT_GREATER_OR_EQUAL(0, ui.Context().Root());
 }
 
-// ========== Edge Cases ==========
-
-void TestUI::TestEdgeCases() {
-    // TODO: Test edge cases (null, boundaries, extreme values)
-    TEST_IGNORE_MESSAGE("Stub");
+void TestUI::TestRenderToBuffer() {
+    UI ui;
+    // RenderToBuffer should not crash with nullptr
+    ui.RenderToBuffer(nullptr, 800, 600);
+    // Should update viewport
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, 800.0f, ui.Context().ViewportWidth());
 }
 
-// ========== Test Runner ==========
-
-void TestUI::TestGetFocusCount() {
-    // TODO: Implement test for GetFocusCount()
-    UI obj;
-    TEST_ASSERT_TRUE(false);  // Not implemented
-}
-
-void TestUI::TestHitTest() {
-    // TODO: Implement test for HitTest()
-    UI obj;
-    TEST_ASSERT_TRUE(false);  // Not implemented
+void TestUI::TestContextAccess() {
+    UI ui;
+    int lbl = ui.Context().CreateLabel("lbl", "Hello");
+    TEST_ASSERT_GREATER_OR_EQUAL(0, lbl);
+    TEST_ASSERT_EQUAL_STRING("Hello", ui.Context().GetText(lbl));
 }
 
 void TestUI::RunAllTests() {
-    RUN_TEST(TestDefaultConstructor);
-    RUN_TEST(TestParameterizedConstructor);
-    RUN_TEST(TestCreateWidget);
-    RUN_TEST(TestCreateLabel);
-    RUN_TEST(TestCreatePanel);
-    RUN_TEST(TestCreateButton);
-    RUN_TEST(TestGetWidgetCount);
-    RUN_TEST(TestGetWidget);
-    RUN_TEST(TestRebuildFocusList);
-    RUN_TEST(TestNextFocus);
-    RUN_TEST(TestPrevFocus);
-    RUN_TEST(TestActivateFocus);
-    RUN_TEST(TestGetFocusedWidget);
-
-    RUN_TEST(TestClear);
-    RUN_TEST(TestEdgeCases);
-    RUN_TEST(TestGetFocusCount);
-    RUN_TEST(TestHitTest);
+    RUN_TEST(TestUI::TestDefaultConstructor);
+    RUN_TEST(TestUI::TestClear);
+    RUN_TEST(TestUI::TestRenderToBuffer);
+    RUN_TEST(TestUI::TestContextAccess);
 }

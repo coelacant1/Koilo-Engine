@@ -51,7 +51,7 @@ public:
         , g(static_cast<uint8_t>(Mathematics::Constrain(vec.Y, 0.0f, 1.0f) * 255.0f))
         , b(static_cast<uint8_t>(Mathematics::Constrain(vec.Z, 0.0f, 1.0f) * 255.0f)) {}
 
-    // Format conversion (previously virtual, now inline)
+    // Format conversion (inline)
     void ToRGB888(uint8_t& outR, uint8_t& outG, uint8_t& outB) const {
         outR = r; outG = g; outB = b;
     }

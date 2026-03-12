@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.3.1] - 2026-3-12
+UI system, rendering fixes, and naming cleanup.
+
+### Added
+- **UI system** (`engine/koilo/systems/ui/`)
+  - KML (Koilo Markup Language) and KSS (Koilo Style Sheet) for declarative UI
+  - Custom TTF renderer for UI text; upgrade from characters used in previous Canvas2D examples
+  - 23 widget types: panel, button, label, slider, checkbox, dropdown, treenode, splitpane, floatingpanel, and others
+  - GPU-accelerated and software rendering paths
+  - CSS-like selectors, pseudo-classes, variables, media queries, and transitions
+  - Hierarchy tree view with expand/collapse and connector lines (not finished)
+  - Floating panel system with minimize, close, and bottom tray
+  - UI demo example (`examples/ui_demo/`)
+  - Reference documentation (`docs/ui/kml_kss.md`)
+
+### Changed
+- Software render path now swaps immediately after present for reliable display on Wayland
+
 ## [0.3.0] - 2026-3-8
 Major architectural restructure: PTX -> Koilo rename, unified engine layout, KoiloScript Language shader system, and new platform backends.
 

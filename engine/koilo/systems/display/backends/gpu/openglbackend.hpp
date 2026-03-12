@@ -13,15 +13,16 @@
 #include <string>
 #include <koilo/registry/reflect_macros.hpp>
 
-// Forward declarations to avoid SDL2 header dependency
+// Forward declarations to avoid SDL3 header dependency
 struct SDL_Window;
-typedef void* SDL_GLContext;
+struct SDL_GLContextState;
+typedef SDL_GLContextState* SDL_GLContext;
 
 namespace koilo {
 
 /**
  * @class OpenGLBackend
- * @brief GPU-accelerated display backend using OpenGL and SDL2.
+ * @brief GPU-accelerated display backend using OpenGL and SDL3.
  *
  * This backend creates a native window and renders frames using OpenGL.
  * Features:

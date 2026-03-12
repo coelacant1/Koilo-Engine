@@ -86,6 +86,9 @@ class NamespaceChecker:
             # Check for namespace start
             ns_match = self.namespace_pattern.match(lines[i])
             if ns_match:
+                # Skip single-line namespace blocks (e.g. namespace std { class X; })
+                if '}' in lines[i]:
+                    continue
                 namespace_stack.append(ns_match.group(1))
             
             # Check for namespace end
@@ -126,7 +129,7 @@ class NamespaceChecker:
                 # Check if in namespace
                 in_namespace, ns_name = self.is_in_namespace(lines, line_num - 1)
                 
-                if not in_namespace or not ns_name.startswith('koilo'):
+                if not in_namespace or not (ns_name.startswith('koilo') or ns_name.startswith('ksl')):
                     # Get context (3 lines before and after)
                     start_line = max(0, line_num - 3)
                     end_line = min(len(lines), line_num + 3)

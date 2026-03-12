@@ -210,7 +210,7 @@ public:
      * @brief Converts the vector to a string representation.
      * @return A `String` in the format "(X, Y)".
      */
-    koilo::UString ToString() const;
+    UString ToString() const;
 
     // --- Static function declarations ---
 

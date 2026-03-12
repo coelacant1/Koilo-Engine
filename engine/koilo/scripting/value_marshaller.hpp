@@ -179,6 +179,13 @@ inline Value MarshalReturnValue(void* result, const std::type_info* retType, boo
         return v;
     }
 
+    // Handle const char* returns (pointer to string literal or internal buffer)
+    if (*retType == typeid(const char*)) {
+        auto cstr = static_cast<const char*>(result);
+        Value v(cstr ? std::string(cstr) : std::string());
+        return v;
+    }
+
     switch (KindForType(*retType)) {
         case FieldKind::Float: {
             Value v(static_cast<double>(*static_cast<float*>(result)));

@@ -72,7 +72,7 @@ fn Update(dt) {
    a. Register `display` as implicit global (reflected DisplayConfig object)
    b. Register all `fn` declarations as callable functions
    c. Execute top-level init statements (var decls, display config, constructors)
-   d. Read display config → create Camera, PixelGroup, Scene
+   d. Read display config -> create Camera, PixelGroup, Scene
    e. Register `scene` as implicit global
    f. Call `fn Setup()` if defined (loads assets, composes scene)
 3. `ExecuteUpdate(dt)` - Called every frame; calls `fn Update(dt)` if defined
@@ -505,7 +505,7 @@ Value {
 - `NONE` is a distinct type (not zero, not empty string)
 - Arrays support mixed types: `[1, "hello", true, [2, 3]]`
 - Tables support nested values: `{ pos: { x: 1, y: 2 }, name: "player" }`
-- String + number → string concatenation
+- String + number -> string concatenation
 - No implicit numeric coercion between types
 
 ---
@@ -873,10 +873,10 @@ arg_list    = expression ( "," expression )* ;
 **Note on semicolons:** Simple statements (var declarations, assignments, return, break, continue, emit, yield, expression statements) require a terminating `;`. Block statements (if, while, for, fn, class) do NOT require a semicolon after the closing `}`.
 
 **Note on postfix chaining:** The `postfix` rule enables C++-like expression chains. Each postfix operation (`.member`, `(args)`, `[index]`) is applied left-to-right. Example: `face.GetMesh().SetMaterial(mat);` parses as:
-1. `face` → identifier (reflected object lookup)
-2. `.GetMesh` → member access
-3. `()` → method call (returns Mesh* object)
-4. `.SetMaterial` → member access on returned Mesh
-5. `(mat)` → method call with material argument
+1. `face` -> identifier (reflected object lookup)
+2. `.GetMesh` -> member access
+3. `()` -> method call (returns Mesh* object)
+4. `.SetMaterial` -> member access on returned Mesh
+5. `(mat)` -> method call with material argument
 
 **Note on constructor expressions:** `ClassName(args)` is syntactically a function call. At evaluation time, if the identifier matches a registered class in the reflection registry, it invokes the matching constructor.

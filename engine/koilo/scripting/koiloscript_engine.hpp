@@ -170,6 +170,13 @@ public:
     /** @brief GPU-only render: draws to the backend FBO without ReadPixels.
      *  Use with OpenGLRenderBackend::BlitToScreen() for zero-copy present. */
     void RenderFrameGPU();
+
+    /** @brief Render UI overlay via GPU. Call after scene render, before swap.
+     *  Backend-agnostic: auto-initializes GPU renderer on first call. */
+    void RenderUIOverlay(int viewportW, int viewportH, float dt);
+
+    /** @brief Update UI animations (software path, called separately). */
+    void UpdateUIAnimations(float dt);
     
     /**
      * @brief Get loaded assets (legacy - returns empty in code-first mode)
@@ -407,9 +414,6 @@ public:
     ScriptContext& GetContext() { return ctx_; }
     const ScriptContext& GetContext() const { return ctx_; }
     
-    /**
-     * @brief Load and attach a script to a scene node (creates a new context)
-     * @param node The SceneNode to bind the script to
     /**
      * @brief Get number of active script contexts (1 = single-file mode)
      */

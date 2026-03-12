@@ -7,6 +7,7 @@
 
 #include <cstdint>
 
+
 namespace ksl {
 namespace elf {
 
@@ -302,9 +303,9 @@ struct Elf64_Ehdr {
         KL_FIELD(Elf64_Ehdr, e_type, "E type", 0, 65535),
         KL_FIELD(Elf64_Ehdr, e_machine, "E machine", 0, 65535),
         KL_FIELD(Elf64_Ehdr, e_version, "E version", 0, 4294967295),
-        KL_FIELD(Elf64_Ehdr, e_entry, "E entry", 0, 18446744073709551615),
-        KL_FIELD(Elf64_Ehdr, e_phoff, "E phoff", 0, 18446744073709551615),
-        KL_FIELD(Elf64_Ehdr, e_shoff, "E shoff", 0, 18446744073709551615),
+        KL_FIELD(Elf64_Ehdr, e_entry, "E entry", 0, 18446744073709551615ULL),
+        KL_FIELD(Elf64_Ehdr, e_phoff, "E phoff", 0, 18446744073709551615ULL),
+        KL_FIELD(Elf64_Ehdr, e_shoff, "E shoff", 0, 18446744073709551615ULL),
         KL_FIELD(Elf64_Ehdr, e_flags, "E flags", 0, 4294967295),
         KL_FIELD(Elf64_Ehdr, e_ehsize, "E ehsize", 0, 65535),
         KL_FIELD(Elf64_Ehdr, e_phentsize, "E phentsize", 0, 65535),
@@ -337,12 +338,12 @@ struct Elf64_Phdr {
     KL_BEGIN_FIELDS(Elf64_Phdr)
         KL_FIELD(Elf64_Phdr, p_type, "P type", 0, 4294967295),
         KL_FIELD(Elf64_Phdr, p_flags, "P flags", 0, 4294967295),
-        KL_FIELD(Elf64_Phdr, p_offset, "P offset", 0, 18446744073709551615),
-        KL_FIELD(Elf64_Phdr, p_vaddr, "P vaddr", 0, 18446744073709551615),
-        KL_FIELD(Elf64_Phdr, p_paddr, "P paddr", 0, 18446744073709551615),
-        KL_FIELD(Elf64_Phdr, p_filesz, "P filesz", 0, 18446744073709551615),
-        KL_FIELD(Elf64_Phdr, p_memsz, "P memsz", 0, 18446744073709551615),
-        KL_FIELD(Elf64_Phdr, p_align, "P align", 0, 18446744073709551615)
+        KL_FIELD(Elf64_Phdr, p_offset, "P offset", 0, 18446744073709551615ULL),
+        KL_FIELD(Elf64_Phdr, p_vaddr, "P vaddr", 0, 18446744073709551615ULL),
+        KL_FIELD(Elf64_Phdr, p_paddr, "P paddr", 0, 18446744073709551615ULL),
+        KL_FIELD(Elf64_Phdr, p_filesz, "P filesz", 0, 18446744073709551615ULL),
+        KL_FIELD(Elf64_Phdr, p_memsz, "P memsz", 0, 18446744073709551615ULL),
+        KL_FIELD(Elf64_Phdr, p_align, "P align", 0, 18446744073709551615ULL)
     KL_END_FIELDS
 
     KL_BEGIN_METHODS(Elf64_Phdr)
@@ -370,14 +371,14 @@ struct Elf64_Shdr {
     KL_BEGIN_FIELDS(Elf64_Shdr)
         KL_FIELD(Elf64_Shdr, sh_name, "Sh name", 0, 4294967295),
         KL_FIELD(Elf64_Shdr, sh_type, "Sh type", 0, 4294967295),
-        KL_FIELD(Elf64_Shdr, sh_flags, "Sh flags", 0, 18446744073709551615),
-        KL_FIELD(Elf64_Shdr, sh_addr, "Sh addr", 0, 18446744073709551615),
-        KL_FIELD(Elf64_Shdr, sh_offset, "Sh offset", 0, 18446744073709551615),
-        KL_FIELD(Elf64_Shdr, sh_size, "Sh size", 0, 18446744073709551615),
+        KL_FIELD(Elf64_Shdr, sh_flags, "Sh flags", 0, 18446744073709551615ULL),
+        KL_FIELD(Elf64_Shdr, sh_addr, "Sh addr", 0, 18446744073709551615ULL),
+        KL_FIELD(Elf64_Shdr, sh_offset, "Sh offset", 0, 18446744073709551615ULL),
+        KL_FIELD(Elf64_Shdr, sh_size, "Sh size", 0, 18446744073709551615ULL),
         KL_FIELD(Elf64_Shdr, sh_link, "Sh link", 0, 4294967295),
         KL_FIELD(Elf64_Shdr, sh_info, "Sh info", 0, 4294967295),
-        KL_FIELD(Elf64_Shdr, sh_addralign, "Sh addralign", 0, 18446744073709551615),
-        KL_FIELD(Elf64_Shdr, sh_entsize, "Sh entsize", 0, 18446744073709551615)
+        KL_FIELD(Elf64_Shdr, sh_addralign, "Sh addralign", 0, 18446744073709551615ULL),
+        KL_FIELD(Elf64_Shdr, sh_entsize, "Sh entsize", 0, 18446744073709551615ULL)
     KL_END_FIELDS
 
     KL_BEGIN_METHODS(Elf64_Shdr)
@@ -403,8 +404,8 @@ struct Elf64_Sym {
         KL_FIELD(Elf64_Sym, st_info, "St info", 0, 255),
         KL_FIELD(Elf64_Sym, st_other, "St other", 0, 255),
         KL_FIELD(Elf64_Sym, st_shndx, "St shndx", 0, 65535),
-        KL_FIELD(Elf64_Sym, st_value, "St value", 0, 18446744073709551615),
-        KL_FIELD(Elf64_Sym, st_size, "St size", 0, 18446744073709551615)
+        KL_FIELD(Elf64_Sym, st_value, "St value", 0, 18446744073709551615ULL),
+        KL_FIELD(Elf64_Sym, st_size, "St size", 0, 18446744073709551615ULL)
     KL_END_FIELDS
 
     KL_BEGIN_METHODS(Elf64_Sym)
@@ -423,9 +424,9 @@ struct Elf64_Rela {
     int64_t  r_addend;
 
     KL_BEGIN_FIELDS(Elf64_Rela)
-        KL_FIELD(Elf64_Rela, r_offset, "R offset", 0, 18446744073709551615),
-        KL_FIELD(Elf64_Rela, r_info, "R info", 0, 18446744073709551615),
-        KL_FIELD(Elf64_Rela, r_addend, "R addend", -9223372036854775808, 9223372036854775807)
+        KL_FIELD(Elf64_Rela, r_offset, "R offset", 0, 18446744073709551615ULL),
+        KL_FIELD(Elf64_Rela, r_info, "R info", 0, 18446744073709551615ULL),
+        KL_FIELD(Elf64_Rela, r_addend, "R addend", -9223372036854775807LL - 1, 9223372036854775807LL)
     KL_END_FIELDS
 
     KL_BEGIN_METHODS(Elf64_Rela)
@@ -443,8 +444,8 @@ struct Elf64_Dyn {
     uint64_t d_val;
 
     KL_BEGIN_FIELDS(Elf64_Dyn)
-        KL_FIELD(Elf64_Dyn, d_tag, "D tag", -9223372036854775808, 9223372036854775807),
-        KL_FIELD(Elf64_Dyn, d_val, "D val", 0, 18446744073709551615)
+        KL_FIELD(Elf64_Dyn, d_tag, "D tag", -9223372036854775807LL - 1, 9223372036854775807LL),
+        KL_FIELD(Elf64_Dyn, d_val, "D val", 0, 18446744073709551615ULL)
     KL_END_FIELDS
 
     KL_BEGIN_METHODS(Elf64_Dyn)
@@ -471,3 +472,4 @@ inline uint8_t  ELF64_ST_TYPE(uint8_t info)  { return info & 0xf; }
 
 } // namespace elf
 } // namespace ksl
+
