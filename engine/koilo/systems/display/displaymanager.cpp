@@ -253,7 +253,7 @@ bool koilo::DisplayManager::BuildFramebuffer(DisplayEntry& entry) {
     bool isRectangular = rectPixelGroup && rectPixelGroup->IsRectangular();
     
     if (isRectangular) {
-        // === 2D Framebuffer Mode (for SDL2, OpenGL, etc.) ===
+        // === 2D Framebuffer Mode (for SDL3, OpenGL, etc.) ===
         // PixelGroup uses: rowCount = WIDTH, colCount = HEIGHT
         uint32_t width = rectPixelGroup->GetRowCount();     // Width (pixels per row)
         uint32_t height = rectPixelGroup->GetColumnCount(); // Height (number of rows)
@@ -262,7 +262,7 @@ bool koilo::DisplayManager::BuildFramebuffer(DisplayEntry& entry) {
             // Fall back to 1D mode if dimensions are invalid
             isRectangular = false;
         } else {
-            // Create 2D framebuffer with RGBA format (SDL2/GPU prefer 4-byte aligned pixels)
+            // Create 2D framebuffer with RGBA format (SDL3/GPU prefer 4-byte aligned pixels)
             entry.pixelBuffer.resize(static_cast<std::size_t>(pixelCount) * 4);
             
             // Debug output
@@ -286,7 +286,7 @@ bool koilo::DisplayManager::BuildFramebuffer(DisplayEntry& entry) {
             entry.framebuffer.data = entry.pixelBuffer.data();
             entry.framebuffer.width = width;
             entry.framebuffer.height = height;
-            entry.framebuffer.format = PixelFormat::RGBA8888;  // Use RGBA for better SDL2 compatibility
+            entry.framebuffer.format = PixelFormat::RGBA8888;  // Use RGBA for better SDL3 compatibility
             entry.framebuffer.stride = width * 4;
         }
     }

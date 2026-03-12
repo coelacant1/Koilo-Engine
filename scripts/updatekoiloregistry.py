@@ -764,7 +764,8 @@ def parse_public_api_from_body(body: str, cls_name: str) -> Tuple[List[FieldInfo
                         ))
                 continue
 
-            m2 = re.search(r"([A-Za-z_]\w*)\s*$", stmt)
+            stmt_no_default = re.sub(r'\s*=\s*.*$', '', stmt)
+            m2 = re.search(r"([A-Za-z_]\w*)\s*$", stmt_no_default)
             if not m2:
                 continue
             fname = m2.group(1)
@@ -1132,7 +1133,7 @@ def remove_reflect_include(src: str) -> Tuple[str, bool]:
     return removed, removed != src
 
 EXCLUDED_SUBTREES = {"registry", "platform"}
-EXCLUDED_FILES = {"reflection_bridge.hpp"}
+EXCLUDED_FILES = {"reflection_bridge.hpp", "bytecode_vm.hpp"}
 
 def main():
     ap = argparse.ArgumentParser(description="Generate/repair Koilo reflection blocks from headers")

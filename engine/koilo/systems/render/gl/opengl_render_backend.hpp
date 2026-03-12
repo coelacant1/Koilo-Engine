@@ -141,6 +141,10 @@ private:
     int overlayTexW_, overlayTexH_;
     std::vector<uint8_t> overlayRgba_; // persistent RGBA buffer
 
+    // FBO-to-screen blit quad (non-flipped UVs, unlike overlay quad)
+    unsigned int blitVao_;
+    unsigned int blitVbo_;
+
     // Debug line rendering resources
     unsigned int lineProgram_;
     unsigned int lineVao_;

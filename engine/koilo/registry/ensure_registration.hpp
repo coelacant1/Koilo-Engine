@@ -35,7 +35,7 @@ void EnsureCoreReflectionRegistered();
 
 /**
  * @brief Ensure platform-specific reflected classes are registered.
- * Call from hosts that link display backends (SDL2, OpenGL, HUB75, etc.).
+ * Call from hosts that link display backends (SDL3, OpenGL, HUB75, etc.).
  */
 void EnsurePlatformReflectionRegistered();
 

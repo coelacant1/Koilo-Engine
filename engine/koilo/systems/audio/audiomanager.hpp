@@ -125,7 +125,7 @@ private:
     // Doppler factor (0.0 = no Doppler, 1.0 = full Doppler)
     float dopplerFactor;
 
-    // Audio backend (SDL2 device)
+    // Audio backend (SDL3 device)
     AudioBackend backend;
 
 public:

@@ -23,7 +23,7 @@ option(KL_ENABLE_WARNINGS "Enable project warning flags" ON)
 option(KL_WARNINGS_AS_ERRORS "Treat warnings as errors" OFF)
 option(KL_USE_SYSTEM_UNITY "Use an existing Unity test framework checkout" OFF)
 option(KOILO_ENABLE_AI "Build AI subsystem (pathfinding, behavior trees)" ON)
-option(KOILO_ENABLE_AUDIO "Build audio subsystem (SDL2 audio)" ON)
+option(KOILO_ENABLE_AUDIO "Build audio subsystem (SDL3 audio)" ON)
 option(KOILO_ENABLE_PARTICLES "Build particle subsystem" ON)
 set(KL_UNITY_DIR ${CMAKE_SOURCE_DIR}/external/unity CACHE PATH "Path to Unity test framework")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -109,6 +109,7 @@ add_library(koilo_headers INTERFACE)
 target_include_directories(koilo_headers INTERFACE
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/engine>
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/engine/koilo>
+  $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/external/glad/include>
   $<BUILD_INTERFACE:${KL_GEN_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
@@ -164,14 +165,13 @@ if(KOILO_ENABLE_PARTICLES)
 endif()
 
 # Audio backend
-find_package(SDL2 QUIET)
-if(SDL2_FOUND)
-  message(STATUS "Audio backend: SDL2")
-  target_include_directories(koilo_core PRIVATE ${SDL2_INCLUDE_DIRS})
-  target_link_libraries(koilo_core PRIVATE ${SDL2_LIBRARIES})
-  target_compile_definitions(koilo_core PRIVATE KL_AUDIO_SDL2)
+find_package(SDL3 QUIET)
+if(SDL3_FOUND)
+  message(STATUS "Audio backend: SDL3")
+  target_link_libraries(koilo_core PRIVATE SDL3::SDL3)
+  target_compile_definitions(koilo_core PRIVATE KL_AUDIO_SDL3)
 else()
-  message(STATUS "Audio backend: disabled (SDL2 not found)")
+  message(STATUS "Audio backend: disabled (SDL3 not found)")
   target_compile_definitions(koilo_core PRIVATE KL_AUDIO_NONE)
 endif()
 

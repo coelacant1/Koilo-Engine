@@ -249,7 +249,7 @@ private:
         KL_METHOD_AUTO(ResourceManager, GetTotalMemoryUsed, "Get total memory used"),
         KL_METHOD_AUTO(ResourceManager, SetMemoryLimit, "Set memory limit"),
         KL_METHOD_AUTO(ResourceManager, GarbageCollect, "Garbage collect"),
-        KL_METHOD_AUTO(ResourceManager, GetCachedResourceCount, "Get cached resource count"),
+        KL_METHOD_OVLD_CONST0(ResourceManager, GetCachedResourceCount, size_t),
         KL_METHOD_AUTO(ResourceManager, PrintStatistics, "Print statistics"),
         KL_METHOD_AUTO(ResourceManager, EnableHotReload, "Enable hot reload"),
         KL_METHOD_AUTO(ResourceManager, CheckHotReload, "Check hot reload")

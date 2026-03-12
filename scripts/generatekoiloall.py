@@ -43,7 +43,16 @@ def parse_args() -> argparse.Namespace:
 def gather_headers(include_root: Path, output_name: str) -> list[str]:
     import re
     headers: list[str] = []
-    for path, _, files in os.walk(include_root):
+    # Directories excluded from the umbrella header (they include platform SDK
+    # headers that can pollute the namespace for other engine code, or have
+    # reflection entries that are only valid when compiled individually).
+    EXCLUDED_DIRS = {"platform"}
+    # Individual paths excluded (compiled via their own CMakeLists, not via umbrella)
+    EXCLUDED_PREFIXES = ("systems/ui/", "systems/font/")
+    for path, dirs, files in os.walk(include_root):
+        rel_dir = Path(path).relative_to(include_root)
+        if rel_dir.parts and rel_dir.parts[0] in EXCLUDED_DIRS:
+            continue
         for f in files:
             if not f.endswith(".hpp"):
                 continue
@@ -64,7 +73,10 @@ def gather_headers(include_root: Path, output_name: str) -> list[str]:
                 pass  # Include file if we can't read it
 
             rel = file_path.relative_to(include_root)
-            headers.append(str(rel).replace(os.sep, "/"))
+            rel_str = str(rel).replace(os.sep, "/")
+            if any(rel_str.startswith(p) for p in EXCLUDED_PREFIXES):
+                continue
+            headers.append(rel_str)
     return sorted(headers)
 
 def generate(include_root: Path, output_file: Path) -> int:

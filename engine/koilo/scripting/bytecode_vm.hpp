@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file bytecode_vm.hpp
- * @brief Stack-based virtual machine for executing KoiloScript bytecode.
+ * @brief Stack-based VM for executing KoiloScript bytecode.
  *
  * @date 23/02/2026
  * @version 1.0

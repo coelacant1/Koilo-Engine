@@ -44,7 +44,7 @@
 #ifdef __APPLE__
     #include <OpenGL/gl3.h>
 #else
-    #include <GL/glew.h>
+    #include <glad/glad.h>
 #endif
 
 namespace koilo {
@@ -182,6 +182,7 @@ OpenGLRenderBackend::OpenGLRenderBackend()
       skyVao_(0), skyVbo_(0),
       overlayProgram_(0), overlayVao_(0), overlayVbo_(0),
       overlayTex_(0), overlayTexW_(0), overlayTexH_(0),
+      blitVao_(0), blitVbo_(0),
       lineProgram_(0), lineVao_(0), lineVbo_(0),
       batchVao_(0), batchVbo_(0), batchVboSize_(0),
       pbo_{0, 0}, pboIndex_(0), pboReady_(false),
@@ -298,6 +299,27 @@ bool OpenGLRenderBackend::Initialize() {
     glBindVertexArray(0);
     // Texture created lazily on first use
 
+    // Create FBO-to-screen blit quad (same shader, non-flipped UVs)
+    glGenVertexArrays(1, &blitVao_);
+    glGenBuffers(1, &blitVbo_);
+    glBindVertexArray(blitVao_);
+    glBindBuffer(GL_ARRAY_BUFFER, blitVbo_);
+    // FBO textures are bottom-up in GL, so v=0 at bottom, v=1 at top
+    float blitQuadVerts[] = {
+        -1.f, -1.f,  0.f, 0.f,
+         1.f, -1.f,  1.f, 0.f,
+         1.f,  1.f,  1.f, 1.f,
+        -1.f, -1.f,  0.f, 0.f,
+         1.f,  1.f,  1.f, 1.f,
+        -1.f,  1.f,  0.f, 1.f,
+    };
+    glBufferData(GL_ARRAY_BUFFER, sizeof(blitQuadVerts), blitQuadVerts, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, overlayStride, nullptr);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, overlayStride, (void*)(2 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    glBindVertexArray(0);
+
     // Create batch rendering VAO/VBO for merged draw calls
     glGenVertexArrays(1, &batchVao_);
     glGenBuffers(1, &batchVbo_);
@@ -347,6 +369,9 @@ void OpenGLRenderBackend::Shutdown() {
     if (overlayProgram_) { glDeleteProgram(overlayProgram_); overlayProgram_ = 0; }
     if (overlayVao_) { glDeleteVertexArrays(1, &overlayVao_); overlayVao_ = 0; }
     if (overlayVbo_) { glDeleteBuffers(1, &overlayVbo_); overlayVbo_ = 0; }
+
+    if (blitVao_) { glDeleteVertexArrays(1, &blitVao_); blitVao_ = 0; }
+    if (blitVbo_) { glDeleteBuffers(1, &blitVbo_); blitVbo_ = 0; }
 
     if (batchVao_) { glDeleteVertexArrays(1, &batchVao_); batchVao_ = 0; }
     if (batchVbo_) { glDeleteBuffers(1, &batchVbo_); batchVbo_ = 0; }
@@ -1303,12 +1328,26 @@ void OpenGLRenderBackend::ReadPixels(Color888* buffer, int width, int height) {
 
 void OpenGLRenderBackend::BlitToScreen(int screenW, int screenH) {
     if (!initialized_ || !fbo_) return;
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo_);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-    glBlitFramebuffer(0, 0, fbWidth_, fbHeight_,
-                      0, 0, screenW, screenH,
-                      GL_COLOR_BUFFER_BIT, GL_NEAREST);
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+
+    // Draw the FBO color texture as a fullscreen quad on the default
+    // framebuffer.  This replaces glBlitFramebuffer which does not
+    // reliably produce visible output on Wayland + llvmpipe/Mesa.
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, screenW, screenH);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
+
+    glUseProgram(overlayProgram_);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, colorTex_);
+    GLint texLoc = glGetUniformLocation(overlayProgram_, "u_texture");
+    glUniform1i(texLoc, 0);
+
+    glBindVertexArray(blitVao_);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+    glUseProgram(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void OpenGLRenderBackend::RenderDebugLines(const float* viewMat, const float* projMat) {

@@ -26,14 +26,14 @@ static void koilo_request_discrete_gpu() {
 }
 #endif
 
-// SDL2 and OpenGL includes
+// SDL3 and OpenGL includes
 #ifdef __APPLE__
     #include <OpenGL/gl3.h>
 #else
-    #include <GL/glew.h>
+    #include <glad/glad.h>
 #endif
 
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 
 namespace koilo {
 
@@ -111,7 +111,7 @@ bool koilo::OpenGLBackend::Initialize() {
     }
     
     if (!InitSDL()) {
-        std::cerr << "Failed to initialize SDL2" << std::endl;
+        std::cerr << "Failed to initialize SDL3" << std::endl;
         return false;
     }
     
@@ -156,7 +156,7 @@ void koilo::OpenGLBackend::Shutdown() {
     
     // Cleanup SDL
     if (glContext_) {
-        SDL_GL_DeleteContext(glContext_);
+        SDL_GL_DestroyContext(glContext_);
         glContext_ = nullptr;
     }
     if (window_) {
@@ -274,9 +274,13 @@ bool koilo::OpenGLBackend::PresentNoSwap(const Framebuffer& fb) {
 
     int vpX, vpY, vpWidth, vpHeight;
     CalculateViewport(fb.width, fb.height, vpX, vpY, vpWidth, vpHeight);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
     glViewport(vpX, vpY, vpWidth, vpHeight);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
     RenderQuad();
     return true;
 }
@@ -310,18 +314,15 @@ bool koilo::OpenGLBackend::SetOrientation(Orientation orient) {
 }
 
 bool koilo::OpenGLBackend::SetBrightness(uint8_t brightness) {
-    // Could use SDL_SetWindowBrightness
-    float b = brightness / 255.0f;
-    if (window_) {
-        return SDL_SetWindowBrightness(window_, b) == 0;
-    }
+    // SDL3 removed SDL_SetWindowBrightness - brightness is managed by the OS
+    (void)brightness;
     return false;
 }
 
 bool koilo::OpenGLBackend::SetVSyncEnabled(bool enabled) {
     vsyncEnabled_ = enabled;
     if (glContext_) {
-        return SDL_GL_SetSwapInterval(enabled ? 1 : 0) == 0;
+        return SDL_GL_SetSwapInterval(enabled ? 1 : 0);
     }
     return false;
 }
@@ -339,8 +340,7 @@ bool koilo::OpenGLBackend::SetFullscreen(bool fullscreen) {
     }
     
     fullscreen_ = fullscreen;
-    Uint32 flags = fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0;
-    return SDL_SetWindowFullscreen(window_, flags) == 0;
+    return SDL_SetWindowFullscreen(window_, fullscreen);
 }
 
 bool koilo::OpenGLBackend::IsWindowOpen() const {
@@ -351,19 +351,17 @@ bool koilo::OpenGLBackend::ProcessEvents() {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
-            case SDL_QUIT:
+            case SDL_EVENT_QUIT:
                 shouldClose_ = true;
                 return false;
                 
-            case SDL_WINDOWEVENT:
-                if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
-                    windowWidth_ = event.window.data1;
-                    windowHeight_ = event.window.data2;
-                }
+            case SDL_EVENT_WINDOW_RESIZED:
+                windowWidth_ = event.window.data1;
+                windowHeight_ = event.window.data2;
                 break;
                 
-            case SDL_KEYDOWN:
-                if (event.key.keysym.sym == SDLK_ESCAPE) {
+            case SDL_EVENT_KEY_DOWN:
+                if (event.key.key == SDLK_ESCAPE) {
                     shouldClose_ = true;
                     return false;
                 }
@@ -382,7 +380,7 @@ void koilo::OpenGLBackend::GetWindowSize(uint32_t& width, uint32_t& height) cons
 // === Private Helper Methods ===
 
 bool koilo::OpenGLBackend::InitSDL() {
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+    if (!SDL_Init(SDL_INIT_VIDEO)) {
         std::cerr << "SDL initialization failed: " << SDL_GetError() << std::endl;
         return false;
     }
@@ -394,14 +392,12 @@ bool koilo::OpenGLBackend::InitSDL() {
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     
     // Create window
-    Uint32 flags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN;
+    SDL_WindowFlags flags = SDL_WINDOW_OPENGL;
     if (resizable_) flags |= SDL_WINDOW_RESIZABLE;
-    if (fullscreen_) flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
+    if (fullscreen_) flags |= SDL_WINDOW_FULLSCREEN;
     
     window_ = SDL_CreateWindow(
         title_.c_str(),
-        SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED,
         windowWidth_,
         windowHeight_,
         flags
@@ -426,15 +422,11 @@ bool koilo::OpenGLBackend::InitSDL() {
 }
 
 bool koilo::OpenGLBackend::InitOpenGL() {
-#ifndef __APPLE__
-    // Initialize GLEW (not needed on macOS)
-    glewExperimental = GL_TRUE;
-    GLenum glewError = glewInit();
-    if (glewError != GLEW_OK) {
-        std::cerr << "GLEW initialization failed: " << glewGetErrorString(glewError) << std::endl;
+    // Load GL function pointers via SDL (works on both GLX and EGL/Wayland)
+    if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
+        std::cerr << "Failed to load OpenGL functions via glad" << std::endl;
         return false;
     }
-#endif
     
     // Create texture
     glGenTextures(1, &texture_);

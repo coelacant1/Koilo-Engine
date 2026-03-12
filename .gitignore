@@ -53,6 +53,7 @@ Thumbs.db
 
 # Generated
 tools/vscode-koiloscript/*.vsix
+CMakeFiles/
 
 # Private assets
 assets/fbx/ascii/commissions/

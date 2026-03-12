@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // modules/main.cpp - ELF module demo
-// Uses SDL2Host but pre-loads modules before script execution.
-#include <koilo/platform/sdl2_host.hpp>
+// Uses SDL3Host but pre-loads modules before script execution.
+#include <koilo/platform/sdl3_host.hpp>
 #include <koilo/modules/module_loader.hpp>
 #include <cstdio>
 #include <cstring>
@@ -27,7 +27,7 @@ int main(int argc, char** argv) {
     if (loaded == 0)
         printf("[modules] Warning: no modules found.\n");
 
-    koilo::SDL2Host host;
+    koilo::SDL3Host host;
     host.scriptPath  = scriptPath;
     host.windowTitle = "KoiloEngine - Modules";
     return host.RunWithEngine(argc, argv, engine);

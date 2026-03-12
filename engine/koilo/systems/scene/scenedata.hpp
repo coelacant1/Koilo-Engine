@@ -275,7 +275,7 @@ enum class DisplayBackendType : uint8_t {
     
     // === Desktop Displays (Secondary) ===
     OpenGL = 100,          ///< OpenGL window (desktop preview)
-    SDL2 = 101,            ///< SDL2 window (desktop preview)
+    SDL3 = 101,            ///< SDL3 window (desktop preview)
     Null = 102,            ///< Null backend (headless)
     SharedMemory = 103,    ///< Shared memory IPC
     

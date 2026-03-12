@@ -895,5 +895,30 @@ void KoiloScriptEngine::RenderFrameGPU() {
     if (dd.IsEnabled()) dd.Update();
 }
 
+void KoiloScriptEngine::RenderUIOverlay(int viewportW, int viewportH, float dt) {
+    if (!ui_) return;
+    // Skip UI initialization and rendering if no UI content was loaded.
+    // The UI constructor always creates a __root panel (index >= 0), so
+    // check whether the root has any children.  Creating GL resources
+    // (program, VAO, textures) when there are no widgets to render
+    // corrupts the scene framebuffer on Wayland/Mesa.
+    int root = ui_->Context().Root();
+    if (root < 0) return;
+    auto* rootWidget = ui_->Context().GetWidget(root);
+    if (!rootWidget || rootWidget->childCount == 0) return;
+    if (!ui_->HasFont())
+        ui_->LoadFont("assets/fonts/NotoSansMono-VariableFont_wdth,wght.ttf", 14.0f);
+    ui_->UpdateAnimations(dt);
+    if (!ui_->InitializeGPU()) return;
+    ui_->RenderGPU(viewportW, viewportH);
+}
+
+void KoiloScriptEngine::UpdateUIAnimations(float dt) {
+    if (!ui_) return;
+    if (!ui_->HasFont())
+        ui_->LoadFont("assets/fonts/NotoSansMono-VariableFont_wdth,wght.ttf", 14.0f);
+    ui_->UpdateAnimations(dt);
+}
+
 } // namespace scripting
 } // namespace koilo
