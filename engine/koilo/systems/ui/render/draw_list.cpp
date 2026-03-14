@@ -31,13 +31,16 @@ static Edges EffectivePadding(const Widget& w, const Style& s) {
 
 // -- Lifetime --------------------------------------------------------
 
+// Clear all draw commands and reset scissor stack
 void UIDrawList::Clear() {
     commands_.clear();
+    commands_.reserve(4096);
     scissorStack_.clear();
 }
 
 // -- Primitive commands ----------------------------------------------
 
+// Append a solid filled rectangle
 void UIDrawList::AddSolidRect(float x, float y, float w, float h,
                               Color4 color) {
     if (color.a == 0 || w <= 0.0f || h <= 0.0f) return;
@@ -48,6 +51,7 @@ void UIDrawList::AddSolidRect(float x, float y, float w, float h,
     commands_.push_back(cmd);
 }
 
+// Append a rectangular border outline
 void UIDrawList::AddBorderRect(float x, float y, float w, float h,
                                Color4 color, float borderWidth) {
     if (color.a == 0 || w <= 0.0f || h <= 0.0f) return;
@@ -59,6 +63,7 @@ void UIDrawList::AddBorderRect(float x, float y, float w, float h,
     commands_.push_back(cmd);
 }
 
+// Append a textured quad (glyph atlas, images)
 void UIDrawList::AddTexturedRect(float x, float y, float w, float h,
                                  float u0, float v0, float u1, float v1,
                                  Color4 color, uint32_t textureHandle) {
@@ -72,11 +77,13 @@ void UIDrawList::AddTexturedRect(float x, float y, float w, float h,
     commands_.push_back(cmd);
 }
 
+// Append a rounded rectangle with uniform corner radius
 void UIDrawList::AddRoundedRect(float x, float y, float w, float h,
                                 float radius, Color4 color) {
     AddRoundedRect(x, y, w, h, radius, radius, radius, radius, color);
 }
 
+// Append a rounded rectangle with per-corner radii
 void UIDrawList::AddRoundedRect(float x, float y, float w, float h,
                                 float rTL, float rTR, float rBR, float rBL,
                                 Color4 color) {
@@ -93,12 +100,14 @@ void UIDrawList::AddRoundedRect(float x, float y, float w, float h,
     commands_.push_back(cmd);
 }
 
+// Append a rounded border rectangle with uniform radius
 void UIDrawList::AddRoundedBorderRect(float x, float y, float w, float h,
                                       float radius, Color4 color,
                                       float borderWidth) {
     AddRoundedBorderRect(x, y, w, h, radius, radius, radius, radius, color, borderWidth);
 }
 
+// Append a rounded border rectangle with per-corner radii
 void UIDrawList::AddRoundedBorderRect(float x, float y, float w, float h,
                                       float rTL, float rTR, float rBR, float rBL,
                                       Color4 color, float borderWidth) {
@@ -116,6 +125,58 @@ void UIDrawList::AddRoundedBorderRect(float x, float y, float w, float h,
     commands_.push_back(cmd);
 }
 
+// Append a line segment with width
+void UIDrawList::AddLine(float x0, float y0, float x1, float y1,
+                         float width, Color4 color) {
+    if (color.a == 0 || width <= 0.0f) return;
+    DrawCmd cmd;
+    cmd.type = DrawCmdType::Line;
+    cmd.x = x0; cmd.y = y0;
+    cmd.w = x1; cmd.h = y1; // reuse w,h as endpoint
+    cmd.borderWidth = width;
+    cmd.color = color;
+    commands_.push_back(cmd);
+}
+
+// Append a filled circle (radius stored in w)
+void UIDrawList::AddFilledCircle(float cx, float cy, float radius, Color4 color) {
+    if (color.a == 0 || radius <= 0.0f) return;
+    DrawCmd cmd;
+    cmd.type = DrawCmdType::FilledCircle;
+    cmd.x = cx; cmd.y = cy;
+    cmd.w = radius; // radius stored in w
+    cmd.color = color;
+    commands_.push_back(cmd);
+}
+
+// Append a circle outline
+void UIDrawList::AddCircleOutline(float cx, float cy, float radius,
+                                  float lineWidth, Color4 color) {
+    if (color.a == 0 || radius <= 0.0f || lineWidth <= 0.0f) return;
+    DrawCmd cmd;
+    cmd.type = DrawCmdType::CircleOutline;
+    cmd.x = cx; cmd.y = cy;
+    cmd.w = radius;
+    cmd.borderWidth = lineWidth;
+    cmd.color = color;
+    commands_.push_back(cmd);
+}
+
+// Append a filled triangle
+void UIDrawList::AddTriangle(float x0, float y0, float x1, float y1,
+                             float ax2, float ay2, Color4 color) {
+    if (color.a == 0) return;
+    DrawCmd cmd;
+    cmd.type = DrawCmdType::Triangle;
+    cmd.x = x0; cmd.y = y0;
+    cmd.w = x1; cmd.h = y1;
+    cmd.x2 = ax2; cmd.y2 = ay2;
+    cmd.color = color;
+    commands_.push_back(cmd);
+}
+
+// Append an icon quad from the icon atlas
+// Push an integer scissor clip rect onto the stack
 void UIDrawList::PushScissor(int x, int y, int w, int h) {
     DrawCmd cmd;
     cmd.type = DrawCmdType::PushScissor;
@@ -125,6 +186,7 @@ void UIDrawList::PushScissor(int x, int y, int w, int h) {
     scissorStack_.push_back({x, y, w, h});
 }
 
+// Push a float scissor clip rect (floor/ceil converted)
 void UIDrawList::PushScissor(float x, float y, float w, float h) {
     // Use floor for position and ceil for size to avoid clipping pixels
     int ix = static_cast<int>(std::floor(x));
@@ -134,6 +196,7 @@ void UIDrawList::PushScissor(float x, float y, float w, float h) {
     PushScissor(ix, iy, iw, ih);
 }
 
+// Pop the most recent scissor rect
 void UIDrawList::PopScissor() {
     DrawCmd cmd;
     cmd.type = DrawCmdType::PopScissor;
@@ -141,11 +204,15 @@ void UIDrawList::PopScissor() {
     if (!scissorStack_.empty()) scissorStack_.pop_back();
 }
 
-// -- Widget tree -> draw commands -------------------------------------
+// ============================================================================
+// Widget tree → draw commands
+// ============================================================================
 
+// Build draw commands for the entire UI tree
 void UIDrawList::BuildFromContext(UIContext& ctx, font::Font* font,
                                   uint32_t fontAtlasTexture) {
     Clear();
+    deferredDropdowns_.clear();
     font_ = font;
     fontAtlasTexture_ = fontAtlasTexture;
 
@@ -159,6 +226,11 @@ void UIDrawList::BuildFromContext(UIContext& ctx, font::Font* font,
     if (!root) return;
 
     EmitWidget(*root, rootIdx, pool, strings, theme);
+
+    // Render deferred dropdown popups (on top of main tree, below floating panels)
+    for (auto& dd : deferredDropdowns_) {
+        EmitDropdownPopup(*dd.widget, dd.rect, dd.style, *dd.strings, *dd.pool);
+    }
 
     // Render minimized panel tray (above status bar)
     EmitMinimizedPanelTray(pool, strings,
@@ -176,10 +248,18 @@ void UIDrawList::BuildFromContext(UIContext& ctx, font::Font* font,
             }
         }
     }
+
+    // Render drag-and-drop overlays
+    if (ctx.IsDragging()) {
+        EmitDragOverlay(ctx, strings);
+    }
 }
 
-// -- Private helpers -------------------------------------------------
+// ============================================================================
+// Private widget emitters
+// ============================================================================
 
+// Recursively emit a widget and its children
 void UIDrawList::EmitWidget(const Widget& widget, int widgetIdx, const WidgetPool& pool,
                             const StringTable& strings, const Theme& theme) {
     if (!widget.flags.visible) return;
@@ -205,10 +285,13 @@ void UIDrawList::EmitWidget(const Widget& widget, int widgetIdx, const WidgetPoo
         float sh = r.h + spread * 2.0f;
         // Approximate blur with concentric rects of decreasing alpha
         int steps = std::max(1, static_cast<int>(blur / 2.0f));
+        // Divide base alpha by step count to prevent additive darkening
+        float baseAlpha = static_cast<float>(style.shadow.color.a) / static_cast<float>(steps + 1);
         for (int s = steps; s >= 0; --s) {
             float t = static_cast<float>(s) / static_cast<float>(steps);
             float expand = blur * t;
-            uint8_t a = static_cast<uint8_t>(style.shadow.color.a * (1.0f - t) * (1.0f - t));
+            uint8_t a = static_cast<uint8_t>(baseAlpha * (1.0f - t) * (1.0f - t));
+            if (a == 0) continue;
             Color4 sc{style.shadow.color.r, style.shadow.color.g, style.shadow.color.b, a};
             if (style.border.HasRadius()) {
                 AddRoundedRect(sx - expand, sy - expand, sw + expand * 2.0f, sh + expand * 2.0f,
@@ -270,7 +353,7 @@ void UIDrawList::EmitWidget(const Widget& widget, int widgetIdx, const WidgetPoo
     switch (widget.tag) {
     case WidgetTag::Label:
     case WidgetTag::MenuItem:
-        EmitText(widget, r, style, strings);
+        EmitMenuItem(widget, r, style, strings);
         break;
     case WidgetTag::TreeNode:
         EmitTreeNode(widget, r, style, strings, pool, widgetIdx);
@@ -294,7 +377,7 @@ void UIDrawList::EmitWidget(const Widget& widget, int widgetIdx, const WidgetPoo
         EmitScrollbar(widget, r, style);
         break;
     case WidgetTag::Dropdown:
-        EmitDropdown(widget, r, style, strings);
+        EmitDropdown(widget, r, style, strings, pool, widgetIdx);
         break;
     case WidgetTag::Image:
         EmitImage(widget, r);
@@ -317,6 +400,15 @@ void UIDrawList::EmitWidget(const Widget& widget, int widgetIdx, const WidgetPoo
     case WidgetTag::FloatingPanel:
         EmitFloatingPanel(widget, r, style, strings);
         break;
+    case WidgetTag::VirtualList:
+        EmitScrollbar(widget, r, style);
+        break;
+    case WidgetTag::Canvas2D:
+        if (widget.onPaint) {
+            CanvasDrawContext cdc(*this, r.x, r.y, r.w, r.h, font_);
+            widget.onPaint(&cdc);
+        }
+        break;
     default:
         break;
     }
@@ -327,9 +419,24 @@ void UIDrawList::EmitWidget(const Widget& widget, int widgetIdx, const WidgetPoo
     }
 
     // Clip children if flagged
-    if (widget.flags.clipChildren) {
+    bool clipping = widget.flags.clipChildren;
+    if (clipping) {
         PushScissor(r.x, r.y, r.w, r.h);
     }
+
+    // Lambda: emit a child, skipping if entirely outside parent clip rect
+    auto emitChild = [&](int childIdx) {
+        if (childIdx < 0 || !pool.IsAlive(childIdx)) return;
+        const Widget* child = pool.Get(childIdx);
+        if (!child) return;
+        // Cull children fully outside parent bounds when clipping is active
+        if (clipping) {
+            const Rect& cr = child->computedRect;
+            if (cr.y + cr.h < r.y || cr.y > r.y + r.h ||
+                cr.x + cr.w < r.x || cr.x > r.x + r.w) return;
+        }
+        EmitWidget(*child, childIdx, pool, strings, theme);
+    };
 
     // Recurse children sorted by z-order (back to front)
     if (widget.childCount > 1) {
@@ -351,21 +458,11 @@ void UIDrawList::EmitWidget(const Widget& widget, int widgetIdx, const WidgetPoo
             }
             sorted[j + 1] = key;
         }
-        for (int16_t i = 0; i < widget.childCount; ++i) {
-            int childIdx = sorted[i];
-            if (childIdx >= 0 && pool.IsAlive(childIdx)) {
-                const Widget* child = pool.Get(childIdx);
-                if (child) EmitWidget(*child, childIdx, pool, strings, theme);
-            }
-        }
+        for (int16_t i = 0; i < widget.childCount; ++i)
+            emitChild(sorted[i]);
     } else {
-        for (int16_t i = 0; i < widget.childCount; ++i) {
-            int childIdx = widget.children[i];
-            if (childIdx >= 0 && pool.IsAlive(childIdx)) {
-                const Widget* child = pool.Get(childIdx);
-                if (child) EmitWidget(*child, childIdx, pool, strings, theme);
-            }
-        }
+        for (int16_t i = 0; i < widget.childCount; ++i)
+            emitChild(widget.children[i]);
     }
 
     // Draw divider handles between children of resizable containers
@@ -373,11 +470,12 @@ void UIDrawList::EmitWidget(const Widget& widget, int widgetIdx, const WidgetPoo
         EmitDividers(widget, pool);
     }
 
-    if (widget.flags.clipChildren) {
+    if (clipping) {
         PopScissor();
     }
 }
 
+// Emit single-line or word-wrapped text within a widget
 void UIDrawList::EmitText(const Widget& widget, const Rect& r,
                           const Style& style, const StringTable& strings) {
     if (!font_ || widget.textId == NullStringId) return;
@@ -543,6 +641,78 @@ void UIDrawList::EmitText(const Widget& widget, const Rect& r,
     PopScissor();
 }
 
+// Emit a menu item with optional shortcut text and submenu chevron
+void UIDrawList::EmitMenuItem(const Widget& widget, const Rect& r,
+                              const Style& style, const StringTable& strings) {
+    if (!font_) return;
+    const char* text = widget.textId != NullStringId ? strings.Lookup(widget.textId) : nullptr;
+
+    float fontSize = style.fontSize > 0.0f ? style.fontSize : 14.0f;
+    if (widget.fontSize > 0.0f) fontSize = widget.fontSize;
+    float fontScale = fontSize / font_->PixelSize();
+
+    float lineH = (font_->Ascent() - font_->Descent()) * fontScale;
+
+    Edges pad = EffectivePadding(widget, style);
+    float cx = r.x + pad.left;
+    float cy = r.y + pad.top;
+    float cw = r.w - pad.left - pad.right;
+    float ch = r.h - pad.top - pad.bottom;
+
+    PushScissor(cx, cy, cw, ch);
+
+    // Left-aligned label
+    if (text && text[0] != '\0') {
+        float tx = cx;
+        float ty = cy + (ch - lineH) * 0.5f + font_->Ascent() * fontScale;
+        EmitTextGlyphs(text, tx, ty, fontSize, style.textColor, widget.fontWeight);
+
+        // Text decoration (underline, strikethrough, overline)
+        if (widget.textDecoration != TextDecoration::None) {
+            float textW = font_->MeasureText(text).width * fontScale;
+            float decoH = std::max(1.0f, std::floor(fontScale));
+            if (static_cast<uint8_t>(widget.textDecoration) &
+                static_cast<uint8_t>(TextDecoration::Underline)) {
+                float underY = ty + 2.0f;
+                AddSolidRect(tx, underY, textW, decoH, style.textColor);
+            }
+            if (static_cast<uint8_t>(widget.textDecoration) &
+                static_cast<uint8_t>(TextDecoration::Strikethrough)) {
+                float midY = ty - font_->Ascent() * fontScale * 0.35f;
+                AddSolidRect(tx, midY, textW, decoH, style.textColor);
+            }
+            if (static_cast<uint8_t>(widget.textDecoration) &
+                static_cast<uint8_t>(TextDecoration::Overline)) {
+                float overY = ty - font_->Ascent() * fontScale;
+                AddSolidRect(tx, overY, textW, decoH, style.textColor);
+            }
+        }
+    }
+
+    // Right-aligned shortcut text
+    const char* shortcut = widget.shortcutTextId != NullStringId
+        ? strings.Lookup(widget.shortcutTextId) : nullptr;
+    if (shortcut && shortcut[0] != '\0') {
+        float sw = font_->MeasureText(shortcut).width * fontScale;
+        float sx = cx + cw - sw;
+        float sy = cy + (ch - lineH) * 0.5f + font_->Ascent() * fontScale;
+        Color4 dimColor = style.textColor;
+        dimColor.a = static_cast<uint8_t>(dimColor.a * 0.6f);
+        EmitTextGlyphs(shortcut, sx, sy, fontSize, dimColor);
+    }
+
+    // Submenu chevron (►) on the right edge
+    if (widget.submenuIdx >= 0) {
+        float chevW = fontSize * 0.5f;
+        float chevX = cx + cw - chevW;
+        float chevY = cy + (ch - lineH) * 0.5f + font_->Ascent() * fontScale;
+        EmitTextGlyphs("\xe2\x96\xb6", chevX, chevY, fontSize * 0.7f, style.textColor);
+    }
+
+    PopScissor();
+}
+
+// Emit horizontally and vertically centered text (buttons)
 void UIDrawList::EmitTextCentered(const Widget& widget, const Rect& r,
                                   const Style& style,
                                   const StringTable& strings) {
@@ -579,10 +749,11 @@ void UIDrawList::EmitTextCentered(const Widget& widget, const Rect& r,
         EmitTextGlyphs(text, textX + style.textShadow.offsetX,
                         textY + style.textShadow.offsetY, fontSize, sc);
     }
-    EmitTextGlyphs(text, textX, textY, fontSize, style.textColor);
+    EmitTextGlyphs(text, textX, textY, fontSize, style.textColor, widget.fontWeight);
     PopScissor();
 }
 
+// Emit a text field with cursor and placeholder support
 void UIDrawList::EmitTextField(const Widget& widget, const Rect& r,
                                const Style& style,
                                const StringTable& strings) {
@@ -623,19 +794,27 @@ void UIDrawList::EmitTextField(const Widget& widget, const Rect& r,
     if (widget.flags.focused) {
         float cursorX = cx;
         if (text && text[0] != '\0' && widget.cursorPos > 0) {
-            // Measure text up to cursor position
+            // Measure text up to cursor position — must exactly match EmitTextGlyphs
+            float targetSize = fontSize;
             size_t len = std::strlen(text);
             size_t pos = 0;
             float penX = 0.0f;
             int charIdx = 0;
+            uint32_t prevCp = 0;
             while (pos < len && charIdx < widget.cursorPos) {
                 uint32_t cp = DecodeUTF8(text, len, pos);
-                const font::GlyphRegion* glyph = font_->GetGlyph(cp);
-                if (glyph) {
-                    penX += glyph->advance * fontScale;
-                } else {
-                    penX += font_->PixelSize() * fontScale * 0.5f;
+                const font::GlyphRegion* glyph = font_->GetGlyphAtSize(cp, targetSize);
+                if (!glyph) {
+                    penX += targetSize * 0.5f;
+                    prevCp = cp;
+                    ++charIdx;
+                    continue;
                 }
+                if (prevCp != 0) {
+                    penX += font_->GetKerning(prevCp, cp) * fontScale;
+                }
+                penX += std::floor(glyph->advance + 0.5f);
+                prevCp = cp;
                 ++charIdx;
             }
             cursorX = cx + penX;
@@ -649,6 +828,7 @@ void UIDrawList::EmitTextField(const Widget& widget, const Rect& r,
     PopScissor();
 }
 
+// Emit a tree node row with connector lines and expand/collapse box
 void UIDrawList::EmitTreeNode(const Widget& widget, const Rect& r,
                                const Style& style,
                                const StringTable& strings,
@@ -733,8 +913,8 @@ void UIDrawList::EmitTreeNode(const Widget& widget, const Rect& r,
     for (int d = 0; d < depth; ++d) {
         float lineX = cx + d * indentStep + boxSize * 0.5f;
         // Vertical line: only draw if there are nodes below at this depth
-        if (continuesAtDepth[d]) {
-            // Full-height vertical line through this row
+        // Skip depth-1 because the parent connector below handles that level
+        if (continuesAtDepth[d] && d < depth - 1) {
             AddSolidRect(lineX, r.y, lineThick, r.h, lineColor);
         }
     }
@@ -744,23 +924,18 @@ void UIDrawList::EmitTreeNode(const Widget& widget, const Rect& r,
         float parentLineX = cx + (depth - 1) * indentStep + boxSize * 0.5f;
         float nodeLeftX   = cx + depth * indentStep;
 
-        // Vertical segment: from top of row down to row center
-        // (connects to parent's continuing vertical line above)
         bool isLastAtDepth = !continuesAtDepth[depth];
-        float vertTop = r.y;
-        float vertBot = rowCenterY;
-        AddSolidRect(parentLineX, vertTop, lineThick, vertBot - vertTop, lineColor);
+        // Vertical segment: top of row down to row center
+        AddSolidRect(parentLineX, r.y, lineThick, rowCenterY - r.y, lineColor);
 
-        // If this is NOT the last child at this depth, extend the vertical
-        // line to the bottom of this row (continues downward)
+        // If NOT the last child at this depth, extend vertical to bottom
         if (!isLastAtDepth) {
-            AddSolidRect(parentLineX, vertBot, lineThick, r.y + r.h - vertBot, lineColor);
+            AddSolidRect(parentLineX, rowCenterY, lineThick, r.y + r.h - rowCenterY, lineColor);
         }
 
         // Horizontal segment: from parent vertical line to this node's content
-        float horizY = rowCenterY;
         float horizEndX = hasKids ? nodeLeftX : (nodeLeftX + boxSize * 0.5f);
-        AddSolidRect(parentLineX + lineThick, horizY, horizEndX - parentLineX - lineThick, lineThick, lineColor);
+        AddSolidRect(parentLineX + lineThick, rowCenterY, horizEndX - parentLineX - lineThick, lineThick, lineColor);
     }
 
     // --- Draw [+]/[-] box if node has children ---
@@ -768,15 +943,14 @@ void UIDrawList::EmitTreeNode(const Widget& widget, const Rect& r,
     float boxY = rowCenterY - boxSize * 0.5f;
 
     if (hasKids) {
-        // Box outline
         AddBorderRect(boxX, boxY, boxSize, boxSize, boxColor, lineThick);
 
-        // Horizontal bar of +/- (always present)
+        // Horizontal bar (always present for +/-)
         float barPad = 2.0f;
-        float barY = rowCenterY - lineThick * 0.5f;
+        float barY = boxY + boxSize * 0.5f - lineThick * 0.5f;
         AddSolidRect(boxX + barPad, barY, boxSize - barPad * 2, lineThick, boxColor);
 
-        // Vertical bar of + (only when collapsed)
+        // Vertical bar (only when collapsed = plus sign)
         if (!widget.expanded) {
             float barX = boxX + boxSize * 0.5f - lineThick * 0.5f;
             AddSolidRect(barX, boxY + barPad, lineThick, boxSize - barPad * 2, boxColor);
@@ -799,6 +973,7 @@ void UIDrawList::EmitTreeNode(const Widget& widget, const Rect& r,
     PopScissor();
 }
 
+// Emit a vertical scrollbar track and thumb
 void UIDrawList::EmitScrollbar(const Widget& widget, const Rect& r,
                                 const Style& style) {
     // Use actual content height from layout
@@ -829,9 +1004,11 @@ void UIDrawList::EmitScrollbar(const Widget& widget, const Rect& r,
                    barWidth * 0.5f, thumbColor);
 }
 
+// Emit a dropdown with selected text, arrow, and popup menu
 void UIDrawList::EmitDropdown(const Widget& widget, const Rect& r,
                                const Style& style,
-                               const StringTable& strings) {
+                               const StringTable& strings,
+                               const WidgetPool& pool, int widgetIdx) {
     if (!font_) return;
 
     float fontSize = style.fontSize > 0.0f ? style.fontSize : 14.0f;
@@ -844,16 +1021,23 @@ void UIDrawList::EmitDropdown(const Widget& widget, const Rect& r,
     float cw = r.w - pad.left - pad.right;
     float ch = r.h - pad.top - pad.bottom;
 
-    // Draw selected text
-    if (widget.textId != NullStringId) {
-        const char* text = strings.Lookup(widget.textId);
-        if (text && text[0] != '\0') {
-            float lineH = (font_->Ascent() - font_->Descent()) * fontScale;
-            float textY = cy + (ch - lineH) * 0.5f + font_->Ascent() * fontScale;
-            PushScissor(cx, cy, cw - 16.0f, ch);
-            EmitTextGlyphs(text, cx, textY, fontSize, style.textColor);
-            PopScissor();
+    // Draw selected text (from child at selectedIndex, or widget text)
+    const char* selectedText = nullptr;
+    if (widget.selectedIndex >= 0 && widget.selectedIndex < widget.childCount) {
+        const Widget* selChild = pool.Get(widget.children[widget.selectedIndex]);
+        if (selChild && selChild->textId != NullStringId) {
+            selectedText = strings.Lookup(selChild->textId);
         }
+    }
+    if (!selectedText && widget.textId != NullStringId) {
+        selectedText = strings.Lookup(widget.textId);
+    }
+    if (selectedText && selectedText[0] != '\0') {
+        float lineH = (font_->Ascent() - font_->Descent()) * fontScale;
+        float textY = cy + (ch - lineH) * 0.5f + font_->Ascent() * fontScale;
+        PushScissor(cx, cy, cw - 16.0f, ch);
+        EmitTextGlyphs(selectedText, cx, textY, fontSize, style.textColor);
+        PopScissor();
     }
 
     // Draw ▼ arrow on the right
@@ -864,8 +1048,59 @@ void UIDrawList::EmitDropdown(const Widget& widget, const Rect& r,
     AddSolidRect(arrowX, arrowY, arrowSize, 2.0f, arrowColor);
     AddSolidRect(arrowX + 1.0f, arrowY + 2.0f, arrowSize - 2.0f, 2.0f, arrowColor);
     AddSolidRect(arrowX + 2.0f, arrowY + 4.0f, arrowSize - 4.0f, 1.0f, arrowColor);
+
+    // Defer popup rendering to overlay pass so it draws on top of everything.
+    if (widget.dropdownOpen && widget.childCount > 0) {
+        deferredDropdowns_.push_back({&widget, r, style, &pool, &strings, widgetIdx});
+    }
 }
 
+// Emit a deferred dropdown popup overlay (called after main tree pass).
+void UIDrawList::EmitDropdownPopup(const Widget& widget, const Rect& r,
+                                    const Style& style,
+                                    const StringTable& strings,
+                                    const WidgetPool& pool) {
+    if (!font_) return;
+
+    float fontSize = style.fontSize > 0.0f ? style.fontSize : 14.0f;
+    if (widget.fontSize > 0.0f) fontSize = widget.fontSize;
+    float fontScale = fontSize / font_->PixelSize();
+
+    Edges pad = EffectivePadding(widget, style);
+    float itemH = r.h;
+    float popupH = widget.childCount * itemH;
+    float popupY = r.y + r.h + 2.0f;
+    float popupW = r.w;
+
+    // Background
+    Color4 popupBg = {40, 40, 50, 245};
+    Color4 popupBorder = {80, 80, 100, 200};
+    AddSolidRect(r.x, popupY, popupW, popupH, popupBg);
+    AddBorderRect(r.x, popupY, popupW, popupH, popupBorder, 1.0f);
+
+    // Items
+    for (int i = 0; i < widget.childCount; ++i) {
+        const Widget* child = pool.Get(widget.children[i]);
+        if (!child) continue;
+        const char* itemText = child->textId != NullStringId
+            ? strings.Lookup(child->textId) : "";
+        if (!itemText || itemText[0] == '\0') continue;
+
+        float iy = popupY + i * itemH;
+
+        // Highlight selected item
+        if (i == widget.selectedIndex) {
+            Color4 selBg = {74, 128, 200, 80};
+            AddSolidRect(r.x + 1.0f, iy, popupW - 2.0f, itemH, selBg);
+        }
+
+        float lineH = (font_->Ascent() - font_->Descent()) * fontScale;
+        float textY = iy + (itemH - lineH) * 0.5f + font_->Ascent() * fontScale;
+        EmitTextGlyphs(itemText, r.x + pad.left, textY, fontSize, style.textColor);
+    }
+}
+
+// Emit a textured image widget
 void UIDrawList::EmitImage(const Widget& widget, const Rect& r) {
     if (widget.textureId == 0) return;
     AddTexturedRect(r.x, r.y, r.w, r.h,
@@ -873,6 +1108,7 @@ void UIDrawList::EmitImage(const Widget& widget, const Rect& r) {
                     {255, 255, 255, 255}, widget.textureId);
 }
 
+// Emit a color swatch with border
 void UIDrawList::EmitColorField(const Widget& widget, const Rect& r,
                                  const Style& style) {
     // Color swatch inset by padding
@@ -901,6 +1137,7 @@ void UIDrawList::EmitColorField(const Widget& widget, const Rect& r,
     }
 }
 
+// Emit a checkbox with border and filled inner rect when checked
 void UIDrawList::EmitCheckbox(const Widget& widget, const Rect& r,
                               const Style& style) {
     float boxSize = std::min(r.w, r.h) * 0.6f;
@@ -920,6 +1157,7 @@ void UIDrawList::EmitCheckbox(const Widget& widget, const Rect& r,
     }
 }
 
+// Emit a slider with track, filled portion, and thumb
 void UIDrawList::EmitSlider(const Widget& widget, const Rect& r,
                             const Style& style) {
     float trackH = 4.0f;
@@ -953,6 +1191,7 @@ void UIDrawList::EmitSlider(const Widget& widget, const Rect& r,
     AddSolidRect(thumbX, thumbY, thumbW, thumbH, style.textColor);
 }
 
+// Emit a horizontal separator line
 void UIDrawList::EmitSeparator(const Widget& widget, const Rect& r,
                                const Style& style) {
     (void)widget;
@@ -961,6 +1200,7 @@ void UIDrawList::EmitSeparator(const Widget& widget, const Rect& r,
     AddSolidRect(r.x, lineY, r.w, lineH, style.border.color);
 }
 
+// Emit a floating panel with title bar, shadow, and chrome buttons
 void UIDrawList::EmitFloatingPanel(const Widget& widget, const Rect& r,
                                     const Style& style,
                                     const StringTable& strings) {
@@ -1033,6 +1273,7 @@ void UIDrawList::EmitFloatingPanel(const Widget& widget, const Rect& r,
     }
 }
 
+// Emit tray of minimized panel restore buttons
 void UIDrawList::EmitMinimizedPanelTray(const WidgetPool& pool,
                                          const StringTable& strings,
                                          float viewportW, float viewportH) {
@@ -1094,6 +1335,7 @@ void UIDrawList::EmitMinimizedPanelTray(const WidgetPool& pool,
     }
 }
 
+// Emit resize divider handles between sibling children
 void UIDrawList::EmitDividers(const Widget& parent, const WidgetPool& pool) {
     if (parent.childCount < 2) return;
     bool isRow = (parent.layout.direction == LayoutDirection::Row);
@@ -1132,6 +1374,7 @@ void UIDrawList::EmitDividers(const Widget& parent, const WidgetPool& pool) {
     }
 }
 
+// Emit a progress bar with rounded track and fill
 void UIDrawList::EmitProgressBar(const Widget& widget, const Rect& r,
                                   const Style& style) {
     Edges pad = EffectivePadding(widget, style);
@@ -1154,6 +1397,7 @@ void UIDrawList::EmitProgressBar(const Widget& widget, const Rect& r,
     }
 }
 
+// Emit a toggle switch with sliding knob
 void UIDrawList::EmitToggleSwitch(const Widget& widget, const Rect& r,
                                    const Style& style) {
     float trackW = r.w;
@@ -1177,6 +1421,7 @@ void UIDrawList::EmitToggleSwitch(const Widget& widget, const Rect& r,
     AddRoundedRect(knobX, knobY, knobD, knobD, kr, kr, kr, kr, Color4{240, 240, 240, 255});
 }
 
+// Emit a radio button with outer circle and inner dot
 void UIDrawList::EmitRadioButton(const Widget& widget, const Rect& r,
                                   const Style& style) {
     float size = std::min(r.w, r.h);
@@ -1199,6 +1444,7 @@ void UIDrawList::EmitRadioButton(const Widget& widget, const Rect& r,
     }
 }
 
+// Emit a number spinner with -/+ buttons and centered value text
 void UIDrawList::EmitNumberSpinner(const Widget& widget, const Rect& r,
                                     const Style& style, const StringTable& strings) {
     Edges pad = EffectivePadding(widget, style);
@@ -1207,8 +1453,8 @@ void UIDrawList::EmitNumberSpinner(const Widget& widget, const Rect& r,
     float cw = r.w - pad.left - pad.right;
     float ch = r.h - pad.top - pad.bottom;
 
-    // Button zones
-    float btnW = 18.0f;
+    // Button zones (square buttons matching content height)
+    float btnW = ch;
 
     // Left button (-)
     Color4 btnColor{50, 50, 60, 255};
@@ -1252,8 +1498,13 @@ void UIDrawList::EmitNumberSpinner(const Widget& widget, const Rect& r,
     }
 }
 
+// ============================================================================
+// Text rendering helpers
+// ============================================================================
+
+// Emit individual glyph quads for a text string
 void UIDrawList::EmitTextGlyphs(const char* text, float x, float y,
-                                float fontSize, Color4 color) {
+                                float fontSize, Color4 color, uint16_t fontWeight) {
     if (!font_) return;
     // Rasterize glyphs at exact display size for pixel-perfect rendering
     float targetSize = fontSize > 0.0f ? fontSize : font_->PixelSize();
@@ -1268,6 +1519,13 @@ void UIDrawList::EmitTextGlyphs(const char* text, float x, float y,
     // Line height at target size
     float fontScale = targetSize / font_->PixelSize();
     float lineAdv = std::floor(font_->LineHeight() * fontScale + 0.5f);
+
+    // Synthetic bold: extra pixel offsets for weights above normal (400)
+    float boldOffset = 0.0f;
+    if (fontWeight > 400) {
+        boldOffset = std::max(0.5f, (fontWeight - 400) / 600.0f * (targetSize / 14.0f));
+        boldOffset = std::min(boldOffset, targetSize * 0.15f);
+    }
 
     uint32_t prevCp = 0;
     while (i < len) {
@@ -1303,6 +1561,20 @@ void UIDrawList::EmitTextGlyphs(const char* text, float x, float y,
                             glyph->u0, glyph->v0,
                             glyph->u1, glyph->v1,
                             color, fontAtlasTexture_);
+
+            // Synthetic bold: re-draw glyph at slight X offsets
+            if (boldOffset > 0.0f) {
+                AddTexturedRect(gx + boldOffset, gy, gw, gh,
+                                glyph->u0, glyph->v0,
+                                glyph->u1, glyph->v1,
+                                color, fontAtlasTexture_);
+                if (fontWeight >= 700) {
+                    AddTexturedRect(gx - boldOffset * 0.5f, gy, gw, gh,
+                                    glyph->u0, glyph->v0,
+                                    glyph->u1, glyph->v1,
+                                    color, fontAtlasTexture_);
+                }
+            }
         }
 
         penX += std::floor(glyph->advance + 0.5f);
@@ -1310,6 +1582,7 @@ void UIDrawList::EmitTextGlyphs(const char* text, float x, float y,
     }
 }
 
+// Decode one UTF-8 codepoint and advance the byte index
 uint32_t UIDrawList::DecodeUTF8(const char* text, size_t len, size_t& i) {
     uint8_t c = static_cast<uint8_t>(text[i]);
     uint32_t cp = 0;
@@ -1327,6 +1600,11 @@ uint32_t UIDrawList::DecodeUTF8(const char* text, size_t len, size_t& i) {
     return cp;
 }
 
+// ============================================================================
+// Overlay rendering
+// ============================================================================
+
+// Emit a tooltip popup near the mouse cursor
 void UIDrawList::EmitTooltip(const char* text, float mouseX, float mouseY,
                               float vpW, float vpH) {
     if (!text || !text[0] || !font_) return;
@@ -1391,6 +1669,55 @@ void UIDrawList::EmitTooltip(const char* text, float mouseX, float mouseY,
         }
         textX += glyph->advance;
     }
+}
+
+// Emit the drag-and-drop ghost label and drop indicators
+void UIDrawList::EmitDragOverlay(const UIContext& ctx, const StringTable& strings) {
+    const auto& drag = ctx.ActiveDrag();
+    float mx = ctx.DragPointerX();
+    float my = ctx.DragPointerY();
+
+    // Ghost label following cursor
+    const char* labelText = nullptr;
+    if (drag.labelId != 0) labelText = strings.Lookup(drag.labelId);
+    if (!labelText || !labelText[0]) labelText = "Drag";
+
+    float labelW = static_cast<float>(std::strlen(labelText)) * 7.0f + 16.0f;
+    float labelH = 22.0f;
+    float gx = mx + 12.0f;
+    float gy = my - 8.0f;
+
+    // Semi-transparent background
+    AddRoundedRect(gx, gy, labelW, labelH, 4.0f, Color4{50, 50, 60, 200});
+    EmitTextGlyphs(labelText, gx + 8.0f, gy + 3.0f, 13.0f, Color4{220, 220, 230, 240});
+
+    // Drop position indicator on tree nodes
+    int hoverIdx = ctx.DragHoverTarget();
+    if (hoverIdx >= 0) {
+        const Widget* target = ctx.Pool().Get(hoverIdx);
+        if (target && target->tag == WidgetTag::TreeNode) {
+            const Rect& tr = target->computedRect;
+            DropPosition pos = ctx.DragDropPosition();
+            Color4 indicator{80, 160, 240, 200};
+            if (pos == DropPosition::Before) {
+                AddSolidRect(tr.x, tr.y - 1.0f, tr.w, 2.0f, indicator);
+            } else if (pos == DropPosition::After) {
+                AddSolidRect(tr.x, tr.y + tr.h - 1.0f, tr.w, 2.0f, indicator);
+            } else {
+                // Into: highlight border around target
+                AddBorderRect(tr.x, tr.y, tr.w, tr.h, indicator, 2.0f);
+            }
+        }
+    }
+}
+
+// Draw text at canvas-relative coordinates
+void CanvasDrawContext::DrawText(float x, float y, const char* text,
+                                 Color4 color, float fontSize) {
+    if (!font_ || !text || text[0] == '\0') return;
+    float fontScale = fontSize / font_->PixelSize();
+    float textY = oy_ + y + font_->Ascent() * fontScale;
+    dl_.EmitTextGlyphs(text, ox_ + x, textY, fontSize, color);
 }
 
 } // namespace ui

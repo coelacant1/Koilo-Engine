@@ -7,7 +7,7 @@
  * with fallback. Provides L(key) lookup for scripts and C++.
  *
  * @date 03/09/2026
- * @author Coela
+ * @author Coela Can't
  */
 
 #pragma once
@@ -29,54 +29,61 @@ namespace koilo {
  */
 class Localization {
 public:
-    static constexpr size_t MAX_ENTRIES    = 4096;
-    static constexpr size_t MAX_STRING_BUF = 256 * 1024; // 256KB
-    static constexpr size_t MAX_KEY_LEN    = 64;
-    static constexpr size_t MAX_VALUE_LEN  = 512;
-    static constexpr size_t MAX_LOCALE_LEN = 8;
+    static constexpr size_t MAX_ENTRIES    = 4096;           ///< Maximum number of string entries.
+    static constexpr size_t MAX_STRING_BUF = 256 * 1024;     ///< Total string storage (256KB).
+    static constexpr size_t MAX_KEY_LEN    = 64;             ///< Maximum key length.
+    static constexpr size_t MAX_VALUE_LEN  = 512;            ///< Maximum value length.
+    static constexpr size_t MAX_LOCALE_LEN = 8;              ///< Maximum locale identifier length.
 
     Localization();
     ~Localization() = default;
 
-    /// Set the active locale (e.g., "en", "ja", "ar").
+    /** @brief Set the active locale (e.g., "en", "ja", "ar"). */
     void SetLocale(const char* locale);
 
-    /// Get the active locale.
+    /** @brief Get the active locale. */
     const char* GetLocale() const { return locale_; }
 
-    /// True if the active locale uses right-to-left text direction.
+    /** @brief True if the active locale uses right-to-left text direction. */
     bool IsRTL() const { return rtl_; }
 
-    /// Set RTL flag for the current locale.
+    /** @brief Set RTL flag for the current locale. */
     void SetRTL(bool rtl) { rtl_ = rtl; }
 
-    /// Add or update a string entry for the current locale.
-    /// Returns true on success, false if table is full.
+    /**
+     * @brief Add or update a string entry for the current locale.
+     * @return True on success, false if table is full.
+     */
     bool Set(const char* key, const char* value);
 
-    /// Look up a localized string by key.
-    /// Returns the value, or the key itself if not found (never null).
+    /**
+     * @brief Look up a localized string by key.
+     * @return The value, or the key itself if not found (never null).
+     */
     const char* Get(const char* key) const;
 
-    /// Convenience alias for Get().
+    /** @brief Convenience alias for Get(). */
     const char* L(const char* key) const { return Get(key); }
 
-    /// Number of entries in the current table.
+    /** @brief Number of entries in the current table. */
     size_t Count() const { return count_; }
 
-    /// Clear all entries.
+    /** @brief Clear all entries. */
     void Clear();
 
-    /// Global font size multiplier for accessibility.
+    /** @brief Global font size multiplier for accessibility. */
     float FontScale() const { return fontScale_; }
+
+    /** @brief Set the global font size multiplier (clamped to >= 0.1). */
     void SetFontScale(float scale) { fontScale_ = scale > 0.1f ? scale : 0.1f; }
 
 private:
+    /** @struct Entry @brief Index into the flat string buffer for one key-value pair. */
     struct Entry {
-        uint16_t keyOffset;
-        uint16_t keyLen;
-        uint32_t valueOffset;
-        uint16_t valueLen;
+        uint16_t keyOffset;    ///< Byte offset of the key in stringBuf_.
+        uint16_t keyLen;       ///< Length of the key string.
+        uint32_t valueOffset;  ///< Byte offset of the value in stringBuf_.
+        uint16_t valueLen;     ///< Length of the value string.
 
         KL_BEGIN_FIELDS(Entry)
             KL_FIELD(Entry, keyOffset, "Key offset", 0, 65535),
@@ -95,17 +102,17 @@ private:
 
     };
 
-    Entry entries_[MAX_ENTRIES]{};
-    size_t count_ = 0;
+    Entry entries_[MAX_ENTRIES]{};  ///< Fixed-size array of string entries.
+    size_t count_ = 0;              ///< Number of entries currently stored.
 
-    char stringBuf_[MAX_STRING_BUF]{};
-    size_t bufUsed_ = 0;
+    char stringBuf_[MAX_STRING_BUF]{};  ///< Flat buffer holding all key and value strings.
+    size_t bufUsed_ = 0;                ///< Bytes consumed in stringBuf_.
 
-    char locale_[MAX_LOCALE_LEN]{"en"};
-    bool rtl_ = false;
-    float fontScale_ = 1.0f;
+    char locale_[MAX_LOCALE_LEN]{"en"}; ///< Active locale identifier.
+    bool rtl_ = false;                  ///< True if locale is right-to-left.
+    float fontScale_ = 1.0f;            ///< Accessibility font scale multiplier.
 
-    /// Find entry index by key. Returns -1 if not found.
+    /** @brief Find entry index by key. Returns -1 if not found. */
     int FindKey(const char* key) const;
 
     KL_BEGIN_FIELDS(Localization)

@@ -24,6 +24,7 @@ namespace ui {
 
 // --- Software UI Renderer -------------------------------------------
 
+/** @class UISWRenderer @brief CPU software UI renderer fallback. */
 class UISWRenderer {
 public:
     UISWRenderer() = default;
@@ -41,19 +42,24 @@ public:
     void Render(const UIDrawList& drawList,
                 const font::GlyphAtlas* atlas = nullptr);
 
+    /** @brief Return the buffer width in pixels. */
     int Width()  const { return width_; }
+    /** @brief Return the buffer height in pixels. */
     int Height() const { return height_; }
+    /** @brief Return a read-only pointer to the RGBA pixel data. */
     const uint8_t* Pixels() const { return pixels_.data(); }
+    /** @brief Return a mutable pointer to the RGBA pixel data. */
     uint8_t* Pixels() { return pixels_.data(); }
 
 private:
-    int width_  = 0;
-    int height_ = 0;
-    std::vector<uint8_t> pixels_;  // RGBA8888
+    int width_  = 0; ///< buffer width in pixels
+    int height_ = 0; ///< buffer height in pixels
+    std::vector<uint8_t> pixels_; ///< RGBA8888 pixel buffer
 
-    int scissorX_ = 0, scissorY_ = 0;
-    int scissorW_ = 0, scissorH_ = 0;
+    int scissorX_ = 0, scissorY_ = 0; ///< current scissor origin
+    int scissorW_ = 0, scissorH_ = 0; ///< current scissor size
 
+    /** @struct ScissorState @brief Saved scissor clip state. */
     struct ScissorState {
         int x, y, w, h;
 
@@ -72,7 +78,7 @@ private:
             /* No reflected ctors. */
         KL_END_DESCRIBE(ScissorState)
     };
-    std::vector<ScissorState> scissorStack_;
+    std::vector<ScissorState> scissorStack_; ///< nested scissor state stack
 
     void BlendPixel(int x, int y, Color4 c);
     void FillRect(int x, int y, int w, int h, Color4 color);

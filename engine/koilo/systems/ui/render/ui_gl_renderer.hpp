@@ -36,12 +36,13 @@ namespace ui {
 
 // --- UI vertex (16 bytes, packed) -----------------------------------
 
+/** @struct UIVertex @brief Vertex for batched UI rendering (52 bytes). */
 struct UIVertex {
-    float x, y;         // screen-space position
-    float u, v;         // texture coordinates / local normalized pos
-    uint8_t r, g, b, a; // vertex color
-    float sdf[4];       // (halfW, halfH, borderWidth, 0) - 0 when unused
-    float radii[4];     // per-corner radius (TL, TR, BR, BL) - 0 when unused
+    float x, y;         ///< screen-space position
+    float u, v;         ///< texture coordinates / local normalized pos
+    uint8_t r, g, b, a; ///< vertex color (RGBA8)
+    float sdf[4];       ///< SDF params (halfW, halfH, borderWidth, 0)
+    float radii[4];     ///< per-corner radius (TL, TR, BR, BL)
 
     KL_BEGIN_FIELDS(UIVertex)
         KL_FIELD(UIVertex, y, "Y", 0, 0)
@@ -60,10 +61,11 @@ static_assert(sizeof(UIVertex) == 52, "UIVertex should be 52 bytes");
 
 // --- OpenGL UI Renderer ---------------------------------------------
 
+/** @class UIGLRenderer @brief OpenGL batched UI renderer. */
 class UIGLRenderer {
 public:
-    static constexpr size_t MAX_VERTICES = 65536;
-    static constexpr size_t MAX_QUADS = MAX_VERTICES / 6;
+    static constexpr size_t MAX_VERTICES = 65536; ///< maximum vertices per batch
+    static constexpr size_t MAX_QUADS = MAX_VERTICES / 6; ///< maximum quads per batch
 
     UIGLRenderer() = default;
     ~UIGLRenderer() { Shutdown(); }
@@ -84,24 +86,26 @@ public:
     /// Render a draw list to the current framebuffer.
     void Render(const UIDrawList& drawList, int viewportW, int viewportH);
 
+    /** @brief Check whether the renderer is initialized. */
     bool IsInitialized() const { return initialized_; }
+    /** @brief Return the GL texture handle for the font atlas. */
     GLuint FontAtlasTexture() const { return fontAtlasTexture_; }
 
 private:
-    bool initialized_ = false;
-    GLuint program_ = 0;
-    GLuint vao_ = 0, vbo_ = 0;
-    GLuint whiteTexture_ = 0;
-    GLuint fontAtlasTexture_ = 0;
-    int fontAtlasW_ = 0, fontAtlasH_ = 0;
+    bool initialized_ = false; ///< true after Initialize() succeeds
+    GLuint program_ = 0;       ///< GL shader program handle
+    GLuint vao_ = 0, vbo_ = 0; ///< vertex array and buffer objects
+    GLuint whiteTexture_ = 0;  ///< 1×1 white texture for solid fills
+    GLuint fontAtlasTexture_ = 0; ///< font atlas GL texture
+    int fontAtlasW_ = 0, fontAtlasH_ = 0; ///< cached atlas dimensions
 
-    GLint locViewport_ = -1;
-    GLint locTexture_  = -1;
-    GLint locUseTexture_ = -1;
+    GLint locViewport_ = -1;   ///< uniform location: viewport size
+    GLint locTexture_  = -1;   ///< uniform location: texture sampler
+    GLint locUseTexture_ = -1; ///< uniform location: texture enable flag
 
-    UIVertex vertices_[MAX_VERTICES];
-    size_t vertexCount_ = 0;
-    GLuint currentTexture_ = 0;
+    UIVertex vertices_[MAX_VERTICES]; ///< CPU-side vertex staging buffer
+    size_t vertexCount_ = 0;   ///< number of staged vertices
+    GLuint currentTexture_ = 0; ///< texture bound for current batch
 
     void SetTexture(GLuint tex, bool isTextured, bool& useTexture);
     void PushQuad(float x, float y, float w, float h,
@@ -111,11 +115,13 @@ private:
                          const float radii[4], float borderWidth, Color4 c);
     void EmitBorder(float x, float y, float w, float h,
                     float bw, Color4 c);
+    void PushTriangle(float x0, float y0, float x1, float y1,
+                      float x2, float y2, Color4 c);
     void Flush(bool useTexture);
     GLuint CompileUIProgram();
     static GLuint CompileProgram(const char* vertSrc, const char* fragSrc);
 
-    std::vector<std::array<GLint, 4>> scissorStack_;
+    std::vector<std::array<GLint, 4>> scissorStack_; ///< nested scissor state stack
 
     KL_BEGIN_FIELDS(UIGLRenderer)
         /* No reflected fields. */

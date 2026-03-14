@@ -2,8 +2,8 @@
 /**
  * @file kml_types.cpp
  * @brief Value parsing utilities for KML/KSS types.
- * @date 03/09/2026
- * @author Coela
+ * @date 03/08/2026
+ * @author Coela Can't
  */
 
 #include "kml_types.hpp"
@@ -16,10 +16,11 @@ namespace koilo {
 namespace ui {
 namespace markup {
 
-// ---------------------------------------------------------------------------
+// ============================================================================
 // Helpers
-// ---------------------------------------------------------------------------
+// ============================================================================
 
+// Trim leading and trailing whitespace
 static std::string Trim(const std::string& s) {
     size_t start = s.find_first_not_of(" \t\r\n");
     if (start == std::string::npos) return "";
@@ -27,11 +28,13 @@ static std::string Trim(const std::string& s) {
     return s.substr(start, end - start + 1);
 }
 
+// Convert string to lowercase
 static std::string ToLower(std::string s) {
     for (auto& c : s) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
     return s;
 }
 
+// Convert a hex character to its integer value
 static int HexDigit(char c) {
     if (c >= '0' && c <= '9') return c - '0';
     if (c >= 'a' && c <= 'f') return c - 'a' + 10;
@@ -39,10 +42,11 @@ static int HexDigit(char c) {
     return -1;
 }
 
-// ---------------------------------------------------------------------------
+// ============================================================================
 // Color parsing
-// ---------------------------------------------------------------------------
+// ============================================================================
 
+// Parse a color string (#RGB, #RRGGBB, rgb(), rgba(), or named color)
 bool ParseColor(const std::string& raw, Color& out) {
     std::string str = Trim(raw);
     if (str.empty()) return false;
@@ -89,6 +93,8 @@ bool ParseColor(const std::string& raw, Color& out) {
         float v;
         while (iss >> v && count < 4) { vals[count++] = v; }
         if ((isRgb && count < 3) || (isRgba && count < 4)) return false;
+        // CSS alpha is 0.0-1.0 - convert to 0-255 range
+        if (isRgba && vals[3] <= 1.0f) vals[3] *= 255.0f;
         out = {(uint8_t)vals[0], (uint8_t)vals[1], (uint8_t)vals[2], (uint8_t)vals[3]};
         return true;
     }
@@ -105,10 +111,11 @@ bool ParseColor(const std::string& raw, Color& out) {
     return false;
 }
 
-// ---------------------------------------------------------------------------
+// ============================================================================
 // Size value parsing
-// ---------------------------------------------------------------------------
+// ============================================================================
 
+// Parse a CSS size value (px, %, em, rem, vw, vh, fill, auto, fit-content)
 bool ParseSizeValue(const std::string& raw, SizeValue& out) {
     std::string str = Trim(ToLower(raw));
     if (str.empty()) return false;
@@ -161,10 +168,11 @@ bool ParseSizeValue(const std::string& raw, SizeValue& out) {
     return true;
 }
 
-// ---------------------------------------------------------------------------
+// ============================================================================
 // Edge shorthand parsing
-// ---------------------------------------------------------------------------
+// ============================================================================
 
+// Parse 1-to-4 value edge shorthand into top/right/bottom/left
 bool ParseEdges(const std::string& raw, EdgesValue& out) {
     std::string str = Trim(raw);
     if (str.empty()) return false;
@@ -197,10 +205,11 @@ bool ParseEdges(const std::string& raw, EdgesValue& out) {
     }
 }
 
-// ---------------------------------------------------------------------------
+// ============================================================================
 // Selector specificity
-// ---------------------------------------------------------------------------
+// ============================================================================
 
+// Compute CSS specificity as a single comparable integer
 int KSSSelector::Specificity() const {
     int spec = 0;
     for (const auto& p : parts) {

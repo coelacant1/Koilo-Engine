@@ -2,8 +2,8 @@
 /**
  * @file kml_builder.cpp
  * @brief Converts parsed KML + KSS into UIContext widget trees.
- * @date 03/09/2026
- * @author Coela
+ * @date 03/08/2026
+ * @author Coela Can't
  */
 
 #include "kml_builder.hpp"
@@ -18,9 +18,9 @@ namespace koilo {
 namespace ui {
 namespace markup {
 
-// ---------------------------------------------------------------------------
+// ============================================================================
 // Tag / pseudo-state lookup tables
-// ---------------------------------------------------------------------------
+// ============================================================================
 
 static const struct { const char* name; WidgetTag tag; } kTagMap[] = {
     {"panel",          WidgetTag::Panel},
@@ -51,6 +51,10 @@ static const struct { const char* name; WidgetTag tag; } kTagMap[] = {
     {"menuitem",       WidgetTag::MenuItem},
     {"floatingpanel",  WidgetTag::FloatingPanel},
     {"float",          WidgetTag::FloatingPanel},  // shorthand
+    {"virtuallist",    WidgetTag::VirtualList},
+    {"vlist",          WidgetTag::VirtualList},     // shorthand
+    {"canvas",         WidgetTag::Canvas2D},
+    {"canvas2d",       WidgetTag::Canvas2D},        // alias
 };
 
 static const struct { const char* name; PseudoState state; } kPseudoMap[] = {
@@ -65,6 +69,7 @@ static const struct { const char* name; PseudoState state; } kPseudoMap[] = {
     {"disabled",      PseudoState::Disabled},
 };
 
+// Look up WidgetTag enum value from a tag name string
 WidgetTag KMLBuilder::TagFromString(const std::string& s) const {
     for (const auto& m : kTagMap) {
         if (s == m.name) return m.tag;
@@ -72,6 +77,7 @@ WidgetTag KMLBuilder::TagFromString(const std::string& s) const {
     return WidgetTag::Panel; // default fallback
 }
 
+// Look up PseudoState enum value from a pseudo-class string
 PseudoState KMLBuilder::PseudoStateFromString(const std::string& s) const {
     for (const auto& m : kPseudoMap) {
         if (s == m.name) return m.state;
@@ -79,17 +85,19 @@ PseudoState KMLBuilder::PseudoStateFromString(const std::string& s) const {
     return PseudoState::Normal;
 }
 
-// ---------------------------------------------------------------------------
+// ============================================================================
 // Constructor
-// ---------------------------------------------------------------------------
+// ============================================================================
 
+// Construct builder with UI context and theme references
 KMLBuilder::KMLBuilder(UIContext& ctx, Theme& theme)
     : ctx_(ctx), theme_(theme) {}
 
-// ---------------------------------------------------------------------------
+// ============================================================================
 // Widget creation from tag name
-// ---------------------------------------------------------------------------
+// ============================================================================
 
+// Create a widget from a tag name, dispatching to the correct UIContext factory
 int KMLBuilder::CreateWidget(const std::string& tag, const std::string& id) {
     const char* cid = id.empty() ? tag.c_str() : id.c_str();
 
@@ -150,16 +158,24 @@ int KMLBuilder::CreateWidget(const std::string& tag, const std::string& id) {
                                 return ctx_.CreateNumberSpinner(cid, 0.0f, 0.0f, 100.0f, 1.0f);
 
     if (tag == "floatingpanel" || tag == "float") {
-        return ctx_.CreateFloatingPanel(cid, cid, 100.0f, 100.0f, 300.0f, 200.0f);
+        float offX = 100.0f + floatingPanelCount_ * 40.0f;
+        float offY = 100.0f + floatingPanelCount_ * 30.0f;
+        int idx = ctx_.CreateFloatingPanel(cid, cid, offX, offY, 300.0f, 200.0f);
+        if (idx >= 0) {
+            Widget* w = ctx_.Pool().Get(idx);
+            if (w) w->zOrder = static_cast<int16_t>(500 + floatingPanelCount_);
+        }
+        ++floatingPanelCount_;
+        return idx;
     }
 
     // Default: panel
     return ctx_.CreatePanel(cid);
 }
 
-// ---------------------------------------------------------------------------
+// ============================================================================
 // Attribute application (inline HTML attributes -> API calls)
-// ---------------------------------------------------------------------------
+// ============================================================================
 
 void KMLBuilder::ApplyAttribute(int widgetIdx, const std::string& tag,
                                   const std::string& name, const std::string& value) {
@@ -186,6 +202,14 @@ void KMLBuilder::ApplyAttribute(int widgetIdx, const std::string& tag,
     if (name == "min") { w->sliderMin = std::strtof(value.c_str(), nullptr); return; }
     if (name == "max") { w->sliderMax = std::strtof(value.c_str(), nullptr); return; }
     if (name == "value") {
+        // ColorField: parse as color hex
+        if (w->tag == WidgetTag::ColorField) {
+            Color c;
+            if (ParseColor(value, c)) {
+                w->colorValue = {c.r, c.g, c.b, c.a};
+            }
+            return;
+        }
         w->sliderValue = std::strtof(value.c_str(), nullptr);
         if (w->tag == WidgetTag::ProgressBar)
             w->progressValue = w->sliderValue;
@@ -236,9 +260,41 @@ void KMLBuilder::ApplyAttribute(int widgetIdx, const std::string& tag,
         return;
     }
 
+    // MenuItem shortcut display text
+    if (name == "shortcut") {
+        w->shortcutTextId = ctx_.Strings().Intern(value.c_str());
+        return;
+    }
+
+    // MenuItem submenu reference (resolved by id during tree build)
+    if (name == "submenu") {
+        // Store the target popup id for deferred resolution
+        w->submenuIdx = -2; // sentinel: needs resolution
+        w->panelTitleId = ctx_.Strings().Intern(value.c_str()); // reuse field temporarily
+        return;
+    }
+
+    // VirtualList configuration
+    if (name == "item-count") {
+        w->virtualItemCount = std::atoi(value.c_str());
+        w->contentHeight = w->virtualItemCount * w->virtualItemHeight;
+        return;
+    }
+    if (name == "item-height") {
+        w->virtualItemHeight = std::strtof(value.c_str(), nullptr);
+        w->contentHeight = w->virtualItemCount * w->virtualItemHeight;
+        return;
+    }
+
     // Placeholder
     if (name == "placeholder") {
         w->placeholderId = ctx_.Strings().Intern(value.c_str());
+        return;
+    }
+
+    // Icon
+    if (name == "icon") {
+        w->iconId = IconFromName(value.c_str());
         return;
     }
 
@@ -313,6 +369,7 @@ void KMLBuilder::ApplyAttribute(int widgetIdx, const std::string& tag,
     }
 }
 
+// Apply all attributes and text content from an element to a widget
 void KMLBuilder::ApplyAttributes(int widgetIdx, const KMLElement& elem) {
     for (const auto& attr : elem.attributes) {
         ApplyAttribute(widgetIdx, elem.tag, attr.name, attr.value);
@@ -324,9 +381,9 @@ void KMLBuilder::ApplyAttributes(int widgetIdx, const KMLElement& elem) {
     }
 }
 
-// ---------------------------------------------------------------------------
+// ============================================================================
 // CSS property application - layout
-// ---------------------------------------------------------------------------
+// ============================================================================
 
 void KMLBuilder::ApplyLayoutProperty(int widgetIdx, const std::string& prop,
                                        const std::string& value) {
@@ -783,9 +840,9 @@ void KMLBuilder::ApplyLayoutProperty(int widgetIdx, const std::string& prop,
     }
 }
 
-// ---------------------------------------------------------------------------
+// ============================================================================
 // CSS property application - visual (theme-aware)
-// ---------------------------------------------------------------------------
+// ============================================================================
 
 void KMLBuilder::ApplyVisualProperty(int widgetIdx, const std::string& tagName,
                                        const std::string& pseudoClass,
@@ -1111,9 +1168,9 @@ void KMLBuilder::ApplyVisualProperty(int widgetIdx, const std::string& tagName,
     }
 }
 
-// ---------------------------------------------------------------------------
+// ============================================================================
 // Stylesheet application (selector matching + cascade)
-// ---------------------------------------------------------------------------
+// ============================================================================
 
 bool KMLBuilder::SimpleSelectorMatches(const KSSSimpleSelector& simple,
                                          const WidgetMeta& meta) const {
@@ -1214,6 +1271,7 @@ bool KMLBuilder::SimpleSelectorMatchesBasic(const KSSSimpleSelector& simple,
     return true;
 }
 
+// Test if a compound selector matches a widget, walking the ancestor chain
 bool KMLBuilder::SelectorMatches(const KSSSelector& selector, int metaIdx) const {
     if (selector.parts.empty()) return false;
 
@@ -1322,11 +1380,16 @@ void KMLBuilder::ApplyDeclarations(int widgetIdx, const std::string& tag,
             continue;
         }
 
-        ApplyLayoutProperty(widgetIdx, decl.property, resolvedValue);
+        // Layout properties (cursor, display, gap, etc.) are on the Widget struct
+        // and don't support per-state variants. Only apply for normal state.
+        if (pseudoClass.empty()) {
+            ApplyLayoutProperty(widgetIdx, decl.property, resolvedValue);
+        }
         ApplyVisualProperty(widgetIdx, tag, pseudoClass, decl.property, resolvedValue);
     }
 }
 
+// Resolve var() references and calc() expressions in a CSS value
 std::string KMLBuilder::ResolveVariable(const std::string& value) const {
     // Resolve calc() expressions first
     std::string resolved = value;
@@ -1475,6 +1538,7 @@ std::string KMLBuilder::ResolveVariable(const std::string& value) const {
     return result;
 }
 
+// Apply all stylesheet rules to the widget tree via selector matching
 void KMLBuilder::ApplyStylesheet(const KSSStylesheet& stylesheet) {
     // Clear per-widget style overrides before reapplying
     theme_.ClearWidgetStyles();
@@ -1589,10 +1653,11 @@ void KMLBuilder::ApplyStylesheet(const KSSStylesheet& stylesheet) {
     }
 }
 
-// ---------------------------------------------------------------------------
+// ============================================================================
 // Element tree -> widget tree
-// ---------------------------------------------------------------------------
+// ============================================================================
 
+// Recursively build a widget from a parsed element and its children
 int KMLBuilder::BuildElement(const KMLElement& elem, int parentIdx, int parentMetaIdx) {
     // Skip text pseudo-elements
     if (elem.tag == "_text") return -1;
@@ -1632,6 +1697,10 @@ int KMLBuilder::BuildElement(const KMLElement& elem, int parentIdx, int parentMe
         meta.attributes.push_back({attr.name, attr.value});
     }
     meta.siblingCount = 0; // updated after all siblings are built
+    // Capture inline style for re-application after stylesheet (CSS specificity)
+    for (const auto& attr : elem.attributes) {
+        if (attr.name == "style") { meta.inlineStyle = attr.value; break; }
+    }
     metas_.push_back(meta);
 
     // Apply inline attributes
@@ -1658,15 +1727,16 @@ int KMLBuilder::BuildElement(const KMLElement& elem, int parentIdx, int parentMe
     return widgetIdx;
 }
 
-// ---------------------------------------------------------------------------
+// ============================================================================
 // Public API
-// ---------------------------------------------------------------------------
+// ============================================================================
 
 BuildResult KMLBuilder::Build(const std::vector<KMLElement>& elements,
                                 const KSSStylesheet& stylesheet) {
     metas_.clear();
     errors_.clear();
     widgetsCreated_ = 0;
+    floatingPanelCount_ = 0;
 
     int rootIdx = -1;
     for (const auto& elem : elements) {
@@ -1677,17 +1747,48 @@ BuildResult KMLBuilder::Build(const std::vector<KMLElement>& elements,
     // Apply stylesheet after all widgets exist (for descendant selectors)
     ApplyStylesheet(stylesheet);
 
+    // Re-apply inline styles - CSS semantics: inline has highest specificity
+    for (const auto& meta : metas_) {
+        if (meta.inlineStyle.empty()) continue;
+        size_t pos = 0;
+        const auto& value = meta.inlineStyle;
+        while (pos < value.size()) {
+            size_t colon = value.find(':', pos);
+            if (colon == std::string::npos) break;
+            size_t semi = value.find(';', colon);
+            if (semi == std::string::npos) semi = value.size();
+            std::string prop = value.substr(pos, colon - pos);
+            std::string val  = value.substr(colon + 1, semi - colon - 1);
+            auto trim = [](std::string s) {
+                size_t a = s.find_first_not_of(" \t");
+                size_t b = s.find_last_not_of(" \t");
+                return (a == std::string::npos) ? "" : s.substr(a, b - a + 1);
+            };
+            prop = trim(prop);
+            val  = trim(val);
+            for (auto& c : prop) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+            ApplyLayoutProperty(meta.widgetIdx, prop, val);
+            ApplyVisualProperty(meta.widgetIdx, meta.tag, "", prop, val);
+            pos = semi + 1;
+        }
+    }
+
     // Inherit cascading properties from parent to child
     if (rootIdx >= 0) InheritProperties(rootIdx);
+
+    // Resolve submenu references (MenuItem submenu="popup-id" -> submenuIdx)
+    ResolveSubmenuReferences(rootIdx);
 
     return {rootIdx, errors_, widgetsCreated_};
 }
 
+// Build the complete widget tree from elements without a stylesheet
 BuildResult KMLBuilder::Build(const std::vector<KMLElement>& elements) {
     KSSStylesheet empty;
     return Build(elements, empty);
 }
 
+// Resolve a SizeValue to pixels based on unit type
 float KMLBuilder::ResolveSizeUnit(const SizeValue& sv, float elementFontSize) const {
     switch (sv.unit) {
         case SizeUnit::Px:      return sv.number;
@@ -1700,10 +1801,12 @@ float KMLBuilder::ResolveSizeUnit(const SizeValue& sv, float elementFontSize) co
     }
 }
 
+// Record a build error with source line information
 void KMLBuilder::Error(int line, const std::string& msg) {
     errors_.push_back({line, 0, msg});
 }
 
+// Cascade inheritable CSS properties (font, color, etc.) from parent to child
 void KMLBuilder::InheritProperties(int widgetIdx) {
     Widget* w = ctx_.Pool().Get(widgetIdx);
     if (!w) return;
@@ -1764,6 +1867,39 @@ void KMLBuilder::InheritProperties(int widgetIdx) {
     // Recurse into children
     for (int i = 0; i < w->childCount; ++i) {
         InheritProperties(w->children[i]);
+    }
+}
+
+// Resolve submenu="id" attributes to widget indices
+void KMLBuilder::ResolveSubmenuReferences(int rootIdx) {
+    if (rootIdx < 0) return;
+
+    // Build id->index map from metas
+    std::unordered_map<std::string, int> idMap;
+    for (const auto& m : metas_) {
+        if (!m.id.empty()) idMap[m.id] = m.widgetIdx;
+    }
+
+    // Walk all widgets and resolve submenuIdx == -2 sentinel
+    for (auto& m : metas_) {
+        Widget* w = ctx_.GetWidget(m.widgetIdx);
+        if (!w || w->tag != WidgetTag::MenuItem || w->submenuIdx != -2) continue;
+
+        const char* targetId = ctx_.Strings().Lookup(w->panelTitleId);
+        if (!targetId || targetId[0] == '\0') {
+            w->submenuIdx = -1;
+            continue;
+        }
+
+        auto it = idMap.find(targetId);
+        if (it != idMap.end()) {
+            w->submenuIdx = static_cast<int16_t>(it->second);
+            // Clear the temporary reuse of panelTitleId
+            w->panelTitleId = NullStringId;
+        } else {
+            Error(0, "submenu reference '" + std::string(targetId) + "' not found");
+            w->submenuIdx = -1;
+        }
     }
 }
 

@@ -294,6 +294,9 @@ bool SDL3Backend::InitSDL() {
         std::cerr << "Window creation failed: " << SDL_GetError() << std::endl;
         return false;
     }
+
+    // Enable text input events (required on some platforms for SDL_EVENT_TEXT_INPUT)
+    SDL_StartTextInput(window_);
     
     // Debug: Verify actual window size
     int actualW, actualH;

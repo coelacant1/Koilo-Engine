@@ -22,6 +22,7 @@
  */
 
 #include <koilo/scripting/koiloscript_engine.hpp>
+#include <koilo/systems/ui/ui.hpp>
 #include <koilo/platform/sdl3_input_helper.hpp>
 #include <koilo/platform/desktop_file_reader.hpp>
 #include <koilo/core/platform/thread_affinity.hpp>
@@ -142,30 +143,64 @@ private:
             lastTick   = now;
             TimeManager::GetInstance().Tick(dt);
 
-            // Events
+            // Determine if the UI is idle (no visual changes pending)
+            UI* uiPtr = engine.GetUI();
+            bool uiIdle = uiPtr && uiPtr->IsIdle();
+            bool sceneActive = engine.GetScene() != nullptr;
+
+            // Events — use blocking wait when UI-only and idle to save CPU/GPU
             SDL_Event e;
-            while (SDL_PollEvent(&e)) {
-                if (e.type == SDL_EVENT_QUIT) { running = false; break; }
-                if (e.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED)
-                    { running = false; break; }
-                if (e.type == SDL_EVENT_WINDOW_RESIZED) {
-                    winW = e.window.data1;
-                    winH = e.window.data2;
-                    // Re-render immediately during resize for smooth feedback
-                    if (gpuBackend) {
-                        engine.RenderFrameGPU();
-                        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-                        glViewport(0, 0, winW, winH);
-                        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-                        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-                        gpuBackend->BlitToScreen(winW, winH);
-                        gpuBackend->CompositeCanvasOverlays(winW, winH);
-                        engine.RenderUIOverlay(winW, winH, dt);
-                        display.SwapOnly();
-                    }
+            bool hadEvents = false;
+            if (!sceneActive && uiIdle) {
+                // Block up to 16ms waiting for input events
+                if (SDL_WaitEventTimeout(&e, 16)) {
+                    hadEvents = true;
+                    do {
+                        if (e.type == SDL_EVENT_QUIT) { running = false; break; }
+                        if (e.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED)
+                            { running = false; break; }
+                        if (e.type == SDL_EVENT_WINDOW_RESIZED) {
+                            winW = e.window.data1;
+                            winH = e.window.data2;
+                        }
+                        if (!HandleSDL3Event(engine, e))
+                            running = false;
+                    } while (running && SDL_PollEvent(&e));
                 }
-                if (!HandleSDL3Event(engine, e))
-                    running = false;
+            } else {
+                while (SDL_PollEvent(&e)) {
+                    hadEvents = true;
+                    if (e.type == SDL_EVENT_QUIT) { running = false; break; }
+                    if (e.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED)
+                        { running = false; break; }
+                    if (e.type == SDL_EVENT_WINDOW_RESIZED) {
+                        winW = e.window.data1;
+                        winH = e.window.data2;
+                        // Re-render immediately during resize for smooth feedback
+                        if (gpuBackend) {
+                            engine.RenderFrameGPU();
+                            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                            glViewport(0, 0, winW, winH);
+                            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+                            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                            gpuBackend->BlitToScreen(winW, winH);
+                            gpuBackend->CompositeCanvasOverlays(winW, winH);
+                            engine.RenderUIOverlay(winW, winH, dt);
+                            display.SwapOnly();
+                        }
+                    }
+                    if (!HandleSDL3Event(engine, e))
+                        running = false;
+                }
+            }
+
+            // Re-check idle state after processing events
+            uiIdle = uiPtr && uiPtr->IsIdle();
+
+            // When UI-only and still idle after events, skip the full render cycle
+            if (!sceneActive && uiIdle && !hadEvents) {
+                if (enableProfiler) profiler.EndFrame();
+                continue;
             }
 
             uint64_t workStart = SDL_GetPerformanceCounter();

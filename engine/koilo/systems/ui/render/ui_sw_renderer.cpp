@@ -1,4 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
+/**
+ * @file ui_sw_renderer.cpp
+ * @brief CPU software UI renderer implementation.
+ * @date 03/08/2026
+ * @author Coela Can't
+ */
+
 #include <koilo/systems/ui/render/ui_sw_renderer.hpp>
 #include <algorithm>
 #include <cstring>
@@ -7,6 +14,11 @@
 namespace koilo {
 namespace ui {
 
+// ============================================================================
+// Public methods
+// ============================================================================
+
+// Resize the pixel buffer
 void UISWRenderer::Resize(int width, int height) {
     if (width == width_ && height == height_) return;
     width_  = width;
@@ -14,10 +26,12 @@ void UISWRenderer::Resize(int width, int height) {
     pixels_.resize(width * height * 4, 0);
 }
 
+// Clear the pixel buffer to transparent
 void UISWRenderer::Clear() {
     std::memset(pixels_.data(), 0, pixels_.size());
 }
 
+// Clear the pixel buffer to a specific color
 void UISWRenderer::Clear(Color4 color) {
     for (int i = 0; i < width_ * height_; ++i) {
         pixels_[i * 4 + 0] = color.r;
@@ -27,6 +41,7 @@ void UISWRenderer::Clear(Color4 color) {
     }
 }
 
+// Render a draw list to the pixel buffer
 void UISWRenderer::Render(const UIDrawList& drawList,
                            const font::GlyphAtlas* atlas) {
     scissorX_ = 0;
@@ -99,6 +114,11 @@ void UISWRenderer::Render(const UIDrawList& drawList,
     }
 }
 
+// ============================================================================
+// Private rasterization helpers
+// ============================================================================
+
+// Blend a single pixel with alpha compositing
 void UISWRenderer::BlendPixel(int x, int y, Color4 c) {
     if (x < scissorX_ || x >= scissorX_ + scissorW_ ||
         y < scissorY_ || y >= scissorY_ + scissorH_ ||
@@ -123,6 +143,7 @@ void UISWRenderer::BlendPixel(int x, int y, Color4 c) {
     }
 }
 
+// Fill a clipped axis-aligned rectangle
 void UISWRenderer::FillRect(int x, int y, int w, int h, Color4 color) {
     int x0 = std::max(x, std::max(0, scissorX_));
     int y0 = std::max(y, std::max(0, scissorY_));
@@ -136,6 +157,7 @@ void UISWRenderer::FillRect(int x, int y, int w, int h, Color4 color) {
     }
 }
 
+// Draw a rectangular border (four edge rects)
 void UISWRenderer::DrawBorder(int x, int y, int w, int h, int bw, Color4 color) {
     FillRect(x, y, w, bw, color);             // top
     FillRect(x, y + h - bw, w, bw, color);    // bottom
@@ -143,6 +165,7 @@ void UISWRenderer::DrawBorder(int x, int y, int w, int h, int bw, Color4 color) 
     FillRect(x + w - bw, y + bw, bw, h - bw * 2, color); // right
 }
 
+// Blit a glyph atlas region with alpha blending
 void UISWRenderer::BlitAtlasRect(const DrawCmd& cmd, const font::GlyphAtlas& atlas) {
     int dstX = static_cast<int>(cmd.x);
     int dstY = static_cast<int>(cmd.y);
@@ -172,6 +195,7 @@ void UISWRenderer::BlitAtlasRect(const DrawCmd& cmd, const font::GlyphAtlas& atl
     }
 }
 
+// Test whether a pixel lies inside a rounded rectangle
 bool UISWRenderer::IsInsideRoundedRect(int px, int py, int rx, int ry,
                                         int rw, int rh, float radius) {
     float r = radius;
@@ -195,6 +219,7 @@ bool UISWRenderer::IsInsideRoundedRect(int px, int py, int rx, int ry,
     return (dx * dx + dy * dy) <= (r * r);
 }
 
+// Fill a rounded rectangle pixel by pixel
 void UISWRenderer::FillRoundedRect(int x, int y, int w, int h,
                                     float radius, Color4 color) {
     int x0 = std::max(x, std::max(0, scissorX_));
@@ -211,6 +236,7 @@ void UISWRenderer::FillRoundedRect(int x, int y, int w, int h,
     }
 }
 
+// Draw a rounded border (outer minus inner rounded rect)
 void UISWRenderer::DrawRoundedBorder(int x, int y, int w, int h,
                                       float radius, int bw, Color4 color) {
     int x0 = std::max(x, std::max(0, scissorX_));

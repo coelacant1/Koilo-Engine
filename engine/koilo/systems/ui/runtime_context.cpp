@@ -3,7 +3,7 @@
  * @file runtime_context.cpp
  * @brief RuntimeContext implementation - isolated UI execution context.
  * @date 03/09/2026
- * @author Coela
+ * @author Coela Can't
  */
 
 #include "runtime_context.hpp"
@@ -11,8 +11,11 @@
 namespace koilo {
 namespace ui {
 
-// -- construction -------------------------------------------------------
+// ====================================================================
+// Construction
+// ====================================================================
 
+// Initialise role, tag, and owned UIContext.
 RuntimeContext::RuntimeContext(ContextRole role, size_t budget,
                                size_t poolCapacity)
     : role_(role)
@@ -20,8 +23,11 @@ RuntimeContext::RuntimeContext(ContextRole role, size_t budget,
     , ctx_(poolCapacity)
     , memoryBudget_(budget) {}
 
-// -- memory budget ------------------------------------------------------
+// ====================================================================
+// Memory budget
+// ====================================================================
 
+// Attempt to reserve bytes; fail if over budget.
 bool RuntimeContext::TryAllocate(size_t size) {
     if (memoryBudget_ > 0 && memoryUsage_ + size > memoryBudget_)
         return false;
@@ -31,6 +37,7 @@ bool RuntimeContext::TryAllocate(size_t size) {
     return true;
 }
 
+// Decrease tracked usage, clamping to zero.
 void RuntimeContext::Release(size_t size) {
     if (size > memoryUsage_)
         memoryUsage_ = 0;
@@ -38,20 +45,27 @@ void RuntimeContext::Release(size_t size) {
         memoryUsage_ -= size;
 }
 
-// -- crash isolation ----------------------------------------------------
+// ====================================================================
+// Crash isolation
+// ====================================================================
 
+// Record an error message for display.
 void RuntimeContext::SetError(const char* message) {
     hasError_ = true;
     lastError_ = message ? message : "Unknown error";
 }
 
+// Reset the error flag and message.
 void RuntimeContext::ClearError() {
     hasError_ = false;
     lastError_.clear();
 }
 
-// -- widget state snapshot / restore (hot-reload) -----------------------
+// ====================================================================
+// Widget state snapshot / restore (hot-reload)
+// ====================================================================
 
+// Walk the pool and capture user-editable state for every named widget.
 void RuntimeContext::SnapshotWidgetState() {
     snapshot_.clear();
     const WidgetPool& pool = ctx_.Pool();
@@ -73,6 +87,7 @@ void RuntimeContext::SnapshotWidgetState() {
     }
 }
 
+// Match snapshot entries to new widgets by interned ID and restore values.
 void RuntimeContext::RestoreWidgetState() {
     if (snapshot_.empty()) return;
 

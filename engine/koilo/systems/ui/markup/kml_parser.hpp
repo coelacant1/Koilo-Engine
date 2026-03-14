@@ -7,8 +7,8 @@
  * Supports: elements, attributes, text content, self-closing tags,
  * nesting, and <!-- comments -->.
  *
- * @date 03/09/2026
- * @author Coela
+ * @date 03/08/2026
+ * @author Coela Can't
  */
 
 #pragma once
@@ -19,28 +19,30 @@ namespace koilo {
 namespace ui {
 namespace markup {
 
+/** @class KMLParser @brief HTML-like markup parser for KML layout files. */
 class KMLParser {
 public:
-    /// Parse markup string into an element tree.
-    /// Returns true on success. On failure, errors() has diagnostics.
+    /**
+     * @brief Parse markup string into an element tree.
+     * @return true on success; on failure, Errors() has diagnostics.
+     */
     bool Parse(const std::string& source);
 
-    /// The parsed root elements (typically one root element).
+    /** @brief The parsed root elements (typically one root element). */
     const std::vector<KMLElement>& Elements() const { return roots_; }
 
-    /// Parse errors (empty on success).
+    /** @brief Parse errors (empty on success). */
     const std::vector<ParseError>& Errors() const { return errors_; }
 
 private:
-    // Scanner state
-    const char* src_ = nullptr;
-    const char* end_ = nullptr;
-    const char* pos_ = nullptr;
-    int line_ = 1;
-    int col_ = 1;
+    const char* src_ = nullptr; ///< start of source buffer
+    const char* end_ = nullptr; ///< end of source buffer
+    const char* pos_ = nullptr; ///< current scan position
+    int line_ = 1;              ///< current line number
+    int col_ = 1;               ///< current column number
 
-    std::vector<KMLElement> roots_;
-    std::vector<ParseError> errors_;
+    std::vector<KMLElement> roots_;  ///< parsed root elements
+    std::vector<ParseError> errors_; ///< accumulated parse errors
 
     // Character-level
     char Peek() const;

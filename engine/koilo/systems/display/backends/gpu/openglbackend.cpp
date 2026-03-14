@@ -407,6 +407,9 @@ bool koilo::OpenGLBackend::InitSDL() {
         std::cerr << "Window creation failed: " << SDL_GetError() << std::endl;
         return false;
     }
+
+    // Enable text input events (required on some platforms for SDL_EVENT_TEXT_INPUT)
+    SDL_StartTextInput(window_);
     
     // Create OpenGL context
     glContext_ = SDL_GL_CreateContext(window_);

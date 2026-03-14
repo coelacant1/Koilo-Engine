@@ -74,6 +74,16 @@ if(SDL3_FOUND OR TARGET SDL3::SDL3)
     ${CMAKE_SOURCE_DIR}/engine/koilo/modules
     ${CMAKE_BINARY_DIR}/generated
   )
+
+  # UI showcase example (all widget types visual debug)
+  add_executable(ui_showcase ${CMAKE_CURRENT_SOURCE_DIR}/ui_showcase/main.cpp)
+  target_link_libraries(ui_showcase PRIVATE koilo_core koiloengine_display SDL3::SDL3)
+  target_include_directories(ui_showcase PRIVATE
+    ${CMAKE_SOURCE_DIR}/engine
+    ${CMAKE_SOURCE_DIR}/engine/koilo
+    ${CMAKE_SOURCE_DIR}/engine/koilo/modules
+    ${CMAKE_BINARY_DIR}/generated
+  )
 else()
   message(STATUS "SDL3 not found  skipping example builds")
 endif()

@@ -7,7 +7,7 @@
  * available to game scripts via reflection.
  *
  * @date 03/09/2026
- * @author Coela
+ * @author Coela Can't
  */
 
 #include "editor_app.hpp"
@@ -15,12 +15,15 @@
 
 namespace koilo {
 
+/// Construct the editor and log initialization.
 EditorApp::EditorApp() {
     log_.Push(LogSeverity::Info, "Editor initialized");
 }
 
+/// Destructor.
 EditorApp::~EditorApp() = default;
 
+/// Build the full editor layout.
 void EditorApp::Setup(int viewportW, int viewportH) {
     ui_.SetViewport(viewportW, viewportH);
 
@@ -59,11 +62,21 @@ void EditorApp::Setup(int viewportW, int viewportH) {
     // -- Status bar --------------------------------------------------
     BuildStatusBar();
 
+    // Wire command registry into the UI context
+    context_.UI().SetCommandRegistry(&commands_);
+    RegisterDefaultCommands();
+
+    // Build color picker popup
+    colorPicker_.Build(context_.UI());
+
     log_.Push(LogSeverity::Info, "Editor layout built");
 }
 
-// -- Menu bar --------------------------------------------------------
+// ============================================================================
+// Menu Bar
+// ============================================================================
 
+/// Build the menu bar with File, Edit, View, Tools, Help buttons.
 void EditorApp::BuildMenuBar() {
     int root = ui_.GetRoot();
     menuBar_ = ui_.CreatePanel("menuBar");
@@ -87,8 +100,11 @@ void EditorApp::BuildMenuBar() {
     addMenuBtn("menuHelp",  "Help",  48);
 }
 
-// -- Status bar ------------------------------------------------------
+// ============================================================================
+// Status Bar
+// ============================================================================
 
+/// Build the status bar with FPS, memory, and tool labels.
 void EditorApp::BuildStatusBar() {
     int root = ui_.GetRoot();
     statusBar_ = ui_.CreatePanel("statusBar");
@@ -111,8 +127,11 @@ void EditorApp::BuildStatusBar() {
     ui_.SetSize(toolLabel_, 80, 18);
 }
 
-// -- Hierarchy panel -------------------------------------------------
+// ============================================================================
+// Hierarchy Panel
+// ============================================================================
 
+/// Build the hierarchy panel with search, tree, and context menu.
 void EditorApp::BuildHierarchyPanel() {
     // Header
     int header = ui_.CreatePanel("hierHeader");
@@ -160,8 +179,11 @@ void EditorApp::BuildHierarchyPanel() {
     addMenuItem("hierCtxDel",    "Delete");
 }
 
-// -- Inspector panel -------------------------------------------------
+// ============================================================================
+// Inspector Panel
+// ============================================================================
 
+/// Build the inspector panel with header and scrollable content.
 void EditorApp::BuildInspectorPanel() {
     // Header
     int header = ui_.CreatePanel("inspHeader");
@@ -188,8 +210,11 @@ void EditorApp::BuildInspectorPanel() {
     ui_.SetSize(inspNoSel_, 0, 24);
 }
 
-// -- Viewport panel --------------------------------------------------
+// ============================================================================
+// Viewport Panel
+// ============================================================================
 
+/// Build the viewport panel with toolbar and render area.
 void EditorApp::BuildViewportPanel() {
     // Toolbar
     vpToolbar_ = ui_.CreatePanel("vpToolbar");
@@ -218,8 +243,11 @@ void EditorApp::BuildViewportPanel() {
     ui_.SetFillHeight(vpView_);
 }
 
-// -- Console panel ---------------------------------------------------
+// ============================================================================
+// Console Panel
+// ============================================================================
 
+/// Build the console panel with filter buttons, log, and input.
 void EditorApp::BuildConsolePanel() {
     // Header
     int header = ui_.CreatePanel("consHeader");
@@ -263,15 +291,21 @@ void EditorApp::BuildConsolePanel() {
     ui_.SetSize(consInput_, 0, 24);
 }
 
-// -- Asset browser ---------------------------------------------------
+// ============================================================================
+// Asset Browser
+// ============================================================================
 
+/// Build the asset browser panel (placeholder).
 void EditorApp::BuildAssetBrowserPanel() {
     // Would be placed in a tab alongside console
     // Omitted from default layout - can be toggled via View menu
 }
 
-// -- Update ----------------------------------------------------------
+// ============================================================================
+// Update
+// ============================================================================
 
+/// Per-frame update: refresh FPS and memory labels.
 bool EditorApp::Update(float dt) {
     frameCount_++;
     fpsTimer_ += dt;
@@ -290,6 +324,37 @@ bool EditorApp::Update(float dt) {
     }
 
     return true;
+}
+
+/// Register built-in editor commands and keyboard shortcuts.
+void EditorApp::RegisterDefaultCommands() {
+    using S = ui::Shortcut;
+    using K = ui::KeyCode;
+
+    commands_.Register("edit.undo", "Undo", "Edit",
+        [this]() { undoStack_.Undo(); },
+        [this]() { return undoStack_.CanUndo(); },
+        S(K::Z, true));
+
+    commands_.Register("edit.redo", "Redo", "Edit",
+        [this]() { undoStack_.Redo(); },
+        [this]() { return undoStack_.CanRedo(); },
+        S(K::Z, true, true));
+
+    commands_.Register("edit.delete", "Delete", "Edit",
+        [this]() { selection_.ClearSelection(); },
+        nullptr,
+        S(K::Delete));
+
+    commands_.Register("edit.selectall", "Select All", "Edit",
+        []() { /* placeholder - needs widget tree integration */ },
+        nullptr,
+        S(K::A, true));
+
+    commands_.Register("view.fullscreen", "Toggle Fullscreen", "View",
+        []() { /* placeholder - needs platform integration */ },
+        nullptr,
+        S(K::F11));
 }
 
 } // namespace koilo
