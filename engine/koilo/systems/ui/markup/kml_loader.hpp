@@ -6,8 +6,8 @@
  * Provides file I/O and a single-call interface for parsing markup +
  * stylesheet and building the widget tree.
  *
- * @date 03/09/2026
- * @author Coela
+ * @date 03/08/2026
+ * @author Coela Can't
  */
 
 #pragma once
@@ -22,39 +22,47 @@ namespace koilo {
 namespace ui {
 namespace markup {
 
+/** @class KMLLoader @brief Top-level API for loading KML layouts and KSS stylesheets. */
 class KMLLoader {
 public:
     explicit KMLLoader(UIContext& ctx, Theme& theme);
 
-    /// Load and build a layout from a KML string.
-    /// Optionally applies a KSS stylesheet string.
-    /// Returns the root widget index, or -1 on failure.
+    /**
+     * @brief Load and build a layout from a KML string.
+     * @param kml  KML markup string.
+     * @param kss  Optional KSS stylesheet string.
+     * @return Root widget index, or -1 on failure.
+     */
     int LoadFromString(const std::string& kml,
                        const std::string& kss = "");
 
-    /// Load and build a layout from file paths.
-    /// The stylesheet path may be empty (no styles applied).
+    /**
+     * @brief Load and build a layout from file paths.
+     * @param kmlPath  Path to the KML file.
+     * @param kssPath  Optional path to a KSS stylesheet.
+     * @return Root widget index, or -1 on failure.
+     */
     int LoadFromFile(const std::string& kmlPath,
                      const std::string& kssPath = "");
 
-    /// Load only a stylesheet from string for later use.
+    /** @brief Load only a stylesheet from string for later use. */
     bool LoadStylesheet(const std::string& kss);
 
-    /// Get the last loaded stylesheet (for reuse across multiple layouts).
+    /** @brief Get the last loaded stylesheet (for reuse across layouts). */
     const KSSStylesheet& Stylesheet() const { return stylesheet_; }
 
-    /// Parse errors from the most recent operation.
+    /** @brief Parse errors from the most recent operation. */
     const std::vector<ParseError>& Errors() const { return errors_; }
 
-    /// Number of widgets created by the last Build operation.
+    /** @brief Number of widgets created by the last Build operation. */
     int WidgetsCreated() const { return widgetsCreated_; }
 
 private:
-    UIContext& ctx_;
-    Theme& theme_;
-    KSSStylesheet stylesheet_;
-    std::vector<ParseError> errors_;
-    int widgetsCreated_ = 0;
+    UIContext& ctx_;                  ///< UI context for widget creation
+    Theme& theme_;                    ///< theme for style resolution
+    KSSStylesheet stylesheet_;        ///< last loaded stylesheet
+    std::vector<ParseError> errors_;  ///< errors from last operation
+    int widgetsCreated_ = 0;          ///< widgets created in last build
 
     static bool ReadFile(const std::string& path, std::string& out);
 };

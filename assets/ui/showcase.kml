@@ -1,0 +1,691 @@
+<!-- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+     Koilo Engine - UI Widget Showcase (KML)
+     Every widget type, layout pattern, and interactive feature
+     in a single demo for visual debugging.
+     = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  -->
+
+<dock id="showcase-root">
+
+  <!-- = = = = = = = = = = =  Title Bar = = = = = = = = = = =  -->
+  <panel id="title-bar" class="title-bar">
+    <label class="title-text">Koilo UI Widget Showcase</label>
+    <panel class="title-spacer"/>
+    <label id="fps-label" class="fps-badge">-- FPS</label>
+  </panel>
+
+  <!-- = = = = = = = = = = =  Main Content = = = = = = = = = = =  -->
+  <splitpane id="main-split" horizontal="true">
+
+    <!-- = = =  Left Sidebar: Navigation = = =  -->
+    <panel id="nav-sidebar" class="sidebar">
+      <panel class="sidebar-header">
+        <label class="sidebar-title">Sections</label>
+      </panel>
+      <scrollview id="nav-scroll" class="sidebar-scroll">
+        <button id="nav-basic" class="nav-btn" icon="info" onclick="OnNavBasic">Basic Controls</button>
+        <button id="nav-input" class="nav-btn" icon="settings" onclick="OnNavInput">Input Widgets</button>
+        <button id="nav-layout" class="nav-btn" icon="grid" onclick="OnNavLayout">Layout &amp; Flex</button>
+        <button id="nav-tree" class="nav-btn" icon="folder" onclick="OnNavTree">Tree &amp; Hierarchy</button>
+        <button id="nav-advanced" class="nav-btn" icon="mesh" onclick="OnNavAdvanced">Advanced Widgets</button>
+        <button id="nav-states" class="nav-btn" icon="eye" onclick="OnNavStates">States &amp; Feedback</button>
+        <button id="nav-text" class="nav-btn" icon="file" onclick="OnNavText">Typography</button>
+      </scrollview>
+    </panel>
+
+    <!-- = = =  Right Content Area = = =  -->
+    <panel id="content-area" class="content">
+      <scrollview id="content-scroll">
+
+        <!-- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+             PAGE: Basic Controls (Sections 1-2)
+             = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  -->
+        <panel id="page-basic" class="page-group">
+
+        <!-- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+             SECTION 1: Basic Controls
+             = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  -->
+        <panel class="section">
+          <label class="section-title">1. Buttons</label>
+          <separator/>
+          <panel class="demo-row">
+            <button id="btn-default" class="demo-btn">Default Button</button>
+            <button id="btn-primary" class="demo-btn primary">Primary</button>
+            <button id="btn-success" class="demo-btn success">Success</button>
+            <button id="btn-danger" class="demo-btn danger">Danger</button>
+            <button id="btn-disabled" class="demo-btn" enabled="false">Disabled</button>
+          </panel>
+          <panel class="demo-row">
+            <button id="btn-icon-save" class="icon-text-btn" icon="save">Save</button>
+            <button id="btn-icon-undo" class="icon-text-btn" icon="undo">Undo</button>
+            <button id="btn-icon-redo" class="icon-text-btn" icon="redo">Redo</button>
+            <button id="btn-icon-trash" class="icon-text-btn danger" icon="trash">Delete</button>
+          </panel>
+          <panel class="demo-row">
+            <button class="small-btn">Small</button>
+            <button class="medium-btn">Medium</button>
+            <button class="large-btn">Large</button>
+          </panel>
+        </panel>
+
+        <!-- = = =  Labels = = =  -->
+        <panel class="section">
+          <label class="section-title">2. Labels &amp; Text</label>
+          <separator/>
+          <panel class="demo-col">
+            <label class="text-primary">Primary text - default readability</label>
+            <label class="text-secondary">Secondary text - supplemental info</label>
+            <label class="text-muted">Muted text - low priority</label>
+            <label class="text-accent">Accent text - highlighted info</label>
+            <label class="text-error">Error text - something went wrong</label>
+            <label class="text-success">Success text - operation complete</label>
+            <label class="text-mono">Monospace: font_size = 12px;</label>
+          </panel>
+        </panel>
+
+        </panel><!-- /page-basic -->
+
+        <!-- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+             PAGE: Input Widgets (Sections 3-7)
+             = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  -->
+        <panel id="page-input" class="page-group" style="display: none">
+
+        <!-- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+             SECTION 2: Input Widgets
+             = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  -->
+        <panel class="section">
+          <label class="section-title">3. Text Fields</label>
+          <separator/>
+          <panel class="demo-col">
+            <panel class="field-row">
+              <label class="field-label">Name</label>
+              <textfield id="tf-name" placeholder="Enter your name..." style="width: fill"/>
+            </panel>
+            <panel class="field-row">
+              <label class="field-label">Search</label>
+              <textfield id="tf-search" placeholder="Search..." icon="search" style="width: fill"/>
+            </panel>
+            <panel class="field-row">
+              <label class="field-label">Disabled</label>
+              <textfield id="tf-disabled" text="Read only value" enabled="false" style="width: fill"/>
+            </panel>
+          </panel>
+        </panel>
+
+        <panel class="section">
+          <label class="section-title">4. Sliders</label>
+          <separator/>
+          <panel class="demo-col">
+            <panel class="field-row">
+              <label class="field-label">Volume</label>
+              <slider id="sl-volume" min="0" max="100" value="75"/>
+              <label id="sl-volume-val" class="value-label">75</label>
+            </panel>
+            <panel class="field-row">
+              <label class="field-label">Opacity</label>
+              <slider id="sl-opacity" min="0" max="1" value="0.5"/>
+              <label id="sl-opacity-val" class="value-label">0.50</label>
+            </panel>
+            <panel class="field-row">
+              <label class="field-label">Range</label>
+              <slider id="sl-range" min="-50" max="50" value="0"/>
+              <label id="sl-range-val" class="value-label">0</label>
+            </panel>
+          </panel>
+        </panel>
+
+        <panel class="section">
+          <label class="section-title">5. Checkboxes, Toggles &amp; Radio</label>
+          <separator/>
+          <panel class="demo-row" style="gap: 24px; align-items: start">
+            <panel class="check-group">
+              <label class="group-title">Checkboxes</label>
+              <panel class="check-row">
+                <checkbox id="cb-wireframe" checked="true"/>
+                <label>Wireframe</label>
+              </panel>
+              <panel class="check-row">
+                <checkbox id="cb-grid"/>
+                <label>Show Grid</label>
+              </panel>
+              <panel class="check-row">
+                <checkbox id="cb-normals"/>
+                <label>Normals</label>
+              </panel>
+              <panel class="check-row">
+                <checkbox id="cb-disabled" checked="true" enabled="false"/>
+                <label class="text-muted">Disabled</label>
+              </panel>
+            </panel>
+
+            <panel class="check-group">
+              <label class="group-title">Toggles</label>
+              <panel class="check-row">
+                <toggle id="tg-vsync" checked="true"/>
+                <label>V-Sync</label>
+              </panel>
+              <panel class="check-row">
+                <toggle id="tg-hdr"/>
+                <label>HDR</label>
+              </panel>
+              <panel class="check-row">
+                <toggle id="tg-aa" checked="true"/>
+                <label>Anti-Aliasing</label>
+              </panel>
+            </panel>
+
+            <panel class="check-group">
+              <label class="group-title">Radio Buttons</label>
+              <panel class="check-row">
+                <radio id="rd-low" group="quality"/>
+                <label>Low</label>
+              </panel>
+              <panel class="check-row">
+                <radio id="rd-medium" group="quality" checked="true"/>
+                <label>Medium</label>
+              </panel>
+              <panel class="check-row">
+                <radio id="rd-high" group="quality"/>
+                <label>High</label>
+              </panel>
+              <panel class="check-row">
+                <radio id="rd-ultra" group="quality"/>
+                <label>Ultra</label>
+              </panel>
+            </panel>
+          </panel>
+        </panel>
+
+        <panel class="section">
+          <label class="section-title">6. Number Spinners &amp; Dropdowns</label>
+          <separator/>
+          <panel class="demo-col">
+            <panel class="field-row">
+              <label class="field-label">FOV</label>
+              <spinner id="sp-fov" min="30" max="120" value="60" step="5"/>
+            </panel>
+            <panel class="field-row">
+              <label class="field-label">Grid Size</label>
+              <spinner id="sp-grid" min="0.1" max="100" value="1.0" step="0.1"/>
+            </panel>
+            <panel class="field-row">
+              <label class="field-label">Shader</label>
+              <dropdown id="dd-shader" class="prop-dropdown">
+                <label>Phong</label>
+                <label>PBR</label>
+                <label>Toon</label>
+                <label>Unlit</label>
+              </dropdown>
+            </panel>
+            <panel class="field-row">
+              <label class="field-label">Quality</label>
+              <dropdown id="dd-quality" class="prop-dropdown">
+                <label>Low</label>
+                <label>Medium</label>
+                <label>High</label>
+                <label>Ultra</label>
+              </dropdown>
+            </panel>
+          </panel>
+        </panel>
+
+        <panel class="section">
+          <label class="section-title">7. Color Fields</label>
+          <separator/>
+          <panel class="demo-row">
+            <panel class="color-swatch-group">
+              <label class="swatch-label">Ambient</label>
+              <colorfield id="cf-ambient" value="#4488CC"/>
+            </panel>
+            <panel class="color-swatch-group">
+              <label class="swatch-label">Diffuse</label>
+              <colorfield id="cf-diffuse" value="#CC8844"/>
+            </panel>
+            <panel class="color-swatch-group">
+              <label class="swatch-label">Specular</label>
+              <colorfield id="cf-specular" value="#CCCCCC"/>
+            </panel>
+            <panel class="color-swatch-group">
+              <label class="swatch-label">Emissive</label>
+              <colorfield id="cf-emissive" value="#44CC88"/>
+            </panel>
+          </panel>
+          <panel class="demo-row">
+            <label class="field-label">Hex Input</label>
+            <textfield id="tf-hex" class="hex-field" placeholder="#FF8800" onchange="OnHexChange"/>
+            <colorfield id="cf-hex-preview" value="#FF8800"/>
+          </panel>
+        </panel>
+
+        </panel><!-- /page-input -->
+
+        <!-- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+             PAGE: Layout & Flex (Sections 8-10)
+             = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  -->
+        <panel id="page-layout" class="page-group" style="display: none">
+
+        <!-- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+             SECTION 3: Layout & Flex
+             = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  -->
+        <panel class="section">
+          <label class="section-title">8. Flex Layout - Row</label>
+          <separator/>
+          <panel class="layout-demo-box row">
+            <panel class="flex-item a">flex: 1</panel>
+            <panel class="flex-item b">flex: 2</panel>
+            <panel class="flex-item c">flex: 1</panel>
+          </panel>
+          <panel class="layout-demo-box row space-between">
+            <panel class="flex-chip">Start</panel>
+            <panel class="flex-chip">Middle</panel>
+            <panel class="flex-chip">End</panel>
+          </panel>
+          <panel class="layout-demo-box row center">
+            <panel class="flex-chip">Centered A</panel>
+            <panel class="flex-chip">Centered B</panel>
+          </panel>
+        </panel>
+
+        <panel class="section">
+          <label class="section-title">9. Flex Layout - Column</label>
+          <separator/>
+          <panel class="layout-demo-box col" style="height: 120px">
+            <panel class="flex-item a">Top</panel>
+            <panel class="flex-item b" style="flex-grow: 1">Fill</panel>
+            <panel class="flex-item c">Bottom</panel>
+          </panel>
+        </panel>
+
+        <panel class="section">
+          <label class="section-title">10. Nested Panels &amp; Padding</label>
+          <separator/>
+          <panel class="nested-outer">
+            <label class="nested-label">Outer (16px padding)</label>
+            <panel class="nested-middle">
+              <label class="nested-label">Middle (12px padding)</label>
+              <panel class="nested-inner">
+                <label class="nested-label">Inner (8px padding)</label>
+              </panel>
+            </panel>
+          </panel>
+        </panel>
+
+        </panel><!-- /page-layout -->
+
+        <!-- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+             PAGE: Tree & Hierarchy (Section 11)
+             = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  -->
+        <panel id="page-tree" class="page-group" style="display: none">
+
+        <!-- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+             SECTION 4: Tree & Hierarchy
+             = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  -->
+        <panel class="section">
+          <label class="section-title">11. Tree View</label>
+          <separator/>
+          <panel class="tree-container">
+            <treenode id="tn-root" text="Project Root" depth="0" has-children="true" expanded="true" icon="folder-open"/>
+            <treenode id="tn-assets" text="Assets" depth="1" has-children="true" expanded="true" icon="folder"/>
+            <treenode id="tn-textures" text="Textures" depth="2" has-children="true" expanded="true" icon="folder"/>
+            <treenode id="tn-tex-ground" text="ground_diffuse.png" depth="3" icon="texture"/>
+            <treenode id="tn-tex-sky" text="skybox_hdr.hdr" depth="3" icon="texture"/>
+            <treenode id="tn-tex-normal" text="rock_normal.png" depth="3" icon="texture"/>
+            <treenode id="tn-models" text="Models" depth="2" has-children="true" expanded="true" icon="folder"/>
+            <treenode id="tn-mdl-player" text="player.fbx" depth="3" icon="mesh"/>
+            <treenode id="tn-mdl-weapon" text="sword.obj" depth="3" icon="mesh"/>
+            <treenode id="tn-scripts" text="Scripts" depth="2" icon="folder"/>
+            <treenode id="tn-materials" text="Materials" depth="2" has-children="true" expanded="true" icon="folder"/>
+            <treenode id="tn-mat-pbr" text="PBR_Default.mat" depth="3" icon="material"/>
+            <treenode id="tn-mat-glass" text="Glass_Transparent.mat" depth="3" icon="material"/>
+            <treenode id="tn-scenes" text="Scenes" depth="1" icon="folder"/>
+            <treenode id="tn-config" text="koilo.proj" depth="1" icon="settings"/>
+          </panel>
+        </panel>
+
+        </panel><!-- /page-tree -->
+
+        <!-- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+             PAGE: Advanced Widgets (Sections 12-16)
+             = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  -->
+        <panel id="page-advanced" class="page-group" style="display: none">
+
+        <!-- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+             SECTION 5: Advanced Widgets
+             = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  -->
+        <panel class="section">
+          <label class="section-title">12. Progress Bars</label>
+          <separator/>
+          <panel class="demo-col">
+            <panel class="field-row">
+              <label class="field-label">Build</label>
+              <progress id="pb-build" value="0.72"/>
+              <label class="value-label">72%</label>
+            </panel>
+            <panel class="field-row">
+              <label class="field-label">Upload</label>
+              <progress id="pb-upload" value="0.35"/>
+              <label class="value-label">35%</label>
+            </panel>
+            <panel class="field-row">
+              <label class="field-label">Complete</label>
+              <progress id="pb-done" class="success" value="1.0"/>
+              <label class="value-label">100%</label>
+            </panel>
+          </panel>
+        </panel>
+
+        <panel class="section">
+          <label class="section-title">13. Separators &amp; Dividers</label>
+          <separator/>
+          <panel class="demo-col">
+            <label>Content above horizontal separator</label>
+            <separator/>
+            <label>Content below horizontal separator</label>
+            <separator class="thick"/>
+            <label>After thick separator</label>
+          </panel>
+          <panel class="demo-row" style="height: 24px">
+            <label>Left</label>
+            <separator class="vsep" style="height: 16px"/>
+            <label>Center</label>
+            <separator class="vsep" style="height: 16px"/>
+            <label>Right</label>
+          </panel>
+        </panel>
+
+        <panel class="section">
+          <label class="section-title">14. Split Pane</label>
+          <separator/>
+          <panel style="height: 120px; width: fill">
+            <splitpane id="demo-split" horizontal="true" style="width: fill; height: fill">
+              <panel class="split-child" style="width: 50%; height: fill">
+                <label class="split-label">Left Pane</label>
+                <label class="text-muted">Drag the divider</label>
+              </panel>
+              <panel class="split-child" style="width: 50%; height: fill">
+                <label class="split-label">Right Pane</label>
+                <label class="text-muted">Drag the divider</label>
+              </panel>
+            </splitpane>
+          </panel>
+        </panel>
+
+        <panel class="section">
+          <label class="section-title">15. Scroll View</label>
+          <separator/>
+          <scrollview id="demo-scrollview" class="scroll-demo">
+            <label>Scrollable item 1</label>
+            <label>Scrollable item 2</label>
+            <label>Scrollable item 3</label>
+            <label>Scrollable item 4</label>
+            <label>Scrollable item 5</label>
+            <label>Scrollable item 6</label>
+            <label>Scrollable item 7</label>
+            <label>Scrollable item 8</label>
+            <label>Scrollable item 9</label>
+            <label>Scrollable item 10</label>
+            <label>Scrollable item 11</label>
+            <label>Scrollable item 12</label>
+            <label>Scrollable item 13</label>
+            <label>Scrollable item 14</label>
+            <label>Scrollable item 15</label>
+          </scrollview>
+        </panel>
+
+        <panel class="section">
+          <label class="section-title">16. Tab Bar</label>
+          <separator/>
+          <panel class="tab-container">
+            <tabbar id="demo-tabs">
+              <button id="tab-general" class="tab-btn" onclick="OnTabGeneral">General</button>
+              <button id="tab-rendering" class="tab-btn" onclick="OnTabRendering">Rendering</button>
+              <button id="tab-physics" class="tab-btn" onclick="OnTabPhysics">Physics</button>
+              <button id="tab-audio" class="tab-btn" onclick="OnTabAudio">Audio</button>
+              <button id="tab-scripting" class="tab-btn" onclick="OnTabScripting">Scripting</button>
+            </tabbar>
+            <panel id="tab-body" class="tab-body">
+              <label id="tab-content">Tab content area - switches based on active tab.</label>
+              <label id="tab-detail" class="text-secondary">Each tab shows a different property category.</label>
+            </panel>
+          </panel>
+        </panel>
+
+        </panel><!-- /page-advanced -->
+
+        <!-- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+             PAGE: States & Feedback (Sections 17-20)
+             = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  -->
+        <panel id="page-states" class="page-group" style="display: none">
+
+        <!-- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+             SECTION 6: States & Visual Feedback
+             = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  -->
+        <panel class="section">
+          <label class="section-title">17. Button States</label>
+          <separator/>
+          <panel class="demo-row">
+            <button class="state-btn">Normal</button>
+            <button class="state-btn hovered">:hover</button>
+            <button class="state-btn pressed">:active</button>
+            <button class="state-btn focused">:focused</button>
+            <button class="state-btn" enabled="false">:disabled</button>
+          </panel>
+        </panel>
+
+        <panel class="section">
+          <label class="section-title">18. Borders &amp; Rounded Corners</label>
+          <separator/>
+          <panel class="demo-row">
+            <panel class="border-demo r0">radius: 0</panel>
+            <panel class="border-demo r4">radius: 4</panel>
+            <panel class="border-demo r8">radius: 8</panel>
+            <panel class="border-demo r16">radius: 16</panel>
+            <panel class="border-demo pill">pill</panel>
+          </panel>
+        </panel>
+
+        <panel class="section">
+          <label class="section-title">19. Shadows &amp; Elevation</label>
+          <separator/>
+          <panel class="demo-row shadow-row" style="gap: 24px; padding: 24px 8px 16px 8px">
+            <panel class="shadow-card s0">
+              <label style="font-size: 10px; color: #888">flat</label>
+            </panel>
+            <panel class="shadow-card s1">
+              <label style="font-size: 10px; color: #888">level 1</label>
+            </panel>
+            <panel class="shadow-card s2">
+              <label style="font-size: 10px; color: #888">level 2</label>
+            </panel>
+            <panel class="shadow-card s3">
+              <label style="font-size: 10px; color: #888">level 3</label>
+            </panel>
+          </panel>
+        </panel>
+
+        <panel class="section">
+          <label class="section-title">20. Opacity &amp; Visibility</label>
+          <separator/>
+          <panel class="demo-row">
+            <panel class="opacity-box" style="opacity: 1.0"><label>100%</label></panel>
+            <panel class="opacity-box" style="opacity: 0.75"><label>75%</label></panel>
+            <panel class="opacity-box" style="opacity: 0.50"><label>50%</label></panel>
+            <panel class="opacity-box" style="opacity: 0.25"><label>25%</label></panel>
+          </panel>
+        </panel>
+
+        </panel><!-- /page-states -->
+
+        <!-- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+             PAGE: Typography (Sections 21-26)
+             = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  -->
+        <panel id="page-text" class="page-group" style="display: none">
+
+        <!-- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+             SECTION 7: Typography
+             = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  -->
+        <panel class="section">
+          <label class="section-title">21. Font Sizes</label>
+          <separator/>
+          <panel class="demo-col">
+            <label style="font-size: 8px">8px - Tiny caption text</label>
+            <label style="font-size: 10px">10px - Small label</label>
+            <label style="font-size: 12px">12px - Default body text</label>
+            <label style="font-size: 14px">14px - Subtitle text</label>
+            <label style="font-size: 18px">18px - Section heading</label>
+            <label style="font-size: 24px">24px - Page title</label>
+          </panel>
+        </panel>
+
+        <panel class="section">
+          <label class="section-title">22. Font Weights (Variable Font)</label>
+          <separator/>
+          <panel class="demo-col">
+            <label class="text-muted" style="font-size: 10px">Note: Requires variable font support in renderer</label>
+            <label style="font-weight: 300">Light (300) - The quick brown fox</label>
+            <label style="font-weight: 400">Regular (400) - The quick brown fox</label>
+            <label style="font-weight: 600">Semibold (600) - The quick brown fox</label>
+            <label style="font-weight: 700">Bold (700) - The quick brown fox</label>
+            <label style="font-weight: 900">Black (900) - The quick brown fox</label>
+          </panel>
+        </panel>
+
+        <panel class="section">
+          <label class="section-title">23. Text Decoration &amp; Overflow</label>
+          <separator/>
+          <panel class="demo-col">
+            <label style="text-decoration: underline">Underlined text</label>
+            <label style="text-decoration: line-through">Strikethrough text</label>
+            <label style="letter-spacing: 4px">W i d e   l e t t e r   s p a c i n g</label>
+            <panel class="truncate-box">
+              <label class="truncated">This is a very long text that should be truncated with an ellipsis because it overflows its container width</label>
+            </panel>
+          </panel>
+        </panel>
+
+        <!-- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+             SECTION 8: Composite Patterns
+             = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  -->
+        <panel class="section">
+          <label class="section-title">24. Inspector-Style Properties</label>
+          <separator/>
+          <panel class="inspector-demo">
+            <panel class="prop-row">
+              <label class="prop-key">Position</label>
+              <panel class="vec3-input">
+                <label class="axis x">X</label>
+                <textfield class="vec-field" placeholder="0.0"/>
+                <label class="axis y">Y</label>
+                <textfield class="vec-field" placeholder="1.5"/>
+                <label class="axis z">Z</label>
+                <textfield class="vec-field" placeholder="0.0"/>
+              </panel>
+            </panel>
+            <panel class="prop-row">
+              <label class="prop-key">Rotation</label>
+              <panel class="vec3-input">
+                <label class="axis x">X</label>
+                <textfield class="vec-field" placeholder="0.0"/>
+                <label class="axis y">Y</label>
+                <textfield class="vec-field" placeholder="45.0"/>
+                <label class="axis z">Z</label>
+                <textfield class="vec-field" placeholder="0.0"/>
+              </panel>
+            </panel>
+            <panel class="prop-row">
+              <label class="prop-key">Tint</label>
+              <colorfield id="cf-tint" value="#66AAFF"/>
+              <textfield class="hex-field" placeholder="#FFFFFF"/>
+            </panel>
+            <panel class="prop-row">
+              <label class="prop-key">Smoothness</label>
+              <slider id="sl-smooth" min="0" max="1" value="0.5"/>
+              <label class="inline-val">0.50</label>
+            </panel>
+            <panel class="prop-row">
+              <label class="prop-key">Cast Shadows</label>
+              <toggle id="tg-shadows" checked="true"/>
+            </panel>
+            <panel class="prop-row">
+              <label class="prop-key">LOD Bias</label>
+              <spinner id="sp-lod" min="0" max="4" value="1" step="0.5"/>
+            </panel>
+          </panel>
+        </panel>
+
+        <panel class="section">
+          <label class="section-title">25. Menu Items with Shortcuts</label>
+          <separator/>
+          <panel class="menu-demo">
+            <panel id="demo-popup" class="popup-menu-demo">
+              <menuitem id="mi-new" text="New Scene" shortcut="Ctrl+N" icon="file" onclick="OnMenuNew"/>
+              <menuitem id="mi-open" text="Open..." shortcut="Ctrl+O" icon="folder-open" onclick="OnMenuOpen"/>
+              <menuitem id="mi-save" text="Save" shortcut="Ctrl+S" icon="save" onclick="OnMenuSave"/>
+              <separator/>
+              <menuitem id="mi-undo" text="Undo" shortcut="Ctrl+Z" icon="undo" onclick="OnMenuUndo"/>
+              <menuitem id="mi-redo" text="Redo" shortcut="Ctrl+Y" icon="redo" onclick="OnMenuRedo"/>
+              <separator/>
+              <menuitem id="mi-prefs" text="Preferences..." shortcut="Ctrl+," icon="settings" onclick="OnMenuPrefs"/>
+            </panel>
+            <label id="shortcut-status" class="text-muted" style="margin-top: 8px">Press Ctrl+N, Ctrl+O, etc. to test shortcuts</label>
+          </panel>
+        </panel>
+
+        <panel class="section">
+          <label class="section-title">26. Status Bar Pattern</label>
+          <separator/>
+          <panel class="status-demo">
+            <panel class="status-left">
+              <label class="status-dot online"/>
+              <label>Connected</label>
+            </panel>
+            <panel class="status-center">
+              <label>Objects: 42  |  Tris: 128k  |  Draw Calls: 86</label>
+            </panel>
+            <panel class="status-right">
+              <progress id="pb-status" value="0.65" class="mini-progress"/>
+              <label class="fps-small">60 FPS</label>
+            </panel>
+          </panel>
+        </panel>
+
+        </panel><!-- /page-text -->
+
+        <!-- End spacer -->
+        <panel style="height: 40px"/>
+
+      </scrollview>
+    </panel>
+  </splitpane>
+
+  <!-- = = = = = = = = = = =  Floating Panels = = = = = = = = = = =  -->
+  <floatingpanel id="float-tools" title="Quick Tools" style="width: 200px; height: 240px">
+    <panel class="float-body">
+      <button class="float-tool-btn" icon="move">Move</button>
+      <button class="float-tool-btn" icon="rotate">Rotate</button>
+      <button class="float-tool-btn" icon="scale">Scale</button>
+      <separator/>
+      <panel class="field-row compact">
+        <label class="small-label">Snap</label>
+        <toggle id="tg-snap" checked="true"/>
+      </panel>
+      <panel class="field-row compact">
+        <label class="small-label">Grid</label>
+        <spinner id="sp-snap" min="0.1" max="10" value="1" step="0.1"/>
+      </panel>
+    </panel>
+  </floatingpanel>
+
+  <floatingpanel id="float-log" title="Debug Log" style="width: 320px; height: 180px">
+    <scrollview class="log-scroll">
+      <label class="log-info">[00:00.1] Engine initialized</label>
+      <label class="log-info">[00:00.2] Loading scene: MainScene.kscn</label>
+      <label class="log-warn">[00:00.3] Missing texture: rock_ao.png</label>
+      <label class="log-info">[00:00.4] Compiled 14 shaders (0.8s)</label>
+      <label class="log-error">[00:01.0] Script error: enemy_ai.ks:42 - undefined 'target'</label>
+      <label class="log-info">[00:01.1] Physics: 60Hz step, broadphase 2ms</label>
+      <label class="log-info">[00:01.5] Audio: 3 sources active</label>
+      <label class="log-warn">[00:02.0] LOD group 'rocks' has 0 levels</label>
+    </scrollview>
+  </floatingpanel>
+
+</dock>

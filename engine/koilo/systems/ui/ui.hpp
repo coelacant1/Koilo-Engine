@@ -7,7 +7,7 @@
  * retained-mode UIContext widget system for all operations.
  *
  * @date 03/08/2026
- * @author Coela
+ * @author Coela Can't
  */
 
 #pragma once
@@ -32,7 +32,9 @@ namespace koilo {
  */
 class UI {
 public:
+    /** @brief Default constructor. Initializes root widget. */
     UI();
+    /** @brief Destructor. */
     ~UI() = default;
 
     /// Access the underlying UIContext.
@@ -40,50 +42,89 @@ public:
     const ui::UIContext& Context() const { return ctx_; }
 
     // -- Viewport & layout ---------------------------------------
+    /** @brief Set the viewport dimensions. */
     void SetViewport(float w, float h);
+    /** @brief Run the layout pass. */
     void UpdateLayout();
 
     // -- Widget creation -----------------------------------------
+    /** @brief Create a panel widget. */
     int CreatePanel(const char* id);
+    /** @brief Create a label widget. */
     int CreateLabel(const char* id, const char* text);
+    /** @brief Create a button widget. */
     int CreateButton(const char* id, const char* text);
+    /** @brief Create a slider widget. */
     int CreateSlider(const char* id, float min, float max, float value);
+    /** @brief Create a checkbox widget. */
     int CreateCheckbox(const char* id, bool checked);
+    /** @brief Create a text field widget. */
     int CreateTextField(const char* id, const char* placeholder);
+    /** @brief Create a separator widget. */
     int CreateSeparator(const char* id);
+    /** @brief Create a scroll view widget. */
     int CreateScrollView(const char* id);
+    /** @brief Create a tree node widget. */
     int CreateTreeNode(const char* id, const char* text);
+    /** @brief Create a dock container widget. */
     int CreateDockContainer(const char* id);
+    /** @brief Create a split pane widget. */
     int CreateSplitPane(const char* id, bool vertical);
+    /** @brief Create a tab bar widget. */
     int CreateTabBar(const char* id);
+    /** @brief Create a popup menu widget. */
     int CreatePopupMenu(const char* id);
+    /** @brief Create a menu item widget. */
     int CreateMenuItem(const char* id, const char* text);
 
     // -- Widget tree ---------------------------------------------
+    /** @brief Set widget parent-child relationship. */
     bool SetParent(int child, int parent);
+    /** @brief Destroy a widget by index. */
     void DestroyWidget(int idx);
+    /** @brief Find a widget by string ID. */
     int FindWidget(const char* id);
+    /** @brief Get the root widget index. */
     int GetRoot();
+    /** @brief Get the number of live widgets. */
     int GetWidgetCount();
 
     // -- Properties ----------------------------------------------
+    /** @brief Set the text of a widget. */
     void SetText(int idx, const char* text);
+    /** @brief Get the text of a widget. */
     const char* GetText(int idx);
+    /** @brief Set widget visibility. */
     void SetVisible(int idx, bool v);
+    /** @brief Set widget enabled state. */
     void SetEnabled(int idx, bool e);
+    /** @brief Set widget selected state. */
+    void SetSelected(int idx, bool s);
+    /** @brief Set a ColorField's color from a hex string (e.g. "#FF8800"). */
+    void SetColorHex(int idx, const char* hex);
+    /** @brief Set widget size. */
     void SetSize(int idx, float w, float h);
+    /** @brief Set widget position. */
     void SetPosition(int idx, float x, float y);
+    /** @brief Set widget padding (top, right, bottom, left). */
     void SetPadding(int idx, float top, float right, float bottom, float left);
+    /** @brief Set widget margin (top, right, bottom, left). */
     void SetMargin(int idx, float top, float right, float bottom, float left);
 
     // -- Layout --------------------------------------------------
+    /** @brief Set column layout with spacing. */
     void SetLayoutColumn(int idx, float spacing);
+    /** @brief Set row layout with spacing. */
     void SetLayoutRow(int idx, float spacing);
+    /** @brief Set widget to fill available width. */
     void SetFillWidth(int idx);
+    /** @brief Set widget to fill available height. */
     void SetFillHeight(int idx);
 
     // -- Events (script callbacks) -------------------------------
+    /** @brief Set click callback script function name. */
     void SetOnClick(int idx, const char* fnName);
+    /** @brief Set change callback script function name. */
     void SetOnChange(int idx, const char* fnName);
 
     // -- Inspector -----------------------------------------------
@@ -92,12 +133,17 @@ public:
     int InspectType(const char* className, int parentIdx);
 
     // -- Theme ---------------------------------------------------
+    /** @brief Override theme color for a widget element type. */
     void SetThemeColor(const char* element, int r, int g, int b, int a);
 
     // -- Query ---------------------------------------------------
+    /** @brief Get the current slider value. */
     float GetSliderValue(int idx);
+    /** @brief Get checkbox checked state. */
     bool GetChecked(int idx);
+    /** @brief Get viewport width. */
     float GetViewportWidth();
+    /** @brief Get viewport height. */
     float GetViewportHeight();
 
     /// Render UI to a Color888 buffer (software path).
@@ -134,6 +180,8 @@ public:
     void HandlePointerUp(float x, float y, uint8_t button = 0);
     void HandlePointerMove(float x, float y);
     void HandleScroll(float x, float y, float delta);
+    void HandleKeyDown(int keyCode, bool shift = false, bool ctrl = false, bool alt = false);
+    void HandleTextInput(const char* text);
 
     /// Get the cursor type requested by the currently hovered widget.
     ui::CursorType GetRequestedCursor() const;
@@ -175,17 +223,20 @@ public:
     /// Get global font scale multiplier.
     float GetFontScale();
 
+    /// Check if the UI needs visual updates (state changed or transitions active).
+    bool IsIdle() const;
+
 private:
-    ui::UIContext ctx_;
-    ui::TweenPool tweenPool_{256};
-    Localization localization_;
-    ui::UIDrawList drawList_;
-    ui::UIGLRenderer glRenderer_;
-    ui::UISWRenderer swRenderer_;
-    font::Font font_;
-    uint32_t fontAtlasTexture_ = 0;
-    bool gpuInitialized_ = false;
-    std::chrono::steady_clock::time_point lastFrameTime_ = std::chrono::steady_clock::now();
+    ui::UIContext ctx_;              ///< Retained-mode widget context.
+    ui::TweenPool tweenPool_{256};   ///< Pool for active UI tweens.
+    Localization localization_;      ///< Localization string table.
+    ui::UIDrawList drawList_;        ///< Intermediate draw command list.
+    ui::UIGLRenderer glRenderer_;    ///< OpenGL UI renderer.
+    ui::UISWRenderer swRenderer_;    ///< Software UI renderer.
+    font::Font font_;                ///< Loaded TTF font for text rendering.
+    uint32_t fontAtlasTexture_ = 0;  ///< GPU texture handle for font atlas.
+    bool gpuInitialized_ = false;    ///< Whether GPU renderer has been initialized.
+    std::chrono::steady_clock::time_point lastFrameTime_ = std::chrono::steady_clock::now(); ///< Last frame timestamp for dt calculation.
 
     /// Apply tween value to the target widget property.
     static void ApplyTween(int widgetIdx, ui::TweenProperty prop,

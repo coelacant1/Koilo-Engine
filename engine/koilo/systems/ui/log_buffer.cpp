@@ -3,7 +3,7 @@
  * @file log_buffer.cpp
  * @brief Ring buffer log implementation.
  * @date 03/09/2026
- * @author Coela
+ * @author Coela Can't
  */
 
 #include "log_buffer.hpp"
@@ -12,15 +12,26 @@
 
 namespace koilo {
 
+// =====================================================================
+// Construction / Destruction
+// =====================================================================
+
+// Allocate ring buffer with given capacity
 LogBuffer::LogBuffer(size_t capacity)
     : capacity_(capacity) {
     entries_ = new LogEntry[capacity_];
 }
 
+// Release heap-allocated entry array
 LogBuffer::~LogBuffer() {
     delete[] entries_;
 }
 
+// =====================================================================
+// Core operations
+// =====================================================================
+
+// Append an entry, advancing the ring head
 void LogBuffer::Push(LogSeverity severity, const char* message, uint32_t timestamp) {
     LogEntry& entry = entries_[head_];
     entry.severity = severity;
@@ -32,6 +43,7 @@ void LogBuffer::Push(LogSeverity severity, const char* message, uint32_t timesta
     ++totalPushed_;
 }
 
+// Retrieve entry by logical index (0 = oldest)
 const LogEntry* LogBuffer::At(size_t index) const {
     if (index >= count_) return nullptr;
     // Oldest entry is at (head_ - count_) mod capacity_
@@ -39,11 +51,17 @@ const LogEntry* LogBuffer::At(size_t index) const {
     return &entries_[actual];
 }
 
+// Reset buffer state without deallocating
 void LogBuffer::Clear() {
     head_ = 0;
     count_ = 0;
 }
 
+// =====================================================================
+// Filtering / Search
+// =====================================================================
+
+// Count entries matching a severity level
 size_t LogBuffer::CountBySeverity(LogSeverity severity) const {
     size_t n = 0;
     for (size_t i = 0; i < count_; ++i) {
@@ -52,7 +70,7 @@ size_t LogBuffer::CountBySeverity(LogSeverity severity) const {
     return n;
 }
 
-// Case-insensitive substring search
+// Case-insensitive substring match helper
 static bool ContainsCI(const char* haystack, const char* needle) {
     if (!needle[0]) return true;
     size_t nlen = std::strlen(needle);
@@ -72,6 +90,7 @@ static bool ContainsCI(const char* haystack, const char* needle) {
     return false;
 }
 
+// Find entries whose message contains a substring
 size_t LogBuffer::Search(const char* substring, size_t* outIndices,
                          size_t maxResults) const {
     if (!substring || !outIndices || maxResults == 0) return 0;

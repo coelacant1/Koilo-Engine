@@ -7,7 +7,7 @@
  * Fires a callback whenever the selection changes.
  *
  * @date 03/09/2026
- * @author Coela
+ * @author Coela Can't
  */
 
 #pragma once
@@ -23,10 +23,10 @@ namespace koilo {
 /// Callback signature: invoked when the selection set changes.
 using SelectionChangedCallback = std::function<void()>;
 
-/// A single selected item - pairs a live pointer with its type.
+/** @struct SelectionEntry @brief A single selected item - pairs a live pointer with its type. */
 struct SelectionEntry {
-    void* instance = nullptr;
-    const ClassDesc* desc = nullptr;
+    void* instance = nullptr;          ///< Opaque pointer to the selected object.
+    const ClassDesc* desc = nullptr;   ///< Type descriptor for the selected object.
 
     bool operator==(const SelectionEntry& o) const {
         return instance == o.instance;
@@ -54,48 +54,48 @@ class SelectionManager {
 public:
     SelectionManager() = default;
 
-    /// Select a single object (clears previous selection).
+    /** @brief Select a single object (clears previous selection). */
     void Select(void* instance, const ClassDesc* desc);
 
-    /// Add an object to the current selection (multi-select).
+    /** @brief Add an object to the current selection (multi-select). */
     void AddToSelection(void* instance, const ClassDesc* desc);
 
-    /// Remove an object from the selection.
+    /** @brief Remove an object from the selection. */
     void RemoveFromSelection(void* instance);
 
-    /// Toggle an object in the selection.
+    /** @brief Toggle an object in the selection. */
     void ToggleSelection(void* instance, const ClassDesc* desc);
 
-    /// Clear the selection.
+    /** @brief Clear the selection. */
     void ClearSelection();
 
-    /// True if the given object is in the selection.
+    /** @brief True if the given object is in the selection. */
     bool IsSelected(void* instance) const;
 
-    /// Number of selected objects.
+    /** @brief Number of selected objects. */
     size_t Count() const { return entries_.size(); }
 
-    /// True if exactly one object is selected.
+    /** @brief True if exactly one object is selected. */
     bool IsSingle() const { return entries_.size() == 1; }
 
-    /// True if no objects are selected.
+    /** @brief True if no objects are selected. */
     bool IsEmpty() const { return entries_.empty(); }
 
-    /// Get the first (or only) selected entry.  Returns nullptr fields if empty.
+    /** @brief Get the first (or only) selected entry. Returns nullptr fields if empty. */
     const SelectionEntry& Primary() const { return entries_.empty() ? kEmpty_ : entries_[0]; }
 
-    /// Get all selected entries.
+    /** @brief Get all selected entries. */
     const std::vector<SelectionEntry>& Entries() const { return entries_; }
 
-    /// Set callback invoked when selection changes.
+    /** @brief Set callback invoked when selection changes. */
     void SetOnChanged(SelectionChangedCallback cb) { onChange_ = std::move(cb); }
 
 private:
     void NotifyChanged() { if (onChange_) onChange_(); }
 
-    std::vector<SelectionEntry> entries_;
-    SelectionChangedCallback onChange_;
-    static const SelectionEntry kEmpty_;
+    std::vector<SelectionEntry> entries_;   ///< Currently selected items.
+    SelectionChangedCallback onChange_;      ///< Change notification callback.
+    static const SelectionEntry kEmpty_;    ///< Sentinel for empty selection.
 
     KL_BEGIN_FIELDS(SelectionManager)
         /* No reflected fields. */

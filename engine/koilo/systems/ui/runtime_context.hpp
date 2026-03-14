@@ -8,7 +8,7 @@
  * guarantee that a crash in user code never takes down the editor.
  *
  * @date 03/09/2026
- * @author Coela
+ * @author Coela Can't
  */
 
 #pragma once
@@ -39,9 +39,12 @@ enum class ContextRole : uint8_t {
  */
 class RuntimeContext {
 public:
-    /// @param role   Editor or Game
-    /// @param budget Maximum memory budget in bytes (0 = unlimited)
-    /// @param poolCapacity  Widget pool size for the UIContext
+    /**
+     * @brief Construct an isolated runtime context.
+     * @param role   Editor or Game.
+     * @param budget Maximum memory budget in bytes (0 = unlimited).
+     * @param poolCapacity  Widget pool size for the UIContext.
+     */
     explicit RuntimeContext(ContextRole role,
                             size_t budget = 0,
                             size_t poolCapacity = WidgetPool::DEFAULT_CAPACITY);
@@ -55,76 +58,91 @@ public:
     RuntimeContext& operator=(RuntimeContext&&) = default;
 
     // -- Identity ------------------------------------------------
+
+    /** @brief Return the role (Editor or Game). */
     ContextRole Role() const { return role_; }
+
+    /** @brief Return the identity tag string. */
     const char* Tag() const { return tag_; }
 
     // -- UIContext access ----------------------------------------
+
+    /** @brief Mutable access to the owned UIContext. */
     UIContext& UI() { return ctx_; }
+
+    /** @brief Const access to the owned UIContext. */
     const UIContext& UI() const { return ctx_; }
 
     // -- Memory budget -------------------------------------------
 
-    /// Current tracked memory usage (bytes).
+    /** @brief Current tracked memory usage (bytes). */
     size_t MemoryUsage() const { return memoryUsage_; }
 
-    /// Maximum budget (bytes). 0 = unlimited.
+    /** @brief Maximum budget (bytes). 0 = unlimited. */
     size_t MemoryBudget() const { return memoryBudget_; }
 
-    /// Try to allocate size bytes within the budget.
-    /// Returns true if within budget, false if would exceed it.
+    /**
+     * @brief Try to allocate size bytes within the budget.
+     * @return true if within budget, false if would exceed it.
+     */
     bool TryAllocate(size_t size);
 
-    /// Release tracked bytes.
+    /** @brief Release tracked bytes. */
     void Release(size_t size);
 
-    /// Peak memory usage observed.
+    /** @brief Peak memory usage observed. */
     size_t PeakMemoryUsage() const { return peakMemoryUsage_; }
 
     // -- Crash isolation -----------------------------------------
 
-    /// True if the last script execution produced an error.
+    /** @brief True if the last script execution produced an error. */
     bool HasError() const { return hasError_; }
 
-    /// Human-readable error message from last failure.
+    /** @brief Human-readable error message from last failure. */
     const char* LastError() const { return lastError_.c_str(); }
 
-    /// Record an error (called by the engine when a script throws).
+    /** @brief Record an error (called by the engine when a script throws). */
     void SetError(const char* message);
 
-    /// Clear the error flag (e.g. after user acknowledges or on reload).
+    /** @brief Clear the error flag (e.g. after user acknowledges or on reload). */
     void ClearError();
 
     // -- Widget tree snapshot for hot-reload ----------------------
 
-    /// Capture serialisable state of every live widget (ID + values).
-    /// Stores into an internal buffer for RestoreWidgetState().
+    /**
+     * @brief Capture serialisable state of every live widget (ID + values).
+     *
+     * Stores into an internal buffer for RestoreWidgetState().
+     */
     void SnapshotWidgetState();
 
-    /// After a reload, walk the new widget tree and restore values
-    /// for widgets whose interned IDs match the snapshot.
+    /**
+     * @brief After a reload, walk the new widget tree and restore values
+     *        for widgets whose interned IDs match the snapshot.
+     */
     void RestoreWidgetState();
 
 private:
-    ContextRole role_;
+    ContextRole role_;           ///< Editor or Game
     const char* tag_;            ///< "Editor" or "Game" - used as memory profiler tag
-    UIContext ctx_;
+    UIContext ctx_;              ///< Owned UI context (widget tree, theme, layout)
 
-    size_t memoryBudget_  = 0;
-    size_t memoryUsage_   = 0;
-    size_t peakMemoryUsage_ = 0;
+    size_t memoryBudget_  = 0;   ///< Maximum allowed memory (0 = unlimited)
+    size_t memoryUsage_   = 0;   ///< Current tracked allocation total
+    size_t peakMemoryUsage_ = 0; ///< Highest observed memoryUsage_
 
-    bool hasError_ = false;
-    std::string lastError_;
+    bool hasError_ = false;      ///< True after SetError() until ClearError()
+    std::string lastError_;      ///< Human-readable error message
 
-    // Hot-reload snapshot storage
+    /** @class WidgetSnapshot @brief Serialisable snapshot of a single widget's user-editable state. */
     struct WidgetSnapshot {
-        StringId id = NullStringId;
-        WidgetTag tag = WidgetTag::Panel;
-        float sliderValue = 0;
-        bool checked = false;
-        bool expanded = false;
-        float scrollX = 0, scrollY = 0;
-        int selectedIndex = 0;
+        StringId id = NullStringId;  ///< Interned widget identifier
+        WidgetTag tag = WidgetTag::Panel; ///< Widget type tag for matching
+        float sliderValue = 0;       ///< Captured slider value
+        bool checked = false;        ///< Captured checkbox state
+        bool expanded = false;       ///< Captured tree-node expanded state
+        float scrollX = 0, scrollY = 0; ///< Captured scroll offsets
+        int selectedIndex = 0;       ///< Captured list selection index
 
         KL_BEGIN_FIELDS(WidgetSnapshot)
             KL_FIELD(WidgetSnapshot, sliderValue, "Slider value", 0, 0),
@@ -144,7 +162,7 @@ private:
         KL_END_DESCRIBE(WidgetSnapshot)
 
     };
-    std::vector<WidgetSnapshot> snapshot_;
+    std::vector<WidgetSnapshot> snapshot_; ///< Hot-reload snapshot buffer
 
     KL_BEGIN_FIELDS(RuntimeContext)
         /* No reflected fields. */

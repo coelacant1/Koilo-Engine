@@ -8,8 +8,8 @@
  * selector matching with specificity-based cascade, and pseudo-state
  * style injection into the Theme.
  *
- * @date 03/09/2026
- * @author Coela
+ * @date 03/08/2026
+ * @author Coela Can't
  */
 
 #pragma once
@@ -26,46 +26,48 @@ namespace koilo {
 namespace ui {
 namespace markup {
 
-/// Build result returned from KMLBuilder::Build().
+/** @struct BuildResult @brief Build result returned from KMLBuilder::Build(). */
 struct BuildResult {
-    int rootWidgetIdx = -1;
-    std::vector<ParseError> errors;
-    int widgetsCreated = 0;
+    int rootWidgetIdx = -1;          ///< root widget index, -1 on failure
+    std::vector<ParseError> errors;  ///< accumulated errors
+    int widgetsCreated = 0;          ///< total widgets created
 };
 
+/** @class KMLBuilder @brief Converts parsed KML/KSS into a UIContext widget tree. */
 class KMLBuilder {
 public:
     explicit KMLBuilder(UIContext& ctx, Theme& theme);
 
-    /// Build widget tree from parsed elements, applying stylesheet rules.
+    /** @brief Build widget tree from parsed elements, applying stylesheet rules. */
     BuildResult Build(const std::vector<KMLElement>& elements,
                       const KSSStylesheet& stylesheet);
 
-    /// Build widget tree from parsed elements without a stylesheet.
+    /** @brief Build widget tree from parsed elements without a stylesheet. */
     BuildResult Build(const std::vector<KMLElement>& elements);
 
 private:
-    UIContext& ctx_;
-    Theme& theme_;
+    UIContext& ctx_; ///< UI context for widget creation
+    Theme& theme_;   ///< theme for style resolution
 
-    // Selector matching context: stores class list and ancestry per widget
+    /** @struct WidgetMeta @brief Selector matching context per widget. */
     struct WidgetMeta {
-        int widgetIdx;
-        std::string tag;
-        std::string id;
-        std::vector<std::string> classes;
-        std::vector<std::pair<std::string, std::string>> attributes; // raw attributes
-        int parentMetaIdx; // -1 for root
-        int childIndex = 0;     // index among parent's children
-        int siblingCount = 0;   // total siblings (including self)
+        int widgetIdx;              ///< widget pool index
+        std::string tag;            ///< element tag name
+        std::string id;             ///< element id attribute
+        std::vector<std::string> classes; ///< CSS class list
+        std::vector<std::pair<std::string, std::string>> attributes; ///< raw attributes
+        int parentMetaIdx;          ///< parent meta index, -1 for root
+        int childIndex = 0;     ///< index among parent's children
+        int siblingCount = 0;   ///< total siblings (including self)
+        std::string inlineStyle; ///< raw style="" attribute for re-application
     };
-    std::vector<WidgetMeta> metas_;
+    std::vector<WidgetMeta> metas_; ///< per-widget selector metadata
 
-    // CSS variables resolved from :root
-    std::unordered_map<std::string, std::string> cssVariables_;
+    std::unordered_map<std::string, std::string> cssVariables_; ///< CSS variables from :root
 
-    int widgetsCreated_ = 0;
-    std::vector<ParseError> errors_;
+    int widgetsCreated_ = 0;          ///< running widget count
+    int floatingPanelCount_ = 0;       ///< floating panel offset counter
+    std::vector<ParseError> errors_;   ///< accumulated build errors
 
     // Core build
     int BuildElement(const KMLElement& elem, int parentIdx, int parentMetaIdx);
@@ -97,6 +99,9 @@ private:
     // CSS property inheritance (top-down tree walk)
     void InheritProperties(int widgetIdx);
 
+    // Resolve submenu="id" attributes to widget indices
+    void ResolveSubmenuReferences(int rootIdx);
+
     // Helpers
     PseudoState PseudoStateFromString(const std::string& s) const;
     WidgetTag TagFromString(const std::string& s) const;
@@ -105,10 +110,9 @@ private:
     void Error(int line, const std::string& msg);
     std::string ResolveVariable(const std::string& value) const;
 
-    // Viewport dimensions for vw/vh resolution
-    float viewportW_ = 1280.0f;
-    float viewportH_ = 720.0f;
-    float rootFontSize_ = 14.0f;
+    float viewportW_ = 1280.0f;  ///< viewport width for vw resolution
+    float viewportH_ = 720.0f;   ///< viewport height for vh resolution
+    float rootFontSize_ = 14.0f;  ///< root font size for rem resolution
 };
 
 } // namespace markup

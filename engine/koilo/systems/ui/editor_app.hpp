@@ -9,7 +9,7 @@
  * API available to game scripts - proving full feature parity.
  *
  * @date 03/09/2026
- * @author Coela
+ * @author Coela Can't
  */
 
 #pragma once
@@ -20,6 +20,8 @@
 #include <koilo/systems/ui/undo_stack.hpp>
 #include <koilo/systems/ui/selection.hpp>
 #include <koilo/systems/ui/log_buffer.hpp>
+#include <koilo/systems/ui/command_registry.hpp>
+#include <koilo/systems/ui/color_picker.hpp>
 #include "../../registry/reflect_macros.hpp"
 
 namespace koilo {
@@ -33,7 +35,9 @@ namespace koilo {
  */
 class EditorApp {
 public:
+    /** @brief Construct the editor application. */
     EditorApp();
+    /** @brief Destructor. */
     ~EditorApp();
 
     /// Build the full editor layout. Call once at startup.
@@ -42,19 +46,30 @@ public:
     /// Per-frame update. Returns true if the UI needs a re-render.
     bool Update(float dt);
 
-    /// Accessors for shared editor state
+    /** @brief Get the UI instance. */
     UI& GetUI() { return ui_; }
+    /** @brief Get the undo stack. */
     UndoStack& GetUndoStack() { return undoStack_; }
+    /** @brief Get the selection manager. */
     SelectionManager& GetSelection() { return selection_; }
+    /** @brief Get the log buffer. */
     LogBuffer& GetLog() { return log_; }
+    /** @brief Get the editor runtime context. */
     ui::RuntimeContext& GetContext() { return context_; }
+    /** @brief Get the command registry. */
+    ui::CommandRegistry& GetCommands() { return commands_; }
 
-    // Panel root widget indices (for external queries)
+    /** @brief Get the menu bar widget index. */
     int GetMenuBar() const { return menuBar_; }
+    /** @brief Get the status bar widget index. */
     int GetStatusBar() const { return statusBar_; }
+    /** @brief Get the dock area widget index. */
     int GetDockArea() const { return dockArea_; }
+    /** @brief Get the left pane widget index. */
     int GetLeftPane() const { return leftPane_; }
+    /** @brief Get the center pane widget index. */
     int GetCenterPane() const { return centerPane_; }
+    /** @brief Get the right pane widget index. */
     int GetRightPane() const { return rightPane_; }
 
 private:
@@ -66,53 +81,56 @@ private:
     void BuildViewportPanel();
     void BuildConsolePanel();
     void BuildAssetBrowserPanel();
+    void RegisterDefaultCommands();
 
     // Shared state
-    UI ui_;
-    ui::RuntimeContext context_{ui::ContextRole::Editor};
-    UndoStack undoStack_;
-    SelectionManager selection_;
-    LogBuffer log_;
+    UI ui_;                                                    ///< UI engine instance.
+    ui::RuntimeContext context_{ui::ContextRole::Editor};       ///< Editor runtime context.
+    ui::CommandRegistry commands_;                              ///< Registered editor commands.
+    ui::ColorPicker colorPicker_;                               ///< Color picker popup widget.
+    UndoStack undoStack_;                                       ///< Undo/redo history stack.
+    SelectionManager selection_;                                ///< Selected objects tracker.
+    LogBuffer log_;                                             ///< Console log message buffer.
 
     // Widget indices for the shell layout
-    int menuBar_       = -1;
-    int statusBar_     = -1;
-    int dockArea_      = -1;
-    int leftPane_      = -1;
-    int centerPane_    = -1;
-    int rightPane_     = -1;
+    int menuBar_       = -1;  ///< Menu bar widget index.
+    int statusBar_     = -1;  ///< Status bar widget index.
+    int dockArea_      = -1;  ///< Dock area widget index.
+    int leftPane_      = -1;  ///< Left pane widget index.
+    int centerPane_    = -1;  ///< Center pane widget index.
+    int rightPane_     = -1;  ///< Right pane widget index.
 
     // Status bar labels
-    int fpsLabel_      = -1;
-    int memLabel_      = -1;
-    int toolLabel_     = -1;
+    int fpsLabel_      = -1;  ///< FPS counter label index.
+    int memLabel_      = -1;  ///< Memory usage label index.
+    int toolLabel_     = -1;  ///< Active tool label index.
 
     // Hierarchy panel
-    int hierSearch_    = -1;
-    int hierTree_      = -1;
-    int hierCtxMenu_   = -1;
+    int hierSearch_    = -1;  ///< Hierarchy search field index.
+    int hierTree_      = -1;  ///< Hierarchy tree container index.
+    int hierCtxMenu_   = -1;  ///< Hierarchy context menu index.
 
     // Inspector panel
-    int inspHeader_    = -1;
-    int inspScroll_    = -1;
-    int inspNoSel_     = -1;
+    int inspHeader_    = -1;  ///< Inspector header label index.
+    int inspScroll_    = -1;  ///< Inspector scroll view index.
+    int inspNoSel_     = -1;  ///< "No selection" label index.
 
     // Viewport panel
-    int vpToolbar_     = -1;
-    int vpView_        = -1;
+    int vpToolbar_     = -1;  ///< Viewport toolbar panel index.
+    int vpView_        = -1;  ///< Viewport render area index.
 
     // Console panel
-    int consScroll_    = -1;
-    int consLog_       = -1;
-    int consInput_     = -1;
+    int consScroll_    = -1;  ///< Console scroll view index.
+    int consLog_       = -1;  ///< Console log container index.
+    int consInput_     = -1;  ///< Console input field index.
 
     // Asset browser
-    int abTree_        = -1;
-    int abPreview_     = -1;
-    int abPath_        = -1;
+    int abTree_        = -1;    ///< Asset tree view index.
+    int abPreview_     = -1;    ///< Asset preview area index.
+    int abPath_        = -1;    ///< Asset path label index.
 
-    float fpsTimer_    = 0.0f;
-    int frameCount_    = 0;
+    float fpsTimer_    = 0.0f;  ///< Accumulated time for FPS counter.
+    int frameCount_    = 0;     ///< Frame counter for FPS calculation.
 
     KL_BEGIN_FIELDS(EditorApp)
         /* No reflected fields. */

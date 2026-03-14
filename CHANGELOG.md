@@ -4,6 +4,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.3.2] - 2026-3-14
+UI code quality: hpp/cpp splits, coding standards fixes, dirty-flag rendering (attempt, not finished), and widget bug fixes. End of the staged changes - working to keep the upstream repository up-to-date (even if broken).
+
+### Changed
+- **hpp/cpp splits** - Separated header-only UI files into proper hpp/cpp pairs for faster incremental builds and cleaner interfaces:
+  - `ui_context.hpp/cpp` (core context, event handling, widget management)
+  - `draw_list.hpp/cpp` (draw command generation and widget emitters)
+  - `kml_builder.hpp/cpp` (KML markup parser and widget construction)
+  - `kss_parser.hpp/cpp` (KSS stylesheet parser)
+  - `layout.hpp/cpp` (flexbox-style layout engine)
+  - `event.hpp/cpp` (hit testing and event dispatch)
+  - `theme.hpp/cpp` (style resolution and theme management)
+  - `canvas2d.hpp/cpp` (Canvas2D immediate-mode draw context)
+  - `color_picker.hpp/cpp` (HSV color picker panel)
+- Aligned all UI source files to project coding standards
+- Dropdown popup rendering deferred to overlay pass so menus draw above sibling widgets
+
+### Fixed
+- Text input corruption (character reordering and dropped characters)
+- Cursor position drift in text fields growing with text length
+- Slider and toggle switch sluggish response from per-pixel dirty marking
+- Shadow opacity too dark from additive overlap of multi-step blur rects
+- `rgba()` alpha values in KSS parsed as 0-1 float now correctly mapped to 0-255
+- Number spinner vertical sizing asymmetry
+- Tree node showing expand icon on leaf nodes with no children
+- Dropdown items not clickable (hit test returning child labels instead of dropdown)
+
+### Added
+- **Dirty-flag rendering** - UI only redraws when widget state changes
+- `SetRenderDirty()` / `IsRenderDirty()` API on UIContext for explicit redraw requests
+- `MarkDirty()` propagation through widget hierarchy on state changes
+- ColorField hex value parsing from KML `value` attribute
+- `SetColorHex()` scripting API for programmatic color field updates
+- `onChange` callback support for text fields
+
 ## [0.3.1] - 2026-3-12
 UI system, rendering fixes, and naming cleanup.
 

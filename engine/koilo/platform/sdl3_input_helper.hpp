@@ -114,6 +114,12 @@ inline bool HandleSDL3Event(scripting::KoiloScriptEngine& engine, const SDL_Even
             input->GetKeyboard().SetKeyState(SDLScancodeToKeyCode(sc), true);
             std::string keyId = SDLKeycodeToString(event.key.key);
             if (!keyId.empty()) engine.HandleInput("key", keyId.c_str());
+            if (UI* ui = engine.GetUI()) {
+                bool shift = (event.key.mod & SDL_KMOD_SHIFT) != 0;
+                bool ctrl  = (event.key.mod & SDL_KMOD_CTRL) != 0;
+                bool alt   = (event.key.mod & SDL_KMOD_ALT) != 0;
+                ui->HandleKeyDown(static_cast<int>(SDLScancodeToKeyCode(sc)), shift, ctrl, alt);
+            }
             break;
         }
 
@@ -127,6 +133,9 @@ inline bool HandleSDL3Event(scripting::KoiloScriptEngine& engine, const SDL_Even
 
         case SDL_EVENT_TEXT_INPUT:
             input->GetKeyboard().AddTextInput(event.text.text);
+            if (UI* ui = engine.GetUI()) {
+                ui->HandleTextInput(event.text.text);
+            }
             break;
 
         case SDL_EVENT_MOUSE_MOTION:

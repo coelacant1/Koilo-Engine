@@ -3,17 +3,27 @@
  * @file localization.cpp
  * @brief Localization string table implementation.
  * @date 03/09/2026
- * @author Coela
+ * @author Coela Can't
  */
 
 #include "localization.hpp"
 
 namespace koilo {
 
+// =====================================================================
+// Construction
+// =====================================================================
+
+// Initialize with default "en" locale
 Localization::Localization() {
     locale_[0] = 'e'; locale_[1] = 'n'; locale_[2] = '\0';
 }
 
+// =====================================================================
+// Locale management
+// =====================================================================
+
+// Switch the active locale identifier
 void Localization::SetLocale(const char* locale) {
     if (!locale) return;
     size_t len = strlen(locale);
@@ -22,6 +32,11 @@ void Localization::SetLocale(const char* locale) {
     locale_[len] = '\0';
 }
 
+// =====================================================================
+// String table operations
+// =====================================================================
+
+// Add or update a key-value pair in the string table
 bool Localization::Set(const char* key, const char* value) {
     if (!key || !value) return false;
 
@@ -65,6 +80,7 @@ bool Localization::Set(const char* key, const char* value) {
     return true;
 }
 
+// Look up a localized string, falling back to the key itself
 const char* Localization::Get(const char* key) const {
     if (!key) return "";
     int idx = FindKey(key);
@@ -72,11 +88,13 @@ const char* Localization::Get(const char* key) const {
     return stringBuf_ + entries_[idx].valueOffset;
 }
 
+// Discard all entries and reset buffer usage
 void Localization::Clear() {
     count_ = 0;
     bufUsed_ = 0;
 }
 
+// Linear scan for a key in the entry table
 int Localization::FindKey(const char* key) const {
     size_t keyLen = strlen(key);
     for (size_t i = 0; i < count_; ++i) {

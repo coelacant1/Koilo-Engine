@@ -2,8 +2,8 @@
 /**
  * @file kss_parser.cpp
  * @brief CSS-like stylesheet parser implementation.
- * @date 03/09/2026
- * @author Coela
+ * @date 03/08/2026
+ * @author Coela Can't
  */
 
 #include "kss_parser.hpp"
@@ -16,14 +16,16 @@ namespace koilo {
 namespace ui {
 namespace markup {
 
-// ---------------------------------------------------------------------------
+// ============================================================================
 // Character-level
-// ---------------------------------------------------------------------------
+// ============================================================================
 
+// Return current character without advancing
 char KSSParser::Peek() const {
     return AtEnd() ? '\0' : *pos_;
 }
 
+// Consume and return current character, tracking line/column
 char KSSParser::Advance() {
     if (AtEnd()) return '\0';
     char c = *pos_++;
@@ -32,20 +34,24 @@ char KSSParser::Advance() {
     return c;
 }
 
+// Check if scanner has reached end of input
 bool KSSParser::AtEnd() const {
     return pos_ >= end_;
 }
 
+// Skip over whitespace characters
 void KSSParser::SkipWhitespace() {
     while (!AtEnd() && std::isspace(static_cast<unsigned char>(Peek()))) {
         Advance();
     }
 }
 
+// Skip a // line comment until newline
 void KSSParser::SkipLineComment() {
     while (!AtEnd() && Peek() != '\n') Advance();
 }
 
+// Skip a /* ... */ block comment
 void KSSParser::SkipBlockComment() {
     while (!AtEnd()) {
         if (Peek() == '*') {
@@ -58,6 +64,7 @@ void KSSParser::SkipBlockComment() {
     Error("Unterminated block comment");
 }
 
+// Skip whitespace, line comments, and block comments
 void KSSParser::SkipWhitespaceAndComments() {
     while (!AtEnd()) {
         SkipWhitespace();
@@ -70,14 +77,16 @@ void KSSParser::SkipWhitespaceAndComments() {
     }
 }
 
+// Record a parse error at current position
 void KSSParser::Error(const std::string& msg) {
     errors_.push_back({line_, col_, msg});
 }
 
-// ---------------------------------------------------------------------------
+// ============================================================================
 // Identifier parsing
-// ---------------------------------------------------------------------------
+// ============================================================================
 
+// Parse a CSS identifier (supports -- prefix for custom properties)
 std::string KSSParser::ParseIdent() {
     std::string id;
     // Allow -- prefix for CSS custom properties
@@ -98,7 +107,7 @@ std::string KSSParser::ParseIdent() {
     return id;
 }
 
-/// Read a property value until ';' or '}' (does not consume the delimiter).
+// Read a property value until ';' or '}' (does not consume the delimiter)
 std::string KSSParser::ParseValue() {
     std::string val;
     int parenDepth = 0;
@@ -117,10 +126,11 @@ std::string KSSParser::ParseValue() {
     return (start == std::string::npos) ? "" : val.substr(start);
 }
 
-// ---------------------------------------------------------------------------
+// ============================================================================
 // Selector parsing
-// ---------------------------------------------------------------------------
+// ============================================================================
 
+// Parse a simple selector: element.class#id:pseudo[attr]
 bool KSSParser::ParseSimpleSelector(KSSSimpleSelector& simple) {
     // A simple selector: element.class#id:pseudo (all parts optional, at least one required)
     bool hasAny = false;
@@ -228,6 +238,7 @@ bool KSSParser::ParseSimpleSelector(KSSSimpleSelector& simple) {
     return hasAny;
 }
 
+// Parse a compound selector with combinators (space, >, +, ~)
 bool KSSParser::ParseSelector(KSSSelector& selector) {
     // A selector is one or more simple selectors separated by whitespace
     // (descendant), > (child), + (adjacent sibling), or ~ (general sibling).
@@ -277,6 +288,7 @@ bool KSSParser::ParseSelector(KSSSelector& selector) {
     return true;
 }
 
+// Parse comma-separated list of selectors
 bool KSSParser::ParseSelectorList(std::vector<KSSSelector>& selectors) {
     while (true) {
         SkipWhitespaceAndComments();
@@ -297,10 +309,11 @@ bool KSSParser::ParseSelectorList(std::vector<KSSSelector>& selectors) {
     return !selectors.empty();
 }
 
-// ---------------------------------------------------------------------------
+// ============================================================================
 // Declaration parsing
-// ---------------------------------------------------------------------------
+// ============================================================================
 
+// Parse a single property: value declaration
 bool KSSParser::ParseDeclaration(KSSDeclaration& decl) {
     SkipWhitespaceAndComments();
     decl.property = ParseIdent();
@@ -326,6 +339,7 @@ bool KSSParser::ParseDeclaration(KSSDeclaration& decl) {
     return true;
 }
 
+// Parse a { property: value; ... } declaration block
 bool KSSParser::ParseDeclarationBlock(std::vector<KSSDeclaration>& decls) {
     SkipWhitespaceAndComments();
     if (Peek() != '{') {
@@ -355,10 +369,11 @@ bool KSSParser::ParseDeclarationBlock(std::vector<KSSDeclaration>& decls) {
     return false;
 }
 
-// ---------------------------------------------------------------------------
+// ============================================================================
 // Rule parsing
-// ---------------------------------------------------------------------------
+// ============================================================================
 
+// Parse a complete rule: selector list + declaration block
 bool KSSParser::ParseRule(KSSRule& rule) {
     SkipWhitespaceAndComments();
     if (AtEnd()) return false;
@@ -369,10 +384,11 @@ bool KSSParser::ParseRule(KSSRule& rule) {
     return true;
 }
 
-// ---------------------------------------------------------------------------
+// ============================================================================
 // Public API
-// ---------------------------------------------------------------------------
+// ============================================================================
 
+// Parse a complete KSS stylesheet with rules, @media, @keyframes, and variables
 bool KSSParser::Parse(const std::string& source) {
     stylesheet_.rules.clear();
     stylesheet_.variables.clear();

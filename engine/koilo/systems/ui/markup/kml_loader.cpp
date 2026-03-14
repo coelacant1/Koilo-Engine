@@ -2,8 +2,8 @@
 /**
  * @file kml_loader.cpp
  * @brief KML/KSS file loading and build orchestration.
- * @date 03/09/2026
- * @author Coela
+ * @date 03/08/2026
+ * @author Coela Can't
  */
 
 #include "kml_loader.hpp"
@@ -15,13 +15,15 @@ namespace koilo {
 namespace ui {
 namespace markup {
 
+// Construct loader with UI context and theme references
 KMLLoader::KMLLoader(UIContext& ctx, Theme& theme)
     : ctx_(ctx), theme_(theme) {}
 
-// ---------------------------------------------------------------------------
+// ============================================================================
 // File I/O
-// ---------------------------------------------------------------------------
+// ============================================================================
 
+// Read entire file contents into a string
 bool KMLLoader::ReadFile(const std::string& path, std::string& out) {
     std::ifstream file(path, std::ios::in | std::ios::binary);
     if (!file.is_open()) return false;
@@ -31,10 +33,11 @@ bool KMLLoader::ReadFile(const std::string& path, std::string& out) {
     return true;
 }
 
-// ---------------------------------------------------------------------------
+// ============================================================================
 // Public API
-// ---------------------------------------------------------------------------
+// ============================================================================
 
+// Parse markup + stylesheet strings and build the widget tree
 int KMLLoader::LoadFromString(const std::string& kml, const std::string& kss) {
     errors_.clear();
     widgetsCreated_ = 0;
@@ -66,6 +69,7 @@ int KMLLoader::LoadFromString(const std::string& kml, const std::string& kss) {
     return result.rootWidgetIdx;
 }
 
+// Load KML/KSS from file paths and build the widget tree
 int KMLLoader::LoadFromFile(const std::string& kmlPath, const std::string& kssPath) {
     std::string kml, kss;
 
@@ -84,6 +88,7 @@ int KMLLoader::LoadFromFile(const std::string& kmlPath, const std::string& kssPa
     return LoadFromString(kml, kss);
 }
 
+// Parse a standalone stylesheet string for later reuse
 bool KMLLoader::LoadStylesheet(const std::string& kss) {
     KSSParser parser;
     if (!parser.Parse(kss)) {

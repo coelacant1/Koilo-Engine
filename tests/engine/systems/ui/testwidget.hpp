@@ -78,5 +78,70 @@ public:
     static void TestRadioGroupExclusion();
     static void TestSpinnerClamp();
 
+    // Drag-and-drop
+    static void TestDragPayloadLifecycle();
+    static void TestDragThreshold();
+    static void TestDropAcceptReject();
+    static void TestDragCancelEscape();
+    static void TestTreeDragReparent();
+
+    // Sub-menu & popup stack tests
+    static void TestPopupStack();
+    static void TestMenuItemShortcutText();
+    static void TestSubMenuHoverExpand();
+
+    // Command registry tests
+    static void TestCommandRegistryBasic();
+    static void TestShortcutDispatch();
+    static void TestShortcutRebind();
+
+    // Color conversion tests
+    static void TestColorHSVRoundtrip();
+    static void TestColorFromHex();
+
+    // Virtual list tests
+    static void TestVirtualListCreate();
+    static void TestVirtualListScroll();
+    static void TestVirtualListRowRecycle();
+
+    // Canvas2D tests
+    static void TestCanvas2DCreate();
+    static void TestCanvas2DDrawCommands();
+
+    // Settings store tests
+    static void TestSettingsGetSet();
+    static void TestSettingsSerialize();
+    static void TestSettingsDefaults();
+
+    // Icon system tests
+
+    static void TestIconFromName();
+
+    // Color picker tests
+    static void TestColorPickerBuild();
+    static void TestColorPickerSVInteraction();
+
+    // Curve editor tests
+    static void TestCurveEditorEvaluate();
+    static void TestCurveEditorAddRemove();
+
+    // Timeline tests
+    static void TestTimelineScrub();
+
+    // Content browser tests
+    static void TestFsAdapter();
+    static void TestBreadcrumb();
+    static void TestContentBrowserBuild();
+
+    // Node graph tests
+    static void TestNodeGraphBuild();
+    static void TestNodeGraphConnect();
+
+    // TreeRow multi-column tests
+    static void TestTreeRowColumns();
+
+    // Preferences panel tests
+    static void TestPreferencesBuild();
+
     static void RunAllTests();
 };

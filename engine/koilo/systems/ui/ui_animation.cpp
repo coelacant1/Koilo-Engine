@@ -3,7 +3,7 @@
  * @file ui_animation.cpp
  * @brief UI animation system implementation.
  * @date 03/09/2026
- * @author Coela
+ * @author Coela Can't
  */
 
 #include "ui_animation.hpp"
@@ -12,7 +12,9 @@
 namespace koilo {
 namespace ui {
 
-// -- Easing functions ------------------------------------------------
+// ============================================================================
+// Easing functions
+// ============================================================================
 
 static float EaseLinear(float t) { return t; }
 
@@ -67,6 +69,7 @@ static const EaseFn kEaseFns[static_cast<int>(EaseType::Count)] = {
     EaseOutBounce
 };
 
+// Evaluate the selected easing function
 float EaseEvaluate(EaseType type, float t) {
     int idx = static_cast<int>(type);
     if (idx < 0 || idx >= static_cast<int>(EaseType::Count)) return t;
@@ -74,16 +77,21 @@ float EaseEvaluate(EaseType type, float t) {
     return kEaseFns[idx](t);
 }
 
-// -- TweenPool -------------------------------------------------------
+// ============================================================================
+// TweenPool
+// ============================================================================
 
+// Allocate the tween array
 TweenPool::TweenPool(size_t capacity) : capacity_(capacity) {
     tweens_ = new Tween[capacity_];
 }
 
+// Release the tween array
 TweenPool::~TweenPool() {
     delete[] tweens_;
 }
 
+// Find a free slot and initialise a new tween
 int TweenPool::Start(int widgetIdx, TweenProperty prop, float from, float to,
                      float duration, EaseType ease, float delay) {
     // Find free slot
@@ -110,6 +118,7 @@ int TweenPool::Start(int widgetIdx, TweenProperty prop, float from, float to,
     return -1; // pool full
 }
 
+// Cancel a single tween by index
 void TweenPool::Cancel(int tweenIdx) {
     if (tweenIdx < 0 || tweenIdx >= static_cast<int>(capacity_)) return;
     if (tweens_[tweenIdx].active) {
@@ -119,6 +128,7 @@ void TweenPool::Cancel(int tweenIdx) {
     }
 }
 
+// Cancel all tweens targeting a specific widget
 void TweenPool::CancelAll(int widgetIdx) {
     for (size_t i = 0; i < capacity_; ++i) {
         if (tweens_[i].active && tweens_[i].widgetIdx == widgetIdx) {
@@ -129,6 +139,7 @@ void TweenPool::CancelAll(int widgetIdx) {
     }
 }
 
+// Tick all active tweens and invoke the apply callback
 int TweenPool::Update(float dt, ApplyFn apply, void* userData) {
     int completed = 0;
 
@@ -188,6 +199,7 @@ int TweenPool::Update(float dt, ApplyFn apply, void* userData) {
     return completed;
 }
 
+// Configure loop and ping-pong on a tween
 void TweenPool::SetLoop(int tweenIdx, bool loop, bool pingPong) {
     if (tweenIdx < 0 || tweenIdx >= static_cast<int>(capacity_)) return;
     if (!tweens_[tweenIdx].active) return;
@@ -195,12 +207,14 @@ void TweenPool::SetLoop(int tweenIdx, bool loop, bool pingPong) {
     tweens_[tweenIdx].pingPong = pingPong;
 }
 
+// Assign a completion callback
 void TweenPool::SetOnComplete(int tweenIdx, TweenCallback cb) {
     if (tweenIdx < 0 || tweenIdx >= static_cast<int>(capacity_)) return;
     if (!tweens_[tweenIdx].active) return;
     tweens_[tweenIdx].onComplete = std::move(cb);
 }
 
+// Direct access to a tween slot by index
 const Tween* TweenPool::At(int idx) const {
     if (idx < 0 || idx >= static_cast<int>(capacity_)) return nullptr;
     return &tweens_[idx];

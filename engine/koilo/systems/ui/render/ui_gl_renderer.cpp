@@ -17,6 +17,7 @@ namespace ui {
 
 // --- Public methods -------------------------------------------------
 
+// Initialize GL resources (shader, VAO/VBO, white texture)
 bool UIGLRenderer::Initialize() {
     if (initialized_) return true;
 
@@ -82,6 +83,7 @@ bool UIGLRenderer::Initialize() {
     return true;
 }
 
+// Release all GL resources
 void UIGLRenderer::Shutdown() {
     if (!initialized_) return;
     if (program_)      { glDeleteProgram(program_); program_ = 0; }
@@ -91,6 +93,7 @@ void UIGLRenderer::Shutdown() {
     initialized_ = false;
 }
 
+// Upload or re-upload the font atlas texture
 GLuint UIGLRenderer::UploadFontAtlas(font::GlyphAtlas& atlas) {
     if (!initialized_) return 0;
 
@@ -131,6 +134,7 @@ GLuint UIGLRenderer::UploadFontAtlas(font::GlyphAtlas& atlas) {
     return fontAtlasTexture_;
 }
 
+// Render the draw list to the current framebuffer
 void UIGLRenderer::Render(const UIDrawList& drawList, int viewportW, int viewportH) {
     if (!initialized_ || drawList.Size() == 0) return;
 
@@ -236,6 +240,50 @@ void UIGLRenderer::Render(const UIDrawList& drawList, int viewportW, int viewpor
                 glDisable(GL_SCISSOR_TEST);
             }
             break;
+
+        case DrawCmdType::Line: {
+            SetTexture(whiteTexture_, false, useTexture);
+            // Emit oriented quad from (x,y) to (w,h) with thickness
+            float dx = cmd.w - cmd.x;
+            float dy = cmd.h - cmd.y;
+            float len = std::sqrt(dx * dx + dy * dy);
+            if (len < 0.001f) break;
+            float hw = cmd.borderWidth * 0.5f;
+            float nx = -dy / len * hw;
+            float ny =  dx / len * hw;
+            PushTriangle(cmd.x + nx, cmd.y + ny,
+                         cmd.x - nx, cmd.y - ny,
+                         cmd.w + nx, cmd.h + ny, cmd.color);
+            PushTriangle(cmd.x - nx, cmd.y - ny,
+                         cmd.w - nx, cmd.h - ny,
+                         cmd.w + nx, cmd.h + ny, cmd.color);
+            break;
+        }
+
+        case DrawCmdType::FilledCircle: {
+            SetTexture(whiteTexture_, false, useTexture);
+            // SDF circle: emit quad with rounded-quad path,
+            // radius = w, center = (x,y)
+            float r = cmd.w;
+            float side = r * 2.0f;
+            float radii[4] = {r, r, r, r};
+            PushRoundedQuad(cmd.x - r, cmd.y - r, side, side, radii, 0.0f, cmd.color);
+            break;
+        }
+
+        case DrawCmdType::CircleOutline: {
+            SetTexture(whiteTexture_, false, useTexture);
+            float r = cmd.w;
+            float side = r * 2.0f;
+            float radii[4] = {r, r, r, r};
+            PushRoundedQuad(cmd.x - r, cmd.y - r, side, side, radii, cmd.borderWidth, cmd.color);
+            break;
+        }
+
+        case DrawCmdType::Triangle:
+            SetTexture(whiteTexture_, false, useTexture);
+            PushTriangle(cmd.x, cmd.y, cmd.w, cmd.h, cmd.x2, cmd.y2, cmd.color);
+            break;
         }
     }
 
@@ -253,14 +301,16 @@ void UIGLRenderer::Render(const UIDrawList& drawList, int viewportW, int viewpor
 
 // --- Private batching helpers ---------------------------------------
 
+// Switch texture and flush if the binding changed
 void UIGLRenderer::SetTexture(GLuint tex, bool isTextured, bool& useTexture) {
     if (tex != currentTexture_ || isTextured != useTexture) {
-        Flush(useTexture);
+        if (vertexCount_ > 0) Flush(useTexture);
         currentTexture_ = tex;
         useTexture = isTextured;
     }
 }
 
+// Stage a textured quad (6 vertices, 2 triangles)
 void UIGLRenderer::PushQuad(float x, float y, float w, float h,
                              float u0, float v0, float u1, float v1,
                              Color4 c) {
@@ -281,6 +331,7 @@ void UIGLRenderer::PushQuad(float x, float y, float w, float h,
     vertexCount_ += 6;
 }
 
+// Stage a rounded quad with SDF data for the fragment shader
 void UIGLRenderer::PushRoundedQuad(float x, float y, float w, float h,
                                     const float radii[4], float borderWidth, Color4 c) {
     if (vertexCount_ + 6 > MAX_VERTICES) Flush(false);
@@ -303,6 +354,7 @@ void UIGLRenderer::PushRoundedQuad(float x, float y, float w, float h,
     vertexCount_ += 6;
 }
 
+// Emit four edge quads for a rectangular border
 void UIGLRenderer::EmitBorder(float x, float y, float w, float h,
                                float bw, Color4 c) {
     // Top
@@ -315,6 +367,18 @@ void UIGLRenderer::EmitBorder(float x, float y, float w, float h,
     PushQuad(x + w - bw, y + bw, bw, h - bw * 2.0f, 0, 0, 1, 1, c);
 }
 
+// Stage a single triangle (3 vertices)
+void UIGLRenderer::PushTriangle(float x0, float y0, float x1, float y1,
+                                 float ax2, float ay2, Color4 c) {
+    if (vertexCount_ + 3 > MAX_VERTICES) Flush(false);
+    UIVertex* v = &vertices_[vertexCount_];
+    v[0] = { x0, y0, 0, 0, c.r, c.g, c.b, c.a, {0,0,0,0}, {0,0,0,0} };
+    v[1] = { x1, y1, 0, 0, c.r, c.g, c.b, c.a, {0,0,0,0}, {0,0,0,0} };
+    v[2] = { ax2, ay2, 0, 0, c.r, c.g, c.b, c.a, {0,0,0,0}, {0,0,0,0} };
+    vertexCount_ += 3;
+}
+
+// Upload staged vertices and issue the draw call
 void UIGLRenderer::Flush(bool useTexture) {
     if (vertexCount_ == 0) return;
 
@@ -330,6 +394,7 @@ void UIGLRenderer::Flush(bool useTexture) {
 
 // --- Shader compilation ---------------------------------------------
 
+// Build the UI vertex + fragment shader program
 GLuint UIGLRenderer::CompileUIProgram() {
     const char* vertSrc = R"GLSL(
 #version 330 core
@@ -422,6 +487,7 @@ void main() {
     return CompileProgram(vertSrc, fragSrc);
 }
 
+// Compile and link a vertex + fragment shader into a program
 GLuint UIGLRenderer::CompileProgram(const char* vertSrc, const char* fragSrc) {
     auto compileShader = [](GLenum type, const char* src) -> GLuint {
         GLuint shader = glCreateShader(type);

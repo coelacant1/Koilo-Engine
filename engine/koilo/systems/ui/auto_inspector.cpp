@@ -3,7 +3,7 @@
  * @file auto_inspector.cpp
  * @brief Reflection-driven inspector UI generator implementation.
  * @date 03/08/2026
- * @author Coela
+ * @author Coela Can't
  */
 
 #include "auto_inspector.hpp"
@@ -18,11 +18,11 @@ namespace ui {
 
 // -- helpers ------------------------------------------------------------
 
-static constexpr size_t ID_BUF = 128;
-static constexpr float  LABEL_W  = 140.0f;
-static constexpr float  ROW_H    = 24.0f;
-static constexpr float  SPACING  = 4.0f;
-static constexpr float  CAT_PAD  = 6.0f;
+static constexpr size_t ID_BUF = 128;  ///< Maximum widget ID buffer length
+static constexpr float  LABEL_W  = 140.0f; ///< Default label column width
+static constexpr float  ROW_H    = 24.0f;  ///< Default row height
+static constexpr float  SPACING  = 4.0f;   ///< Default inter-widget spacing
+static constexpr float  CAT_PAD  = 6.0f;   ///< Category panel padding
 
 /// Build a deterministic widget ID from class + field name.
 static void MakeId(char* buf, const char* cls, const char* field,
@@ -66,8 +66,11 @@ static void IntToStr(char* buf, size_t sz, int v) {
     snprintf(buf, sz, "%d", v);
 }
 
-// -- per-field widget generators ----------------------------------------
+// ====================================================================
+// Per-field widget generators
+// ====================================================================
 
+// Create a slider control bound to a numeric field.
 static int CreateSliderField(UIContext& ctx, int row, const char* cls,
                              const char* name, void* instance,
                              const FieldDecl& f) {
@@ -112,6 +115,7 @@ static int CreateSliderField(UIContext& ctx, int row, const char* cls,
     return sld;
 }
 
+// Create a checkbox control bound to a boolean field.
 static int CreateCheckboxField(UIContext& ctx, int row, const char* cls,
                                const char* name, void* instance,
                                const FieldDecl& f) {
@@ -132,6 +136,7 @@ static int CreateCheckboxField(UIContext& ctx, int row, const char* cls,
     return chk;
 }
 
+// Create a read-only label showing the current field value.
 static int CreateValueLabel(UIContext& ctx, int row, const char* cls,
                             const char* name, void* instance,
                             const FieldDecl& f) {
@@ -180,6 +185,7 @@ static int CreateValueLabel(UIContext& ctx, int row, const char* cls,
     return lbl;
 }
 
+// Create an RGB colour editor with three 0-255 sliders.
 static int CreateColorField(UIContext& ctx, int parent, const char* cls,
                             const char* name, void* instance,
                             const FieldDecl& f) {
@@ -215,8 +221,76 @@ static int CreateColorField(UIContext& ctx, int parent, const char* cls,
     return panel;
 }
 
-// -- main generator -----------------------------------------------------
+/// Create a compact Vec2/Vec3 editor: [ label | X spinner | Y spinner | (Z spinner) ]
+/// Returns the row panel index, or -1 if not a recognized vector type.
+static int CreateVectorField(UIContext& ctx, int parent, const char* cls,
+                             const char* name, const char* label,
+                             void* instance, const FieldDecl& f,
+                             const ClassDesc* nested) {
+    if (!nested) return -1;
 
+    // Count float fields to detect Vec2 (2 floats) or Vec3 (3 floats)
+    int floatCount = 0;
+    const FieldDecl* floatFields[4] = {};
+    for (size_t j = 0; j < nested->fields.count && floatCount < 4; ++j) {
+        if (nested->fields.data[j].kind == FieldKind::Float) {
+            floatFields[floatCount++] = &nested->fields.data[j];
+        }
+    }
+    if (floatCount < 2 || floatCount > 4) return -1;
+    // Verify all fields in the class are floats (pure vector type)
+    if (static_cast<size_t>(floatCount) != nested->fields.count) return -1;
+
+    void* subObj = f.access.get_ptr(instance);
+
+    char id[ID_BUF];
+    MakeId(id, cls, name, "row");
+    int row = ctx.CreatePanel(id);
+    if (row < 0) return -1;
+    ctx.SetParent(row, parent);
+    ctx.SetLayout(row, LayoutDirection::Row, Alignment::Start,
+                  Alignment::Center, 2.0f);
+    ctx.SetSizeMode(row, SizeMode::FillRemaining, SizeMode::Fixed);
+    ctx.SetSize(row, 0, ROW_H);
+
+    // Label
+    MakeId(id, cls, name, "lbl");
+    int lbl = ctx.CreateLabel(id, label);
+    if (lbl >= 0) {
+        ctx.SetParent(lbl, row);
+        ctx.SetSize(lbl, LABEL_W, ROW_H);
+    }
+
+    // One NumberSpinner per component
+    for (int c = 0; c < floatCount; ++c) {
+        const FieldDecl& cf = *floatFields[c];
+        char spId[ID_BUF];
+        snprintf(spId, ID_BUF, "insp_%s_%s_%s", cls, name, cf.name);
+
+        float val = *static_cast<const float*>(cf.access.get_cptr(subObj));
+        float min = static_cast<float>(cf.min_value);
+        float max = static_cast<float>(cf.max_value);
+        if (min >= max) { min = -10000.0f; max = 10000.0f; }
+
+        int sp = ctx.CreateNumberSpinner(spId, val, min, max, 0.1f);
+        if (sp < 0) continue;
+        ctx.SetParent(sp, row);
+        ctx.SetSizeMode(sp, SizeMode::FillRemaining, SizeMode::Fixed);
+        ctx.SetSize(sp, 0, ROW_H);
+
+        FieldAccess acc = cf.access;
+        ctx.SetOnChange(sp, [acc, subObj](Widget& w) {
+            *static_cast<float*>(acc.get_ptr(subObj)) = w.sliderValue;
+        });
+    }
+    return row;
+}
+
+// ====================================================================
+// Main generator
+// ====================================================================
+
+// Build a full inspector widget tree for a reflected class.
 InspectorResult GenerateInspector(const ClassDesc* desc, void* instance,
                                   UIContext& ctx, int parentIdx) {
     InspectorResult result;
@@ -355,11 +429,19 @@ InspectorResult GenerateInspector(const ClassDesc* desc, void* instance,
                         break;
                     }
                     case FieldKind::Complex: {
-                        // Nested object - try recursive inspection
+                        // Nested object - try vector editor first, then recursive
 #if KL_HAS_RTTI
                         if (f.type) {
                             const ClassDesc* nested = ClassForType(*f.type);
                             if (nested) {
+                                // Try compact vector editor (Vec2/Vec3/Vec4)
+                                int vecWidget = CreateVectorField(
+                                    ctx, catPanel, cls, name, label,
+                                    instance, f, nested);
+                                if (vecWidget >= 0) {
+                                    widgetIdx = vecWidget;
+                                    break;
+                                }
                                 // Create a foldout for the sub-object
                                 char foldId[ID_BUF];
                                 MakeId(foldId, cls, name, "fold");
@@ -403,8 +485,11 @@ InspectorResult GenerateInspector(const ClassDesc* desc, void* instance,
     return result;
 }
 
-// -- refresh ------------------------------------------------------------
+// ====================================================================
+// Refresh
+// ====================================================================
 
+// Sync inspector widget values from the live object state.
 void RefreshInspector(const ClassDesc* desc, void* instance,
                       UIContext& ctx, int inspectorRoot) {
     if (!desc || !instance || inspectorRoot < 0) return;
@@ -472,6 +557,30 @@ void RefreshInspector(const ClassDesc* desc, void* instance,
                     Widget* w = ctx.GetWidget(idx);
                     if (w) w->checked = *static_cast<const bool*>(ptr);
                 }
+                break;
+            }
+            case FieldKind::Complex: {
+                // Refresh vector spinner values
+#if KL_HAS_RTTI
+                if (f.type) {
+                    const ClassDesc* nested = ClassForType(*f.type);
+                    if (nested) {
+                        const void* subObj = f.access.get_cptr(instance);
+                        for (size_t j = 0; j < nested->fields.count; ++j) {
+                            const FieldDecl& cf = nested->fields.data[j];
+                            if (cf.kind != FieldKind::Float) continue;
+                            char spId[ID_BUF];
+                            snprintf(spId, ID_BUF, "insp_%s_%s_%s", cls, name, cf.name);
+                            int idx = ctx.FindWidget(spId);
+                            if (idx >= 0) {
+                                Widget* w = ctx.GetWidget(idx);
+                                if (w) w->sliderValue = *static_cast<const float*>(
+                                    cf.access.get_cptr(subObj));
+                            }
+                        }
+                    }
+                }
+#endif
                 break;
             }
             default: {

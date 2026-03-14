@@ -1,6 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
+/**
+ * @file ui.cpp
+ * @brief UI class implementation.
+ * @date 03/08/2026
+ * @author Coela Can't
+ */
+
 #include <koilo/systems/ui/ui.hpp>
 #include <koilo/systems/ui/auto_inspector.hpp>
+#include <koilo/systems/input/keycodes.hpp>
 #include <koilo/registry/global_registry.hpp>
 #include <koilo/scripting/reflection_bridge.hpp>
 #include <cstring>
@@ -8,7 +16,9 @@
 
 namespace koilo {
 
-// -- Constructor -----------------------------------------------------
+// ============================================================================
+// Constructor
+// ============================================================================
 
 UI::UI() {
     int root = ctx_.CreatePanel("__root");
@@ -17,7 +27,9 @@ UI::UI() {
                            ui::SizeMode::FillRemaining);
 }
 
-// -- Viewport & layout -----------------------------------------------
+// ============================================================================
+// Viewport & Layout
+// ============================================================================
 
 void UI::SetViewport(float w, float h) { ctx_.SetViewport(w, h); }
 void UI::UpdateLayout() {
@@ -32,50 +44,60 @@ void UI::UpdateLayout() {
     ctx_.UpdateLayout();
 }
 
-// -- Widget creation -------------------------------------------------
+// ============================================================================
+// Widget Creation
+// ============================================================================
 
+/// Create a panel widget and attach to root.
 int UI::CreatePanel(const char* id) {
     int idx = ctx_.CreatePanel(id);
     if (idx >= 0) ctx_.SetParent(idx, ctx_.Root());
     return idx;
 }
 
+/// Create a label widget and attach to root.
 int UI::CreateLabel(const char* id, const char* text) {
     int idx = ctx_.CreateLabel(id, text);
     if (idx >= 0) ctx_.SetParent(idx, ctx_.Root());
     return idx;
 }
 
+/// Create a button widget and attach to root.
 int UI::CreateButton(const char* id, const char* text) {
     int idx = ctx_.CreateButton(id, text);
     if (idx >= 0) ctx_.SetParent(idx, ctx_.Root());
     return idx;
 }
 
+/// Create a slider widget and attach to root.
 int UI::CreateSlider(const char* id, float min, float max, float value) {
     int idx = ctx_.CreateSlider(id, min, max, value);
     if (idx >= 0) ctx_.SetParent(idx, ctx_.Root());
     return idx;
 }
 
+/// Create a checkbox widget and attach to root.
 int UI::CreateCheckbox(const char* id, bool checked) {
     int idx = ctx_.CreateCheckbox(id, checked);
     if (idx >= 0) ctx_.SetParent(idx, ctx_.Root());
     return idx;
 }
 
+/// Create a text field widget and attach to root.
 int UI::CreateTextField(const char* id, const char* placeholder) {
     int idx = ctx_.CreateTextField(id, placeholder);
     if (idx >= 0) ctx_.SetParent(idx, ctx_.Root());
     return idx;
 }
 
+/// Create a separator widget and attach to root.
 int UI::CreateSeparator(const char* id) {
     int idx = ctx_.CreateSeparator(id);
     if (idx >= 0) ctx_.SetParent(idx, ctx_.Root());
     return idx;
 }
 
+/// Create a scroll view widget with clip and fill behavior.
 int UI::CreateScrollView(const char* id) {
     int idx = ctx_.CreateWidget(ui::WidgetTag::ScrollView, id);
     if (idx >= 0) {
@@ -87,6 +109,7 @@ int UI::CreateScrollView(const char* id) {
     return idx;
 }
 
+/// Create a tree node widget and attach to root.
 int UI::CreateTreeNode(const char* id, const char* text) {
     int idx = ctx_.CreateWidget(ui::WidgetTag::TreeNode, id);
     if (idx >= 0) {
@@ -97,107 +120,159 @@ int UI::CreateTreeNode(const char* id, const char* text) {
     return idx;
 }
 
+/// Create a dock container widget and attach to root.
 int UI::CreateDockContainer(const char* id) {
     int idx = ctx_.CreateDockContainer(id);
     if (idx >= 0) ctx_.SetParent(idx, ctx_.Root());
     return idx;
 }
 
+/// Create a split pane widget and attach to root.
 int UI::CreateSplitPane(const char* id, bool vertical) {
     int idx = ctx_.CreateSplitPane(id, vertical);
     if (idx >= 0) ctx_.SetParent(idx, ctx_.Root());
     return idx;
 }
 
+/// Create a tab bar widget and attach to root.
 int UI::CreateTabBar(const char* id) {
     int idx = ctx_.CreateTabBar(id);
     if (idx >= 0) ctx_.SetParent(idx, ctx_.Root());
     return idx;
 }
 
+/// Create a popup menu widget and attach to root.
 int UI::CreatePopupMenu(const char* id) {
     int idx = ctx_.CreatePopupMenu(id);
     if (idx >= 0) ctx_.SetParent(idx, ctx_.Root());
     return idx;
 }
 
+/// Create a menu item widget and attach to root.
 int UI::CreateMenuItem(const char* id, const char* text) {
     int idx = ctx_.CreateMenuItem(id, text);
     if (idx >= 0) ctx_.SetParent(idx, ctx_.Root());
     return idx;
 }
 
-// -- Widget tree -----------------------------------------------------
+// ============================================================================
+// Widget Tree
+// ============================================================================
 
+/// Set widget parent-child relationship.
 bool UI::SetParent(int child, int parent) { return ctx_.SetParent(child, parent); }
+/// Destroy a widget by index.
 void UI::DestroyWidget(int idx) { ctx_.DestroyWidget(idx); }
+/// Find a widget by string ID.
 int UI::FindWidget(const char* id) { return ctx_.FindWidget(id); }
+/// Get the root widget index.
 int UI::GetRoot() { return ctx_.Root(); }
+/// Get the number of live widgets.
 int UI::GetWidgetCount() { return static_cast<int>(ctx_.Pool().Count()); }
 
-// -- Properties ------------------------------------------------------
+// ============================================================================
+// Properties
+// ============================================================================
 
+/// Set the text of a widget.
 void UI::SetText(int idx, const char* text) { ctx_.SetText(idx, text); }
+/// Get the text of a widget.
 const char* UI::GetText(int idx) { return ctx_.GetText(idx); }
+/// Set widget visibility.
 void UI::SetVisible(int idx, bool v) { ctx_.SetVisible(idx, v); }
+/// Set widget enabled state.
 void UI::SetEnabled(int idx, bool e) { ctx_.SetEnabled(idx, e); }
+/// Set widget selected state.
+void UI::SetSelected(int idx, bool s) { ctx_.SetSelected(idx, s); }
+
+/// Set a ColorField's color from a hex string.
+void UI::SetColorHex(int idx, const char* hex) {
+    ui::Widget* w = ctx_.Pool().Get(idx);
+    if (!w || !hex) return;
+    w->colorValue = ui::Color4::FromHex(hex);
+    ctx_.SetRenderDirty();
+}
+
+/// Set widget size.
 void UI::SetSize(int idx, float w, float h) { ctx_.SetSize(idx, w, h); }
+/// Set widget position.
 void UI::SetPosition(int idx, float x, float y) { ctx_.SetPosition(idx, x, y); }
 
+/// Set widget padding (top, right, bottom, left).
 void UI::SetPadding(int idx, float top, float right, float bottom, float left) {
     ctx_.SetPadding(idx, top, right, bottom, left);
 }
 
+/// Set widget margin (top, right, bottom, left).
 void UI::SetMargin(int idx, float top, float right, float bottom, float left) {
     ctx_.SetMargin(idx, top, right, bottom, left);
 }
 
-// -- Layout ----------------------------------------------------------
+// ============================================================================
+// Layout
+// ============================================================================
 
+/// Set column layout with spacing.
 void UI::SetLayoutColumn(int idx, float spacing) {
     ctx_.SetLayout(idx, ui::LayoutDirection::Column,
                    ui::Alignment::Start, ui::Alignment::Start, spacing);
 }
 
+/// Set row layout with spacing.
 void UI::SetLayoutRow(int idx, float spacing) {
     ctx_.SetLayout(idx, ui::LayoutDirection::Row,
                    ui::Alignment::Start, ui::Alignment::Start, spacing);
 }
 
+/// Set widget to fill available width.
 void UI::SetFillWidth(int idx) {
     ctx_.SetSizeMode(idx, ui::SizeMode::FillRemaining,
                      ctx_.GetWidget(idx) ? ctx_.GetWidget(idx)->heightMode
                                          : ui::SizeMode::Fixed);
 }
 
+/// Set widget to fill available height.
 void UI::SetFillHeight(int idx) {
     ui::SizeMode wMode = ctx_.GetWidget(idx) ? ctx_.GetWidget(idx)->widthMode
                                               : ui::SizeMode::Fixed;
     ctx_.SetSizeMode(idx, wMode, ui::SizeMode::FillRemaining);
 }
 
-// -- Events ----------------------------------------------------------
+// ============================================================================
+// Events
+// ============================================================================
 
+/// Set click callback script function name.
 void UI::SetOnClick(int idx, const char* fnName) { ctx_.SetOnClickScript(idx, fnName); }
+/// Set change callback script function name.
 void UI::SetOnChange(int idx, const char* fnName) { ctx_.SetOnChangeScript(idx, fnName); }
 
-// -- Query -----------------------------------------------------------
+// ============================================================================
+// Query
+// ============================================================================
 
+/// Get the current slider value.
 float UI::GetSliderValue(int idx) {
     const ui::Widget* w = ctx_.GetWidget(idx);
     return w ? w->sliderValue : 0.0f;
 }
 
+/// Get checkbox checked state.
 bool UI::GetChecked(int idx) {
     const ui::Widget* w = ctx_.GetWidget(idx);
     return w ? w->checked : false;
 }
 
+/// Get viewport width.
 float UI::GetViewportWidth() { return ctx_.ViewportWidth(); }
+/// Get viewport height.
 float UI::GetViewportHeight() { return ctx_.ViewportHeight(); }
 
-// -- Inspector -------------------------------------------------------
+// ============================================================================
+// Inspector
+// ============================================================================
 
+/// Auto-generate inspector UI for a registered type.
 int UI::InspectType(const char* className, int parentIdx) {
     if (!className) return -1;
     const ClassDesc* desc = scripting::ReflectionBridge::FindClass(className);
@@ -208,8 +283,11 @@ int UI::InspectType(const char* className, int parentIdx) {
     return r.rootWidget;
 }
 
-// -- Theme -----------------------------------------------------------
+// ============================================================================
+// Theme
+// ============================================================================
 
+/// Override theme color for a widget element type.
 void UI::SetThemeColor(const char* element, int r, int g, int b, int a) {
     if (!element) return;
     ui::Color4 c(static_cast<uint8_t>(r), static_cast<uint8_t>(g),
@@ -243,8 +321,11 @@ void UI::SetThemeColor(const char* element, int r, int g, int b, int a) {
     }
 }
 
-// -- Auto-size text widgets ------------------------------------------
+// ============================================================================
+// Auto-size Text Widgets
+// ============================================================================
 
+/// Pre-layout pass: auto-size text widgets without explicit dimensions.
 void UI::AutoSizeTextWidgets() {
     if (!font_.IsLoaded()) return;
 
@@ -305,6 +386,7 @@ void UI::AutoSizeTextWidgets() {
     }
 }
 
+/// Render UI to a Color888 buffer via software path.
 void UI::RenderToBuffer(Color888* buffer, int width, int height) {
     // Skip if the root has no children - the opaque clear would overwrite
     // the scene/canvas content with the UI background color.
@@ -346,12 +428,15 @@ void UI::RenderToBuffer(Color888* buffer, int width, int height) {
     }
 }
 
+/// Load a TTF font for UI text rendering.
 bool UI::LoadFont(const char* path, float pixelSize) {
     return font_.LoadFromFile(path, pixelSize);
 }
 
+/// Check if a font is loaded.
 bool UI::HasFont() const { return font_.IsLoaded(); }
 
+/// Initialize GPU UI rendering (OpenGL).
 bool UI::InitializeGPU() {
     if (gpuInitialized_) return true;
     if (!glRenderer_.Initialize()) return false;
@@ -362,6 +447,7 @@ bool UI::InitializeGPU() {
     return true;
 }
 
+/// Render UI overlay via OpenGL.
 void UI::RenderGPU(int viewportW, int viewportH) {
     ctx_.SetViewport(static_cast<float>(viewportW), static_cast<float>(viewportH));
 
@@ -371,6 +457,13 @@ void UI::RenderGPU(int viewportW, int viewportH) {
     lastFrameTime_ = now;
     if (dt > 0.1f) dt = 0.1f;
     ctx_.UpdateTransitions(dt);
+
+    // Skip draw list rebuild when nothing changed; re-render cached list
+    if (!ctx_.IsRenderDirty()) {
+        if (drawList_.Size() > 0)
+            glRenderer_.Render(drawList_, viewportW, viewportH);
+        return;
+    }
 
     AutoSizeTextWidgets();
     ctx_.UpdateLayout();
@@ -394,6 +487,8 @@ void UI::RenderGPU(int viewportW, int viewportH) {
         drawList_.BuildFromContext(ctx_, f, fontAtlasTexture_);
     }
 
+    ctx_.ClearRenderDirty();
+
     // Re-upload atlas if new glyphs were rasterized during BuildFromContext
     if (font_.IsLoaded() && fontAtlasTexture_ != 0 && font_.Atlas().IsDirty()) {
         glRenderer_.UploadFontAtlas(font_.Atlas());
@@ -402,6 +497,7 @@ void UI::RenderGPU(int viewportW, int viewportH) {
     glRenderer_.Render(drawList_, viewportW, viewportH);
 }
 
+/// Remove all widgets and reset state.
 void UI::Clear() {
     auto& pool = ctx_.Pool();
     for (size_t i = 0; i < pool.Capacity(); ++i) {
@@ -420,8 +516,11 @@ void UI::Clear() {
                            ui::SizeMode::FillRemaining);
 }
 
-// -- Markup loading (KML + KSS) ------------------------------------
+// ============================================================================
+// Markup Loading (KML + KSS)
+// ============================================================================
 
+/// Load a UI layout from KML markup and optional KSS stylesheet.
 int UI::LoadMarkup(const char* kmlPath, const char* kssPath) {
     ui::markup::KMLLoader loader(ctx_, ctx_.GetTheme());
     std::string kss = (kssPath && kssPath[0]) ? kssPath : "";
@@ -436,6 +535,7 @@ int UI::LoadMarkup(const char* kmlPath, const char* kssPath) {
     return rootIdx;
 }
 
+/// Load a UI layout from KML/KSS strings (in-memory).
 int UI::LoadMarkupString(const char* kml, const char* kss) {
     ui::markup::KMLLoader loader(ctx_, ctx_.GetTheme());
     std::string kssStr = (kss && kss[0]) ? kss : "";
@@ -450,8 +550,11 @@ int UI::LoadMarkupString(const char* kml, const char* kss) {
     return rootIdx;
 }
 
-// -- Input events ----------------------------------------------------
+// ============================================================================
+// Input Events
+// ============================================================================
 
+/// Forward a pointer-down event to the UI.
 void UI::HandlePointerDown(float x, float y, uint8_t button) {
     ui::Event ev;
     ev.type = ui::EventType::PointerDown;
@@ -461,6 +564,7 @@ void UI::HandlePointerDown(float x, float y, uint8_t button) {
     ctx_.ProcessEvent(ev);
 }
 
+/// Forward a pointer-up event to the UI.
 void UI::HandlePointerUp(float x, float y, uint8_t button) {
     ui::Event ev;
     ev.type = ui::EventType::PointerUp;
@@ -470,6 +574,7 @@ void UI::HandlePointerUp(float x, float y, uint8_t button) {
     ctx_.ProcessEvent(ev);
 }
 
+/// Forward a pointer-move event to the UI.
 void UI::HandlePointerMove(float x, float y) {
     ui::Event ev;
     ev.type = ui::EventType::PointerMove;
@@ -478,10 +583,12 @@ void UI::HandlePointerMove(float x, float y) {
     ctx_.ProcessEvent(ev);
 }
 
+/// Get the cursor type requested by the hovered widget.
 ui::CursorType UI::GetRequestedCursor() const {
     return ctx_.GetRequestedCursor();
 }
 
+/// Forward a scroll event to the UI.
 void UI::HandleScroll(float x, float y, float delta) {
     ui::Event ev;
     ev.type = ui::EventType::Scroll;
@@ -491,8 +598,107 @@ void UI::HandleScroll(float x, float y, float delta) {
     ctx_.ProcessEvent(ev);
 }
 
-// -- Animation -------------------------------------------------------
+/// Forward a key-down event to the UI.
+void UI::HandleKeyDown(int keyCode, bool shift, bool ctrl, bool alt) {
+    // Convert koilo::KeyCode (SDL scancode values) to ui::KeyCode (UI enum)
+    ui::KeyCode uiKey = ui::KeyCode::None;
+    auto kc = static_cast<koilo::KeyCode>(keyCode);
+    switch (kc) {
+        case koilo::KeyCode::Tab:       uiKey = ui::KeyCode::Tab;       break;
+        case koilo::KeyCode::Escape:    uiKey = ui::KeyCode::Escape;    break;
+        case koilo::KeyCode::Return:    uiKey = ui::KeyCode::Return;    break;
+        case koilo::KeyCode::Backspace: uiKey = ui::KeyCode::Backspace; break;
+        case koilo::KeyCode::Delete:    uiKey = ui::KeyCode::Delete;    break;
+        case koilo::KeyCode::Left:      uiKey = ui::KeyCode::Left;      break;
+        case koilo::KeyCode::Right:     uiKey = ui::KeyCode::Right;     break;
+        case koilo::KeyCode::Up:        uiKey = ui::KeyCode::Up;        break;
+        case koilo::KeyCode::Down:      uiKey = ui::KeyCode::Down;      break;
+        case koilo::KeyCode::Home:      uiKey = ui::KeyCode::Home;      break;
+        case koilo::KeyCode::End:       uiKey = ui::KeyCode::End;       break;
+        case koilo::KeyCode::PageUp:    uiKey = ui::KeyCode::PageUp;    break;
+        case koilo::KeyCode::PageDown:  uiKey = ui::KeyCode::PageDown;  break;
+        case koilo::KeyCode::Space:     uiKey = ui::KeyCode::Space;     break;
+        case koilo::KeyCode::Minus:     uiKey = ui::KeyCode::Minus;     break;
+        case koilo::KeyCode::Period:    uiKey = ui::KeyCode::Period;    break;
+        case koilo::KeyCode::Comma:     uiKey = ui::KeyCode::Comma;     break;
+        case koilo::KeyCode::A: uiKey = ui::KeyCode::A; break;
+        case koilo::KeyCode::B: uiKey = ui::KeyCode::B; break;
+        case koilo::KeyCode::C: uiKey = ui::KeyCode::C; break;
+        case koilo::KeyCode::D: uiKey = ui::KeyCode::D; break;
+        case koilo::KeyCode::E: uiKey = ui::KeyCode::E; break;
+        case koilo::KeyCode::F: uiKey = ui::KeyCode::F; break;
+        case koilo::KeyCode::G: uiKey = ui::KeyCode::G; break;
+        case koilo::KeyCode::H: uiKey = ui::KeyCode::H; break;
+        case koilo::KeyCode::I: uiKey = ui::KeyCode::I; break;
+        case koilo::KeyCode::J: uiKey = ui::KeyCode::J; break;
+        case koilo::KeyCode::K: uiKey = ui::KeyCode::K; break;
+        case koilo::KeyCode::L: uiKey = ui::KeyCode::L; break;
+        case koilo::KeyCode::M: uiKey = ui::KeyCode::M; break;
+        case koilo::KeyCode::N: uiKey = ui::KeyCode::N; break;
+        case koilo::KeyCode::O: uiKey = ui::KeyCode::O; break;
+        case koilo::KeyCode::P: uiKey = ui::KeyCode::P; break;
+        case koilo::KeyCode::Q: uiKey = ui::KeyCode::Q; break;
+        case koilo::KeyCode::R: uiKey = ui::KeyCode::R; break;
+        case koilo::KeyCode::S: uiKey = ui::KeyCode::S; break;
+        case koilo::KeyCode::T: uiKey = ui::KeyCode::T; break;
+        case koilo::KeyCode::U: uiKey = ui::KeyCode::U; break;
+        case koilo::KeyCode::V: uiKey = ui::KeyCode::V; break;
+        case koilo::KeyCode::W: uiKey = ui::KeyCode::W; break;
+        case koilo::KeyCode::X: uiKey = ui::KeyCode::X; break;
+        case koilo::KeyCode::Y: uiKey = ui::KeyCode::Y; break;
+        case koilo::KeyCode::Z: uiKey = ui::KeyCode::Z; break;
+        case koilo::KeyCode::Num0: uiKey = ui::KeyCode::Num0; break;
+        case koilo::KeyCode::Num1: uiKey = ui::KeyCode::Num1; break;
+        case koilo::KeyCode::Num2: uiKey = ui::KeyCode::Num2; break;
+        case koilo::KeyCode::Num3: uiKey = ui::KeyCode::Num3; break;
+        case koilo::KeyCode::Num4: uiKey = ui::KeyCode::Num4; break;
+        case koilo::KeyCode::Num5: uiKey = ui::KeyCode::Num5; break;
+        case koilo::KeyCode::Num6: uiKey = ui::KeyCode::Num6; break;
+        case koilo::KeyCode::Num7: uiKey = ui::KeyCode::Num7; break;
+        case koilo::KeyCode::Num8: uiKey = ui::KeyCode::Num8; break;
+        case koilo::KeyCode::Num9: uiKey = ui::KeyCode::Num9; break;
+        case koilo::KeyCode::F1:  uiKey = ui::KeyCode::F1;  break;
+        case koilo::KeyCode::F2:  uiKey = ui::KeyCode::F2;  break;
+        case koilo::KeyCode::F3:  uiKey = ui::KeyCode::F3;  break;
+        case koilo::KeyCode::F4:  uiKey = ui::KeyCode::F4;  break;
+        case koilo::KeyCode::F5:  uiKey = ui::KeyCode::F5;  break;
+        case koilo::KeyCode::F6:  uiKey = ui::KeyCode::F6;  break;
+        case koilo::KeyCode::F7:  uiKey = ui::KeyCode::F7;  break;
+        case koilo::KeyCode::F8:  uiKey = ui::KeyCode::F8;  break;
+        case koilo::KeyCode::F9:  uiKey = ui::KeyCode::F9;  break;
+        case koilo::KeyCode::F10: uiKey = ui::KeyCode::F10; break;
+        case koilo::KeyCode::F11: uiKey = ui::KeyCode::F11; break;
+        case koilo::KeyCode::F12: uiKey = ui::KeyCode::F12; break;
+        default: break;
+    }
+    if (uiKey == ui::KeyCode::None) return;
 
+    ui::Event ev;
+    ev.type = ui::EventType::KeyDown;
+    ev.key = uiKey;
+    ev.mods.shift = shift;
+    ev.mods.ctrl = ctrl;
+    ev.mods.alt = alt;
+    ctx_.ProcessEvent(ev);
+}
+
+/// Forward text input to the UI.
+void UI::HandleTextInput(const char* text) {
+    if (!text || text[0] == '\0') return;
+    ui::Event ev;
+    ev.type = ui::EventType::TextInput;
+    size_t len = std::strlen(text);
+    if (len > 7) len = 7;
+    std::memcpy(ev.textInput, text, len);
+    ev.textInput[len] = '\0';
+    ctx_.ProcessEvent(ev);
+}
+
+// ============================================================================
+// Animation
+// ============================================================================
+
+/// Parse a tween property name string to enum.
 static ui::TweenProperty ParseTweenProperty(const char* prop) {
     if (!prop) return ui::TweenProperty::PositionX;
     if (strcmp(prop, "x") == 0)       return ui::TweenProperty::PositionX;
@@ -508,6 +714,7 @@ static ui::TweenProperty ParseTweenProperty(const char* prop) {
     return ui::TweenProperty::PositionX;
 }
 
+/// Parse an easing type name string to enum.
 static ui::EaseType ParseEaseType(const char* ease) {
     if (!ease) return ui::EaseType::Linear;
     if (strcmp(ease, "linear") == 0)     return ui::EaseType::Linear;
@@ -523,6 +730,7 @@ static ui::EaseType ParseEaseType(const char* ease) {
     return ui::EaseType::Linear;
 }
 
+/// Apply a tween value to the target widget property.
 void UI::ApplyTween(int widgetIdx, ui::TweenProperty prop, float value, void* userData) {
     auto* self = static_cast<UI*>(userData);
     ui::Widget* w = self->ctx_.GetWidget(widgetIdx);
@@ -544,44 +752,66 @@ void UI::ApplyTween(int widgetIdx, ui::TweenProperty prop, float value, void* us
     w->flags.dirty = 1;
 }
 
+/// Start a tween animation.
 int UI::Animate(int widgetIdx, const char* property, float from, float to,
                 float duration, const char* easing) {
     return tweenPool_.Start(widgetIdx, ParseTweenProperty(property), from, to,
                             duration, ParseEaseType(easing));
 }
 
+/// Cancel a tween by index.
 void UI::CancelAnimation(int tweenIdx) { tweenPool_.Cancel(tweenIdx); }
+/// Cancel all tweens on a widget.
 void UI::CancelAllAnimations(int widgetIdx) { tweenPool_.CancelAll(widgetIdx); }
+/// Update all active animations.
 void UI::UpdateAnimations(float dt) { tweenPool_.Update(dt, ApplyTween, this); }
 
-// -- Localization ----------------------------------------------------
+// ============================================================================
+// Localization
+// ============================================================================
 
+/// Set active locale string.
 void UI::SetLocale(const char* locale) { localization_.SetLocale(locale); }
 
+/// Look up a localized string by key.
 const char* UI::L(const char* key) { return localization_.Get(key); }
 
+/// Add a localized string entry.
 void UI::SetLocalizedString(const char* key, const char* value) {
     localization_.Set(key, value);
 }
 
-// -- Accessibility ---------------------------------------------------
+// ============================================================================
+// Accessibility
+// ============================================================================
 
+/// Set screen reader label for a widget.
 void UI::SetAriaLabel(int idx, const char* label) {
     ui::Widget* w = ctx_.GetWidget(idx);
     if (!w || !label) return;
     w->ariaLabel = ctx_.Strings().Intern(label);
 }
 
+/// Get screen reader label for a widget.
 const char* UI::GetAriaLabel(int idx) {
     const ui::Widget* w = ctx_.GetWidget(idx);
     if (!w || w->ariaLabel == ui::NullStringId) return "";
     return ctx_.Strings().Lookup(w->ariaLabel);
 }
 
+/// Set global font scale multiplier.
 void UI::SetFontScale(float scale) { localization_.SetFontScale(scale); }
+/// Get global font scale multiplier.
 float UI::GetFontScale() { return localization_.FontScale(); }
 
-// -- Reflection registration -----------------------------------------
+/// Check if the UI is idle (no pending visual changes).
+bool UI::IsIdle() const {
+    return !ctx_.IsRenderDirty() && !ctx_.GetTheme().HasActiveTransitions();
+}
+
+// ============================================================================
+// Reflection Registration
+// ============================================================================
 
 KL_DEFINE_FIELDS(UI)
 KL_END_FIELDS
@@ -616,6 +846,8 @@ KL_DEFINE_METHODS(UI)
     KL_METHOD_OVLD(UI, GetText, const char*, int),
     KL_METHOD_OVLD(UI, SetVisible, void, int, bool),
     KL_METHOD_OVLD(UI, SetEnabled, void, int, bool),
+    KL_METHOD_OVLD(UI, SetSelected, void, int, bool),
+    KL_METHOD_OVLD(UI, SetColorHex, void, int, const char*),
     KL_METHOD_OVLD(UI, SetSize, void, int, float, float),
     KL_METHOD_OVLD(UI, SetPosition, void, int, float, float),
     KL_METHOD_OVLD(UI, SetPadding, void, int, float, float, float, float),
