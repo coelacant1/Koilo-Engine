@@ -14,6 +14,7 @@
 #pragma once
 
 #include "kml_types.hpp"
+#include "../../../registry/reflect_macros.hpp"
 
 namespace koilo {
 namespace ui {
@@ -61,6 +62,19 @@ private:
     void SkipComment();
 
     void Error(const std::string& msg);
+
+    KL_BEGIN_FIELDS(KMLParser)
+        /* No reflected fields. */
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(KMLParser)
+        KL_METHOD_AUTO(KMLParser, Errors, "Errors")
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(KMLParser)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(KMLParser)
+
 };
 
 } // namespace markup

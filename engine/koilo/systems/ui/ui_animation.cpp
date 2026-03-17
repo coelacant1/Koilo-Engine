@@ -82,13 +82,7 @@ float EaseEvaluate(EaseType type, float t) {
 // ============================================================================
 
 // Allocate the tween array
-TweenPool::TweenPool(size_t capacity) : capacity_(capacity) {
-    tweens_ = new Tween[capacity_];
-}
-
-// Release the tween array
-TweenPool::~TweenPool() {
-    delete[] tweens_;
+TweenPool::TweenPool(size_t capacity) : tweens_(capacity), capacity_(capacity) {
 }
 
 // Find a free slot and initialise a new tween

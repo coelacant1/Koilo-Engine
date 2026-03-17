@@ -4,6 +4,69 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.3.3] - 2026-3-17
+Vulkan render backend, kernel architecture, module system, and compile-time backend selection. (Unshelving some unfinished content - Kernel + Vulkan)
+
+### Added
+- **Vulkan render backend** (`engine/koilo/systems/render/vk/`)
+  - Full Vulkan rendering pipeline with SPIR-V shader compilation
+- **Vulkan display backend** (`engine/koilo/systems/display/backends/gpu/vulkanbackend.*`)
+  - SDL3 + Vulkan surface integration with multi-GPU enumeration and selection
+  - Discrete GPU preference with automatic fallback
+  - VSync support, fullscreen toggle, and dynamic window resizing
+  - `IGPUDisplayBackend` interface shared with OpenGL backend
+- **Kernel architecture** (`engine/koilo/kernel/`)
+  - `KoiloKernel` - central engine kernel with service registry, message bus, and module manager
+  - `ServiceRegistry` - name-based typed service discovery
+  - `MessageBus` - ring-buffered pub/sub messaging with deferred and immediate delivery
+  - `ModuleManager` - module lifecycle, phase-ordered initialization, dependency resolution
+  - `IModule` - unified module interface with Initialize/Update/Render/Shutdown lifecycle
+  - Capability-based permission system for module sandboxing
+  - Message types for module lifecycle, assets, scene, and ECS events
+- **Kernel console** (`engine/koilo/kernel/console/`)
+  - `ConsoleModule` with `CommandRegistry` for extensible command system
+  - `ConsoleSession` with history, tab completion, and output formatting
+  - `ConsoleSocket` - TCP server for remote console access on port 9090
+  - Built-in commands: reflection introspection, memory stats, message bus, service listing, GPU info
+  - `ConsoleWidget` - in-engine UI console panel
+- **Kernel memory** (`engine/koilo/kernel/memory/`)
+  - Arena allocator (frame-temporary, 4MB default)
+  - Linear allocator (scratch buffer, 1MB default)
+  - Pool allocator for fixed-size block allocation
+  - Allocation tagging for memory tracking
+- **Kernel asset pipeline** (`engine/koilo/kernel/asset/`)
+  - Asset registry with handle-based reference management
+  - Async job queue with worker thread for background asset loading
+  - Asset manifest and converter registry
+- **Module implementations**
+  - `AssetModule` - asset loading, file watching, hot-reload via message bus
+  - `PhysicsModule` - physics world integration as kernel module
+  - `AIModule` - behavior tree and pathfinding as kernel module
+  - `AudioModule` - audio system as kernel module
+- **SPIR-V shader sources** (`shaders/`)
+  - `scene.vert`, `blit.vert/frag`, `ui.vert/frag` - core Vulkan shaders
+- `KOILO_USE_OPENGL` CMake option for explicit OpenGL opt-in
+- `koilo_runner.cpp` - standalone script runner entry point
+- Run scripts for all example projects (`examples/*/run.sh`)
+
+### Changed
+- **Vulkan is now the default render backend** - `KOILO_USE_VULKAN` defaults to ON; `KOILO_USE_OPENGL` defaults to OFF
+- OpenGL backend, render code, and tests conditionally compiled behind `KL_HAVE_OPENGL_BACKEND`
+- `render_backend_factory` always compiled (needed for backend selection regardless of active backend)
+- `KL_HAVE_FILESYSTEM` defined independently of OpenGL backend
+- KSL uber-shader references guarded behind `KL_HAVE_OPENGL_BACKEND`
+- Examples converted from custom `main.cpp` entry points to script-based execution via `koilo_runner`
+- Engine modules (Asset, Physics, AI, Audio) converted to `IModule` interface with kernel lifecycle
+- UI Vulkan renderer uses per-frame vertex buffers with flight-frame indexing
+- Scene, ECS, and world systems updated for kernel service integration
+
+### Fixed
+- Vulkan UI root panel painting opaque background over 3D content
+- Vulkan UI font atlas R8 swizzle returning constant 1.0 instead of glyph alpha
+- Vulkan UI vertex buffer corruption from shared buffer across frames-in-flight
+- Vulkan UI overflow flush silently discarding accumulated vertices
+- Vulkan swapchain crash on window resize (stale image index after recreation)
+
 ## [0.3.2] - 2026-3-14
 UI code quality: hpp/cpp splits, coding standards fixes, dirty-flag rendering (attempt, not finished), and widget bug fixes. End of the staged changes - working to keep the upstream repository up-to-date (even if broken).
 

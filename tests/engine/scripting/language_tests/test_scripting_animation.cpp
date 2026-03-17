@@ -7,14 +7,14 @@ void TestAnimationClasses() {
     
     StringFileReader reader;
     
-    // Test 1: KeyFrameTrack - persistent, call Update() across frames
+    // Test 1: AnimationTrack - persistent, call Update() across frames
     {
-        TEST("KeyFrameTrack persistent + Update");
+        TEST("AnimationTrack persistent + Update");
         KoiloScriptEngine engine(&reader);
         const char* script = R"(
 fn Update(dt) {
     if type(_track) == "null" {
-        _track = KeyFrameTrack(0.0, 1.0);
+        _track = AnimationTrack(0.0, 1.0);
         _track.AddKeyFrame(0.0, 0.0);
         _track.AddKeyFrame(1.0, 1.0);
         _track.Play();

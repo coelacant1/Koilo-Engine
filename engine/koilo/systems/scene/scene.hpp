@@ -16,6 +16,7 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <memory>
 
 #include "mesh.hpp"
 #include "scenenode.hpp"
@@ -39,7 +40,7 @@ private:
 
     // Scene graph nodes (owned by scene)
     std::map<std::string, SceneNode*> nodesByName_;
-    std::vector<SceneNode*> ownedNodes_;
+    std::vector<std::unique_ptr<SceneNode>> ownedNodes_;
 
     void RemoveElement(unsigned int element);
 

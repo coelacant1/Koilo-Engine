@@ -18,6 +18,7 @@
 #include <koilo/systems/ui/drag_drop.hpp>
 #include <koilo/systems/ui/fs_adapter.hpp>
 #include <koilo/systems/ui/ui_context.hpp>
+#include "../../registry/reflect_macros.hpp"
 
 namespace koilo {
 namespace ui {
@@ -75,6 +76,23 @@ private:
     Breadcrumb breadcrumb_;                ///< Breadcrumb navigation bar.
     FileActionCallback onFileAction_;      ///< Callback for single-click file action.
     FileActionCallback onDoubleClick_;     ///< Callback for double-click file action.
+
+    KL_BEGIN_FIELDS(ContentBrowser)
+        /* No reflected fields. */
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(ContentBrowser)
+        KL_METHOD_AUTO(ContentBrowser, CurrentPath, "Current path"),
+        KL_METHOD_AUTO(ContentBrowser, Entries, "Entries"),
+        KL_METHOD_AUTO(ContentBrowser, RootIndex, "Root index"),
+        KL_METHOD_AUTO(ContentBrowser, ListIndex, "List index"),
+        KL_METHOD_AUTO(ContentBrowser, TreeIndex, "Tree index")
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(ContentBrowser)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(ContentBrowser)
+
 };
 
 } // namespace ui

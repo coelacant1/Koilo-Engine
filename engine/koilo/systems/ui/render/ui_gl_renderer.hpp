@@ -17,6 +17,7 @@
 #pragma once
 
 #include <koilo/systems/ui/render/draw_list.hpp>
+#include <koilo/systems/ui/render/ui_vertex.hpp>
 #include <koilo/systems/font/font.hpp>
 #include "../../../registry/reflect_macros.hpp"
 
@@ -33,31 +34,6 @@
 
 namespace koilo {
 namespace ui {
-
-// --- UI vertex (16 bytes, packed) -----------------------------------
-
-/** @struct UIVertex @brief Vertex for batched UI rendering (52 bytes). */
-struct UIVertex {
-    float x, y;         ///< screen-space position
-    float u, v;         ///< texture coordinates / local normalized pos
-    uint8_t r, g, b, a; ///< vertex color (RGBA8)
-    float sdf[4];       ///< SDF params (halfW, halfH, borderWidth, 0)
-    float radii[4];     ///< per-corner radius (TL, TR, BR, BL)
-
-    KL_BEGIN_FIELDS(UIVertex)
-        KL_FIELD(UIVertex, y, "Y", 0, 0)
-    KL_END_FIELDS
-
-    KL_BEGIN_METHODS(UIVertex)
-        /* No reflected methods. */
-    KL_END_METHODS
-
-    KL_BEGIN_DESCRIBE(UIVertex)
-        /* No reflected ctors. */
-    KL_END_DESCRIBE(UIVertex)
-
-};
-static_assert(sizeof(UIVertex) == 52, "UIVertex should be 52 bytes");
 
 // --- OpenGL UI Renderer ---------------------------------------------
 

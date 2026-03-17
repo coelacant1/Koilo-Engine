@@ -14,7 +14,7 @@ void TestEasyEaseAnimator::TestDefaultConstructor() {
 }
 
 void TestEasyEaseAnimator::TestParameterizedConstructor() {
-    EasyEaseAnimator anim(8, IEasyEaseAnimator::Cosine, 1.0f, 0.5f);
+    EasyEaseAnimator anim(8, EasyEaseAnimator::Cosine, 1.0f, 0.5f);
     TEST_ASSERT_TRUE(true);
 }
 

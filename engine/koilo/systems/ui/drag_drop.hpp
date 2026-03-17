@@ -13,6 +13,7 @@
 #pragma once
 
 #include <cstdint>
+#include "../../registry/reflect_macros.hpp"
 
 namespace koilo {
 namespace ui {
@@ -38,6 +39,19 @@ struct DragPayload {
     bool IsActive() const { return typeTag != DragType::None; }
     /** @brief Reset payload to default state. */
     void Clear() { typeTag = DragType::None; data = nullptr; sourceWidget = -1; labelId = 0; iconTextureId = 0; }
+
+    KL_BEGIN_FIELDS(DragPayload)
+        KL_FIELD(DragPayload, typeTag, "Type tag", 0, 4294967295)
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(DragPayload)
+        KL_METHOD_AUTO(DragPayload, Clear, "Clear")
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(DragPayload)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(DragPayload)
+
 };
 
 /// Result of a drop target query - where to insert relative to the target.

@@ -8,7 +8,7 @@
  */
 
 #include "testcomponent.hpp"
-#include <koilo/ecs/component.hpp>
+#include <koilo/systems/ecs/component.hpp>
 
 using namespace koilo;
 

@@ -198,9 +198,6 @@ struct DebugText {
  */
 class DebugDraw {
 private:
-    // Singleton instance
-    static DebugDraw* instance;
-
     // Debug primitives
     std::vector<DebugLine> lines;
     std::vector<DebugSphere> spheres;

@@ -55,7 +55,7 @@ cat > "$OUTPUT_DIR/${NAME}.c" << TEMPLATE
  * Access from script:
  *   ${NAME}.YourMethod()
  */
-#include <koilo/modules/koilo_module_sdk.h>
+#include <koilo/kernel/koilo_module_sdk.h>
 
 /* ---- Module state ---- */
 
@@ -126,7 +126,7 @@ TEMPLATE
 cat > "$OUTPUT_DIR/Makefile" << MAKEFILE
 # Makefile for ${NAME} KoiloEngine module
 ENGINE_ROOT ?= ${ENGINE_ROOT}
-SDK_INCLUDE = \$(ENGINE_ROOT)/engine/include
+SDK_INCLUDE = \$(ENGINE_ROOT)/engine
 COMPILE_TOOL = \$(ENGINE_ROOT)/tools/koilo-compile-module/koilo-compile-module.sh
 
 .PHONY: desktop clean

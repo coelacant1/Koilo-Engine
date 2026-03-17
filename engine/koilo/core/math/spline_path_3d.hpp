@@ -3,7 +3,7 @@
  * @file spline_path_3d.hpp
  * @brief Catmull-Rom spline path for smooth 3D interpolation through control points.
  *
- * @date 07/03/2026
+ * @date 03/07/2026
  * @version 1.0
  * @author Coela Can't
  */

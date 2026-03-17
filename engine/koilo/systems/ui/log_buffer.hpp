@@ -15,6 +15,7 @@
 #include <cstdint>
 #include <cstddef>
 #include <cstring>
+#include <vector>
 #include "../../registry/reflect_macros.hpp"
 
 namespace koilo {
@@ -68,7 +69,6 @@ public:
     static constexpr size_t DEFAULT_CAPACITY = 1024;
 
     explicit LogBuffer(size_t capacity = DEFAULT_CAPACITY);
-    ~LogBuffer();
 
     /** @brief Add a log entry. */
     void Push(LogSeverity severity, const char* message, uint32_t timestamp = 0);
@@ -103,7 +103,7 @@ public:
                   size_t maxResults) const;
 
 private:
-    LogEntry* entries_ = nullptr;  ///< Heap-allocated ring buffer.
+    std::vector<LogEntry> entries_; ///< Ring buffer storage.
     size_t capacity_ = 0;          ///< Maximum number of entries.
     size_t head_ = 0;              ///< Next write position.
     size_t count_ = 0;             ///< Current number of valid entries.

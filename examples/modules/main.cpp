@@ -2,7 +2,7 @@
 // modules/main.cpp - ELF module demo
 // Uses SDL3Host but pre-loads modules before script execution.
 #include <koilo/platform/sdl3_host.hpp>
-#include <koilo/modules/module_loader.hpp>
+#include <koilo/kernel/module_loader.hpp>
 #include <cstdio>
 #include <cstring>
 

@@ -11,7 +11,7 @@
 #pragma once
 
 #include <unity.h>
-#include <koilo/ecs/components/transformcomponent.hpp>
+#include <koilo/systems/ecs/components/transformcomponent.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

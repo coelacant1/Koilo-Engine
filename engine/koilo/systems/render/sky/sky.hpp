@@ -5,6 +5,7 @@
 #include <memory>
 #include <koilo/core/color/color888.hpp>
 #include <koilo/core/math/vector3d.hpp>
+#include <koilo/core/math/mathematics.hpp>
 #include <koilo/systems/render/material/implementations/kslmaterial.hpp>
 #include <koilo/registry/reflect_macros.hpp>
 
@@ -60,8 +61,6 @@ private:
     KSLMaterial* skyMaterial_ = nullptr;             // user-set (borrowed)
     std::unique_ptr<KSLMaterial> defaultMaterial_;   // auto-created fallback
 
-    static Sky* instance_;
-
     // Keyframe interpolation
     struct SkyKey {
         float hour;
@@ -92,7 +91,8 @@ private:
     static const int    keyframeCount_;
 
     static uint8_t lerp8(uint8_t a, uint8_t b, float t) {
-        return static_cast<uint8_t>(a + (b - a) * t);
+        return static_cast<uint8_t>(Mathematics::Lerp(
+            static_cast<float>(a), static_cast<float>(b), t));
     }
 
     KL_BEGIN_FIELDS(Sky)

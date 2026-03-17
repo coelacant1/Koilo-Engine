@@ -94,12 +94,10 @@
 #include "ecs/testentity.hpp"
 #include "ecs/testentitymanager.hpp"
 #include "ecs/testscriptentitymanager.hpp"
-#include "ecs/testsystem.hpp"
+
 #include "modules/testmoduleloader.hpp"
 #include "ksl/testelfloader.hpp"
 #include "ksl/testkslmaterial.hpp"
-#include "resources/testresource.hpp"
-#include "resources/testresourcemanager.hpp"
 #include "scripting/testargmarshaller.hpp"
 #include "scripting/testatomtable.hpp"
 #include "scripting/testbytecodecompiler.hpp"
@@ -153,7 +151,9 @@
 #include "systems/audio/testscriptaudiomanager.hpp"
 #endif
 #include "systems/display/backends/embedded/testhub75backend.hpp"
+#ifdef KL_HAVE_OPENGL_BACKEND
 #include "systems/display/backends/gpu/testopenglbackend.hpp"
+#endif
 #include "systems/display/backends/gpu/testsdl3backend.hpp"
 #include "systems/display/backends/testnullbackend.hpp"
 #include "systems/display/testdisplayinfo.hpp"
@@ -198,13 +198,7 @@
 #include "systems/render/core/testcameramanager.hpp"
 #include "systems/render/core/testpixel.hpp"
 #include "systems/render/core/testpixelgroup.hpp"
-#include "systems/render/engine/testrenderer.hpp"
-#include "systems/render/engine/testrenderingengine.hpp"
-
 #include "systems/render/material/testimaterial.hpp"
-#include "systems/render/material/testmaterialanimator.hpp"
-#include "systems/render/material/testmaterialanimatorparams.hpp"
-#include "systems/render/material/testmaterialanimatorshader.hpp"
 #include "systems/render/raster/helpers/testrastertriangle2d.hpp"
 #include "systems/render/raster/helpers/testrastertriangle3d.hpp"
 #include "systems/render/raster/testrasterizer.hpp"
@@ -216,7 +210,9 @@
 #include "systems/render/shader/testsurfaceproperties.hpp"
 #include "systems/render/sky/testsky.hpp"
 #include "systems/render/testcanvas2d.hpp"
+#ifdef KL_HAVE_OPENGL_BACKEND
 #include "systems/render/testopenglrenderbackend.hpp"
+#endif
 #include "systems/render/testsoftwarerenderbackend.hpp"
 #include "systems/scene/animation/testanimationchannel.hpp"
 #include "systems/scene/animation/testanimationclip.hpp"
@@ -225,8 +221,6 @@
 #include "systems/scene/animation/testbone.hpp"
 #include "systems/scene/animation/testeasyeaseanimator.hpp"
 #include "systems/scene/animation/testkeyframe.hpp"
-#include "systems/scene/animation/testkeyframeinterpolation.hpp"
-#include "systems/scene/animation/testkeyframetrack.hpp"
 #include "systems/scene/animation/testskeleton.hpp"
 #include "systems/scene/animation/testskeletonanimator.hpp"
 #include "systems/scene/animation/testskinvertex.hpp"
@@ -243,7 +237,7 @@
 #include "systems/scene/testmorphablemesh.hpp"
 #include "systems/scene/testprimitivemesh.hpp"
 #include "systems/scene/testscene.hpp"
-#include "systems/scene/testscenedata.hpp"
+
 #include "systems/scene/testscenenode.hpp"
 #include "systems/scene/testskindata.hpp"
 #include "systems/scene/testsprite.hpp"
@@ -266,6 +260,8 @@
 #include "systems/world/testserializedentity.hpp"
 #include "systems/world/testserializedlevel.hpp"
 #include "systems/world/testworldmanager.hpp"
+#include "kernel/testkernel.hpp"
+#include "kernel/testconsole.hpp"
 
 void setUp() {}
 void tearDown() {}
@@ -380,12 +376,10 @@ int main(int /*argc*/, char ** /*argv*/) {
     TestEntity::RunAllTests();
     TestEntityManager::RunAllTests();
     TestScriptEntityManager::RunAllTests();
-    TestSystem::RunAllTests();
+
     TestModuleLoader::RunAllTests();
     TestElfLoader::RunAllTests();
     TestKSLMaterial::RunAllTests();
-    TestResource::RunAllTests();
-    TestResourceManager::RunAllTests();
     TestArgMarshaller::RunAllTests();
     TestAtomTable::RunAllTests();
     TestBytecodeCompiler::RunAllTests();
@@ -439,7 +433,9 @@ int main(int /*argc*/, char ** /*argv*/) {
     TestScriptAudioManager::RunAllTests();
 #endif
     TestHUB75Backend::RunAllTests();
+#ifdef KL_HAVE_OPENGL_BACKEND
     TestOpenGLBackend::RunAllTests();
+#endif
     TestSDL3Backend::RunAllTests();
     TestNullBackend::RunAllTests();
     TestDisplayInfo::RunAllTests();
@@ -484,13 +480,7 @@ int main(int /*argc*/, char ** /*argv*/) {
     TestCameraManager::RunAllTests();
     TestPixel::RunAllTests();
     TestPixelGroup::RunAllTests();
-    TestRenderingEngine::RunAllTests();
-    TestRenderingEngine::RunAllTests();
-
     TestIMaterial::RunAllTests();
-    TestMaterialAnimator::RunAllTests();
-    TestMaterialAnimatorParams::RunAllTests();
-    TestMaterialAnimatorShader::RunAllTests();
     TestRasterTriangle2D::RunAllTests();
     TestRasterTriangle3D::RunAllTests();
     TestRasterizer::RunAllTests();
@@ -502,7 +492,9 @@ int main(int /*argc*/, char ** /*argv*/) {
     TestSurfaceProperties::RunAllTests();
     TestSky::RunAllTests();
     TestCanvas2D::RunAllTests();
+#ifdef KL_HAVE_OPENGL_BACKEND
     TestOpenGLRenderBackend::RunAllTests();
+#endif
     TestSoftwareRenderBackend::RunAllTests();
     TestAnimationChannel::RunAllTests();
     TestAnimationClip::RunAllTests();
@@ -511,8 +503,7 @@ int main(int /*argc*/, char ** /*argv*/) {
     TestBone::RunAllTests();
     TestEasyEaseAnimator::RunAllTests();
     TestKeyFrame::RunAllTests();
-    TestKeyFrameInterpolation::RunAllTests();
-    TestKeyFrameTrack::RunAllTests();
+
     TestSkeleton::RunAllTests();
     TestSkeletonAnimator::RunAllTests();
     TestSkinVertex::RunAllTests();
@@ -529,7 +520,7 @@ int main(int /*argc*/, char ** /*argv*/) {
     TestMorphableMesh::RunAllTests();
     TestPrimitiveMesh::RunAllTests();
     TestScene::RunAllTests();
-    TestSceneData::RunAllTests();
+
     TestSceneNode::RunAllTests();
     TestSkinData::RunAllTests();
     TestSprite::RunAllTests();
@@ -541,6 +532,8 @@ int main(int /*argc*/, char ** /*argv*/) {
     TestSerializedEntity::RunAllTests();
     TestSerializedLevel::RunAllTests();
     TestWorldManager::RunAllTests();
+    TestKernel::RunAllTests();
+    TestKernelConsole::RunAllTests();
 
     UNITY_END();
 }

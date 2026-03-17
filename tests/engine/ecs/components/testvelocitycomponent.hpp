@@ -11,7 +11,7 @@
 #pragma once
 
 #include <unity.h>
-#include <koilo/ecs/components/velocitycomponent.hpp>
+#include <koilo/systems/ecs/components/velocitycomponent.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

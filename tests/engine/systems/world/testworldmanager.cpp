@@ -76,7 +76,7 @@ void TestWorldManager::TestUpdate() {
 void TestWorldManager::TestEdgeCases() {
     WorldManager manager;
     manager.LoadLevel("");
-    manager.UnloadLevel(nullptr);
+    manager.UnloadLevel("");
     koilo::TimeManager::GetInstance().Tick(0.0f); manager.Update();
     // Should handle edge cases gracefully
     TEST_ASSERT_EQUAL_UINT32(0, manager.GetLevelCount());

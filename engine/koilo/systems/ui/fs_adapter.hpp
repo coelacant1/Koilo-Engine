@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 #include <koilo/systems/ui/icon_ids.hpp>
+#include "../../registry/reflect_macros.hpp"
 
 namespace koilo {
 namespace ui {
@@ -25,6 +26,19 @@ struct FsEntry {
     bool        isDir  = false; ///< True if this entry is a directory
     uint64_t    size   = 0;    ///< File size in bytes (0 for directories)
     IconId      icon   = IconId::File; ///< Icon representing the file type
+
+    KL_BEGIN_FIELDS(FsEntry)
+        KL_FIELD(FsEntry, name, "Name", 0, 0)
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(FsEntry)
+        /* No reflected methods. */
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(FsEntry)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(FsEntry)
+
 };
 
 /** @brief Map common file extensions to icons. */

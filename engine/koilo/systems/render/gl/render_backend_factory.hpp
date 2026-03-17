@@ -47,4 +47,16 @@ std::unique_ptr<IRenderBackend> TryCreateGPURenderBackend();
  */
 std::unique_ptr<IRenderBackend> CreateBestSoftwareBackend();
 
+#ifdef KL_HAVE_VULKAN_BACKEND
+class VulkanBackend;
+
+/**
+ * @brief Create a Vulkan GPU render backend.
+ *
+ * @param display Pointer to an initialized VulkanBackend display.
+ * @return VulkanRenderBackend if init succeeds, nullptr otherwise.
+ */
+std::unique_ptr<IRenderBackend> TryCreateVulkanRenderBackend(VulkanBackend* display);
+#endif
+
 } // namespace koilo

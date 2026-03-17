@@ -17,6 +17,7 @@
 #include <cstddef>
 #include <cmath>
 #include <functional>
+#include <vector>
 #include "../../registry/reflect_macros.hpp"
 
 namespace koilo {
@@ -115,7 +116,6 @@ public:
     static constexpr size_t DEFAULT_CAPACITY = 256;
 
     explicit TweenPool(size_t capacity = DEFAULT_CAPACITY);
-    ~TweenPool();
 
     /**
      * @brief Start a new tween.
@@ -159,7 +159,7 @@ public:
     const Tween* At(int idx) const;
 
 private:
-    Tween* tweens_   = nullptr;  ///< Heap-allocated tween array
+    std::vector<Tween> tweens_;  ///< Pre-allocated tween array
     size_t capacity_ = 0;        ///< Total pool capacity
     size_t activeCount_ = 0;     ///< Number of currently active tweens
 

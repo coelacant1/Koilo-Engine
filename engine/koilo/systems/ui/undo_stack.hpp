@@ -65,8 +65,6 @@ public:
     PropertyChangeCommand(void* instance, const FieldDecl& field,
                           const void* newValue);
 
-    ~PropertyChangeCommand() override;
-
     /** @brief Apply the new value to the field. */
     void Execute() override;
 
@@ -80,8 +78,8 @@ private:
     void* instance_;           ///< Live object whose field is modified
     FieldAccess access_;       ///< Accessor for the target field
     size_t size_;              ///< Byte size of the field
-    uint8_t* oldValue_;        ///< Snapshot of value before Execute()
-    uint8_t* newValue_;        ///< Value written by Execute()
+    std::vector<uint8_t> oldValue_;  ///< Snapshot of value before Execute()
+    std::vector<uint8_t> newValue_;  ///< Value written by Execute()
     std::string name_;         ///< Descriptive name shown in undo history
 };
 

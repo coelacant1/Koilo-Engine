@@ -14,6 +14,7 @@
 #include <koilo/systems/audio/audiobackend.hpp>
 #include <cstring>
 #include <algorithm>
+#include <vector>
 
 namespace koilo {
 
@@ -31,17 +32,15 @@ static void SDLCALL SDLAudioStreamCallback(void* userdata, SDL_AudioStream* stre
     constexpr int kStackLimit = 16384;
     float stackBuf[kStackLimit / sizeof(float)];
     float* buf = stackBuf;
-    bool heapAlloc = false;
+    std::vector<float> heapBuf;
     if (additional_amount > kStackLimit) {
-        buf = new float[additional_amount / sizeof(float)];
-        heapAlloc = true;
+        heapBuf.resize(additional_amount / sizeof(float));
+        buf = heapBuf.data();
     }
 
     std::memset(buf, 0, static_cast<size_t>(additional_amount));
     self->MixFrames(buf, frameCount);
     SDL_PutAudioStreamData(stream, buf, additional_amount);
-
-    if (heapAlloc) delete[] buf;
 }
 #endif
 

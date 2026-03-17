@@ -6,18 +6,24 @@
 #include <koilo/systems/scene/animation/ieasyeaseanimator.hpp>
 #include <koilo/core/time/timemanager.hpp>
 #include <koilo/systems/render/sky/sky.hpp>
+#include <koilo/systems/render/core/pixelgroup.hpp>
+#include <koilo/systems/scene/camera/camera.hpp>
+#include <koilo/systems/scene/camera/cameralayout.hpp>
+#include <koilo/systems/scene/scene.hpp>
 
 // Direct system headers (replacing module wrappers)
 #include <koilo/systems/physics/physicsworld.hpp>
+#include <koilo/systems/physics/physics_module.hpp>
 #include <koilo/systems/ui/ui.hpp>
+#include <koilo/systems/asset/asset_module.hpp>
 #ifdef KOILO_ENABLE_PARTICLES
 #include <koilo/systems/particles/particlesystem.hpp>
 #endif
 #ifdef KOILO_ENABLE_AI
-#include <koilo/systems/ai/script_ai_manager.hpp>
+#include <koilo/systems/ai/ai_module.hpp>
 #endif
 #ifdef KOILO_ENABLE_AUDIO
-#include <koilo/systems/audio/script_audio_manager.hpp>
+#include <koilo/systems/audio/audio_module.hpp>
 #endif
 
 namespace koilo {
@@ -41,60 +47,54 @@ void KoiloScriptEngine::BuildCamera() {
     // Create PixelGroup
     Vector2D size((float)pixelWidth, (float)pixelHeight);
     Vector2D position(0, 0);
-    pixelGroup_ = new PixelGroup(pixelWidth * pixelHeight, size, position, pixelWidth);
+    pixelGroup_ = std::make_unique<PixelGroup>(pixelWidth * pixelHeight, size, position, pixelWidth);
     
     // Default camera setup
     Vector3D camPos(0, 0, 8);
-    cameraTransform_ = new Transform(Vector3D(0, 0, 0), camPos, Vector3D(1, 1, 1));
-    cameraLayout_ = new CameraLayout(CameraLayout::YNForward, CameraLayout::ZUp);
-    camera_ = new Camera(cameraTransform_, cameraLayout_, pixelGroup_);
+    cameraTransform_ = std::make_unique<Transform>(Vector3D(0, 0, 0), camPos, Vector3D(1, 1, 1));
+    cameraLayout_ = std::make_unique<CameraLayout>(CameraLayout::YNForward, CameraLayout::ZUp);
+    camera_ = std::make_unique<Camera>(cameraTransform_.get(), cameraLayout_.get(), pixelGroup_.get());
     
-    scene_ = new Scene();
+    scene_ = std::make_unique<Scene>();
 }
 
 
 void KoiloScriptEngine::RegisterSceneGlobal() {
     if (scene_) {
-        RegisterGlobal("scene", "Scene", scene_);
+        RegisterGlobal("scene", "Scene", scene_.get());
     }
     if (camera_) {
-        RegisterGlobal("cam", "Camera", camera_);
+        RegisterGlobal("cam", "Camera", camera_.get());
     }
 }
 
 void KoiloScriptEngine::RegisterDefaultModules() {
-    // Physics (always on)
-    physicsWorld_ = new PhysicsWorld();
-    RegisterGlobal("physics", "PhysicsWorld", physicsWorld_);
-    physicsWorld_->OnCollisionEnter([this](const CollisionEvent& evt) {
-        CallFunction("OnCollisionEnter");
-    });
-    physicsWorld_->OnCollisionExit([this](const CollisionEvent& evt) {
-        CallFunction("OnCollisionExit");
-    });
+    // Asset pipeline - registered early so other modules can use it
+    moduleLoader_.Register(std::make_unique<AssetModule>());
+
+    // Physics - registered as a module, Step() called from module Update()
+    moduleLoader_.Register(std::make_unique<PhysicsModule>());
 
     // UI (always on) - ensure reflection is registered before creating globals
     (void)UI::Describe();
-    ui_ = new UI();
+    ui_ = std::make_unique<UI>();
     ui_->Context().SetScriptCallback([this](const char* fnName) {
         CallFunction(std::string(fnName));
     });
-    RegisterGlobal("ui", "UI", ui_);
+    RegisterGlobal("ui", "UI", ui_.get());
 
     // Particles
 #ifdef KOILO_ENABLE_PARTICLES
-    particleSystem_ = new ParticleSystem();
-    RegisterGlobal("particles", "ParticleSystem", particleSystem_);
+    particleSystem_ = std::make_unique<ParticleSystem>();
+    RegisterGlobal("particles", "ParticleSystem", particleSystem_.get());
 #endif
 
 #ifdef KOILO_ENABLE_AI
-    aiManager_ = new ScriptAIManager();
-    RegisterGlobal("ai", "ScriptAIManager", aiManager_);
+    moduleLoader_.Register(std::make_unique<AIModule>());
 #endif
 
 #ifdef KOILO_ENABLE_AUDIO
-    audioManager_ = new ScriptAudioManager();
-    RegisterGlobal("audio", "ScriptAudioManager", audioManager_);
+    moduleLoader_.Register(std::make_unique<AudioModule>());
 #endif
 }
 

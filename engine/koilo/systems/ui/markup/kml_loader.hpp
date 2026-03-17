@@ -17,6 +17,7 @@
 #include "kss_parser.hpp"
 #include "kml_builder.hpp"
 #include <string>
+#include "../../../registry/reflect_macros.hpp"
 
 namespace koilo {
 namespace ui {
@@ -65,6 +66,20 @@ private:
     int widgetsCreated_ = 0;          ///< widgets created in last build
 
     static bool ReadFile(const std::string& path, std::string& out);
+
+    KL_BEGIN_FIELDS(KMLLoader)
+        /* No reflected fields. */
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(KMLLoader)
+        KL_METHOD_AUTO(KMLLoader, Errors, "Errors"),
+        KL_METHOD_AUTO(KMLLoader, WidgetsCreated, "Widgets created")
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(KMLLoader)
+        /* Requires references - no reflected ctors. */
+    KL_END_DESCRIBE(KMLLoader)
+
 };
 
 } // namespace markup

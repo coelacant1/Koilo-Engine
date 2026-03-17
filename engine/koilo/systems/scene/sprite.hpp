@@ -22,6 +22,7 @@
 #include <koilo/systems/scene/primitivemesh.hpp>
 #include <koilo/core/math/transform.hpp>
 #include <koilo/registry/reflect_macros.hpp>
+#include <memory>
 
 namespace koilo {
 
@@ -64,7 +65,7 @@ public:
 
 private:
     PrimitiveMesh quad_;
-    KSLMaterial* material_ = nullptr;
+    std::unique_ptr<KSLMaterial> material_;
     Texture* texture_ = nullptr;
     bool initialized_ = false;
 

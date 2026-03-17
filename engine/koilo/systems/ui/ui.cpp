@@ -25,6 +25,10 @@ UI::UI() {
     ctx_.SetRoot(root);
     ctx_.SetSizeMode(root, ui::SizeMode::FillRemaining,
                            ui::SizeMode::FillRemaining);
+    // Root panel must be transparent so the 3D scene shows through
+    ui::Style rootStyle = ctx_.GetTheme().Get(ui::WidgetTag::Panel, ui::PseudoState::Normal);
+    rootStyle.background = {0, 0, 0, 0};
+    ctx_.GetTheme().SetWidget(root, ui::PseudoState::Normal, rootStyle);
 }
 
 // ============================================================================
@@ -436,6 +440,7 @@ bool UI::LoadFont(const char* path, float pixelSize) {
 /// Check if a font is loaded.
 bool UI::HasFont() const { return font_.IsLoaded(); }
 
+#ifdef KL_HAVE_OPENGL_BACKEND
 /// Initialize GPU UI rendering (OpenGL).
 bool UI::InitializeGPU() {
     if (gpuInitialized_) return true;
@@ -496,6 +501,79 @@ void UI::RenderGPU(int viewportW, int viewportH) {
 
     glRenderer_.Render(drawList_, viewportW, viewportH);
 }
+#endif
+
+#ifdef KL_HAVE_VULKAN_BACKEND
+bool UI::InitializeVulkanGPU(VulkanBackend* backend) {
+    if (vkGpuInitialized_) return true;
+    if (vkGpuInitFailed_) return false;
+    if (!backend) return false;
+    vkRenderer_ = std::make_unique<ui::UIVkRenderer>();
+    if (!vkRenderer_->Initialize(backend)) {
+        vkRenderer_.reset();
+        vkGpuInitFailed_ = true;
+        return false;
+    }
+    if (font_.IsLoaded()) {
+        fontAtlasTexture_ = vkRenderer_->UploadFontAtlas(font_.Atlas());
+    }
+    vkGpuInitialized_ = true;
+    return true;
+}
+
+void UI::RenderVulkanGPU(int viewportW, int viewportH, VkCommandBuffer cmd) {
+    if (!vkRenderer_ || !cmd) return;
+
+    ctx_.SetViewport(static_cast<float>(viewportW), static_cast<float>(viewportH));
+
+    auto now = std::chrono::steady_clock::now();
+    float dt = std::chrono::duration<float>(now - lastFrameTime_).count();
+    lastFrameTime_ = now;
+    if (dt > 0.1f) dt = 0.1f;
+    ctx_.UpdateTransitions(dt);
+
+    if (!ctx_.IsRenderDirty()) {
+        if (drawList_.Size() > 0)
+            vkRenderer_->Render(drawList_, viewportW, viewportH, cmd);
+        return;
+    }
+
+    AutoSizeTextWidgets();
+    ctx_.UpdateLayout();
+
+    if (font_.IsLoaded() && fontAtlasTexture_ == 0 && vkGpuInitialized_) {
+        fontAtlasTexture_ = vkRenderer_->UploadFontAtlas(font_.Atlas());
+    }
+
+    font::Font* f = font_.IsLoaded() ? &font_ : nullptr;
+
+    int gen = f ? f->Atlas().Generation() : 0;
+    drawList_.Clear();
+    drawList_.BuildFromContext(ctx_, f, fontAtlasTexture_);
+    if (f && f->Atlas().Generation() != gen) {
+        drawList_.Clear();
+        drawList_.BuildFromContext(ctx_, f, fontAtlasTexture_);
+    }
+
+    ctx_.ClearRenderDirty();
+
+    if (font_.IsLoaded() && fontAtlasTexture_ != 0 && font_.Atlas().IsDirty()) {
+        vkRenderer_->UploadFontAtlas(font_.Atlas());
+    }
+
+    vkRenderer_->Render(drawList_, viewportW, viewportH, cmd);
+}
+
+void UI::ShutdownVulkanGPU() {
+    if (vkRenderer_) {
+        vkRenderer_->Shutdown();
+        vkRenderer_.reset();
+    }
+    vkGpuInitialized_ = false;
+    vkGpuInitFailed_ = false;
+    fontAtlasTexture_ = 0;
+}
+#endif
 
 /// Remove all widgets and reset state.
 void UI::Clear() {
@@ -514,6 +592,10 @@ void UI::Clear() {
     ctx_.SetRoot(root);
     ctx_.SetSizeMode(root, ui::SizeMode::FillRemaining,
                            ui::SizeMode::FillRemaining);
+    // Root panel must be transparent so the 3D scene shows through
+    ui::Style rootStyle = ctx_.GetTheme().Get(ui::WidgetTag::Panel, ui::PseudoState::Normal);
+    rootStyle.background = {0, 0, 0, 0};
+    ctx_.GetTheme().SetWidget(root, ui::PseudoState::Normal, rootStyle);
 }
 
 // ============================================================================

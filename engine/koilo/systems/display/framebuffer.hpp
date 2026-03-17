@@ -11,7 +11,7 @@
 
 #include <cstdint>
 #include <cstring>
-#include "pixelformat.hpp"
+#include <koilo/core/color/pixelformat.hpp>
 #include <koilo/registry/reflect_macros.hpp>
 
 namespace koilo {

@@ -11,7 +11,7 @@
 #pragma once
 
 #include <unity.h>
-#include <koilo/ecs/components/tagcomponent.hpp>
+#include <koilo/systems/ecs/components/tagcomponent.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include <koilo/systems/world/level.hpp>
-#include <koilo/ecs/entitymanager.hpp>
+#include <koilo/systems/ecs/entitymanager.hpp>
 #include <algorithm>
 
 namespace koilo {

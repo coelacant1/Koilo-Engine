@@ -11,7 +11,7 @@
 #pragma once
 
 #include <unity.h>
-#include <koilo/modules/module_loader.hpp>
+#include <koilo/kernel/module_loader.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

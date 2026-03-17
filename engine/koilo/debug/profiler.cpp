@@ -7,22 +7,15 @@
 
 namespace koilo {
 
-// Static member initialization
-Profiler* koilo::Profiler::instance = nullptr;
-
-// === Profiler Implementation ===
-
-koilo::Profiler::Profiler()
+Profiler::Profiler()
     : enabled(false), currentDepth(0), frameStartTime(0.0), lastFrameTime(0.0),
       fps(0.0), frameCount(0) {
     startTime = std::chrono::high_resolution_clock::now();
 }
 
-Profiler& koilo::Profiler::GetInstance() {
-    if (instance == nullptr) {
-        instance = new Profiler();
-    }
-    return *instance;
+Profiler& Profiler::GetInstance() {
+    static Profiler instance;
+    return instance;
 }
 
 void koilo::Profiler::BeginFrame() {

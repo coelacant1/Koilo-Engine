@@ -8,8 +8,8 @@
  */
 
 #include "testentitymanager.hpp"
-#include <koilo/ecs/entitymanager.hpp>
-#include <koilo/ecs/entity.hpp>
+#include <koilo/systems/ecs/entitymanager.hpp>
+#include <koilo/systems/ecs/entity.hpp>
 
 using namespace koilo;
 

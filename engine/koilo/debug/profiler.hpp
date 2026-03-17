@@ -88,9 +88,6 @@ struct ProfileStats {
  */
 class Profiler {
 private:
-    // Singleton instance
-    static Profiler* instance;
-
     // Profiling state
     bool enabled;
     std::chrono::high_resolution_clock::time_point startTime;

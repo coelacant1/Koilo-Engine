@@ -5,11 +5,9 @@
 
 namespace koilo {
 
-Sky* Sky::instance_ = nullptr;
-
 Sky& Sky::GetInstance() {
-    if (!instance_) instance_ = new Sky();
-    return *instance_;
+    static Sky instance;
+    return instance;
 }
 
 void Sky::Enable() {

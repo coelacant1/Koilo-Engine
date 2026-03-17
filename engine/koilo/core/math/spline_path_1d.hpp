@@ -3,7 +3,7 @@
  * @file spline_path_1d.hpp
  * @brief Catmull-Rom spline for scalar values (angles, intensity, etc).
  *
- * @date 07/03/2026
+ * @date 03/07/2026
  * @version 1.0
  * @author Coela Can't
  */

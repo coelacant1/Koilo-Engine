@@ -17,6 +17,7 @@
 #include <cmath>
 #include <vector>
 #include <cstdio>
+#include "../../registry/reflect_macros.hpp"
 
 namespace koilo {
 namespace ui {
@@ -25,6 +26,19 @@ namespace ui {
 struct KeyframeMark {
     int frame;                       ///< Frame number for this keyframe
     Color4 color{255, 200, 60, 255}; ///< Display color for the keyframe marker
+
+    KL_BEGIN_FIELDS(KeyframeMark)
+        KL_FIELD(KeyframeMark, frame, "Frame", -2147483648, 2147483647)
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(KeyframeMark)
+        /* No reflected methods. */
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(KeyframeMark)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(KeyframeMark)
+
 };
 
 /** @class Timeline @brief Interactive timeline scrubber rendered on a Canvas2D widget. */
@@ -82,6 +96,28 @@ private:
     std::vector<KeyframeMark> keyframes_;    ///< Keyframe markers on the timeline
 
     void Paint(void* rawCtx);
+
+    KL_BEGIN_FIELDS(Timeline)
+        /* No reflected fields. */
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(Timeline)
+        KL_METHOD_AUTO(Timeline, SetCurrentFrame, "Set current frame"),
+        KL_METHOD_AUTO(Timeline, GetCurrentFrame, "Get current frame"),
+        KL_METHOD_AUTO(Timeline, GetStartFrame, "Get start frame"),
+        KL_METHOD_AUTO(Timeline, GetEndFrame, "Get end frame"),
+        KL_METHOD_AUTO(Timeline, GetFPS, "Get fps"),
+        KL_METHOD_AUTO(Timeline, SetFPS, "Set fps"),
+        KL_METHOD_AUTO(Timeline, AddKeyframe, "Add keyframe"),
+        KL_METHOD_AUTO(Timeline, ClearKeyframes, "Clear keyframes"),
+        KL_METHOD_AUTO(Timeline, HandleInput, "Handle input"),
+        KL_METHOD_AUTO(Timeline, Keyframes, "Keyframes")
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(Timeline)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(Timeline)
+
 };
 
 } // namespace ui
