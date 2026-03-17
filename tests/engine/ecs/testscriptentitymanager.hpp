@@ -11,7 +11,7 @@
 #pragma once
 
 #include <unity.h>
-#include <koilo/ecs/script_entity_manager.hpp>
+#include <koilo/systems/ecs/script_entity_manager.hpp>
 #include <utils/testhelpers.hpp>
 
 /**

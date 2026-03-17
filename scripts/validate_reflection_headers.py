@@ -46,7 +46,6 @@ KNOWN_EXCLUSIONS = {
     "ipixelgroup.hpp",
     "camerabase.hpp",
     "iscriptfilereader.hpp",
-    "ieasyeaseanimator.hpp",
     "effect.hpp",
     "project.hpp",
     "behaviortreenode.hpp",

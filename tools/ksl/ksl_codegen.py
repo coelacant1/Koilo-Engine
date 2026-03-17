@@ -61,17 +61,20 @@ SWIZZLE_PATTERN = re.compile(r'\.(xy|xz|yz|xyz|rgb)\(\)')
 
 
 def extract_params(source):
-    """Extract KSL_PARAM macro invocations -> list of (type, name, array_size or None)."""
-    params = []
-    # KSL_PARAM(TYPE, NAME, DESC, MIN, MAX) - TYPE can contain :: (e.g. ksl::vec3)
+    """Extract KSL_PARAM macro invocations -> list of (type, name, array_size or None).
+    Returns params in declaration order (matching C++ struct layout)."""
+    entries = []
+    # KSL_PARAM(TYPE, NAME, DESC, MIN, MAX)
     for m in re.finditer(r'KSL_PARAM\(\s*([\w:]+)\s*,\s*(\w+)\s*,', source):
         typ = m.group(1).replace('ksl::', '')
-        params.append((typ, m.group(2), None))
+        entries.append((m.start(), typ, m.group(2), None))
     # KSL_PARAM_ARRAY(TYPE, NAME, SIZE, DESC)
     for m in re.finditer(r'KSL_PARAM_ARRAY\(\s*([\w:]+)\s*,\s*(\w+)\s*,\s*(\d+)\s*,', source):
         typ = m.group(1).replace('ksl::', '')
-        params.append((typ, m.group(2), int(m.group(3))))
-    return params
+        entries.append((m.start(), typ, m.group(2), int(m.group(3))))
+    # Sort by source position to preserve declaration order
+    entries.sort(key=lambda e: e[0])
+    return [(typ, name, arr) for _, typ, name, arr in entries]
 
 
 def extract_shade_body(source):
@@ -340,8 +343,15 @@ def detect_features(source, body):
     return features
 
 
-def generate_glsl(source, shader_name=None):
-    """Generate complete GLSL fragment shader from .ksl.hpp source."""
+def generate_glsl(source, shader_name=None, vulkan=False):
+    """Generate complete GLSL fragment shader from .ksl.hpp source.
+
+    Args:
+        source: .ksl.hpp file contents.
+        shader_name: override for comment header.
+        vulkan: if True, emit #version 450 with explicit layout qualifiers
+                and descriptor set bindings (Vulkan/SPIR-V compatible).
+    """
     params = extract_params(source)
     body, input_var = extract_shade_body(source)
     helpers = extract_helper_functions(source)
@@ -354,67 +364,185 @@ def generate_glsl(source, shader_name=None):
 
     lines = []
     lines.append(f'// Auto-generated from {shader_name}.ksl.hpp - DO NOT EDIT')
-    lines.append('#version 330 core')
+
+    if vulkan:
+        lines.append('#version 450')
+    else:
+        lines.append('#version 330 core')
     lines.append('')
 
-    # Varyings (always present)
-    lines.append('in vec3 v_position;')
-    lines.append('in vec3 v_normal;')
-    lines.append('in vec2 v_uv;')
-    lines.append('in vec3 v_viewDir;')
-
-    if features['depth']:
-        lines.append('in float v_depth;')
+    # Varyings (always present) - Vulkan needs explicit locations
+    if vulkan:
+        lines.append('layout(location = 0) in vec3 v_position;')
+        lines.append('layout(location = 1) in vec3 v_normal;')
+        lines.append('layout(location = 2) in vec2 v_uv;')
+        lines.append('layout(location = 3) in vec3 v_viewDir;')
+        next_in_loc = 4
+        if features['depth']:
+            lines.append(f'layout(location = {next_in_loc}) in float v_depth;')
+    else:
+        lines.append('in vec3 v_position;')
+        lines.append('in vec3 v_normal;')
+        lines.append('in vec2 v_uv;')
+        lines.append('in vec3 v_viewDir;')
+        if features['depth']:
+            lines.append('in float v_depth;')
 
     lines.append('')
-    lines.append('out vec4 fragColor;')
+
+    if vulkan:
+        lines.append('layout(location = 0) out vec4 fragColor;')
+    else:
+        lines.append('out vec4 fragColor;')
     lines.append('')
 
-    # Time uniforms
-    if features['time']:
-        lines.append('uniform float u_time;')
-        lines.append('uniform float u_dt;')
-        lines.append('uniform int u_frameCount;')
-        lines.append('')
+    # --- Descriptor set layout for Vulkan ---
+    # Set 0: Scene UBO (transforms, time, camera, lights)
+    # Set 1: Material UBO (shader-specific params)
+    # Set 2: Texture samplers
+    scene_ubo_members = []
+    material_ubo_members = []
+    next_sampler_binding = 0
 
-    # Light uniforms
-    if features['lights']:
-        lines.append('#define MAX_LIGHTS 16')
-        lines.append('struct Light {')
-        lines.append('    vec3 position;')
-        lines.append('    vec3 color;')
-        lines.append('    float intensity;')
-        lines.append('    float falloff;')
-        lines.append('    float curve;')
-        lines.append('};')
-        lines.append('uniform Light u_lights[MAX_LIGHTS];')
-        lines.append('uniform int u_lightCount;')
-        lines.append('')
+    if vulkan:
+        # Build scene UBO members
+        if features['time']:
+            scene_ubo_members.append('    float u_time;')
+            scene_ubo_members.append('    float u_dt;')
+            scene_ubo_members.append('    int u_frameCount;')
+            scene_ubo_members.append('    int _pad_scene0;')
+        if features['lights']:
+            scene_ubo_members.append('    int u_lightCount;')
+            scene_ubo_members.append('    int _pad_scene1;')
+            scene_ubo_members.append('    int _pad_scene2;')
+            scene_ubo_members.append('    int _pad_scene3;')
 
-    # Texture uniforms
-    if features['textures']:
-        for i in range(8):
-            if f'in.ctx->textures[{i}]' in source or f'u_texture{i}' in source:
-                lines.append(f'uniform sampler2D u_texture{i};')
-        lines.append('')
+        # Scene UBO
+        if scene_ubo_members:
+            lines.append('layout(set = 0, binding = 2) uniform SceneUBO {')
+            for m in scene_ubo_members:
+                lines.append(m)
+            lines.append('};')
+            lines.append('')
 
-    # Audio uniforms
-    if features['audio_samples']:
-        lines.append('#define MAX_AUDIO_SAMPLES 1024')
-        lines.append('uniform float u_audioSamples[MAX_AUDIO_SAMPLES];')
-        lines.append('uniform int u_sampleCount;')
-        lines.append('')
-    if features['audio_spectrum']:
-        lines.append('#define MAX_AUDIO_SPECTRUM 512')
-        lines.append('uniform float u_audioSpectrum[MAX_AUDIO_SPECTRUM];')
-        lines.append('uniform int u_spectrumCount;')
-        lines.append('')
+        # Light SSBO (set 0, binding 1) - use SSBO for struct array
+        if features['lights']:
+            lines.append('#define MAX_LIGHTS 16')
+            lines.append('struct Light {')
+            lines.append('    vec3 position;')
+            lines.append('    float intensity;')
+            lines.append('    vec3 color;')
+            lines.append('    float falloff;')
+            lines.append('    float curve;')
+            lines.append('    float _pad0;')
+            lines.append('    float _pad1;')
+            lines.append('    float _pad2;')
+            lines.append('};')
+            lines.append('layout(set = 0, binding = 1, std430) readonly buffer LightBuffer {')
+            lines.append('    Light u_lights[];')
+            lines.append('};')
+            lines.append('')
 
-    # Shader-specific uniforms from KSL_PARAM
-    param_uniforms = generate_uniforms(params)
-    if param_uniforms:
-        lines.append(param_uniforms)
-        lines.append('')
+        # Audio SSBO (set 0, binding 3 + 4) - binding 2 is SceneUBO
+        if features['audio_samples']:
+            lines.append('#define MAX_AUDIO_SAMPLES 1024')
+            lines.append('layout(set = 0, binding = 3, std430) readonly buffer AudioSampleBuffer {')
+            lines.append('    float u_audioSamples[];')
+            lines.append('};')
+            # sampleCount is in scene UBO - add it there
+            lines.append('')
+        if features['audio_spectrum']:
+            lines.append('#define MAX_AUDIO_SPECTRUM 512')
+            lines.append('layout(set = 0, binding = 4, std430) readonly buffer AudioSpectrumBuffer {')
+            lines.append('    float u_audioSpectrum[];')
+            lines.append('};')
+            lines.append('')
+
+        # Audio count uniforms (push constant or scene UBO extension)
+        # For simplicity, emit as part of scene UBO above or as standalone
+        if features['audio_samples'] and 'int u_sampleCount;' not in '\n'.join(scene_ubo_members):
+            pass  # sampleCount will be in push constants
+        if features['audio_spectrum'] and 'int u_spectrumCount;' not in '\n'.join(scene_ubo_members):
+            pass  # spectrumCount will be in push constants
+
+        # Material UBO (set 1, binding 0) - shader-specific params
+        for typ, name, arr_size in params:
+            glsl_type = typ.replace('ksl::', '')
+            if arr_size:
+                material_ubo_members.append(f'    {glsl_type} u_{name}[{arr_size}];')
+            else:
+                material_ubo_members.append(f'    {glsl_type} u_{name};')
+
+        if material_ubo_members:
+            lines.append('layout(set = 1, binding = 0) uniform MaterialUBO {')
+            for m in material_ubo_members:
+                lines.append(m)
+            lines.append('};')
+            lines.append('')
+
+        # Push constants for audio counts and shader ID
+        push_members = []
+        if features['audio_samples']:
+            push_members.append('    int u_sampleCount;')
+        if features['audio_spectrum']:
+            push_members.append('    int u_spectrumCount;')
+        if push_members:
+            lines.append('layout(push_constant) uniform PushConstants {')
+            for m in push_members:
+                lines.append(m)
+            lines.append('};')
+            lines.append('')
+
+        # Texture samplers (set 2)
+        if features['textures']:
+            for i in range(8):
+                if f'in.ctx->textures[{i}]' in source or f'u_texture{i}' in source:
+                    lines.append(f'layout(set = 2, binding = {next_sampler_binding}) uniform sampler2D u_texture{i};')
+                    next_sampler_binding += 1
+            lines.append('')
+
+    else:
+        # OpenGL: plain uniforms (original path)
+        if features['time']:
+            lines.append('uniform float u_time;')
+            lines.append('uniform float u_dt;')
+            lines.append('uniform int u_frameCount;')
+            lines.append('')
+
+        if features['lights']:
+            lines.append('#define MAX_LIGHTS 16')
+            lines.append('struct Light {')
+            lines.append('    vec3 position;')
+            lines.append('    vec3 color;')
+            lines.append('    float intensity;')
+            lines.append('    float falloff;')
+            lines.append('    float curve;')
+            lines.append('};')
+            lines.append('uniform Light u_lights[MAX_LIGHTS];')
+            lines.append('uniform int u_lightCount;')
+            lines.append('')
+
+        if features['textures']:
+            for i in range(8):
+                if f'in.ctx->textures[{i}]' in source or f'u_texture{i}' in source:
+                    lines.append(f'uniform sampler2D u_texture{i};')
+            lines.append('')
+
+        if features['audio_samples']:
+            lines.append('#define MAX_AUDIO_SAMPLES 1024')
+            lines.append('uniform float u_audioSamples[MAX_AUDIO_SAMPLES];')
+            lines.append('uniform int u_sampleCount;')
+            lines.append('')
+        if features['audio_spectrum']:
+            lines.append('#define MAX_AUDIO_SPECTRUM 512')
+            lines.append('uniform float u_audioSpectrum[MAX_AUDIO_SPECTRUM];')
+            lines.append('uniform int u_spectrumCount;')
+            lines.append('')
+
+        param_uniforms = generate_uniforms(params)
+        if param_uniforms:
+            lines.append(param_uniforms)
+            lines.append('')
 
     # KSL standard library functions (only those used by this shader)
     if stdlib_funcs:
@@ -641,9 +769,16 @@ def main():
     parser.add_argument('--uber', action='store_true',
                         help='Generate uber-shader from all input files')
     parser.add_argument('--uber-ids', help='Output shader ID mapping file (.txt)')
+    parser.add_argument('--vulkan', action='store_true',
+                        help='Generate Vulkan-compatible GLSL (#version 450, '
+                             'explicit layout qualifiers, descriptor set bindings)')
     args = parser.parse_args()
 
     if args.uber:
+        if args.vulkan:
+            print('Error: --uber and --vulkan cannot be combined '
+                  '(Vulkan does not use uber-shaders)', file=sys.stderr)
+            sys.exit(1)
         # Uber-shader mode: combine all inputs into one shader
         shader_sources = []
         for inp in sorted(args.input):
@@ -669,13 +804,14 @@ def main():
                     f.write(f'{sid} {name}\n')
             print(f'Wrote shader ID map to {args.uber_ids}')
     else:
-        # Single-shader mode (original behavior)
+        # Single-shader mode
         source = Path(args.input[0]).read_text()
-        glsl = generate_glsl(source, args.name)
+        glsl = generate_glsl(source, args.name, vulkan=args.vulkan)
 
         if args.output:
             Path(args.output).write_text(glsl)
-            print(f'Generated {args.output}')
+            suffix = ' (Vulkan)' if args.vulkan else ''
+            print(f'Generated {args.output}{suffix}')
         else:
             print(glsl)
 

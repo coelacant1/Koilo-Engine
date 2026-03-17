@@ -94,6 +94,7 @@ public:
             }
 
             // If uber-shader loaded, assign shared program + shader ID
+#ifdef KL_HAVE_OPENGL_BACKEND
             if (hasUber) {
                 auto it = uberShaderIDs_.find(name);
                 if (it != uberShaderIDs_.end()) {
@@ -103,6 +104,7 @@ public:
             } else if (fs::exists(glslPath) && !vertexShaderSrc.empty()) {
                 hasGPU = mod->LoadGLSL(glslPath, vertexShaderSrc);
             }
+#endif
 
             if (hasCPU || hasGPU) {
                 modules_[name] = std::move(mod);
@@ -124,6 +126,74 @@ public:
         if (!mod->LoadGLSL(glslPath, vertexShaderSrc)) return false;
         modules_[name] = std::move(mod);
         return true;
+    }
+
+    /**
+     * @brief Scan a SPIR-V directory for compiled .frag.spv + .vert.spv files.
+     *
+     * Populates the spirvData_ map with raw SPIR-V bytecode for each shader.
+     * The Vulkan render backend retrieves this data to create pipeline objects.
+     *
+     * @param spirvDir Path to directory containing .frag.spv files and scene.vert.spv.
+     * @return Number of fragment SPIR-V modules loaded.
+     */
+    int ScanSPIRVDirectory(const std::string& spirvDir) {
+#ifdef KL_HAVE_FILESYSTEM
+        namespace fs = std::filesystem;
+        int loaded = 0;
+
+        if (!fs::exists(spirvDir) || !fs::is_directory(spirvDir)) return 0;
+
+        // Load shared vertex shader
+        std::string vertPath = spirvDir + "/scene.vert.spv";
+        if (fs::exists(vertPath)) {
+            vertexSPIRV_ = ReadBinaryFile(vertPath);
+        }
+
+        // Load per-shader fragment SPIR-V
+        for (const auto& entry : fs::directory_iterator(spirvDir)) {
+            if (!entry.is_regular_file()) continue;
+            std::string fname = entry.path().filename().string();
+            // Match *.frag.spv
+            if (fname.size() > 9 &&
+                fname.compare(fname.size() - 9, 9, ".frag.spv") == 0) {
+                std::string stem = fname.substr(0, fname.size() - 9);
+                auto data = ReadBinaryFile(entry.path().string());
+                if (!data.empty()) {
+                    spirvData_[stem] = std::move(data);
+                    loaded++;
+                }
+            }
+        }
+
+        return loaded;
+#else
+        (void)spirvDir;
+        return 0;
+#endif
+    }
+
+    /** Get raw SPIR-V bytecode for a fragment shader by name. */
+    const std::vector<uint32_t>& GetFragmentSPIRV(const std::string& name) const {
+        static const std::vector<uint32_t> empty;
+        auto it = spirvData_.find(name);
+        return it != spirvData_.end() ? it->second : empty;
+    }
+
+    /** Get raw SPIR-V bytecode for the shared vertex shader. */
+    const std::vector<uint32_t>& GetVertexSPIRV() const { return vertexSPIRV_; }
+
+    /** Check if SPIR-V data is loaded. */
+    bool HasSPIRV() const { return !spirvData_.empty() && !vertexSPIRV_.empty(); }
+
+    /** Get list of loaded SPIR-V shader names. */
+    std::vector<std::string> ListSPIRVShaders() const {
+        std::vector<std::string> names;
+        names.reserve(spirvData_.size());
+        for (const auto& [name, _] : spirvData_) {
+            names.push_back(name);
+        }
+        return names;
     }
 
     KSLModule* GetModule(const std::string& name) const {
@@ -167,6 +237,8 @@ public:
         uberShaderIDs_.clear();
 #endif
         modules_.clear();
+        vertexSPIRV_.clear();
+        spirvData_.clear();
     }
 
 private:
@@ -175,6 +247,22 @@ private:
     unsigned int uberProgram_ = 0;
     std::unordered_map<std::string, int> uberShaderIDs_;
 #endif
+
+    // SPIR-V bytecode storage (loaded but not consumed until Vulkan backend creates pipelines)
+    std::vector<uint32_t> vertexSPIRV_;
+    std::unordered_map<std::string, std::vector<uint32_t>> spirvData_;
+
+    /** Read a binary file as uint32_t words (SPIR-V format). */
+    static std::vector<uint32_t> ReadBinaryFile(const std::string& path) {
+        std::ifstream file(path, std::ios::binary | std::ios::ate);
+        if (!file.is_open()) return {};
+        auto size = file.tellg();
+        if (size <= 0 || size % 4 != 0) return {};
+        file.seekg(0);
+        std::vector<uint32_t> data(static_cast<size_t>(size) / 4);
+        file.read(reinterpret_cast<char*>(data.data()), size);
+        return data;
+    }
 };
 
 } // namespace ksl

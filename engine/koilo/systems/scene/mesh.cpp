@@ -25,20 +25,25 @@ bool koilo::Mesh::IsEnabled() {
 }
 
 bool koilo::Mesh::HasUV(){
+    if (!originalTriangles) return false;
     return originalTriangles->HasUV();
 }
 
 
 const Vector2D* koilo::Mesh::GetUVVertices(){
+    if (!originalTriangles) return nullptr;
     return originalTriangles->GetUVVertices();
 }
 
 const IndexGroup* koilo::Mesh::GetUVIndexGroup(){
+    if (!originalTriangles) return nullptr;
     return originalTriangles->GetUVIndexGroup();
 }
 
 Vector3D koilo::Mesh::GetCenterOffset() {
     Vector3D center;
+    if (!modifiedTriangles || modifiedTriangles->GetVertexCount() == 0)
+        return center;
 
     for (uint32_t i = 0; i < modifiedTriangles->GetVertexCount(); i++) {
         center = center + modifiedTriangles->GetVertices()[i];
@@ -48,6 +53,7 @@ Vector3D koilo::Mesh::GetCenterOffset() {
 }
 
 void koilo::Mesh::GetMinMaxDimensions(Vector3D& minimum, Vector3D& maximum) {
+    if (!modifiedTriangles) return;
     for (uint32_t i = 0; i < modifiedTriangles->GetVertexCount(); i++) {
         minimum = Vector3D::Min(minimum, modifiedTriangles->GetVertices()[i]);
         maximum = Vector3D::Max(maximum, modifiedTriangles->GetVertices()[i]);
@@ -72,6 +78,7 @@ void koilo::Mesh::SetTransform(Transform& t) {
 }
 
 void koilo::Mesh::ResetVertices() {
+    if (!modifiedTriangles || !originalTriangles) return;
     for (uint32_t i = 0; i < modifiedTriangles->GetVertexCount(); i++) {
         modifiedTriangles->GetVertices()[i] = originalTriangles->GetVertices()[i];
     }
@@ -79,7 +86,7 @@ void koilo::Mesh::ResetVertices() {
 }
 
 void koilo::Mesh::UpdateTransform() {
-    if (!transformDirty_) return;
+    if (!transformDirty_ || !modifiedTriangles) return;
 
     for (uint32_t i = 0; i < modifiedTriangles->GetVertexCount(); i++) {
         Vector3D original = modifiedTriangles->GetVertices()[i];

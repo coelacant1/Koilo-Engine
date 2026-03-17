@@ -11,6 +11,10 @@
 
 #include <koilo/scripting/koiloscript_engine.hpp>
 #include <koilo/core/math/vector3d.hpp>
+#include <koilo/systems/scene/camera/camera.hpp>
+#include <koilo/systems/scene/camera/cameralayout.hpp>
+#include <koilo/systems/scene/scene.hpp>
+#include <koilo/systems/render/core/pixelgroup.hpp>
 #include <koilo/systems/scene/animation/animationclip.hpp>
 #include <koilo/systems/scene/animation/animationmixer.hpp>
 #include <koilo/assets/image/texture.hpp>
@@ -31,8 +35,8 @@
 #include <koilo/core/geometry/2d/circle.hpp>
 #include <koilo/debug/debugdraw.hpp>
 #include <koilo/debug/debugrenderer.hpp>
-#include <koilo/ecs/script_entity_manager.hpp>
-#include <koilo/ecs/entitymanager.hpp>
+#include <koilo/systems/ecs/script_entity_manager.hpp>
+#include <koilo/systems/ecs/entitymanager.hpp>
 #include <koilo/systems/ai/script_ai_manager.hpp>
 #include <koilo/systems/scene/animation/skeleton.hpp>
 #include <koilo/systems/scene/animation/skeleton_animator.hpp>
@@ -50,9 +54,9 @@
 #include <koilo/systems/world/levelserializer.hpp>
 #include <koilo/systems/world/worldmanager.hpp>
 #include <koilo/systems/world/script_world_manager.hpp>
-#include <koilo/ecs/components/tagcomponent.hpp>
-#include <koilo/ecs/components/transformcomponent.hpp>
-#include <koilo/ecs/components/velocitycomponent.hpp>
+#include <koilo/systems/ecs/components/tagcomponent.hpp>
+#include <koilo/systems/ecs/components/transformcomponent.hpp>
+#include <koilo/systems/ecs/components/velocitycomponent.hpp>
 #include <iostream>
 #include <cassert>
 #include <cmath>

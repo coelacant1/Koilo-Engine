@@ -584,6 +584,22 @@ inline void KSLShaderBridge::EnsureReady() {
         const auto& lights = owner_->GetLights();
         frameCtx_.lights = lights.empty() ? nullptr : lights.data();
         frameCtx_.lightCount = static_cast<int>(lights.size());
+
+        // Populate textures from owner
+        int texCount = owner_->TextureCount();
+        frameCtx_.textureCount = 0;
+        for (int i = 0; i < texCount && i < 8; ++i) {
+            Texture* tex = owner_->GetTexture(i);
+            if (tex && tex->GetRGBData()) {
+                frameCtx_.textures[i].data = tex->GetRGBData();
+                frameCtx_.textures[i].width = static_cast<int>(tex->GetWidth());
+                frameCtx_.textures[i].height = static_cast<int>(tex->GetHeight());
+                frameCtx_.textures[i].channels = 3;
+                frameCtx_.textureCount = i + 1;
+            } else {
+                frameCtx_.textures[i] = {};
+            }
+        }
     }
 }
 

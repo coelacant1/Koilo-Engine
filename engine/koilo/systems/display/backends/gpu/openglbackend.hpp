@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include <koilo/systems/display/idisplaybackend.hpp>
+#include <koilo/systems/display/igpu_display_backend.hpp>
 #include <string>
 #include <koilo/registry/reflect_macros.hpp>
 
@@ -39,7 +39,7 @@ namespace koilo {
  * // Frames are rendered to GPU-accelerated window
  * @endcode
  */
-class OpenGLBackend : public IDisplayBackend {
+class OpenGLBackend : public IGPUDisplayBackend {
 public:
     /**
      * @enum ScalingMode
@@ -91,15 +91,21 @@ public:
     // === OpenGL Specific ===
 
     /** @brief Swap buffers only (no texture upload). Use with BlitToScreen(). */
-    void SwapOnly();
+    void SwapOnly() override;
     /** Upload texture + draw quad without swapping. Call SwapOnly() later. */
-    bool PresentNoSwap(const Framebuffer& fb);
+    bool PresentNoSwap(const Framebuffer& fb) override;
     
     /**
      * @brief Set texture filtering to nearest-neighbor (sharp pixels) or bilinear (smooth).
      * Call after Initialize(). Use nearest for pixel-art / low-res upscaling.
      */
-    void SetNearestFiltering(bool nearest);
+    void SetNearestFiltering(bool nearest) override;
+
+    /**
+     * @brief Prepare the default framebuffer for compositing.
+     * Binds FBO 0, sets viewport, clears color+depth.
+     */
+    void PrepareDefaultFramebuffer(int width, int height) override;
 
     /**
      * @brief Set scaling mode.

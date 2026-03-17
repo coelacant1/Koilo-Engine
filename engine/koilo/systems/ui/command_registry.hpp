@@ -15,6 +15,7 @@
 #include <unordered_map>
 #include <vector>
 #include "event.hpp"
+#include "../../registry/reflect_macros.hpp"
 
 namespace koilo {
 namespace ui {
@@ -61,6 +62,21 @@ struct Shortcut {
 
     /** @brief Get the display name for a KeyCode. */
     static const char* KeyName(KeyCode k);
+
+    KL_BEGIN_FIELDS(Shortcut)
+        KL_FIELD(Shortcut, key, "Key", 0, 0)
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(Shortcut)
+        KL_METHOD_AUTO(Shortcut, IsValid, "Is valid"),
+        KL_METHOD_AUTO(Shortcut, Matches, "Matches"),
+        KL_METHOD_AUTO(Shortcut, Label, "Label")
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(Shortcut)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(Shortcut)
+
 };
 
 /** @class CommandEntry
@@ -73,6 +89,19 @@ struct CommandEntry {
     Shortcut shortcut;       ///< Default keyboard shortcut
     std::function<void()> execute; ///< The action to perform
     std::function<bool()> canExecute; ///< Optional predicate (nullptr = always enabled)
+
+    KL_BEGIN_FIELDS(CommandEntry)
+        KL_FIELD(CommandEntry, id, "Id", 0, 0)
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(CommandEntry)
+        /* No reflected methods. */
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(CommandEntry)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(CommandEntry)
+
 };
 
 /** @class CommandRegistry
@@ -169,14 +198,54 @@ private:
                     | (static_cast<uint32_t>(s.alt)   << 18)
                     | (static_cast<uint32_t>(s.super) << 19)) {}
         bool operator==(const ShortcutKey& o) const { return value == o.value; }
+
+        KL_BEGIN_FIELDS(ShortcutKey)
+            KL_FIELD(ShortcutKey, value, "Value", 0, 4294967295)
+        KL_END_FIELDS
+
+        KL_BEGIN_METHODS(ShortcutKey)
+            /* No reflected methods. */
+        KL_END_METHODS
+
+        KL_BEGIN_DESCRIBE(ShortcutKey)
+            /* No reflected ctors. */
+        KL_END_DESCRIBE(ShortcutKey)
+
     };
     /// Hash functor for ShortcutKey.
     struct ShortcutKeyHash {
         size_t operator()(const ShortcutKey& k) const { return std::hash<uint32_t>{}(k.value); }
+
+        KL_BEGIN_FIELDS(ShortcutKeyHash)
+            /* No reflected fields. */
+        KL_END_FIELDS
+
+        KL_BEGIN_METHODS(ShortcutKeyHash)
+            /* No reflected methods. */
+        KL_END_METHODS
+
+        KL_BEGIN_DESCRIBE(ShortcutKeyHash)
+            /* No reflected ctors. */
+        KL_END_DESCRIBE(ShortcutKeyHash)
+
     };
 
     std::unordered_map<std::string, CommandEntry> commands_; ///< All registered commands by id.
     std::unordered_map<ShortcutKey, std::string, ShortcutKeyHash> shortcutMap_; ///< Shortcut -> command id.
+
+    KL_BEGIN_FIELDS(CommandRegistry)
+        /* No reflected fields. */
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(CommandRegistry)
+        KL_METHOD_AUTO(CommandRegistry, ShortcutLabel, "Shortcut label"),
+        KL_METHOD_AUTO(CommandRegistry, ByCategory, "By category")
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(CommandRegistry)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(CommandRegistry)
+
 };
 
 } // namespace ui

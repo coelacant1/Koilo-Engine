@@ -17,6 +17,7 @@
 
 #include <cstdint>
 #include <cstddef>
+#include <vector>
 #include <koilo/core/color/color888.hpp>
 #include <koilo/core/math/vector2d.hpp>
 #include <koilo/registry/reflect_macros.hpp>
@@ -109,8 +110,8 @@ private:
     const Color888* pixels_ = nullptr;
 
     // Owned buffer tracking
-    uint8_t* ownedIndices_ = nullptr;
-    Color888* ownedPixels_ = nullptr;
+    std::vector<uint8_t> ownedIndices_;
+    std::vector<Color888> ownedPixels_;
 
     void FreeOwned();
 

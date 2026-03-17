@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include <koilo/systems/world/worldmanager.hpp>
 #include <koilo/systems/world/levelserializer.hpp>
-#include <koilo/ecs/entitymanager.hpp>
+#include <koilo/systems/ecs/entitymanager.hpp>
 #include <koilo/core/time/timemanager.hpp>
 #include <algorithm>
 #include <iostream>

@@ -8,9 +8,7 @@ koilo::Scene::Scene() {
 }
 
 koilo::Scene::~Scene() {
-    for (auto* node : ownedNodes_) {
-        delete node;
-    }
+    // ownedNodes_ cleaned up by unique_ptr destructors
 }
 
 void koilo::Scene::AddMesh(Mesh* mesh) {
@@ -70,8 +68,8 @@ SceneNode* koilo::Scene::CreateObject(const std::string& name) {
     if (it != nodesByName_.end()) {
         return it->second;  // already exists
     }
-    auto* node = new SceneNode(name);
-    ownedNodes_.push_back(node);
+    ownedNodes_.push_back(std::make_unique<SceneNode>(name));
+    auto* node = ownedNodes_.back().get();
     nodesByName_[name] = node;
     return node;
 }

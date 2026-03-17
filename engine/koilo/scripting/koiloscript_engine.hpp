@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #pragma once
 
+#include <koilo/core/interfaces/iscript_bridge.hpp>
 #include <koilo/platform/iscriptfilereader.hpp>
 #include <koilo/scripting/koiloscript_lexer.hpp>
 #include <koilo/scripting/koiloscript_parser.hpp>
@@ -11,20 +12,13 @@
 #include <koilo/scripting/bytecode.hpp>
 #include <koilo/scripting/bytecode_vm.hpp>
 #include <koilo/scripting/signal_registry.hpp>
-#include <koilo/systems/render/irenderbackend.hpp>
-#include <koilo/systems/render/gl/software_render_backend.hpp>
 #include <koilo/assets/koilomesh_loader.hpp>
-#include <koilo/systems/render/core/pixelgroup.hpp>
-#include <koilo/systems/scene/camera/camera.hpp>
-#include <koilo/systems/scene/camera/cameralayout.hpp>
-#include <koilo/systems/scene/scene.hpp>
 #include <koilo/systems/input/inputmanager.hpp>
 #include <koilo/debug/debugdraw.hpp>
-#include <koilo/ecs/script_entity_manager.hpp>
+#include <koilo/systems/ecs/script_entity_manager.hpp>
 #include <koilo/systems/world/script_world_manager.hpp>
-#include <koilo/modules/module_loader.hpp>
+#include <koilo/kernel/module_loader.hpp>
 #include <koilo/scripting/coroutine.hpp>
-#include <koilo/systems/render/canvas2d.hpp>
 #include <string>
 #include <map>
 #include <unordered_map>
@@ -41,6 +35,14 @@ class ParticleSystem;
 class ScriptAIManager;
 class ScriptAudioManager;
 class Sky;
+class KoiloKernel;
+class IRenderBackend;
+class PixelGroup;
+class Camera;
+class CameraLayout;
+class Scene;
+class Canvas2D;
+class Transform;
 
 namespace scripting {
 
@@ -75,7 +77,7 @@ struct DisplayInfo {
  *       }
  *   }
  */
-class KoiloScriptEngine {
+class KoiloScriptEngine : public IScriptBridge {
 public:
     // Engine lifecycle state - enforces correct call order.
     enum class EngineState { Created, ScriptLoaded, SceneBuilt, Running, Error };
@@ -96,6 +98,10 @@ public:
      */
     explicit KoiloScriptEngine(platform::IScriptFileReader* fileReader, bool loadDefaultModules = true);
     ~KoiloScriptEngine();
+
+    /// Set the kernel reference. Must be called before BuildScene().
+    void SetKernel(KoiloKernel* kernel) { kernel_ = kernel; }
+    KoiloKernel* GetKernel() const { return kernel_; }
     
     /**
      * @brief Load script from file
@@ -251,20 +257,20 @@ public:
      * @brief Get the scene created from SCENE block camera/objects
      * @return Scene pointer, or nullptr if no camera defined in script
      */
-    Scene* GetScene() const { return scene_; }
+    Scene* GetScene() const { return scene_.get(); }
     
     /**
-     * @brief Get the physics world
-     * @return PhysicsWorld pointer, or nullptr if not enabled
+     * @brief Get the physics world (via physics module)
+     * @return PhysicsWorld pointer, or nullptr if not loaded
      */
-    PhysicsWorld* GetPhysicsWorld() const { return physicsWorld_; }
+    PhysicsWorld* GetPhysicsWorld();
     
     InputManager* GetInputManager() { return &inputManager_; }
-    UI* GetUI() { return ui_; }
-    ParticleSystem* GetParticleSystem() { return particleSystem_; }
+    UI* GetUI() { return ui_.get(); }
+    ParticleSystem* GetParticleSystem() { return particleSystem_.get(); }
     ScriptEntityManager* GetEntities() { return &scriptEntities_; }
-    ScriptAIManager* GetAI() { return aiManager_; }
-    ScriptAudioManager* GetAudio() { return audioManager_; }
+    ScriptAIManager* GetAI();
+    ScriptAudioManager* GetAudio();
     ScriptWorldManager* GetWorld() { return &scriptWorld_; }
     DebugDraw& GetDebugDraw() { return DebugDraw::GetInstance(); }
     
@@ -278,13 +284,13 @@ public:
      * @brief Get the camera created from SCENE block
      * @return Camera pointer, or nullptr if no camera defined in script
      */
-    Camera* GetCamera() const { return camera_; }
+    Camera* GetCamera() const { return camera_.get(); }
     
     /**
      * @brief Get the pixel group created from DISPLAY dimensions
      * @return PixelGroup pointer, or nullptr if no camera defined in script
      */
-    PixelGroup* GetPixelGroup() const { return pixelGroup_; }
+    PixelGroup* GetPixelGroup() const { return pixelGroup_.get(); }
     
     /**
      * @brief Get a state property value (e.g., color from state block)
@@ -375,18 +381,13 @@ public:
     SignalRegistry& GetSignalRegistry() { return signalRegistry_; }
     
     // Set render backend (default: SoftwareRenderBackend)
-    void SetRenderBackend(std::unique_ptr<IRenderBackend> backend) {
-        renderBackend_ = std::move(backend);
-        if (renderBackend_ && !renderBackend_->IsInitialized()) {
-            renderBackend_->Initialize();
-        }
-    }
+    void SetRenderBackend(std::unique_ptr<IRenderBackend> backend);
     
     // Get current render backend
     IRenderBackend* GetRenderBackend() const { return renderBackend_.get(); }
     
     // Register an object as a script-accessible global (used by modules)
-    void RegisterGlobal(const char* name, const char* className, void* instance);
+    void RegisterGlobal(const char* name, const char* className, void* instance) override;
     
     /**
      * @brief Call a script function by name from host code
@@ -424,6 +425,10 @@ public:
     
     // Set a script variable by name (for C ABI module access).
     void SetScriptVariable(const std::string& name, const Value& value);
+
+    // IScriptBridge overrides (thin wrappers around Value-based API)
+    void SetScriptVariable(const std::string& name, double value) override;
+    double GetScriptVariableNum(const std::string& name) const override;
     
 private:
     friend class BytecodeVM;
@@ -458,29 +463,27 @@ private:
     std::map<std::string, ObjectData> objects;
     
     // Rendering objects created from script
-    PixelGroup* pixelGroup_ = nullptr;
-    Camera* camera_ = nullptr;
-    CameraLayout* cameraLayout_ = nullptr;
-    Transform* cameraTransform_ = nullptr;
-    Scene* scene_ = nullptr;
+    std::unique_ptr<PixelGroup> pixelGroup_;
+    std::unique_ptr<Camera> camera_;
+    std::unique_ptr<CameraLayout> cameraLayout_;
+    std::unique_ptr<Transform> cameraTransform_;
+    std::unique_ptr<Scene> scene_;
     InputManager inputManager_;
     ScriptEntityManager scriptEntities_;
     ScriptWorldManager scriptWorld_;
     std::map<std::string, void*> materialInstances_;
     std::vector<MorphableMesh*> ownedMeshes_;
     
-    // Core subsystems (directly owned)
-    PhysicsWorld* physicsWorld_ = nullptr;
-    UI* ui_ = nullptr;
-    ParticleSystem* particleSystem_ = nullptr;
-    ScriptAIManager* aiManager_ = nullptr;
-    ScriptAudioManager* audioManager_ = nullptr;
+    // Core subsystems (directly owned - module-managed systems removed)
+    std::unique_ptr<UI> ui_;
+    std::unique_ptr<ParticleSystem> particleSystem_;
 
     // Temp counter base: saved after BuildScene so Update temps can recycle names
     int sceneCounterBase_ = 0;
 
     // External module loader (for user/third-party ELF modules)
     ModuleLoader moduleLoader_;
+    KoiloKernel* kernel_ = nullptr;
     CoroutineManager coroutineManager_;
     
     // Bytecode VM

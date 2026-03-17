@@ -18,13 +18,7 @@ namespace koilo {
 
 // Allocate ring buffer with given capacity
 LogBuffer::LogBuffer(size_t capacity)
-    : capacity_(capacity) {
-    entries_ = new LogEntry[capacity_];
-}
-
-// Release heap-allocated entry array
-LogBuffer::~LogBuffer() {
-    delete[] entries_;
+    : entries_(capacity), capacity_(capacity) {
 }
 
 // =====================================================================

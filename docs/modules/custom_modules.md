@@ -4,16 +4,33 @@ Dynamic modules extend KoiloEngine at runtime. Modules are C or C++ shared libra
 
 ---
 
+## Running Examples
+
+Use the generic `koilo` runner with `--modules-dir` to pre-load modules:
+
+```bash
+# Build the engine and modules
+./build.sh
+
+# Run the modules demo
+./build/koilo --script examples/modules/demo_all_modules.ks --modules-dir build/modules
+
+# Or use the convenience wrapper
+./examples/modules/run.sh
+```
+
+---
+
 ## Module Phases
 
 Modules run in phase order after the script update:
 
 | Phase | Constant | Purpose |
 |-------|----------|---------|
-| 0 | `KL_PHASE_CORE` | Math, reflection, scene (always present) |
-| 1 | `KL_PHASE_SYSTEM` | Independent subsystems (physics, audio, AI, sensors) |
-| 2 | `KL_PHASE_RENDER` | Pipeline stages (effects, particles) |
-| 3 | `KL_PHASE_OVERLAY` | Drawn last (UI, debug overlays) |
+| 0 | `KOILO_PHASE_CORE` | Math, reflection, scene (always present) |
+| 1 | `KOILO_PHASE_SYSTEM` | Independent subsystems (physics, audio, AI, sensors) |
+| 2 | `KOILO_PHASE_RENDER` | Pipeline stages (effects, particles) |
+| 3 | `KOILO_PHASE_OVERLAY` | Drawn last (UI, debug overlays) |
 
 ---
 
@@ -22,15 +39,15 @@ Modules run in phase order after the script update:
 Include the single-header SDK:
 
 ```c
-#include <koilo/modules/koilo_module_sdk.h>
+#include <koilo/kernel/koilo_module_sdk.h>
 ```
 
 ### Header
 
-Every module declares its identity with `KL_MODULE_HEADER`:
+Every module declares its identity with `KOILO_MODULE_HEADER`:
 
 ```c
-KL_MODULE_HEADER("my_sensor", "1.0.0", KL_PHASE_SYSTEM)
+KOILO_MODULE_HEADER("my_sensor", "1.0.0", KOILO_PHASE_SYSTEM)
 ```
 
 Name is up to 31 characters. Version is informational. Phase controls init/update order.
@@ -38,27 +55,27 @@ Name is up to 31 characters. Version is informational. Phase controls init/updat
 ### Lifecycle Hooks
 
 ```c
-static PtxEngineServices* svc = NULL;
+static KoiloEngineServices* svc = NULL;
 static void* eng = NULL;
 
-KL_MODULE_INIT {
+KOILO_MODULE_INIT {
     svc = svc_;
     eng = engine_;
     svc->register_global(eng, "my_sensor", "MySensorClass", &my_instance);
     return 1;  // non-zero = success
 }
 
-KL_MODULE_UPDATE {
+KOILO_MODULE_UPDATE {
     // dt is delta time in seconds
     my_instance.elapsed += dt;
 }
 
-KL_MODULE_RENDER {
+KOILO_MODULE_RENDER {
     // buffer is Color888* (RGB, 3 bytes per pixel)
     // width and height are pixel dimensions
 }
 
-KL_MODULE_SHUTDOWN {
+KOILO_MODULE_SHUTDOWN {
     svc = NULL;
     eng = NULL;
 }
@@ -68,7 +85,7 @@ These expand to the C functions the loader resolves by symbol name: `koilo_modul
 
 ### Engine Services
 
-The `PtxEngineServices` struct passed to init provides engine functionality:
+The `KoiloEngineServices` struct passed to init provides engine functionality:
 
 ```c
 // Core (ABI v1)
@@ -97,10 +114,10 @@ svc->register_class(eng, &classDesc);
 svc->register_exports(eng, exports, count);
 ```
 
-Use `KL_HAS_API` to check availability before calling newer functions:
+Use `KOILO_HAS_API` to check availability before calling newer functions:
 
 ```c
-if (KL_HAS_API(svc, get_pixel_buffer) && svc->get_pixel_buffer) {
+if (KOILO_HAS_API(svc, get_pixel_buffer) && svc->get_pixel_buffer) {
     void* buf = svc->get_pixel_buffer(eng);
 }
 ```
@@ -109,15 +126,16 @@ if (KL_HAS_API(svc, get_pixel_buffer) && svc->get_pixel_buffer) {
 
 ## C++ API (Static Modules)
 
-C++ modules implement `IEngineModule` from `koilo/modules/module_api.hpp`:
+C++ modules implement `IModule` from `koilo/kernel/unified_module.hpp`:
 
 ```cpp
-class IEngineModule {
+class IModule {
 public:
     virtual ModuleInfo GetInfo() const = 0;
-    virtual bool Initialize(scripting::KoiloScriptEngine* engine) = 0;
+    virtual bool Initialize(KoiloKernel& kernel) = 0;
     virtual void Update(float dt) = 0;
-    virtual void Render(Color888* buffer, int width, int height) = 0;
+    virtual void Render(Color888* buf, int w, int h) {}   // optional
+    virtual void OnMessage(const Message& msg) {}          // optional
     virtual void Shutdown() = 0;
 };
 
@@ -134,18 +152,29 @@ Register with the module loader:
 loader.Register(std::make_unique<MyModule>());
 ```
 
-The engine pointer passed to `Initialize` provides access to all subsystems:
+The kernel reference passed to `Initialize` provides access to all subsystems via service registry:
 
 ```cpp
-bool MyModule::Initialize(scripting::KoiloScriptEngine* engine) {
-    engine_ = engine;
-    auto* sensor = new MySensor();
-    engine->RegisterGlobal("my_sensor", "MySensor", sensor);
+bool MyModule::Initialize(KoiloKernel& kernel) {
+    kernel_ = &kernel;
+    auto* engine = kernel.Services().Get<scripting::KoiloScriptEngine>("script");
+    engine->RegisterGlobal("my_sensor", "MySensor", &sensor_instance);
     return true;
 }
 ```
 
 `RegisterGlobal` looks up the class name in the reflection registry and exposes the instance to scripts under the given name.
+
+### Internal vs External Modules
+
+| | Internal (`IModule`) | External (C ABI `.so`) |
+|---|---|---|
+| Language | C++ | C or C++ |
+| Interface | `IModule` virtual class | `koilo_module_*` C symbols |
+| Access | Full kernel via `KoiloKernel&` | Limited via `KoiloEngineServices` |
+| Lifecycle | Compiled into engine | Loaded at runtime via `dlopen` |
+| Hot-reload | No | Yes (file mtime check) |
+| Use case | Engine subsystems | Plugins, mods, hardware drivers |
 
 ---
 

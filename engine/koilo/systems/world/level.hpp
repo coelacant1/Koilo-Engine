@@ -14,7 +14,7 @@
 #include <unordered_map>
 #include <koilo/core/math/vector3d.hpp>
 #include <koilo/registry/reflect_macros.hpp>
-#include <koilo/ecs/entity.hpp>
+#include <koilo/systems/ecs/entity.hpp>
 
 namespace koilo {
 

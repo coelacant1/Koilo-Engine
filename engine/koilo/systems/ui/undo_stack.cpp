@@ -21,33 +21,27 @@ PropertyChangeCommand::PropertyChangeCommand(void* instance,
     : instance_(instance)
     , access_(field.access)
     , size_(field.size)
-    , oldValue_(new uint8_t[field.size])
-    , newValue_(new uint8_t[field.size]) {
+    , oldValue_(field.size)
+    , newValue_(field.size) {
     // Snapshot current value
     const void* current = access_.get_cptr(instance_);
-    std::memcpy(oldValue_, current, size_);
-    std::memcpy(newValue_, newValue, size_);
+    std::memcpy(oldValue_.data(), current, size_);
+    std::memcpy(newValue_.data(), newValue, size_);
 
     name_ = "Change ";
     name_ += field.name;
 }
 
-// Release heap-allocated value snapshots.
-PropertyChangeCommand::~PropertyChangeCommand() {
-    delete[] oldValue_;
-    delete[] newValue_;
-}
-
 // Apply the new value to the target field.
 void PropertyChangeCommand::Execute() {
     void* dst = access_.get_ptr(instance_);
-    std::memcpy(dst, newValue_, size_);
+    std::memcpy(dst, newValue_.data(), size_);
 }
 
 // Restore the old value to the target field.
 void PropertyChangeCommand::Undo() {
     void* dst = access_.get_ptr(instance_);
-    std::memcpy(dst, oldValue_, size_);
+    std::memcpy(dst, oldValue_.data(), size_);
 }
 
 // ====================================================================

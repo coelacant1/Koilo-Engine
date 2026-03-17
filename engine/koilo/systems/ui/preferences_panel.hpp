@@ -14,6 +14,7 @@
 #include <vector>
 #include <koilo/systems/ui/settings_store.hpp>
 #include <koilo/systems/ui/ui_context.hpp>
+#include "../../registry/reflect_macros.hpp"
 
 namespace koilo {
 namespace ui {
@@ -84,6 +85,26 @@ private:
     int buttonRowIdx_ = -1; ///< Bottom button row widget index.
     std::string selectedCategory_; ///< Currently selected category name.
     std::vector<std::string> categories_; ///< Cached list of category names.
+
+    KL_BEGIN_FIELDS(PreferencesPanel)
+        /* No reflected fields. */
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(PreferencesPanel)
+        /* Unsupported overload: PreferencesPanel::if */
+        KL_METHOD_AUTO(PreferencesPanel, Hide, "Hide"),
+        /* Unsupported overload: PreferencesPanel::if */
+        KL_METHOD_AUTO(PreferencesPanel, IsVisible, "Is visible"),
+        KL_METHOD_AUTO(PreferencesPanel, SelectCategory, "Select category"),
+        KL_METHOD_AUTO(PreferencesPanel, RebuildContent, "Rebuild content"),
+        KL_METHOD_AUTO(PreferencesPanel, PanelIndex, "Panel index"),
+        KL_METHOD_AUTO(PreferencesPanel, SelectedCategory, "Selected category")
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(PreferencesPanel)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(PreferencesPanel)
+
 };
 
 } // namespace ui

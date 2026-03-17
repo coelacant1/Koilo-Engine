@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 #include <koilo/systems/ui/ui_context.hpp>
+#include "../../registry/reflect_macros.hpp"
 
 namespace koilo {
 namespace ui {
@@ -62,6 +63,21 @@ private:
     std::string  currentPath_;   ///< Full path string.
     std::vector<std::string> segments_; ///< Parsed path segments.
     NavigateCallback onNavigate_; ///< Navigation callback.
+
+    KL_BEGIN_FIELDS(Breadcrumb)
+        /* No reflected fields. */
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(Breadcrumb)
+        KL_METHOD_AUTO(Breadcrumb, RebuildSegments, "Rebuild segments"),
+        KL_METHOD_AUTO(Breadcrumb, CurrentPath, "Current path"),
+        KL_METHOD_AUTO(Breadcrumb, RowIndex, "Row index")
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(Breadcrumb)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(Breadcrumb)
+
 };
 
 } // namespace ui

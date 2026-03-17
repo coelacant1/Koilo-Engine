@@ -17,7 +17,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ENGINE_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-SDK_INCLUDE="$ENGINE_ROOT/engine/include"
+SDK_INCLUDE="$ENGINE_ROOT/engine"
 
 # Defaults
 TARGET="desktop"
@@ -42,7 +42,7 @@ Targets:
   teensy41  Build as .bin using arm-none-eabi-gcc (requires ARM toolchain)
 
 The SDK header (koilo_module_sdk.h) is included automatically from:
-  $SDK_INCLUDE/koilo/modules/
+  $SDK_INCLUDE/koilo/kernel/
 EOF
     exit 0
 }
@@ -89,8 +89,8 @@ if [[ ! -f "$SOURCE" ]]; then
     exit 1
 fi
 
-if [[ ! -f "$SDK_INCLUDE/koilo/modules/koilo_module_sdk.h" ]]; then
-    echo "Error: SDK header not found at $SDK_INCLUDE/koilo/modules/koilo_module_sdk.h" >&2
+if [[ ! -f "$SDK_INCLUDE/koilo/kernel/koilo_module_sdk.h" ]]; then
+    echo "Error: SDK header not found at $SDK_INCLUDE/koilo/kernel/koilo_module_sdk.h" >&2
     echo "Make sure you're running from a KoiloEngine project directory" >&2
     exit 1
 fi

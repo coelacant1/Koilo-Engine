@@ -50,21 +50,25 @@ namespace koilo {
 class MorphableMesh {
 private:
     KoiloMeshLoader loader_;
-    BlendshapeController* controller_ = nullptr;
+    std::unique_ptr<BlendshapeController> controller_;
     
     // Mesh geometry
-    StaticTriangleGroup* baseGeometry_ = nullptr;
-    TriangleGroup* workingGeometry_ = nullptr;
-    Mesh* mesh_ = nullptr;
+    std::unique_ptr<StaticTriangleGroup> baseGeometry_;
+    std::unique_ptr<TriangleGroup> workingGeometry_;
+    std::unique_ptr<Mesh> mesh_;
     
     // Morph target data (owned by this class)
     std::vector<std::unique_ptr<Blendshape>> blendshapes_;
     std::vector<std::unique_ptr<int[]>> morphIndices_;      // Owned index arrays
     std::vector<std::unique_ptr<Vector3D[]>> morphVectors_; // Owned vertex delta arrays
     
+    // Geometry arrays (owned, borrowed by StaticTriangleGroup)
+    std::vector<Vector3D> vertexData_;
+    std::vector<IndexGroup> indexData_;
+    
     // UV data (owned by this class)
-    Vector2D* uvVertices_ = nullptr;
-    IndexGroup* uvIndices_ = nullptr;
+    std::vector<Vector2D> uvVertices_;
+    std::vector<IndexGroup> uvIndices_;
     
     // Name to blendshape mapping
     std::map<std::string, uint16_t> morphNameToId_;

@@ -21,6 +21,7 @@
 #include <vector>
 #include <unordered_map>
 #include <functional>
+#include "../../../registry/reflect_macros.hpp"
 
 namespace koilo {
 namespace ui {
@@ -31,6 +32,19 @@ struct BuildResult {
     int rootWidgetIdx = -1;          ///< root widget index, -1 on failure
     std::vector<ParseError> errors;  ///< accumulated errors
     int widgetsCreated = 0;          ///< total widgets created
+
+    KL_BEGIN_FIELDS(BuildResult)
+        KL_FIELD(BuildResult, rootWidgetIdx, "Root widget idx", -2147483648, 2147483647)
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(BuildResult)
+        /* No reflected methods. */
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(BuildResult)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(BuildResult)
+
 };
 
 /** @class KMLBuilder @brief Converts parsed KML/KSS into a UIContext widget tree. */
@@ -60,6 +74,19 @@ private:
         int childIndex = 0;     ///< index among parent's children
         int siblingCount = 0;   ///< total siblings (including self)
         std::string inlineStyle; ///< raw style="" attribute for re-application
+
+        KL_BEGIN_FIELDS(WidgetMeta)
+            KL_FIELD(WidgetMeta, widgetIdx, "Widget idx", -2147483648, 2147483647)
+        KL_END_FIELDS
+
+        KL_BEGIN_METHODS(WidgetMeta)
+            /* No reflected methods. */
+        KL_END_METHODS
+
+        KL_BEGIN_DESCRIBE(WidgetMeta)
+            /* No reflected ctors. */
+        KL_END_DESCRIBE(WidgetMeta)
+
     };
     std::vector<WidgetMeta> metas_; ///< per-widget selector metadata
 
@@ -113,6 +140,19 @@ private:
     float viewportW_ = 1280.0f;  ///< viewport width for vw resolution
     float viewportH_ = 720.0f;   ///< viewport height for vh resolution
     float rootFontSize_ = 14.0f;  ///< root font size for rem resolution
+
+    KL_BEGIN_FIELDS(KMLBuilder)
+        /* No reflected fields. */
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(KMLBuilder)
+        /* No reflected methods. */
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(KMLBuilder)
+        /* Requires references - no reflected ctors. */
+    KL_END_DESCRIBE(KMLBuilder)
+
 };
 
 } // namespace markup

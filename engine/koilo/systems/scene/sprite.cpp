@@ -10,14 +10,11 @@ Sprite::Sprite(Texture* texture, float width, float height) {
     Build(texture, width, height);
 }
 
-Sprite::~Sprite() {
-    delete material_;
-}
+Sprite::~Sprite() = default;
 
 void Sprite::Init(Texture* texture, float width, float height) {
     if (initialized_) {
-        delete material_;
-        material_ = nullptr;
+        material_.reset();
     }
     Build(texture, width, height);
 }
@@ -25,9 +22,9 @@ void Sprite::Init(Texture* texture, float width, float height) {
 void Sprite::Build(Texture* texture, float width, float height) {
     quad_.CreateTexturedQuad(width, height);
     texture_ = texture;
-    material_ = new KSLMaterial("texture");
+    material_ = std::make_unique<KSLMaterial>("texture");
     if (quad_.GetMesh()) {
-        quad_.GetMesh()->SetMaterial(material_);
+        quad_.GetMesh()->SetMaterial(material_.get());
     }
     initialized_ = true;
 }
@@ -76,7 +73,7 @@ bool Sprite::IsEnabled() const {
 }
 
 KSLMaterial* Sprite::GetMaterial() {
-    return material_;
+    return material_.get();
 }
 
 } // namespace koilo

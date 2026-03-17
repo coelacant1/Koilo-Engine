@@ -4,6 +4,8 @@
  * @brief Implementation of OpenGLRenderBackend unit tests.
  */
 
+#ifdef KL_HAVE_OPENGL_BACKEND
+
 #include "testopenglrenderbackend.hpp"
 
 using namespace koilo;
@@ -79,3 +81,5 @@ void TestOpenGLRenderBackend::RunAllTests() {
     RUN_TEST(TestGetName);
     RUN_TEST(TestEdgeCases);
 }
+
+#endif // KL_HAVE_OPENGL_BACKEND

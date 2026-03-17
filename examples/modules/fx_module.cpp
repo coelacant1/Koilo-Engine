@@ -12,7 +12,7 @@
  *        -I engine/include -std=c++17 -o fx_module.so fx_module.cpp
  */
 
-#include <koilo/modules/module_api.hpp>
+#include <koilo/kernel/module_api.hpp>
 #include <cmath>
 #include <cstdint>
 

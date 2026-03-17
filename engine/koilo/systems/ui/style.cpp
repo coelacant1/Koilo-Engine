@@ -144,12 +144,12 @@ Style Theme::LerpStyle(const Style& a, const Style& b, float t) {
     r.accentColor = LerpColor(a.accentColor, b.accentColor, t);
     r.placeholderColor = LerpColor(a.placeholderColor, b.placeholderColor, t);
     r.border.color = LerpColor(a.border.color, b.border.color, t);
-    r.border.width = Lerp(a.border.width, b.border.width, t);
-    r.border.radiusTL = Lerp(a.border.radiusTL, b.border.radiusTL, t);
-    r.border.radiusTR = Lerp(a.border.radiusTR, b.border.radiusTR, t);
-    r.border.radiusBR = Lerp(a.border.radiusBR, b.border.radiusBR, t);
-    r.border.radiusBL = Lerp(a.border.radiusBL, b.border.radiusBL, t);
-    r.opacity = Lerp(a.opacity, b.opacity, t);
+    r.border.width = Mathematics::Lerp(a.border.width, b.border.width, t);
+    r.border.radiusTL = Mathematics::Lerp(a.border.radiusTL, b.border.radiusTL, t);
+    r.border.radiusTR = Mathematics::Lerp(a.border.radiusTR, b.border.radiusTR, t);
+    r.border.radiusBR = Mathematics::Lerp(a.border.radiusBR, b.border.radiusBR, t);
+    r.border.radiusBL = Mathematics::Lerp(a.border.radiusBL, b.border.radiusBL, t);
+    r.opacity = Mathematics::Lerp(a.opacity, b.opacity, t);
     return r;
 }
 

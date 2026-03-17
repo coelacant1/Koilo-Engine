@@ -14,23 +14,42 @@
  *   }
  *
  * Command-line flags:
- *   --software    Force software rendering
- *   --uncapped    Disable frame rate cap (ignore script SetTargetFPS)
- *   --no-profiler Disable the performance profiler
- *   --profiler    Enable profiler with periodic terminal reports
- *   --vsync       Enable vertical sync
+ *   --script <path>       Path to .ks script file
+ *   --title <name>        Window title (default: "KoiloEngine")
+ *   --software            Force software rendering
+ *   --uncapped            Disable frame rate cap (ignore script SetTargetFPS)
+ *   --no-profiler         Disable the performance profiler
+ *   --profiler            Enable profiler with periodic terminal reports
+ *   --vsync               Enable vertical sync
+ *   --modules-dir <path>  Pre-load .so modules from directory
+ *   --console             Start with dev console enabled
  */
 
 #include <koilo/scripting/koiloscript_engine.hpp>
+#include <koilo/kernel/module_loader.hpp>
+#include <koilo/kernel/kernel.hpp>
+#include <koilo/kernel/register_services.hpp>
 #include <koilo/systems/ui/ui.hpp>
+#include <koilo/systems/render/core/pixelgroup.hpp>
+#include <koilo/systems/scene/camera/camera.hpp>
+#include <koilo/systems/scene/camera/cameralayout.hpp>
+#include <koilo/systems/scene/scene.hpp>
+#include <koilo/systems/render/canvas2d.hpp>
+#include <koilo/systems/render/irenderbackend.hpp>
+#include <koilo/systems/render/igpu_render_backend.hpp>
+#include <koilo/systems/display/igpu_display_backend.hpp>
 #include <koilo/platform/sdl3_input_helper.hpp>
 #include <koilo/platform/desktop_file_reader.hpp>
 #include <koilo/core/platform/thread_affinity.hpp>
 #include <koilo/core/time/timemanager.hpp>
+#ifdef KL_HAVE_OPENGL_BACKEND
 #include <koilo/systems/display/backends/gpu/openglbackend.hpp>
+#endif
+#ifdef KL_HAVE_VULKAN_BACKEND
+#include <koilo/systems/display/backends/gpu/vulkanbackend.hpp>
+#endif
 #include <koilo/systems/display/framebuffer.hpp>
 #include <koilo/systems/render/gl/render_backend_factory.hpp>
-#include <koilo/systems/render/gl/opengl_render_backend.hpp>
 #include <koilo/systems/profiling/performanceprofiler.hpp>
 #include <SDL3/SDL.h>
 #include <cstdio>
@@ -38,6 +57,7 @@
 #include <chrono>
 #include <thread>
 #include <algorithm>
+#include <atomic>
 
 namespace koilo {
 
@@ -46,30 +66,63 @@ struct SDL3Host {
     const char* scriptPath  = nullptr;
     const char* windowTitle = "KoiloEngine";
 
-    // Defaults (overridable before Run)
+    // Defaults (overridable before Run or via CLI flags)
     bool enableProfiler  = false;
     bool enableVSync     = false;
     bool forceSoftware   = false;
     bool forceUncapped   = false;
+    bool enableConsole   = false;
+    bool preferVulkan    = false;
     int  profilerInterval = 120;  // Print report every N frames (0 = never)
+    const char* modulesDir = nullptr;
+    std::atomic<bool>* externalStop = nullptr;  // If set, RunLoop exits when *externalStop == false
 
     int Run(int argc, char** argv) {
         ParseArgs(argc, argv);
 
         platform::PinToPerformanceCore();
         platform::DesktopFileReader reader;
+        KoiloKernel kernel;
         scripting::KoiloScriptEngine engine(&reader);
+        engine.SetKernel(&kernel);
+        kernel.Services().Register("script", &engine);
+        kernel.Services().Register("script_bridge", static_cast<IScriptBridge*>(&engine));
+        RegisterCoreServices(kernel);
+
+        if (modulesDir) {
+            int loaded = engine.GetModuleLoader().ScanAndLoad(modulesDir);
+            printf("[koilo] Loaded %d module(s) from %s\n", loaded, modulesDir);
+        }
 
         if (!LoadAndBuild(engine)) return 1;
-        return RunLoop(argc, argv, engine);
+        int rc = RunLoop(argc, argv, engine, kernel);
+        kernel.Shutdown();
+        return rc;
     }
 
     // For hosts that need to configure the engine before loading (e.g. modules)
     int RunWithEngine(int argc, char** argv,
                       scripting::KoiloScriptEngine& engine) {
         ParseArgs(argc, argv);
+        KoiloKernel kernel;
+        engine.SetKernel(&kernel);
+        kernel.Services().Register("script", &engine);
+        kernel.Services().Register("script_bridge", static_cast<IScriptBridge*>(&engine));
+        RegisterCoreServices(kernel);
         if (!LoadAndBuild(engine)) return 1;
-        return RunLoop(argc, argv, engine);
+        int rc = RunLoop(argc, argv, engine, kernel);
+        kernel.Shutdown();
+        return rc;
+    }
+
+    /// Run display using an externally-owned kernel and engine.
+    /// The caller is responsible for kernel lifecycle (init, shutdown).
+    int RunWithKernel(int argc, char** argv,
+                      scripting::KoiloScriptEngine& engine,
+                      KoiloKernel& kernel) {
+        ParseArgs(argc, argv);
+        if (!LoadAndBuild(engine)) return 1;
+        return RunLoop(argc, argv, engine, kernel);
     }
 
 private:
@@ -87,7 +140,8 @@ private:
     }
 
     int RunLoop(int /*argc*/, char** /*argv*/,
-                scripting::KoiloScriptEngine& engine) {
+                scripting::KoiloScriptEngine& engine,
+                KoiloKernel& kernel) {
         auto info = engine.GetDisplayInfo();
         int winW = info.width      > 0 ? info.width      : 960;
         int winH = info.height     > 0 ? info.height     : 540;
@@ -100,22 +154,55 @@ private:
         if (capFPS && info.targetFPS > 0.0f)
             targetFrameTime = 1.0f / info.targetFPS;
 
-        // Create display
-        OpenGLBackend display(winW, winH, windowTitle, false, true);
-        if (!display.Initialize()) {
-            printf("Failed to initialize OpenGL display backend\n");
-            return 1;
+        // Create display backend
+        std::unique_ptr<IDisplayBackend> displayOwner;
+        IGPUDisplayBackend* gpuDisplayPtr = nullptr;
+#ifdef KL_HAVE_VULKAN_BACKEND
+        VulkanBackend* vkDisplay = nullptr;
+        if (preferVulkan) {
+            auto vk = std::make_unique<VulkanBackend>(
+                static_cast<uint32_t>(winW), static_cast<uint32_t>(winH),
+                std::string(windowTitle), false, true);
+            if (vk->Initialize()) {
+                vkDisplay = vk.get();
+                gpuDisplayPtr = vk.get();
+                displayOwner = std::move(vk);
+            } else {
+                printf("[SDL3Host] Vulkan init failed, falling back to OpenGL\n");
+            }
         }
-        display.SetVSyncEnabled(enableVSync);
-        if (forceSoftware) display.SetNearestFiltering(true);
+#endif
+        if (!displayOwner) {
+#ifdef KL_HAVE_OPENGL_BACKEND
+            auto gl = std::make_unique<OpenGLBackend>(winW, winH, windowTitle, false, true);
+            if (!gl->Initialize()) {
+                printf("Failed to initialize OpenGL display backend\n");
+                return 1;
+            }
+            gpuDisplayPtr = gl.get();
+            displayOwner = std::move(gl);
+#else
+            printf("No display backend available (Vulkan failed, OpenGL not compiled)\n");
+            return 1;
+#endif
+        }
+        IGPUDisplayBackend& gpuDisplay = *gpuDisplayPtr;
+        gpuDisplay.SetVSyncEnabled(enableVSync);
+        if (forceSoftware) gpuDisplay.SetNearestFiltering(true);
 
         // Select render backend
-        if (!forceSoftware)
-            engine.SetRenderBackend(CreateBestRenderBackend());
-        else
+        if (!forceSoftware) {
+#ifdef KL_HAVE_VULKAN_BACKEND
+            if (vkDisplay)
+                engine.SetRenderBackend(TryCreateVulkanRenderBackend(vkDisplay));
+            else
+#endif
+                engine.SetRenderBackend(CreateBestRenderBackend());
+        } else {
             engine.SetRenderBackend(CreateBestSoftwareBackend());
+        }
 
-        auto* gpuBackend = dynamic_cast<OpenGLRenderBackend*>(engine.GetRenderBackend());
+        auto* gpuBackend = dynamic_cast<IGPURenderBackend*>(engine.GetRenderBackend());
 
         // Profiler
         auto& profiler = PerformanceProfiler::GetInstance();
@@ -136,6 +223,8 @@ private:
         double estMaxFPS     = 0.0;
 
         while (running) {
+            if (externalStop && !externalStop->load(std::memory_order_relaxed))
+                { running = false; break; }
             if (enableProfiler) profiler.BeginFrame();
 
             uint64_t now = SDL_GetPerformanceCounter();
@@ -148,14 +237,19 @@ private:
             bool uiIdle = uiPtr && uiPtr->IsIdle();
             bool sceneActive = engine.GetScene() != nullptr;
 
-            // Events -- use blocking wait when UI-only and idle to save CPU/GPU
+            // Events - use blocking wait when UI-only and idle to save CPU/GPU
             SDL_Event e;
             bool hadEvents = false;
+            auto checkStop = [&]() {
+                if (externalStop && !externalStop->load(std::memory_order_relaxed))
+                    running = false;
+            };
             if (!sceneActive && uiIdle) {
                 // Block up to 16ms waiting for input events
                 if (SDL_WaitEventTimeout(&e, 16)) {
                     hadEvents = true;
-                    do {
+                    checkStop();
+                    if (running) do {
                         if (e.type == SDL_EVENT_QUIT) { running = false; break; }
                         if (e.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED)
                             { running = false; break; }
@@ -166,6 +260,8 @@ private:
                         if (!HandleSDL3Event(engine, e))
                             running = false;
                     } while (running && SDL_PollEvent(&e));
+                } else {
+                    checkStop();
                 }
             } else {
                 while (SDL_PollEvent(&e)) {
@@ -176,18 +272,11 @@ private:
                     if (e.type == SDL_EVENT_WINDOW_RESIZED) {
                         winW = e.window.data1;
                         winH = e.window.data2;
-                        // Re-render immediately during resize for smooth feedback
-                        if (gpuBackend) {
-                            engine.RenderFrameGPU();
-                            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-                            glViewport(0, 0, winW, winH);
-                            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-                            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-                            gpuBackend->BlitToScreen(winW, winH);
-                            gpuBackend->CompositeCanvasOverlays(winW, winH);
-                            engine.RenderUIOverlay(winW, winH, dt);
-                            display.SwapOnly();
+#ifdef KL_HAVE_VULKAN_BACKEND
+                        if (vkDisplay) {
+                            vkDisplay->NotifyResized();
                         }
+#endif
                     }
                     if (!HandleSDL3Event(engine, e))
                         running = false;
@@ -204,11 +293,13 @@ private:
             }
 
             uint64_t workStart = SDL_GetPerformanceCounter();
+            kernel.BeginFrame();
 
             if (gpuBackend) {
-                if (!firstFrame) display.SwapOnly();
+                if (!firstFrame) gpuDisplay.SwapOnly();
                 firstFrame = false;
 
+                kernel.Tick(dt);
                 engine.ExecuteUpdate();
                 if (engine.HasError()) {
                     printf("Script error: %s\n", engine.GetError());
@@ -216,17 +307,29 @@ private:
                 }
 
                 engine.RenderFrameGPU();
-                // Ensure default framebuffer is bound and cleared before
-                // compositing the scene, canvas overlays, and UI.
-                glBindFramebuffer(GL_FRAMEBUFFER, 0);
-                glViewport(0, 0, winW, winH);
-                glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                gpuDisplay.PrepareDefaultFramebuffer(winW, winH);
                 gpuBackend->BlitToScreen(winW, winH);
                 gpuBackend->CompositeCanvasOverlays(winW, winH);
-                engine.RenderUIOverlay(winW, winH, dt);
+#ifdef KL_HAVE_VULKAN_BACKEND
+                if (vkDisplay) {
+                    // Vulkan UI: render into the active swapchain render pass
+                    if (uiPtr) {
+                        engine.UpdateUIAnimations(dt);
+                        if (!uiPtr->InitializeVulkanGPU(vkDisplay)) {
+                            // Vulkan UI init failed - skip UI rendering
+                        } else {
+                            VkCommandBuffer cmd = vkDisplay->BeginFrame();
+                            if (cmd) uiPtr->RenderVulkanGPU(winW, winH, cmd);
+                        }
+                    }
+                } else
+#endif
+                {
+                    engine.RenderUIOverlay(winW, winH, dt);
+                }
             } else {
                 // Software render path
+                kernel.Tick(dt);
                 engine.ExecuteUpdate();
                 if (engine.HasError()) {
                     printf("Script error: %s\n", engine.GetError());
@@ -238,9 +341,11 @@ private:
                 Framebuffer framebuffer(
                     reinterpret_cast<uint8_t*>(fb.data()),
                     pixW, pixH, PixelFormat::RGB888);
-                display.PresentNoSwap(framebuffer);
-                display.SwapOnly();
+                gpuDisplay.PresentNoSwap(framebuffer);
+                gpuDisplay.SwapOnly();
             }
+
+            kernel.EndFrame();
 
             uint64_t workEnd = SDL_GetPerformanceCounter();
             double workMs = static_cast<double>(workEnd - workStart) /
@@ -286,18 +391,36 @@ private:
             }
         }
 
-        if (!firstFrame) display.SwapOnly();
-        display.Shutdown();
+        if (!firstFrame) gpuDisplay.SwapOnly();
+
+        // Shut down render backend and UI GPU resources before display backend
+        // so Vulkan resources are destroyed while the VkDevice is still alive.
+        engine.SetRenderBackend(nullptr);
+#ifdef KL_HAVE_VULKAN_BACKEND
+        if (UI* ui = engine.GetUI()) ui->ShutdownVulkanGPU();
+#endif
+
+        displayOwner->Shutdown();
         return 0;
     }
 
     void ParseArgs(int argc, char** argv) {
         for (int i = 1; i < argc; ++i) {
-            if (std::strcmp(argv[i], "--software") == 0)    forceSoftware = true;
+            if (std::strcmp(argv[i], "--software") == 0)         forceSoftware = true;
             else if (std::strcmp(argv[i], "--uncapped") == 0)    forceUncapped = true;
             else if (std::strcmp(argv[i], "--profiler") == 0)    enableProfiler = true;
             else if (std::strcmp(argv[i], "--no-profiler") == 0) enableProfiler = false;
             else if (std::strcmp(argv[i], "--vsync") == 0)       enableVSync = true;
+            else if (std::strcmp(argv[i], "--script") == 0 && i + 1 < argc)
+                scriptPath = argv[++i];
+            else if (std::strcmp(argv[i], "--title") == 0 && i + 1 < argc)
+                windowTitle = argv[++i];
+            else if (std::strcmp(argv[i], "--modules-dir") == 0 && i + 1 < argc)
+                modulesDir = argv[++i];
+            else if (std::strcmp(argv[i], "--console") == 0)
+                enableConsole = true;
+            else if (std::strcmp(argv[i], "--vulkan") == 0)
+                preferVulkan = true;
         }
     }
 };

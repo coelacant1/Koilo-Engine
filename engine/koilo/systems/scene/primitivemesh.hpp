@@ -15,6 +15,8 @@
 #include <koilo/core/math/vector3d.hpp>
 #include <koilo/core/math/vector2d.hpp>
 #include <koilo/registry/reflect_macros.hpp>
+#include <memory>
+#include <vector>
 
 namespace koilo {
 
@@ -36,13 +38,13 @@ public:
     bool HasUV() const;
 
 private:
-    Mesh* mesh_ = nullptr;
-    StaticTriangleGroup* baseGeometry_ = nullptr;
-    TriangleGroup* workingGeometry_ = nullptr;
-    Vector3D* vertices_ = nullptr;
-    IndexGroup* indices_ = nullptr;
-    Vector2D* uvVertices_ = nullptr;
-    IndexGroup* uvIndices_ = nullptr;
+    std::unique_ptr<Mesh> mesh_;
+    std::unique_ptr<StaticTriangleGroup> baseGeometry_;
+    std::unique_ptr<TriangleGroup> workingGeometry_;
+    std::vector<Vector3D> vertices_;
+    std::vector<IndexGroup> indices_;
+    std::vector<Vector2D> uvVertices_;
+    std::vector<IndexGroup> uvIndices_;
 
     void Cleanup();
 

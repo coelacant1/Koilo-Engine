@@ -5,6 +5,14 @@
 #include <koilo/scripting/value_marshaller.hpp>
 #include <koilo/scripting/display_config.hpp>
 #include <koilo/registry/ensure_registration.hpp>
+#include <koilo/systems/render/irenderbackend.hpp>
+#include <koilo/systems/render/igpu_render_backend.hpp>
+#include <koilo/systems/render/gl/software_render_backend.hpp>
+#include <koilo/systems/render/core/pixelgroup.hpp>
+#include <koilo/systems/scene/camera/camera.hpp>
+#include <koilo/systems/scene/camera/cameralayout.hpp>
+#include <koilo/systems/scene/scene.hpp>
+#include <koilo/systems/render/canvas2d.hpp>
 #include <koilo/systems/scene/morphablemesh.hpp>
 #include <koilo/systems/scene/primitivemesh.hpp>
 #include <koilo/systems/render/raster/rasterizer.hpp>
@@ -14,17 +22,19 @@
 #include <koilo/debug/debugrenderer.hpp>
 #include <koilo/systems/render/sky/sky.hpp>
 #include <koilo/systems/physics/physicsworld.hpp>
+#include <koilo/systems/physics/physics_module.hpp>
 #include <koilo/systems/ui/ui.hpp>
 #ifdef KOILO_ENABLE_PARTICLES
 #include <koilo/systems/particles/particlesystem.hpp>
 #endif
 #ifdef KOILO_ENABLE_AI
 #include <koilo/systems/ai/script_ai_manager.hpp>
+#include <koilo/systems/ai/ai_module.hpp>
 #endif
 #ifdef KOILO_ENABLE_AUDIO
 #include <koilo/systems/audio/script_audio_manager.hpp>
+#include <koilo/systems/audio/audio_module.hpp>
 #endif
-#include <koilo/systems/render/gl/opengl_render_backend.hpp>
 #include <cstring>
 #include <cstdio>
 #include <algorithm>
@@ -60,13 +70,34 @@ KoiloScriptEngine::~KoiloScriptEngine() {
         delete mesh;
     }
     ownedMeshes_.clear();
-    // Shutdown directly-owned subsystems
-    delete physicsWorld_; physicsWorld_ = nullptr;
-    delete ui_; ui_ = nullptr;
-    delete particleSystem_; particleSystem_ = nullptr;
-    delete aiManager_; aiManager_ = nullptr;
-    delete audioManager_; audioManager_ = nullptr;
+    // Shutdown module-managed systems first
     moduleLoader_.ShutdownAll();
+    // Directly-owned subsystems cleaned up by unique_ptr destructors
+}
+
+// --- Module-backed system accessors ------------------------------------------
+
+PhysicsWorld* KoiloScriptEngine::GetPhysicsWorld() {
+    auto* mod = dynamic_cast<PhysicsModule*>(moduleLoader_.GetModule("physics"));
+    return mod ? mod->GetWorld() : nullptr;
+}
+
+ScriptAIManager* KoiloScriptEngine::GetAI() {
+#ifdef KOILO_ENABLE_AI
+    auto* mod = dynamic_cast<AIModule*>(moduleLoader_.GetModule("ai"));
+    return mod ? mod->GetManager() : nullptr;
+#else
+    return nullptr;
+#endif
+}
+
+ScriptAudioManager* KoiloScriptEngine::GetAudio() {
+#ifdef KOILO_ENABLE_AUDIO
+    auto* mod = dynamic_cast<AudioModule*>(moduleLoader_.GetModule("audio"));
+    return mod ? mod->GetManager() : nullptr;
+#else
+    return nullptr;
+#endif
 }
 
 bool KoiloScriptEngine::LoadScript(const char* filepath) {
@@ -240,7 +271,9 @@ bool KoiloScriptEngine::BuildScene() {
     RegisterWorldGlobal();
     
     // Initialize external modules (if any loaded via ELF)
-    moduleLoader_.InitializeAll(this);
+    if (kernel_) {
+        moduleLoader_.InitializeAll(*kernel_);
+    }
     
     // Call fn Setup() if defined - loads assets, builds scene objects
     if (compiledScript_ && vm_) {
@@ -283,7 +316,6 @@ void KoiloScriptEngine::ExecuteUpdate() {
     inputManager_.Update();
     
     // Update core subsystems
-    if (physicsWorld_) physicsWorld_->Step();
 #ifdef KOILO_ENABLE_PARTICLES
     if (particleSystem_) particleSystem_->Update();
 #endif
@@ -767,6 +799,22 @@ void KoiloScriptEngine::SetScriptVariable(const std::string& name, const Value& 
     SetVariable(name, value);
 }
 
+void KoiloScriptEngine::SetScriptVariable(const std::string& name, double value) {
+    SetVariable(name, Value(value));
+}
+
+double KoiloScriptEngine::GetScriptVariableNum(const std::string& name) const {
+    Value v = GetVariable(name);
+    return (v.type == Value::Type::NUMBER) ? v.numberValue : 0.0;
+}
+
+void KoiloScriptEngine::SetRenderBackend(std::unique_ptr<IRenderBackend> backend) {
+    renderBackend_ = std::move(backend);
+    if (renderBackend_ && !renderBackend_->IsInitialized()) {
+        renderBackend_->Initialize();
+    }
+}
+
 void KoiloScriptEngine::DeclareVariable(const std::string& name, const Value& value) {
     // If declaring with a constructed object, promote it to persistent
     if (value.type == Value::Type::OBJECT && !value.objectName.empty()) {
@@ -836,7 +884,7 @@ void KoiloScriptEngine::RenderFrame(Color888* buffer, int width, int height) {
         }
         {
             KL_PROFILE_SCOPE("Rasterize");
-            renderBackend_->Render(scene_, camera_);
+            renderBackend_->Render(scene_.get(), camera_.get());
         }
         renderBackend_->ReadPixels(buffer, width, height);
 
@@ -857,7 +905,7 @@ void KoiloScriptEngine::RenderFrame(Color888* buffer, int width, int height) {
                                  clamp255(c.b * 255.0f)),
                         line.depthTest, buffer, width, height);
                 }
-                DebugRenderer::Render(dd, camera_, buffer, width, height,
+                DebugRenderer::Render(dd, camera_.get(), buffer, width, height,
                                       nullptr, 0, 0,
                                       /*renderLines=*/false);
                 dd.Update();
@@ -884,11 +932,11 @@ void KoiloScriptEngine::RenderFrameGPU() {
     KL_PROFILE_SCOPE("RenderFrame");
     if (!scene_ || !camera_ || !renderBackend_) return;
     // Use RenderDirect to skip PBO readback - FBO stays on GPU for BlitToScreen
-    auto* glBackend = dynamic_cast<OpenGLRenderBackend*>(renderBackend_.get());
-    if (glBackend) {
-        glBackend->RenderDirect(scene_, camera_);
+    auto* gpuBackend = dynamic_cast<IGPURenderBackend*>(renderBackend_.get());
+    if (gpuBackend) {
+        gpuBackend->RenderDirect(scene_.get(), camera_.get());
     } else {
-        renderBackend_->Render(scene_, camera_);
+        renderBackend_->Render(scene_.get(), camera_.get());
     }
     // Expire one-frame debug primitives (grid, axes, etc.)
     auto& dd = DebugDraw::GetInstance();
@@ -896,6 +944,7 @@ void KoiloScriptEngine::RenderFrameGPU() {
 }
 
 void KoiloScriptEngine::RenderUIOverlay(int viewportW, int viewportH, float dt) {
+#ifdef KL_HAVE_OPENGL_BACKEND
     if (!ui_) return;
     // Skip UI initialization and rendering if no UI content was loaded.
     // The UI constructor always creates a __root panel (index >= 0), so
@@ -911,6 +960,9 @@ void KoiloScriptEngine::RenderUIOverlay(int viewportW, int viewportH, float dt) 
     ui_->UpdateAnimations(dt);
     if (!ui_->InitializeGPU()) return;
     ui_->RenderGPU(viewportW, viewportH);
+#else
+    (void)viewportW; (void)viewportH; (void)dt;
+#endif
 }
 
 void KoiloScriptEngine::UpdateUIAnimations(float dt) {

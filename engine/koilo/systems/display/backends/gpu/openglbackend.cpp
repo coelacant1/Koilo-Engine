@@ -250,6 +250,13 @@ void koilo::OpenGLBackend::SwapOnly() {
     if (window_) SDL_GL_SwapWindow(window_);
 }
 
+void koilo::OpenGLBackend::PrepareDefaultFramebuffer(int width, int height) {
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, width, height);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
 bool koilo::OpenGLBackend::PresentNoSwap(const Framebuffer& fb) {
     if (!initialized_ || !fb.IsValid()) return false;
     framebufferWidth_ = fb.width;

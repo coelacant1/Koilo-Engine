@@ -20,6 +20,7 @@
 #include "indexgroup.hpp"
 #include "istatictrianglegroup.hpp"
 #include <koilo/registry/reflect_macros.hpp>
+#include <vector>
 
 
 namespace koilo {
@@ -32,7 +33,7 @@ namespace koilo {
  */
 class StaticTriangleGroup : public IStaticTriangleGroup {
 private:
-    Triangle3D* triangles; ///< Array of 3D triangles in the group.
+    std::vector<Triangle3D> triangles; ///< Array of 3D triangles in the group.
     Vector3D* vertices; ///< Array of vertex positions.
     const IndexGroup* indexGroup; ///< Index group defining triangle vertex indices.
     const IndexGroup* uvIndexGroup; ///< Index group for UV coordinates (if available).

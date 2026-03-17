@@ -17,6 +17,7 @@
 #include <cmath>
 #include <string>
 #include <functional>
+#include <vector>
 #include <koilo/registry/reflect_macros.hpp>
 #include <koilo/systems/ui/icon_ids.hpp>
 #include "drag_drop.hpp"
@@ -45,15 +46,12 @@ public:
     static constexpr size_t MAX_LEN  = 63;         ///< Maximum length of a single interned string.
     static constexpr size_t ENTRY_SIZE = MAX_LEN + 1; ///< Storage size per entry including null terminator.
 
-    StringTable() {
-        hashes_ = new uint32_t[CAPACITY]();
-        strings_ = new char[CAPACITY * ENTRY_SIZE]();
+    StringTable()
+        : hashes_(CAPACITY, 0)
+        , strings_(CAPACITY * ENTRY_SIZE, '\0') {
     }
 
-    ~StringTable() {
-        delete[] hashes_;
-        delete[] strings_;
-    }
+    ~StringTable() = default;
 
     StringTable(const StringTable&) = delete;
     StringTable& operator=(const StringTable&) = delete;
@@ -74,13 +72,13 @@ public:
                 hashes_[i] = hash;
                 size_t len = strlen(str);
                 if (len > MAX_LEN) len = MAX_LEN;
-                char* dest = strings_ + i * ENTRY_SIZE;
+                char* dest = &strings_[i * ENTRY_SIZE];
                 memcpy(dest, str, len);
                 dest[len] = '\0';
                 count_++;
                 return hash;
             }
-            if (hashes_[i] == hash && strcmp(strings_ + i * ENTRY_SIZE, str) == 0) {
+            if (hashes_[i] == hash && strcmp(&strings_[i * ENTRY_SIZE], str) == 0) {
                 return hash;
             }
         }
@@ -98,7 +96,7 @@ public:
         for (size_t probe = 0; probe < CAPACITY; ++probe) {
             uint32_t i = (idx + probe) & (CAPACITY - 1);
             if (hashes_[i] == 0) return "";
-            if (hashes_[i] == id) return strings_ + i * ENTRY_SIZE;
+            if (hashes_[i] == id) return &strings_[i * ENTRY_SIZE];
         }
         return "";
     }
@@ -107,9 +105,22 @@ public:
     size_t Count() const { return count_; }
 
 private:
-    uint32_t* hashes_ = nullptr;  ///< Hash table for string lookups.
-    char* strings_ = nullptr;     ///< Contiguous storage for interned string data.
+    std::vector<uint32_t> hashes_;  ///< Hash table for string lookups.
+    std::vector<char> strings_;    ///< Contiguous storage for interned string data.
     size_t count_ = 0;            ///< Current number of interned strings.
+
+    KL_BEGIN_FIELDS(StringTable)
+        /* No reflected fields - internal hash table. */
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(StringTable)
+        KL_METHOD_AUTO(StringTable, Count, "Count")
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(StringTable)
+        /* Non-copyable - no reflected ctors. */
+    KL_END_DESCRIBE(StringTable)
+
 };
 
 // --- Widget Types ---
@@ -249,6 +260,19 @@ struct LayoutParams {
     float spacing = 0.0f;  ///< Spacing between children in pixels.
     bool wrap = false;     ///< Whether children wrap to the next line.
     bool isGrid = false;   ///< True if this container uses grid layout.
+
+    KL_BEGIN_FIELDS(LayoutParams)
+        KL_FIELD(LayoutParams, direction, "Direction", 0, 0)
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(LayoutParams)
+        /* No reflected methods. */
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(LayoutParams)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(LayoutParams)
+
 };
 
 /**
@@ -259,6 +283,19 @@ struct GridTrackDef {
     enum class Type : uint8_t { Px, Fr, Auto, MinContent, MaxContent };
     Type type = Type::Auto;  ///< Track sizing strategy.
     float value = 0.0f;      ///< Pixel value or fractional unit (fr).
+
+    KL_BEGIN_FIELDS(GridTrackDef)
+        KL_FIELD(GridTrackDef, type, "Type", 0, 0)
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(GridTrackDef)
+        /* No reflected methods. */
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(GridTrackDef)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(GridTrackDef)
+
 };
 
 /**
@@ -273,6 +310,19 @@ struct GridLayout {
     int rowCount = 0;      ///< Number of defined rows.
     float columnGap = 0.0f; ///< Gap between columns in pixels.
     float rowGap = 0.0f;    ///< Gap between rows in pixels.
+
+    KL_BEGIN_FIELDS(GridLayout)
+        /* No reflected fields. */
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(GridLayout)
+        /* No reflected methods. */
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(GridLayout)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(GridLayout)
+
 };
 
 /**
@@ -284,6 +334,19 @@ struct GridPlacement {
     int row = 0;        ///< 0-based row start (0 = auto).
     int columnSpan = 1; ///< Number of columns to span.
     int rowSpan = 1;    ///< Number of rows to span.
+
+    KL_BEGIN_FIELDS(GridPlacement)
+        KL_FIELD(GridPlacement, column, "Column", -2147483648, 2147483647)
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(GridPlacement)
+        /* No reflected methods. */
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(GridPlacement)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(GridPlacement)
+
 };
 
 /**
@@ -295,6 +358,22 @@ struct Edges {
     float right = 0.0f;
     float bottom = 0.0f;
     float left = 0.0f;
+
+    KL_BEGIN_FIELDS(Edges)
+        KL_FIELD(Edges, top, "Top", __FLT_MIN__, __FLT_MAX__),
+        KL_FIELD(Edges, right, "Right", __FLT_MIN__, __FLT_MAX__),
+        KL_FIELD(Edges, bottom, "Bottom", __FLT_MIN__, __FLT_MAX__),
+        KL_FIELD(Edges, left, "Left", __FLT_MIN__, __FLT_MAX__)
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(Edges)
+        /* No reflected methods. */
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(Edges)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(Edges)
+
 };
 
 /**
@@ -306,6 +385,22 @@ struct Anchors {
     float minY = 0.0f;
     float maxX = 0.0f;
     float maxY = 0.0f;
+
+    KL_BEGIN_FIELDS(Anchors)
+        KL_FIELD(Anchors, minX, "Min x", __FLT_MIN__, __FLT_MAX__),
+        KL_FIELD(Anchors, minY, "Min y", __FLT_MIN__, __FLT_MAX__),
+        KL_FIELD(Anchors, maxX, "Max x", __FLT_MIN__, __FLT_MAX__),
+        KL_FIELD(Anchors, maxY, "Max y", __FLT_MIN__, __FLT_MAX__)
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(Anchors)
+        /* No reflected methods. */
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(Anchors)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(Anchors)
+
 };
 
 /**
@@ -327,6 +422,22 @@ struct Rect {
     bool Contains(float px, float py) const {
         return px >= x && px < x + w && py >= y && py < y + h;
     }
+
+    KL_BEGIN_FIELDS(Rect)
+        KL_FIELD(Rect, x, "X", __FLT_MIN__, __FLT_MAX__),
+        KL_FIELD(Rect, y, "Y", __FLT_MIN__, __FLT_MAX__),
+        KL_FIELD(Rect, w, "W", __FLT_MIN__, __FLT_MAX__),
+        KL_FIELD(Rect, h, "H", __FLT_MIN__, __FLT_MAX__)
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(Rect)
+        /* No reflected methods. */
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(Rect)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(Rect)
+
 };
 
 // --- Color ---
@@ -419,6 +530,19 @@ struct WidgetFlags {
     uint16_t focusVisible : 1;  ///< Focus from keyboard (Tab), show focus ring.
     uint16_t selected   : 1;    ///< Widget is selected (tree nodes, list items).
     uint16_t minimized  : 1;    ///< Floating panel is minimized to tray.
+
+    KL_BEGIN_FIELDS(WidgetFlags)
+        /* No reflected fields. */
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(WidgetFlags)
+        /* No reflected methods. */
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(WidgetFlags)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(WidgetFlags)
+
 };
 
 static constexpr int MAX_CHILDREN = 64; ///< Maximum number of children per widget.
@@ -555,6 +679,20 @@ struct Widget {
     struct TreeColumn {
         StringId textId = NullStringId;
         float    width  = 0.0f;          ///< Column width in px (0 = auto)
+
+        KL_BEGIN_FIELDS(TreeColumn)
+            KL_FIELD(TreeColumn, textId, "Text id", 0, 0),
+            KL_FIELD(TreeColumn, width, "Width", __FLT_MIN__, __FLT_MAX__)
+        KL_END_FIELDS
+
+        KL_BEGIN_METHODS(TreeColumn)
+            /* No reflected methods. */
+        KL_END_METHODS
+
+        KL_BEGIN_DESCRIBE(TreeColumn)
+            /* No reflected ctors. */
+        KL_END_DESCRIBE(TreeColumn)
+
     };
 
     /**
@@ -565,6 +703,19 @@ struct Widget {
         IconId icon = IconId::None;    ///< Icon identifier.
         bool   toggled = false;        ///< Toggle state (e.g. eye on/off).
         std::function<void(Widget&, int /*actionIdx*/)> onClick; ///< Click callback.
+
+        KL_BEGIN_FIELDS(ActionIcon)
+            KL_FIELD(ActionIcon, icon, "Icon", 0, 0)
+        KL_END_FIELDS
+
+        KL_BEGIN_METHODS(ActionIcon)
+            /* No reflected methods. */
+        KL_END_METHODS
+
+        KL_BEGIN_DESCRIBE(ActionIcon)
+            /* No reflected ctors. */
+        KL_END_DESCRIBE(ActionIcon)
+
     };
     TreeColumn treeColumns[MAX_TREE_COLUMNS]{}; ///< Multi-column data for tree nodes.
     ActionIcon actionIcons[MAX_ACTION_ICONS]{}; ///< Action icon buttons on tree nodes.
@@ -671,6 +822,20 @@ struct Widget {
         flags.focusVisible = 0;
         memset(children, -1, sizeof(children));
     }
+
+    KL_BEGIN_FIELDS(Widget)
+        KL_FIELD(Widget, marginAuto, "Margin auto", 0, 0),
+        KL_FIELD(Widget, propsSet, "Props set", 0, 65535)
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(Widget)
+        /* No reflected methods. */
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(Widget)
+        KL_CTOR0(Widget)
+    KL_END_DESCRIBE(Widget)
+
 };
 
 // --- Widget Pool ---
@@ -688,15 +853,10 @@ public:
      * @param capacity Maximum number of widgets the pool can hold.
      */
     explicit WidgetPool(size_t capacity = DEFAULT_CAPACITY)
-        : capacity_(capacity) {
-        widgets_ = new Widget[capacity_]();
-        alive_ = new bool[capacity_]();
+        : widgets_(capacity), alive_(capacity, false), capacity_(capacity) {
     }
 
-    ~WidgetPool() {
-        delete[] widgets_;
-        delete[] alive_;
-    }
+    ~WidgetPool() = default;
 
     WidgetPool(const WidgetPool&) = delete;
     WidgetPool& operator=(const WidgetPool&) = delete;
@@ -760,11 +920,27 @@ public:
     size_t Capacity() const { return capacity_; }
 
 private:
-    Widget* widgets_ = nullptr;  ///< Contiguous widget storage.
-    bool* alive_ = nullptr;      ///< Per-slot alive flags.
+    std::vector<Widget> widgets_;  ///< Contiguous widget storage.
+    std::vector<bool> alive_;      ///< Per-slot alive flags.
     size_t capacity_ = 0;        ///< Total number of slots.
     size_t count_ = 0;           ///< Number of currently allocated widgets.
     size_t nextFree_ = 0;        ///< Hint for next free slot search.
+
+    KL_BEGIN_FIELDS(WidgetPool)
+        KL_FIELD(WidgetPool, capacity_, "Capacity", 0, 0)
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(WidgetPool)
+        KL_METHOD_AUTO(WidgetPool, Free, "Free"),
+        KL_METHOD_AUTO(WidgetPool, IsAlive, "Is alive"),
+        KL_METHOD_AUTO(WidgetPool, Count, "Count"),
+        KL_METHOD_AUTO(WidgetPool, Capacity, "Capacity")
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(WidgetPool)
+        /* Non-copyable - no reflected ctors. */
+    KL_END_DESCRIBE(WidgetPool)
+
 };
 
 } // namespace ui

@@ -13,6 +13,7 @@
 #pragma once
 
 #include "kml_types.hpp"
+#include "../../../registry/reflect_macros.hpp"
 
 namespace koilo {
 namespace ui {
@@ -58,6 +59,19 @@ private:
     std::string ParseValue();
 
     void Error(const std::string& msg);
+
+    KL_BEGIN_FIELDS(KSSParser)
+        /* No reflected fields. */
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(KSSParser)
+        KL_METHOD_AUTO(KSSParser, Errors, "Errors")
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(KSSParser)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(KSSParser)
+
 };
 
 } // namespace markup

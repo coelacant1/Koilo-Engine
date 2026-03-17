@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 #include <koilo/systems/ui/widget.hpp>
+#include "../../registry/reflect_macros.hpp"
 
 namespace koilo {
 namespace ui {
@@ -78,6 +79,19 @@ struct Port {
     PortType    type = PortType::Float;     ///< Data type tag
     int         nodeId = -1;               ///< Owner node ID
     int         index  = 0;                ///< Port index on the node
+
+    KL_BEGIN_FIELDS(Port)
+        KL_FIELD(Port, name, "Name", 0, 0)
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(Port)
+        /* No reflected methods. */
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(Port)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(Port)
+
 };
 
 /** @class Connection @brief A connection (wire) between two ports. */
@@ -86,6 +100,19 @@ struct Connection {
     int srcPort  = -1;  ///< Source output port index
     int dstNode  = -1;  ///< Destination node ID
     int dstPort  = -1;  ///< Destination input port index
+
+    KL_BEGIN_FIELDS(Connection)
+        KL_FIELD(Connection, srcNode, "Src node", -2147483648, 2147483647)
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(Connection)
+        /* No reflected methods. */
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(Connection)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(Connection)
+
 };
 
 /** @class GraphNode @brief A visual node in the graph. */
@@ -110,6 +137,20 @@ struct GraphNode {
     static constexpr float TITLE_H = 24.0f;     ///< Title bar height in pixels
     static constexpr float PORT_ROW_H = 20.0f;  ///< Height per port row
     static constexpr float PORT_RADIUS = 5.0f;  ///< Port circle radius
+
+    KL_BEGIN_FIELDS(GraphNode)
+        KL_FIELD(GraphNode, id, "Id", -2147483648, 2147483647),
+        KL_FIELD(GraphNode, h, "H", 0, 0)
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(GraphNode)
+        /* No reflected methods. */
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(GraphNode)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(GraphNode)
+
 };
 
 /** @class NodeGraph @brief Visual node graph editor built on Canvas2D. */

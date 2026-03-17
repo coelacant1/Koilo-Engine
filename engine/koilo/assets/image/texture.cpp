@@ -21,10 +21,8 @@ Texture::~Texture() {
 }
 
 void Texture::FreeOwned() {
-    delete[] ownedIndices_;
-    delete[] ownedPixels_;
-    ownedIndices_ = nullptr;
-    ownedPixels_ = nullptr;
+    ownedIndices_.clear();
+    ownedPixels_.clear();
 }
 
 void Texture::CreatePalette(uint32_t width, uint32_t height, const uint8_t* palette, uint8_t paletteSize) {
@@ -34,8 +32,8 @@ void Texture::CreatePalette(uint32_t width, uint32_t height, const uint8_t* pale
     format_ = Format::Palette;
     paletteSize_ = paletteSize;
     palette_ = palette;
-    ownedIndices_ = new uint8_t[width * height]();
-    indices_ = ownedIndices_;
+    ownedIndices_.resize(width * height, 0);
+    indices_ = ownedIndices_.data();
     pixels_ = nullptr;
 }
 
@@ -44,8 +42,8 @@ void Texture::CreateRGB(uint32_t width, uint32_t height) {
     width_ = width;
     height_ = height;
     format_ = Format::RGB888;
-    ownedPixels_ = new Color888[width * height]();
-    pixels_ = ownedPixels_;
+    ownedPixels_.resize(width * height, Color888(0, 0, 0));
+    pixels_ = ownedPixels_.data();
     indices_ = nullptr;
     palette_ = nullptr;
     paletteSize_ = 0;
@@ -86,13 +84,13 @@ Color888 Texture::SampleRect(float u, float v, uint32_t rx, uint32_t ry, uint32_
 }
 
 void Texture::SetPixel(uint32_t x, uint32_t y, Color888 color) {
-    if (format_ != Format::RGB888 || !ownedPixels_) return;
+    if (format_ != Format::RGB888 || ownedPixels_.empty()) return;
     if (x >= width_ || y >= height_) return;
     ownedPixels_[y * width_ + x] = color;
 }
 
 void Texture::SetIndex(uint32_t x, uint32_t y, uint8_t index) {
-    if (format_ != Format::Palette || !ownedIndices_) return;
+    if (format_ != Format::Palette || ownedIndices_.empty()) return;
     if (x >= width_ || y >= height_) return;
     ownedIndices_[y * width_ + x] = index;
 }
@@ -133,26 +131,24 @@ bool Texture::LoadFile(const char* filepath) {
     height_ = h;
     format_ = Format::RGB888;
     
-    ownedPixels_ = new Color888[w * h];
+    ownedPixels_.resize(w * h);
     
     if (channels == 3) {
-        auto* raw = new uint8_t[pixelDataSize];
-        file.read(reinterpret_cast<char*>(raw), pixelDataSize);
+        std::vector<uint8_t> raw(pixelDataSize);
+        file.read(reinterpret_cast<char*>(raw.data()), pixelDataSize);
         for (uint32_t i = 0; i < w * h; ++i) {
             ownedPixels_[i] = Color888(raw[i * 3], raw[i * 3 + 1], raw[i * 3 + 2]);
         }
-        delete[] raw;
     } else {
         // RGBA - drop alpha
-        auto* raw = new uint8_t[pixelDataSize];
-        file.read(reinterpret_cast<char*>(raw), pixelDataSize);
+        std::vector<uint8_t> raw(pixelDataSize);
+        file.read(reinterpret_cast<char*>(raw.data()), pixelDataSize);
         for (uint32_t i = 0; i < w * h; ++i) {
             ownedPixels_[i] = Color888(raw[i * 4], raw[i * 4 + 1], raw[i * 4 + 2]);
         }
-        delete[] raw;
     }
     
-    pixels_ = ownedPixels_;
+    pixels_ = ownedPixels_.data();
     indices_ = nullptr;
     palette_ = nullptr;
     paletteSize_ = 0;

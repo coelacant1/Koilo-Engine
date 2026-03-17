@@ -11,7 +11,7 @@
  *        -I engine/include -std=c++17 -o game_mode_module.so game_mode_module.cpp
  */
 
-#include <koilo/modules/module_api.hpp>
+#include <koilo/kernel/module_api.hpp>
 
 using namespace koilo;
 

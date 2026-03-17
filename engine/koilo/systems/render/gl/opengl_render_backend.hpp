@@ -15,7 +15,7 @@
 
 #pragma once
 
-#include <koilo/systems/render/irenderbackend.hpp>
+#include <koilo/systems/render/igpu_render_backend.hpp>
 #include <koilo/systems/render/gl/software_render_backend.hpp>
 #include <koilo/ksl/ksl_registry.hpp>
 #include <koilo/registry/reflect_macros.hpp>
@@ -39,7 +39,7 @@ template<typename, typename> class MaterialT;
  * Renders 3D scenes to an FBO, then provides ReadPixels for CPU compositing.
  * Meshes with unsupported shaders fall back to software rasterization.
  */
-class OpenGLRenderBackend : public IRenderBackend {
+class OpenGLRenderBackend : public IGPURenderBackend {
 public:
     OpenGLRenderBackend();
     ~OpenGLRenderBackend() override;
@@ -48,18 +48,12 @@ public:
     void Shutdown() override;
     bool IsInitialized() const override;
     void Render(Scene* scene, CameraBase* camera) override;
-    /** Render without kicking the PBO readback (for direct-blit path). */
-    void RenderDirect(Scene* scene, CameraBase* camera);
+    void RenderDirect(Scene* scene, CameraBase* camera) override;
     void ReadPixels(Color888* buffer, int width, int height) override;
     const char* GetName() const override;
 
-    /** @brief Blit the render FBO directly to the default framebuffer (screen).
-     *  Skips ReadPixels entirely - use when no CPU compositing is needed.
-     *  Call after Render(), then SDL_GL_SwapWindow. */
-    void BlitToScreen(int screenW, int screenH);
-
-    /** @brief Composite Canvas2D overlays onto the default framebuffer. */
-    void CompositeCanvasOverlays(int screenW, int screenH);
+    void BlitToScreen(int screenW, int screenH) override;
+    void CompositeCanvasOverlays(int screenW, int screenH) override;
 
     /** Cached KSL uniform location lookup. */
     int GetKSLUniform(unsigned int prog, const std::string& name);

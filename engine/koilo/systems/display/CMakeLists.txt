@@ -14,7 +14,7 @@ set(DISPLAY_SOURCES
 )
 
 set(DISPLAY_HEADERS
-    ${CMAKE_SOURCE_DIR}/engine/koilo/systems/display/pixelformat.hpp
+    ${CMAKE_SOURCE_DIR}/engine/koilo/core/color/pixelformat.hpp
     ${CMAKE_SOURCE_DIR}/engine/koilo/systems/display/framebuffer.hpp
     ${CMAKE_SOURCE_DIR}/engine/koilo/systems/display/displayinfo.hpp
     ${CMAKE_SOURCE_DIR}/engine/koilo/systems/display/idisplaybackend.hpp
@@ -33,21 +33,49 @@ else()
     set(HAVE_SDL3_BACKEND OFF)
 endif()
 
-# Add OpenGL backend if available
-if(SDL3_FOUND AND OPENGL_FOUND)
+# Add OpenGL backend if available and requested
+if(KOILO_USE_OPENGL AND SDL3_FOUND AND OPENGL_FOUND)
     message(STATUS "OpenGL backend enabled")
     list(APPEND DISPLAY_SOURCES backends/gpu/openglbackend.cpp)
     list(APPEND DISPLAY_HEADERS ${CMAKE_SOURCE_DIR}/engine/koilo/systems/display/backends/gpu/openglbackend.hpp)
     # GL render backend (uses same GL context as display backend)
     list(APPEND DISPLAY_SOURCES ${CMAKE_SOURCE_DIR}/engine/koilo/systems/render/gl/opengl_render_backend.cpp)
     list(APPEND DISPLAY_HEADERS ${CMAKE_SOURCE_DIR}/engine/koilo/systems/render/gl/opengl_render_backend.hpp)
-    # Render backend factory (auto-selects GPU or software)
-    list(APPEND DISPLAY_SOURCES ${CMAKE_SOURCE_DIR}/engine/koilo/systems/render/gl/render_backend_factory.cpp)
-    list(APPEND DISPLAY_HEADERS ${CMAKE_SOURCE_DIR}/engine/koilo/systems/render/gl/render_backend_factory.hpp)
+    # UI GL renderer (uses same GL context)
+    list(APPEND DISPLAY_SOURCES ${CMAKE_SOURCE_DIR}/engine/koilo/systems/ui/render/ui_gl_renderer.cpp)
     set(HAVE_OPENGL_BACKEND ON)
 else()
-    message(STATUS "OpenGL backend disabled (SDL3 or OpenGL not found)")
+    if(KOILO_USE_OPENGL)
+        message(STATUS "OpenGL backend disabled (SDL3 or OpenGL not found)")
+    else()
+        message(STATUS "OpenGL backend disabled (KOILO_USE_OPENGL=OFF)")
+    endif()
     set(HAVE_OPENGL_BACKEND OFF)
+endif()
+
+# Render backend factory is always needed (handles backend selection at runtime)
+list(APPEND DISPLAY_SOURCES ${CMAKE_SOURCE_DIR}/engine/koilo/systems/render/gl/render_backend_factory.cpp)
+list(APPEND DISPLAY_HEADERS ${CMAKE_SOURCE_DIR}/engine/koilo/systems/render/gl/render_backend_factory.hpp)
+
+# Add Vulkan backend if available and requested
+set(HAVE_VULKAN_BACKEND OFF)
+if(KOILO_USE_VULKAN AND SDL3_FOUND)
+    find_package(Vulkan QUIET)
+    if(Vulkan_FOUND)
+        message(STATUS "Vulkan backend enabled")
+        list(APPEND DISPLAY_SOURCES backends/gpu/vulkanbackend.cpp)
+        list(APPEND DISPLAY_SOURCES ../render/vk/vulkan_render_backend.cpp)
+        list(APPEND DISPLAY_SOURCES ../ui/render/ui_vk_renderer.cpp)
+        list(APPEND DISPLAY_HEADERS
+            ${CMAKE_SOURCE_DIR}/engine/koilo/systems/display/backends/gpu/vulkanbackend.hpp)
+        set(HAVE_VULKAN_BACKEND ON)
+    else()
+        message(STATUS "Vulkan backend disabled (Vulkan SDK not found)")
+    endif()
+else()
+    if(KOILO_USE_VULKAN AND NOT SDL3_FOUND)
+        message(STATUS "Vulkan backend disabled (SDL3 not found)")
+    endif()
 endif()
 
 # Create library
@@ -87,9 +115,20 @@ if(HAVE_OPENGL_BACKEND)
         ${OPENGL_LIBRARIES}
     )
     
-    target_compile_definitions(koiloengine_display PUBLIC KL_HAVE_OPENGL_BACKEND KL_HAVE_FILESYSTEM)
+    target_compile_definitions(koiloengine_display PUBLIC KL_HAVE_OPENGL_BACKEND)
+endif()
 
-    # --- KSL Shader Build: .ksl.hpp -> .kso + .glsl at build time ---
+# std::filesystem is always available (C++17)
+target_compile_definitions(koiloengine_display PUBLIC KL_HAVE_FILESYSTEM)
+
+if(HAVE_VULKAN_BACKEND)
+    target_include_directories(koiloengine_display PRIVATE ${Vulkan_INCLUDE_DIRS})
+    target_link_libraries(koiloengine_display PUBLIC Vulkan::Vulkan SDL3::SDL3)
+    target_compile_definitions(koiloengine_display PUBLIC KL_HAVE_VULKAN_BACKEND)
+endif()
+
+# --- KSL Shader Build: .ksl.hpp -> .kso + .glsl at build time ---
+if(HAVE_OPENGL_BACKEND OR HAVE_VULKAN_BACKEND)
     find_package(Python3 COMPONENTS Interpreter QUIET)
     if(Python3_FOUND)
         set(KSL_SHADER_DIR "${CMAKE_SOURCE_DIR}/shaders")
@@ -143,6 +182,116 @@ if(HAVE_OPENGL_BACKEND)
         add_dependencies(koiloengine_display ksl_shaders)
 
         message(STATUS "KSL shaders: ${KSL_OUTPUT_DIR}/ (.glsl + .kso + uber.glsl)")
+
+        # --- SPIR-V compilation for Vulkan backend ---
+        if(KOILO_USE_VULKAN)
+            find_program(GLSLANG_VALIDATOR glslangValidator)
+            if(NOT GLSLANG_VALIDATOR)
+                find_program(GLSLANG_VALIDATOR glslc)
+            endif()
+
+            if(GLSLANG_VALIDATOR)
+                set(KSL_SPV_DIR "${KSL_OUTPUT_DIR}/spirv")
+                file(MAKE_DIRECTORY ${KSL_SPV_DIR})
+
+                set(KSL_SPV_OUTPUTS "")
+
+                # Compile shared vertex shader
+                set(KSL_VERT_SRC "${KSL_SHADER_DIR}/scene.vert")
+                set(KSL_VERT_SPV "${KSL_SPV_DIR}/scene.vert.spv")
+                add_custom_command(
+                    OUTPUT ${KSL_VERT_SPV}
+                    COMMAND ${GLSLANG_VALIDATOR} --target-env vulkan1.0
+                        -S vert ${KSL_VERT_SRC} -o ${KSL_VERT_SPV}
+                    DEPENDS ${KSL_VERT_SRC}
+                    COMMENT "SPIR-V: scene.vert -> scene.vert.spv"
+                )
+                list(APPEND KSL_SPV_OUTPUTS ${KSL_VERT_SPV})
+
+                # Compile line shaders (debug draw)
+                foreach(LINE_SHADER line.vert line.frag)
+                    string(REPLACE "." "_" LINE_VAR ${LINE_SHADER})
+                    set(LINE_SRC "${KSL_SHADER_DIR}/${LINE_SHADER}")
+                    set(LINE_SPV "${KSL_SPV_DIR}/${LINE_SHADER}.spv")
+                    string(REGEX REPLACE ".*\\." "" LINE_STAGE ${LINE_SHADER})
+                    add_custom_command(
+                        OUTPUT ${LINE_SPV}
+                        COMMAND ${GLSLANG_VALIDATOR} --target-env vulkan1.0
+                            -S ${LINE_STAGE} ${LINE_SRC} -o ${LINE_SPV}
+                        DEPENDS ${LINE_SRC}
+                        COMMENT "SPIR-V: ${LINE_SHADER} -> ${LINE_SHADER}.spv"
+                    )
+                    list(APPEND KSL_SPV_OUTPUTS ${LINE_SPV})
+                endforeach()
+
+                # Compile blit shaders (fullscreen composite)
+                foreach(BLIT_SHADER blit.vert blit.frag)
+                    set(BLIT_SRC "${KSL_SHADER_DIR}/${BLIT_SHADER}")
+                    set(BLIT_SPV "${KSL_SPV_DIR}/${BLIT_SHADER}.spv")
+                    string(REGEX REPLACE ".*\\." "" BLIT_STAGE ${BLIT_SHADER})
+                    add_custom_command(
+                        OUTPUT ${BLIT_SPV}
+                        COMMAND ${GLSLANG_VALIDATOR} --target-env vulkan1.0
+                            -S ${BLIT_STAGE} ${BLIT_SRC} -o ${BLIT_SPV}
+                        DEPENDS ${BLIT_SRC}
+                        COMMENT "SPIR-V: ${BLIT_SHADER} -> ${BLIT_SHADER}.spv"
+                    )
+                    list(APPEND KSL_SPV_OUTPUTS ${BLIT_SPV})
+                endforeach()
+
+                # Compile UI shaders
+                foreach(UI_SHADER ui.vert ui.frag)
+                    set(UI_SRC "${KSL_SHADER_DIR}/${UI_SHADER}")
+                    set(UI_SPV "${KSL_SPV_DIR}/${UI_SHADER}.spv")
+                    string(REGEX REPLACE ".*\\." "" UI_STAGE ${UI_SHADER})
+                    add_custom_command(
+                        OUTPUT ${UI_SPV}
+                        COMMAND ${GLSLANG_VALIDATOR} --target-env vulkan1.0
+                            -S ${UI_STAGE} ${UI_SRC} -o ${UI_SPV}
+                        DEPENDS ${UI_SRC}
+                        COMMENT "SPIR-V: ${UI_SHADER} -> ${UI_SHADER}.spv"
+                    )
+                    list(APPEND KSL_SPV_OUTPUTS ${UI_SPV})
+                endforeach()
+
+                # Generate Vulkan GLSL and compile each to SPIR-V
+                foreach(KSL_SRC ${KSL_SHADER_SOURCES})
+                    get_filename_component(KSL_NAME ${KSL_SRC} NAME_WLE)
+                    string(REPLACE ".ksl" "" KSL_STEM ${KSL_NAME})
+                    set(KSL_VK_FRAG "${KSL_SPV_DIR}/${KSL_STEM}.frag")
+                    set(KSL_FRAG_SPV "${KSL_SPV_DIR}/${KSL_STEM}.frag.spv")
+
+                    # Generate Vulkan-compatible GLSL
+                    add_custom_command(
+                        OUTPUT ${KSL_VK_FRAG}
+                        COMMAND ${Python3_EXECUTABLE} ${KSL_CODEGEN}
+                            --vulkan ${KSL_SRC} -o ${KSL_VK_FRAG}
+                        DEPENDS ${KSL_SRC} ${KSL_CODEGEN}
+                        COMMENT "KSL: ${KSL_STEM}.ksl.hpp -> ${KSL_STEM}.frag (Vulkan)"
+                    )
+
+                    # Compile to SPIR-V
+                    add_custom_command(
+                        OUTPUT ${KSL_FRAG_SPV}
+                        COMMAND ${GLSLANG_VALIDATOR} --target-env vulkan1.0
+                            -S frag ${KSL_VK_FRAG} -o ${KSL_FRAG_SPV}
+                        DEPENDS ${KSL_VK_FRAG}
+                        COMMENT "SPIR-V: ${KSL_STEM}.frag -> ${KSL_STEM}.frag.spv"
+                    )
+
+                    list(APPEND KSL_SPV_OUTPUTS ${KSL_FRAG_SPV})
+                endforeach()
+
+                add_custom_target(ksl_spirv ALL DEPENDS ${KSL_SPV_OUTPUTS})
+                add_dependencies(koiloengine_display ksl_spirv)
+
+                target_compile_definitions(koiloengine_display PUBLIC KL_HAVE_VULKAN_SHADERS)
+                message(STATUS "SPIR-V shaders: ${KSL_SPV_DIR}/ (${GLSLANG_VALIDATOR})")
+            else()
+                message(WARNING "KOILO_USE_VULKAN=ON but no SPIR-V compiler found "
+                                "(install glslangValidator or glslc)")
+            endif()
+        endif()
     else()
         message(WARNING "Python3 not found - KSL shader generation disabled")
     endif()

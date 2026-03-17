@@ -19,6 +19,7 @@
 #include <vector>
 #include <algorithm>
 #include <cstdio>
+#include "../../registry/reflect_macros.hpp"
 
 namespace koilo {
 namespace ui {
@@ -29,6 +30,19 @@ struct CurvePoint {
     float handleInX, handleInY;   ///< Left tangent handle offset
     float handleOutX, handleOutY; ///< Right tangent handle offset
     bool selected = false;        ///< Whether this point is currently selected
+
+    KL_BEGIN_FIELDS(CurvePoint)
+        KL_FIELD(CurvePoint, y, "Y", 0, 0)
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(CurvePoint)
+        /* No reflected methods. */
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(CurvePoint)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(CurvePoint)
+
 };
 
 /** @class CurveEditor @brief Interactive bezier curve editor rendered on a Canvas2D widget. */
@@ -120,6 +134,22 @@ private:
     }
 
     void Paint(void* rawCtx);
+
+    KL_BEGIN_FIELDS(CurveEditor)
+        /* No reflected fields. */
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(CurveEditor)
+        KL_METHOD_AUTO(CurveEditor, SetEaseInOut, "Set ease in out"),
+        KL_METHOD_AUTO(CurveEditor, SetEaseIn, "Set ease in"),
+        KL_METHOD_AUTO(CurveEditor, SetEaseOut, "Set ease out"),
+        KL_METHOD_AUTO(CurveEditor, CanvasIndex, "Canvas index")
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(CurveEditor)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(CurveEditor)
+
 };
 
 } // namespace ui

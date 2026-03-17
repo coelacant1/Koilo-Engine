@@ -19,19 +19,12 @@ const Color koilo::Color::Orange(1.0f, 0.5f, 0.0f, 1.0f);
 const Color koilo::Color::Purple(0.5f, 0.0f, 0.5f, 1.0f);
 const Color koilo::Color::Gray(0.5f, 0.5f, 0.5f, 1.0f);
 
-// Static member initialization
-DebugDraw* koilo::DebugDraw::instance = nullptr;
-
-// === DebugDraw Implementation ===
-
-koilo::DebugDraw::DebugDraw() : enabled(true) {
+DebugDraw::DebugDraw() : enabled(true) {
 }
 
-DebugDraw& koilo::DebugDraw::GetInstance() {
-    if (instance == nullptr) {
-        instance = new DebugDraw();
-    }
-    return *instance;
+DebugDraw& DebugDraw::GetInstance() {
+    static DebugDraw instance;
+    return instance;
 }
 
 void koilo::DebugDraw::Update() {

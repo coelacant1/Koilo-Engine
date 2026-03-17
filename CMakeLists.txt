@@ -25,6 +25,8 @@ option(KL_USE_SYSTEM_UNITY "Use an existing Unity test framework checkout" OFF)
 option(KOILO_ENABLE_AI "Build AI subsystem (pathfinding, behavior trees)" ON)
 option(KOILO_ENABLE_AUDIO "Build audio subsystem (SDL3 audio)" ON)
 option(KOILO_ENABLE_PARTICLES "Build particle subsystem" ON)
+option(KOILO_USE_VULKAN "Build Vulkan render backend and compile SPIR-V shaders" ON)
+option(KOILO_USE_OPENGL "Build OpenGL render backend" OFF)
 set(KL_UNITY_DIR ${CMAKE_SOURCE_DIR}/external/unity CACHE PATH "Path to Unity test framework")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
@@ -114,72 +116,196 @@ target_include_directories(koilo_headers INTERFACE
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
-# Gather core sources
-file(GLOB_RECURSE KL_CORE_SOURCES
-  CONFIGURE_DEPENDS
-  engine/koilo/*.cpp
-  engine/koilo/core/**/*.cpp
-  engine/koilo/assets/**/*.cpp
-  engine/koilo/registry/**/*.cpp
-  engine/koilo/scripting/**/*.cpp
-  engine/koilo/platform/**/*.cpp
-  engine/koilo/systems/**/*.cpp
-  engine/koilo/debug/**/*.cpp
-  engine/koilo/ecs/**/*.cpp
-  engine/koilo/resources/**/*.cpp
-  engine/koilo/modules/**/*.cpp
-)
-
-list(FILTER KL_CORE_SOURCES EXCLUDE REGEX ".*/systems/display/.*")
-list(FILTER KL_CORE_SOURCES EXCLUDE REGEX ".*/systems/render/gl/.*")
-
-# Optional subsystem source exclusions
-if(NOT KOILO_ENABLE_AI)
-  list(FILTER KL_CORE_SOURCES EXCLUDE REGEX ".*/systems/ai/.*")
-endif()
-if(NOT KOILO_ENABLE_AUDIO)
-  list(FILTER KL_CORE_SOURCES EXCLUDE REGEX ".*/systems/audio/.*")
-endif()
-if(NOT KOILO_ENABLE_PARTICLES)
-  list(FILTER KL_CORE_SOURCES EXCLUDE REGEX ".*/systems/particles/.*")
-endif()
-
-# Add the core reflection auto-registration file (safe for headless builds)
-list(APPEND KL_CORE_SOURCES ${KL_GEN_DIR}/reflection_core_gen.cpp)
-
-add_library(koilo_core STATIC ${KL_CORE_SOURCES})
-add_dependencies(koilo_core koilo_generate)
-
-target_link_libraries(koilo_core PUBLIC koilo_headers)
-target_compile_features(koilo_core PUBLIC cxx_std_17)
-
-# Optional subsystem compile definitions
+# Optional subsystem compile definitions (project-wide via koilo_headers)
 if(KOILO_ENABLE_AI)
-  target_compile_definitions(koilo_core PUBLIC KOILO_ENABLE_AI)
+  target_compile_definitions(koilo_headers INTERFACE KOILO_ENABLE_AI)
 endif()
 if(KOILO_ENABLE_AUDIO)
-  target_compile_definitions(koilo_core PUBLIC KOILO_ENABLE_AUDIO)
+  target_compile_definitions(koilo_headers INTERFACE KOILO_ENABLE_AUDIO)
 endif()
 if(KOILO_ENABLE_PARTICLES)
-  target_compile_definitions(koilo_core PUBLIC KOILO_ENABLE_PARTICLES)
+  target_compile_definitions(koilo_headers INTERFACE KOILO_ENABLE_PARTICLES)
 endif()
 
-# Audio backend
+# -- koilo_foundation ----------------------------------------------
+# Pure math, geometry, color, time, reflection, shader types, interfaces.
+# No dependencies on kernel, scripting, or systems.
+file(GLOB_RECURSE KL_FOUNDATION_SOURCES
+  CONFIGURE_DEPENDS
+  engine/koilo/core/*.cpp
+)
+
+add_library(koilo_foundation STATIC ${KL_FOUNDATION_SOURCES})
+add_dependencies(koilo_foundation koilo_generate)
+target_link_libraries(koilo_foundation PUBLIC koilo_headers)
+target_compile_features(koilo_foundation PUBLIC cxx_std_17)
+
+if(KL_WARNING_FLAGS)
+  target_compile_options(koilo_foundation PRIVATE ${KL_WARNING_FLAGS})
+endif()
+
+# -- Sub-targets (OBJECT libraries for compilation isolation) -----
+# Each compiles independently for incremental build benefit.
+# All objects are collected into the final koilo_engine archive.
+
+# koilo_kernel: microkernel (module lifecycle, memory, console, services)
+file(GLOB_RECURSE KL_KERNEL_SOURCES CONFIGURE_DEPENDS engine/koilo/kernel/*.cpp)
+add_library(koilo_kernel OBJECT ${KL_KERNEL_SOURCES})
+add_dependencies(koilo_kernel koilo_generate)
+target_link_libraries(koilo_kernel PUBLIC koilo_foundation)
+target_compile_features(koilo_kernel PUBLIC cxx_std_17)
+if(KL_WARNING_FLAGS)
+  target_compile_options(koilo_kernel PRIVATE ${KL_WARNING_FLAGS})
+endif()
+
+# koilo_assets: asset loaders (mesh, image, font, model formats)
+file(GLOB_RECURSE KL_ASSETS_SOURCES CONFIGURE_DEPENDS engine/koilo/assets/*.cpp)
+add_library(koilo_assets OBJECT ${KL_ASSETS_SOURCES})
+add_dependencies(koilo_assets koilo_generate)
+target_link_libraries(koilo_assets PUBLIC koilo_foundation)
+target_compile_features(koilo_assets PUBLIC cxx_std_17)
+if(KL_WARNING_FLAGS)
+  target_compile_options(koilo_assets PRIVATE ${KL_WARNING_FLAGS})
+endif()
+
+# koilo_debug: debug draw, debug renderer, profiler
+file(GLOB_RECURSE KL_DEBUG_SOURCES CONFIGURE_DEPENDS engine/koilo/debug/*.cpp)
+add_library(koilo_debug OBJECT ${KL_DEBUG_SOURCES})
+add_dependencies(koilo_debug koilo_generate)
+target_link_libraries(koilo_debug PUBLIC koilo_foundation)
+target_compile_features(koilo_debug PUBLIC cxx_std_17)
+if(KL_WARNING_FLAGS)
+  target_compile_options(koilo_debug PRIVATE ${KL_WARNING_FLAGS})
+endif()
+
+# koilo_scripting: KoiloScript language (lexer, parser, AST, bytecode VM, engine)
+file(GLOB_RECURSE KL_SCRIPTING_SOURCES CONFIGURE_DEPENDS engine/koilo/scripting/*.cpp)
+add_library(koilo_scripting OBJECT ${KL_SCRIPTING_SOURCES})
+add_dependencies(koilo_scripting koilo_generate)
+target_link_libraries(koilo_scripting PUBLIC koilo_kernel koilo_foundation)
+target_compile_features(koilo_scripting PUBLIC cxx_std_17)
+if(KL_WARNING_FLAGS)
+  target_compile_options(koilo_scripting PRIVATE ${KL_WARNING_FLAGS})
+endif()
+
+# koilo_systems: all runtime systems (render, scene, physics, UI, input, etc.)
+file(GLOB_RECURSE KL_SYSTEMS_SOURCES
+  CONFIGURE_DEPENDS
+  engine/koilo/systems/*.cpp
+  engine/koilo/ecs/*.cpp
+)
+list(FILTER KL_SYSTEMS_SOURCES EXCLUDE REGEX ".*/systems/display/.*")
+list(FILTER KL_SYSTEMS_SOURCES EXCLUDE REGEX ".*/systems/render/gl/.*")
+list(FILTER KL_SYSTEMS_SOURCES EXCLUDE REGEX ".*/systems/render/vk/.*")
+list(FILTER KL_SYSTEMS_SOURCES EXCLUDE REGEX ".*/systems/ui/render/ui_gl_renderer\\.cpp")
+list(FILTER KL_SYSTEMS_SOURCES EXCLUDE REGEX ".*/systems/ui/render/ui_vk_renderer\\.cpp")
+if(NOT KOILO_ENABLE_AI)
+  list(FILTER KL_SYSTEMS_SOURCES EXCLUDE REGEX ".*/systems/ai/.*")
+endif()
+if(NOT KOILO_ENABLE_AUDIO)
+  list(FILTER KL_SYSTEMS_SOURCES EXCLUDE REGEX ".*/systems/audio/.*")
+endif()
+if(NOT KOILO_ENABLE_PARTICLES)
+  list(FILTER KL_SYSTEMS_SOURCES EXCLUDE REGEX ".*/systems/particles/.*")
+endif()
+
+add_library(koilo_systems OBJECT ${KL_SYSTEMS_SOURCES})
+add_dependencies(koilo_systems koilo_generate)
+target_link_libraries(koilo_systems PUBLIC
+  koilo_scripting koilo_kernel koilo_debug koilo_assets koilo_foundation
+)
+target_compile_features(koilo_systems PUBLIC cxx_std_17)
+
+# Audio backend (SDL3 for audio subsystem)
 find_package(SDL3 QUIET)
 if(SDL3_FOUND)
   message(STATUS "Audio backend: SDL3")
-  target_link_libraries(koilo_core PRIVATE SDL3::SDL3)
-  target_compile_definitions(koilo_core PRIVATE KL_AUDIO_SDL3)
+  target_link_libraries(koilo_systems PRIVATE SDL3::SDL3)
+  target_compile_definitions(koilo_systems PRIVATE KL_AUDIO_SDL3)
 else()
   message(STATUS "Audio backend: disabled (SDL3 not found)")
-  target_compile_definitions(koilo_core PRIVATE KL_AUDIO_NONE)
+  target_compile_definitions(koilo_systems PRIVATE KL_AUDIO_NONE)
 endif()
 
 if(KL_WARNING_FLAGS)
-  target_compile_options(koilo_core PRIVATE ${KL_WARNING_FLAGS})
+  target_compile_options(koilo_systems PRIVATE ${KL_WARNING_FLAGS})
 endif()
 
+# koilo_platform: platform abstraction (file readers, thread affinity)
+file(GLOB_RECURSE KL_PLATFORM_SOURCES CONFIGURE_DEPENDS engine/koilo/platform/*.cpp)
+add_library(koilo_platform OBJECT ${KL_PLATFORM_SOURCES})
+add_dependencies(koilo_platform koilo_generate)
+target_link_libraries(koilo_platform PUBLIC koilo_foundation)
+target_compile_features(koilo_platform PUBLIC cxx_std_17)
+if(KL_WARNING_FLAGS)
+  target_compile_options(koilo_platform PRIVATE ${KL_WARNING_FLAGS})
+endif()
+
+# koilo_app: application framework (KoiloApplication)
+file(GLOB_RECURSE KL_APP_SOURCES CONFIGURE_DEPENDS engine/koilo/app/*.cpp)
+add_library(koilo_app OBJECT ${KL_APP_SOURCES})
+add_dependencies(koilo_app koilo_generate)
+target_link_libraries(koilo_app PUBLIC koilo_kernel koilo_foundation)
+target_compile_features(koilo_app PUBLIC cxx_std_17)
+if(KL_WARNING_FLAGS)
+  target_compile_options(koilo_app PRIVATE ${KL_WARNING_FLAGS})
+endif()
+
+# Propagate Vulkan backend define to object libraries that need it
+if(KOILO_USE_VULKAN)
+  find_package(Vulkan QUIET)
+  if(Vulkan_FOUND)
+    target_compile_definitions(koilo_scripting PRIVATE KL_HAVE_VULKAN_BACKEND)
+    target_compile_definitions(koilo_systems PRIVATE KL_HAVE_VULKAN_BACKEND)
+    target_include_directories(koilo_scripting PRIVATE ${Vulkan_INCLUDE_DIRS})
+    target_include_directories(koilo_systems PRIVATE ${Vulkan_INCLUDE_DIRS})
+    set(KL_VULKAN_FOUND TRUE)
+  endif()
+endif()
+
+# -- koilo_engine (aggregate archive) ----------------------------
+# Collects all OBJECT library outputs + generated reflection code
+# into a single static library. Avoids circular link ordering issues.
+add_library(koilo_engine STATIC
+  ${KL_GEN_DIR}/reflection_core_gen.cpp
+  $<TARGET_OBJECTS:koilo_kernel>
+  $<TARGET_OBJECTS:koilo_assets>
+  $<TARGET_OBJECTS:koilo_debug>
+  $<TARGET_OBJECTS:koilo_scripting>
+  $<TARGET_OBJECTS:koilo_systems>
+  $<TARGET_OBJECTS:koilo_platform>
+  $<TARGET_OBJECTS:koilo_app>
+)
+add_dependencies(koilo_engine koilo_generate)
+target_link_libraries(koilo_engine PUBLIC koilo_foundation)
+target_compile_features(koilo_engine PUBLIC cxx_std_17)
+
+if(KL_WARNING_FLAGS)
+  target_compile_options(koilo_engine PRIVATE ${KL_WARNING_FLAGS})
+endif()
+
+if(KL_VULKAN_FOUND)
+  target_compile_definitions(koilo_engine PRIVATE KL_HAVE_VULKAN_BACKEND)
+  target_include_directories(koilo_engine PRIVATE ${Vulkan_INCLUDE_DIRS})
+endif()
+
+# Backward-compat alias: koilo_core -> koilo_engine
+add_library(koilo_core ALIAS koilo_engine)
+
 add_subdirectory(engine/koilo/systems/display)
+
+# -- Generic koilo runner ------------------------------------------
+# Single binary: koilo --script examples/space_shooter/space_shooter.ks --software --vsync
+if(SDL3_FOUND OR TARGET SDL3::SDL3)
+  add_executable(koilo engine/koilo/app/koilo_runner.cpp)
+  target_link_libraries(koilo PRIVATE koilo_core koiloengine_display SDL3::SDL3)
+  target_include_directories(koilo PRIVATE
+    ${CMAKE_SOURCE_DIR}/engine
+    ${CMAKE_SOURCE_DIR}/engine/koilo
+    ${CMAKE_SOURCE_DIR}/engine/koilo/modules
+    ${CMAKE_BINARY_DIR}/generated
+  )
+endif()
 
 # Examples
 option(KL_BUILD_EXAMPLES "Build example programs" ON)

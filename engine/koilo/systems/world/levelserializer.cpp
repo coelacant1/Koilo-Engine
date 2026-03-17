@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include <koilo/systems/world/levelserializer.hpp>
 #include <koilo/systems/world/reflectionserializer.hpp>
-#include <koilo/ecs/entitymanager.hpp>
-#include <koilo/ecs/components/tagcomponent.hpp>
-#include <koilo/ecs/components/transformcomponent.hpp>
-#include <koilo/ecs/components/velocitycomponent.hpp>
+#include <koilo/systems/ecs/entitymanager.hpp>
+#include <koilo/systems/ecs/components/tagcomponent.hpp>
+#include <koilo/systems/ecs/components/transformcomponent.hpp>
+#include <koilo/systems/ecs/components/velocitycomponent.hpp>
 #include <koilo/core/math/vector3d.hpp>
 #include <koilo/core/math/quaternion.hpp>
 #include <koilo/core/math/transform.hpp>

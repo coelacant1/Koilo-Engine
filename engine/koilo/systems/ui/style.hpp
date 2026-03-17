@@ -10,6 +10,7 @@
 
 #include "widget.hpp"
 #include "../../registry/reflect_macros.hpp"
+#include <koilo/core/math/mathematics.hpp>
 #include <unordered_map>
 #include <array>
 
@@ -91,6 +92,19 @@ struct Shadow {
     float spread = 0.0f;           ///< Spread distance.
     Color4 color{0, 0, 0, 128};   ///< Shadow color.
     bool active = false;           ///< Whether this shadow is enabled.
+
+    KL_BEGIN_FIELDS(Shadow)
+        KL_FIELD(Shadow, offsetX, "Offset x", __FLT_MIN__, __FLT_MAX__)
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(Shadow)
+        /* No reflected methods. */
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(Shadow)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(Shadow)
+
 };
 
 /**
@@ -103,6 +117,19 @@ struct TextShadow {
     float blur = 0.0f;             ///< Blur radius.
     Color4 color{0, 0, 0, 128};   ///< Shadow color.
     bool active = false;           ///< Whether this text shadow is enabled.
+
+    KL_BEGIN_FIELDS(TextShadow)
+        KL_FIELD(TextShadow, offsetX, "Offset x", __FLT_MIN__, __FLT_MAX__)
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(TextShadow)
+        /* No reflected methods. */
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(TextShadow)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(TextShadow)
+
 };
 
 /**
@@ -114,6 +141,19 @@ struct Gradient {
     Color4 to{0, 0, 0, 0};        ///< End color.
     float angle = 180.0f;          ///< Angle in degrees (180 = top-to-bottom).
     bool active = false;           ///< Whether this gradient is enabled.
+
+    KL_BEGIN_FIELDS(Gradient)
+        /* No reflected fields. */
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(Gradient)
+        /* No reflected methods. */
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(Gradient)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(Gradient)
+
 };
 
 /**
@@ -123,6 +163,19 @@ struct Gradient {
 struct Transition {
     float duration = 0.0f;         ///< Duration in seconds.
     bool active = false;           ///< Whether transitions are enabled.
+
+    KL_BEGIN_FIELDS(Transition)
+        KL_FIELD(Transition, duration, "Duration", __FLT_MIN__, __FLT_MAX__)
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(Transition)
+        /* No reflected methods. */
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(Transition)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(Transition)
+
 };
 
 /**
@@ -144,6 +197,19 @@ struct Transform2D {
         return rotate == 0.0f && scaleX == 1.0f && scaleY == 1.0f &&
                translateX == 0.0f && translateY == 0.0f;
     }
+
+    KL_BEGIN_FIELDS(Transform2D)
+        KL_FIELD(Transform2D, rotate, "Rotate", __FLT_MIN__, __FLT_MAX__)
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(Transform2D)
+        /* No reflected methods. */
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(Transform2D)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(Transform2D)
+
 };
 
 /**
@@ -264,6 +330,19 @@ public:
         float remaining;    ///< Seconds remaining in transition.
         float duration;     ///< Total transition duration.
         bool active = false; ///< Whether this transition is in progress.
+
+        KL_BEGIN_FIELDS(TransitionState)
+            KL_FIELD(TransitionState, current, "Current", 0, 0)
+        KL_END_FIELDS
+
+        KL_BEGIN_METHODS(TransitionState)
+            /* No reflected methods. */
+        KL_END_METHODS
+
+        KL_BEGIN_DESCRIBE(TransitionState)
+            /* No reflected ctors. */
+        KL_END_DESCRIBE(TransitionState)
+
     };
 
     /** @brief Update transitions for all widgets. Call once per frame with delta time. */
@@ -296,14 +375,12 @@ private:
 
     static Color4 LerpColor(Color4 a, Color4 b, float t) {
         return {
-            static_cast<uint8_t>(a.r + (b.r - a.r) * t),
-            static_cast<uint8_t>(a.g + (b.g - a.g) * t),
-            static_cast<uint8_t>(a.b + (b.b - a.b) * t),
-            static_cast<uint8_t>(a.a + (b.a - a.a) * t)
+            static_cast<uint8_t>(Mathematics::Lerp(static_cast<float>(a.r), static_cast<float>(b.r), t)),
+            static_cast<uint8_t>(Mathematics::Lerp(static_cast<float>(a.g), static_cast<float>(b.g), t)),
+            static_cast<uint8_t>(Mathematics::Lerp(static_cast<float>(a.b), static_cast<float>(b.b), t)),
+            static_cast<uint8_t>(Mathematics::Lerp(static_cast<float>(a.a), static_cast<float>(b.a), t))
         };
     }
-
-    static float Lerp(float a, float b, float t) { return a + (b - a) * t; }
 
     static Style LerpStyle(const Style& a, const Style& b, float t);
 

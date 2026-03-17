@@ -773,16 +773,9 @@ OpenGLRenderBackend::MeshCacheEntry& OpenGLRenderBackend::UploadMesh(Mesh* mesh)
         const Vector3D& p3 = *tri.p3;
 
         // Face normal from cross product of edges
-        float e1x = p2.X - p1.X, e1y = p2.Y - p1.Y, e1z = p2.Z - p1.Z;
-        float e2x = p3.X - p1.X, e2y = p3.Y - p1.Y, e2z = p3.Z - p1.Z;
-        float nx = e1y * e2z - e1z * e2y;
-        float ny = e1z * e2x - e1x * e2z;
-        float nz = e1x * e2y - e1y * e2x;
-        float len = std::sqrt(nx * nx + ny * ny + nz * nz);
-        if (len > 1e-8f) {
-            float inv = 1.0f / len;
-            nx *= inv; ny *= inv; nz *= inv;
-        }
+        Vector3D n = (p2 - p1).CrossProduct(p3 - p1);
+        float len = n.Magnitude();
+        if (len > 1e-8f) n = n * (1.0f / len);
 
         float u0 = 0, v0 = 0, u1 = 0, v1 = 0, u2 = 0, v2 = 0;
         if (hasUV && uvIndices && uvVerts) {
@@ -792,12 +785,9 @@ OpenGLRenderBackend::MeshCacheEntry& OpenGLRenderBackend::UploadMesh(Mesh* mesh)
             u2 = uvVerts[uvIdx.C].X; v2 = uvVerts[uvIdx.C].Y;
         }
 
-        verts.push_back({p1.X, p1.Y, p1.Z, nx, ny, nz, u0, v0});
-        verts.push_back({p2.X, p2.Y, p2.Z, nx, ny, nz, u1, v1});
-        verts.push_back({p3.X, p3.Y, p3.Z, nx, ny, nz, u2, v2});
-    }
-
-    if (it != meshCache_.end()) {
+        verts.push_back({p1.X, p1.Y, p1.Z, n.X, n.Y, n.Z, u0, v0});
+        verts.push_back({p2.X, p2.Y, p2.Z, n.X, n.Y, n.Z, u1, v1});
+        verts.push_back({p3.X, p3.Y, p3.Z, n.X, n.Y, n.Z, u2, v2});
         // Re-upload vertex data for animated meshes
         MeshCacheEntry& entry = it->second;
         GLsizeiptr dataSize = static_cast<GLsizeiptr>(verts.size() * sizeof(GLVertex));
@@ -1199,11 +1189,9 @@ void OpenGLRenderBackend::RenderDirect(Scene* scene, CameraBase* camera) {
                     const Vector3D& p1 = *tri.p1;
                     const Vector3D& p2 = *tri.p2;
                     const Vector3D& p3 = *tri.p3;
-                    float nx = (p2.Y-p1.Y)*(p3.Z-p1.Z) - (p2.Z-p1.Z)*(p3.Y-p1.Y);
-                    float ny = (p2.Z-p1.Z)*(p3.X-p1.X) - (p2.X-p1.X)*(p3.Z-p1.Z);
-                    float nz = (p2.X-p1.X)*(p3.Y-p1.Y) - (p2.Y-p1.Y)*(p3.X-p1.X);
-                    float len = std::sqrt(nx*nx + ny*ny + nz*nz);
-                    if (len > 1e-8f) { float inv = 1.0f/len; nx *= inv; ny *= inv; nz *= inv; }
+                    Vector3D n = (p2 - p1).CrossProduct(p3 - p1);
+                    float len = n.Magnitude();
+                    if (len > 1e-8f) n = n * (1.0f / len);
                     float u0=0,v0=0,u1=0,v1=0,u2=0,v2=0;
                     if (hasUV && uvI && uvV) {
                         const IndexGroup& ui = uvI[t];
@@ -1211,9 +1199,9 @@ void OpenGLRenderBackend::RenderDirect(Scene* scene, CameraBase* camera) {
                         u1=uvV[ui.B].X; v1=uvV[ui.B].Y;
                         u2=uvV[ui.C].X; v2=uvV[ui.C].Y;
                     }
-                    s_batchVerts.push_back({p1.X,p1.Y,p1.Z, nx,ny,nz, u0,v0});
-                    s_batchVerts.push_back({p2.X,p2.Y,p2.Z, nx,ny,nz, u1,v1});
-                    s_batchVerts.push_back({p3.X,p3.Y,p3.Z, nx,ny,nz, u2,v2});
+                    s_batchVerts.push_back({p1.X,p1.Y,p1.Z, n.X,n.Y,n.Z, u0,v0});
+                    s_batchVerts.push_back({p2.X,p2.Y,p2.Z, n.X,n.Y,n.Z, u1,v1});
+                    s_batchVerts.push_back({p3.X,p3.Y,p3.Z, n.X,n.Y,n.Z, u2,v2});
                 }
             }
             glBindVertexArray(batchVao_);

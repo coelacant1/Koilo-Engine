@@ -18,7 +18,7 @@
 #include "color565.hpp"
 #include "colorgray.hpp"
 #include "colormono.hpp"
-#include <koilo/systems/display/pixelformat.hpp>
+#include <koilo/core/color/pixelformat.hpp>
 #include <cstdint>
 #include <koilo/registry/reflect_macros.hpp>
 

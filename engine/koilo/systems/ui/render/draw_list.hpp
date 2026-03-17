@@ -226,6 +226,24 @@ private:
         const WidgetPool* pool;
         const StringTable* strings;
         int widgetIdx;
+
+        KL_BEGIN_FIELDS(DeferredDropdown)
+            KL_FIELD(DeferredDropdown, widget, "Widget", 0, 0),
+            KL_FIELD(DeferredDropdown, rect, "Rect", 0, 0),
+            KL_FIELD(DeferredDropdown, style, "Style", 0, 0),
+            KL_FIELD(DeferredDropdown, pool, "Pool", 0, 0),
+            KL_FIELD(DeferredDropdown, strings, "Strings", 0, 0),
+            KL_FIELD(DeferredDropdown, widgetIdx, "Widget idx", -2147483648, 2147483647)
+        KL_END_FIELDS
+
+        KL_BEGIN_METHODS(DeferredDropdown)
+            /* No reflected methods. */
+        KL_END_METHODS
+
+        KL_BEGIN_DESCRIBE(DeferredDropdown)
+            /* No reflected ctors. */
+        KL_END_DESCRIBE(DeferredDropdown)
+
     };
     std::vector<DeferredDropdown> deferredDropdowns_; ///< Open dropdowns to render on top.
 
@@ -303,6 +321,27 @@ private:
     UIDrawList& dl_; ///< underlying draw list
     float ox_, oy_, w_, h_; ///< canvas origin and dimensions
     font::Font* font_; ///< font for text rendering
+
+    KL_BEGIN_FIELDS(CanvasDrawContext)
+        /* No reflected fields. */
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(CanvasDrawContext)
+        KL_METHOD_AUTO(CanvasDrawContext, Height, "Height"),
+        KL_METHOD_AUTO(CanvasDrawContext, DrawRect, "Draw rect"),
+        KL_METHOD_AUTO(CanvasDrawContext, DrawRoundedRect, "Draw rounded rect"),
+        KL_METHOD_AUTO(CanvasDrawContext, DrawBorderRect, "Draw border rect"),
+        KL_METHOD_AUTO(CanvasDrawContext, DrawLine, "Draw line"),
+        KL_METHOD_AUTO(CanvasDrawContext, DrawCircle, "Draw circle"),
+        KL_METHOD_AUTO(CanvasDrawContext, DrawCircleOutline, "Draw circle outline"),
+        KL_METHOD_AUTO(CanvasDrawContext, DrawTriangle, "Draw triangle"),
+        KL_METHOD_AUTO(CanvasDrawContext, DrawText, "Draw text")
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(CanvasDrawContext)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(CanvasDrawContext)
+
 };
 
 } // namespace ui

@@ -8,18 +8,11 @@
 
 namespace koilo {
 
-MorphableMesh::MorphableMesh() {
-    controller_ = new BlendshapeController(nullptr, 64); // Support up to 64 morphs
+MorphableMesh::MorphableMesh()
+    : controller_(std::make_unique<BlendshapeController>(nullptr, 64)) {
 }
 
-MorphableMesh::~MorphableMesh() {
-    delete controller_;
-    delete mesh_;
-    delete workingGeometry_;
-    delete baseGeometry_;
-    delete[] uvVertices_;
-    delete[] uvIndices_;
-}
+MorphableMesh::~MorphableMesh() = default;
 
 bool MorphableMesh::Load(const char* filepath) {
     // Load mesh from file
@@ -101,7 +94,7 @@ void MorphableMesh::Update() {
         return;
     }
     
-    controller_->Update(mesh_);
+    controller_->Update(mesh_.get());
 }
 
 void MorphableMesh::ResetMorphs() {
@@ -113,7 +106,7 @@ void MorphableMesh::ResetMorphs() {
 }
 
 Mesh* MorphableMesh::GetMesh() {
-    return mesh_;
+    return mesh_.get();
 }
 
 const char* MorphableMesh::GetError() const {
@@ -136,9 +129,9 @@ bool MorphableMesh::BuildGeometry() {
     }
     
     // Allocate and copy vertices
-    Vector3D* vertexArray = new Vector3D[vertexCount];
+    vertexData_.resize(vertexCount);
     for (size_t i = 0; i < vertexCount; ++i) {
-        vertexArray[i] = Vector3D(
+        vertexData_[i] = Vector3D(
             vertices[i * 3 + 0],
             vertices[i * 3 + 1],
             vertices[i * 3 + 2]
@@ -146,9 +139,9 @@ bool MorphableMesh::BuildGeometry() {
     }
     
     // Allocate and copy triangles
-    IndexGroup* indexArray = new IndexGroup[triangleCount];
+    indexData_.resize(triangleCount);
     for (size_t i = 0; i < triangleCount; ++i) {
-        indexArray[i] = IndexGroup(
+        indexData_[i] = IndexGroup(
             static_cast<int>(triangles[i * 3 + 0]),
             static_cast<int>(triangles[i * 3 + 1]),
             static_cast<int>(triangles[i * 3 + 2])
@@ -162,11 +155,11 @@ bool MorphableMesh::BuildGeometry() {
         uint32_t uvCount = loader_.GetUVCount();
         
         if (uvData && uvTris && uvCount > 0) {
-            uvVertices_ = new Vector2D[uvCount];
+            uvVertices_.resize(uvCount);
             for (uint32_t i = 0; i < uvCount; ++i) {
                 uvVertices_[i] = Vector2D(uvData[i * 2], uvData[i * 2 + 1]);
             }
-            uvIndices_ = new IndexGroup[triangleCount];
+            uvIndices_.resize(triangleCount);
             for (size_t i = 0; i < triangleCount; ++i) {
                 uvIndices_[i] = IndexGroup(
                     static_cast<int>(uvTris[i * 3 + 0]),
@@ -174,16 +167,20 @@ bool MorphableMesh::BuildGeometry() {
                     static_cast<int>(uvTris[i * 3 + 2])
                 );
             }
-            baseGeometry_ = new StaticTriangleGroup(vertexArray, indexArray, uvIndices_, uvVertices_, vertexCount, triangleCount);
+            baseGeometry_ = std::make_unique<StaticTriangleGroup>(
+                vertexData_.data(), indexData_.data(), uvIndices_.data(),
+                uvVertices_.data(), vertexCount, triangleCount);
         } else {
-            baseGeometry_ = new StaticTriangleGroup(vertexArray, indexArray, vertexCount, triangleCount);
+            baseGeometry_ = std::make_unique<StaticTriangleGroup>(
+                vertexData_.data(), indexData_.data(), vertexCount, triangleCount);
         }
     } else {
-        baseGeometry_ = new StaticTriangleGroup(vertexArray, indexArray, vertexCount, triangleCount);
+        baseGeometry_ = std::make_unique<StaticTriangleGroup>(
+            vertexData_.data(), indexData_.data(), vertexCount, triangleCount);
     }
     
-    workingGeometry_ = new TriangleGroup(baseGeometry_);
-    mesh_ = new Mesh(baseGeometry_, workingGeometry_, nullptr);
+    workingGeometry_ = std::make_unique<TriangleGroup>(baseGeometry_.get());
+    mesh_ = std::make_unique<Mesh>(baseGeometry_.get(), workingGeometry_.get(), nullptr);
     
     return true;
 }

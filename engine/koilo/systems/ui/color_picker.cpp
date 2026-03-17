@@ -7,6 +7,7 @@
  */
 
 #include "color_picker.hpp"
+#include <koilo/core/math/mathematics.hpp>
 
 #include <cmath>
 #include <cstdio>
@@ -191,24 +192,22 @@ void ColorPicker::HandlePointerUp() {
 }
 
 void ColorPicker::UpdateCanvasValue(int canvas, float px, float py) {
-    auto clamp01 = [](float v) { return std::max(0.0f, std::min(1.0f, v)); };
-
     if (canvas == 0) {
         const Widget* sv = ctx_->Pool().Get(svCanvasIdx_);
         if (!sv) return;
         Rect r = sv->computedRect;
-        sat_ = clamp01((px - r.x) / r.w);
-        val_ = 1.0f - clamp01((py - r.y) / r.h);
+        sat_ = Mathematics::Constrain((px - r.x) / r.w, 0.0f, 1.0f);
+        val_ = 1.0f - Mathematics::Constrain((py - r.y) / r.h, 0.0f, 1.0f);
     } else if (canvas == 1) {
         const Widget* hb = ctx_->Pool().Get(hueBarIdx_);
         if (!hb) return;
         Rect r = hb->computedRect;
-        hue_ = clamp01((px - r.x) / r.w) * 360.0f;
+        hue_ = Mathematics::Constrain((px - r.x) / r.w, 0.0f, 1.0f) * 360.0f;
     } else if (canvas == 2) {
         const Widget* ab = ctx_->Pool().Get(alphaBarIdx_);
         if (!ab) return;
         Rect r = ab->computedRect;
-        alpha_ = static_cast<uint8_t>(clamp01((px - r.x) / r.w) * 255.0f);
+        alpha_ = static_cast<uint8_t>(Mathematics::Constrain((px - r.x) / r.w, 0.0f, 1.0f) * 255.0f);
     }
 }
 

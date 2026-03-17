@@ -16,6 +16,7 @@
 
 #include <koilo/systems/ui/ui_context.hpp>
 #include <koilo/systems/ui/render/draw_list.hpp>
+#include "../../registry/reflect_macros.hpp"
 
 namespace koilo {
 namespace ui {
@@ -95,6 +96,19 @@ private:
     void PaintSVCanvas(void* rawCtx);
     void PaintHueBar(void* rawCtx);
     void PaintAlphaBar(void* rawCtx);
+
+    KL_BEGIN_FIELDS(ColorPicker)
+        /* No reflected fields. */
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(ColorPicker)
+        KL_METHOD_AUTO(ColorPicker, HandlePointerDown, "Handle pointer down")
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(ColorPicker)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(ColorPicker)
+
 };
 
 } // namespace ui
