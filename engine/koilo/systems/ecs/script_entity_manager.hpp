@@ -87,6 +87,10 @@ public:
     // -- Sync transforms (call once per frame) -----------------------
     void SyncTransforms();
 
+    // -- Iteration (C++ only) ----------------------------------------
+    /// Get all tracked entities for inspection/iteration.
+    std::vector<Entity> GetAllEntities() const;
+
     // -- Access underlying manager (C++ only) ------------------------
     EntityManager& GetManager();
     const EntityManager& GetManager() const;

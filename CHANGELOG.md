@@ -4,6 +4,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.3.5] - 2026-3-18
+Runtime inspection, console intelligence, state snapshots, and TCP event streaming.
+
+### Added
+- **Entity console commands** (`engine/koilo/kernel/console/entity_commands.cpp`)
+  - `entity.list [tag]` - enumerate all live entities with optional tag filter
+  - `entity.inspect <id|tag>` - show transform, velocity, scene node, and component details
+  - `entity.set <id>.<field> <value>` - set entity position, scale, velocity, or tag at runtime
+  - `entity.watch <id>.<field>` / `entity.unwatch` - pin entity fields to the debug overlay
+  - `scene.hierarchy` - walk and print the scene graph tree with node names, meshes, and positions
+  - `help --json` - structured JSON output of the full command registry for tooling
+- **State save/load system** (`state.save`, `state.load`, `state.list`)
+  - Saves entity transforms + velocities, CVars, and camera position to named snapshots
+  - Tag-based entity matching on restore for cross-session state transfer
+  - Snapshots stored as `states/<name>/` with `entities.json`, `cvars.cfg`, `camera.json`
+- **TCP event subscription** (`engine/koilo/kernel/console/event_bridge.hpp`)
+  - `EventBridge` service bridges MessageBus events to subscribed TCP console clients
+  - `subscribe <event,...>` / `unsubscribe [event,...]` / `subscriptions` commands
+  - Per-client subscription tracking with thread-local token per connection
+  - Supports all 14 built-in event types (module, asset, scene, entity lifecycle)
+  - JSON-line push format for real-time event streaming to external tools
+- **`ScriptEntityManager::GetAllEntities()`** - public method to iterate all valid entities
+
+### Changed
+- **ConsoleModule** - now owns and registers `EventBridge` as kernel service `"events"`
+- **ConsoleSocket** - per-client `EventBridge` token lifecycle (register on connect, unregister on disconnect)
+
 ## [0.3.4] - 2026-3-18
 Service registration, CVar system, structured logging, module modularization, and critical bug fixes.
 
