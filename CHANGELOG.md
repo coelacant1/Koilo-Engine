@@ -4,6 +4,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.3.6] - 2026-3-18
+Render Hardware Interface (RHI) abstraction layer with Vulkan and OpenGL drivers.
+
+### Added
+- **RHI type system** (`engine/koilo/systems/render/rhi/rhi_types.hpp`, 306 lines)
+  - 7 opaque handle types with null sentinels: Buffer, Texture, Shader, Pipeline, RenderPass, Framebuffer, DescriptorSet
+  - 14 pixel/depth formats (R8 through D32F_S8), buffer/texture usage flags, shader stages
+  - Complete pipeline state: topology, rasterizer, depth/stencil, blend, vertex attributes
+  - Descriptor structs: `RHIBufferDesc`, `RHITextureDesc`, `RHIPipelineDesc`, `RHIRenderPassDesc`
+  - Utility helpers: `RHIFormatBytesPerPixel`, `RHIFormatIsDepth`, `HasFlag` operators
+- **RHI device interface** (`engine/koilo/systems/render/rhi/rhi_device.hpp`)
+  - `IRHIDevice` pure virtual interface (~35 methods) covering lifecycle, capabilities, resource CRUD, data transfer, command recording, and presentation
+  - Backend-agnostic contract enabling single render pipeline for all GPU APIs
+- **RHI capability system** (`engine/koilo/systems/render/rhi/rhi_caps.hpp`)
+  - `RHIFeature` enum (10 features): timestamp queries, compute, multi-draw indirect, bindless textures, push constants, storage buffers, geometry/tessellation shaders, async compute, depth clamp
+  - `RHILimits` struct (14 hardware limits) queried from device at initialization
+- **Vulkan RHI driver** (`engine/koilo/systems/render/rhi/vulkan/`, 1504 lines)
+  - Full `IRHIDevice` implementation using Vulkan API with SlotArray handle-VkObject mapping
+  - Resource lifecycle: buffer/texture/shader/pipeline/renderpass/framebuffer create/destroy
+  - Command recording: render pass begin/end, pipeline/buffer/texture binding, draw/draw-indexed
+  - Descriptor pool with per-frame reset to prevent set exhaustion
+  - Push constants, dynamic viewport/scissor, staging buffer transfers with layout transitions
+  - Device limit/feature queries from `VkPhysicalDeviceProperties` and `VkPhysicalDeviceFeatures`
+- **OpenGL RHI driver** (`engine/koilo/systems/render/rhi/opengl/`, 1077 lines)
+  - Full `IRHIDevice` implementation using OpenGL 3.3+ with immediate-mode GL calls
+  - SlotArray pattern matching Vulkan driver for consistent handle management
+  - Format conversion tables (RHIFormat <-> GL internal/pixel/type), topology/blend/compare mapping
+  - Push constants emulated via reserved UBO at binding 7
+  - Persistent VAO with lazy reconfiguration on vertex state change
+  - Proper ordered shutdown: framebuffers - pipelines - shaders - textures - buffers
+- **RHI smoke tests** (`tests/engine/systems/render/rhi/`, 12 tests)
+  - Handle null sentinel and equality, format helpers, usage flag composition
+  - Descriptor struct defaults, capability feature flags, limits defaults
+
+### Changed
+- **CMake** - RHI driver sources excluded from main glob and conditionally compiled via display CMakeLists (Vulkan section / OpenGL section), matching existing backend pattern
+- **Vulkan RHI** - descriptor set layouts now checked for creation errors with proper error logging
+- **Vulkan RHI** - `BindUniformBuffer` and `BindTexture` log errors on descriptor allocation failure
+
 ## [0.3.5] - 2026-3-18
 Runtime inspection, console intelligence, state snapshots, and TCP event streaming.
 

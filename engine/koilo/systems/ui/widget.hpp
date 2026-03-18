@@ -219,7 +219,7 @@ enum class CursorType : uint8_t {
     Move,        ///< Move cursor.
     Grab,        ///< Open hand grab cursor.
     Grabbing,    ///< Closed hand grabbing cursor.
-    EWResize,    ///< Horizontal resize ↔.
+    EWResize,    ///< Horizontal resize <->.
     NSResize,    ///< Vertical resize ↕.
     NWSEResize,  ///< Diagonal resize ↘.
     NESWResize,  ///< Diagonal resize ↙.

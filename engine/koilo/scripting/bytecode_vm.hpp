@@ -133,7 +133,7 @@ private:
     HeapArray& AllocArray();
     std::unordered_map<std::string, Value>& AllocMap(); // table storage
 
-    // Value conversion (VM ↔ engine boundary)
+    // Value conversion (VM <-> engine boundary)
     Value ToValue(NanBoxedValue nb);
     NanBoxedValue FromValue(const Value& v);
 
