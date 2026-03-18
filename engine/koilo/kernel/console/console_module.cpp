@@ -1,5 +1,6 @@
 #include <koilo/kernel/console/console_module.hpp>
 #include <koilo/kernel/console/console_commands.hpp>
+#include <koilo/kernel/console/event_bridge.hpp>
 #include <koilo/systems/ui/console_widget.hpp>
 #include <koilo/kernel/kernel.hpp>
 #include <sstream>
@@ -30,6 +31,11 @@ bool ConsoleModule::Init(KoiloKernel& kernel) {
     instance_->session_ = std::make_unique<ConsoleSession>(kernel, instance_->commands_);
     instance_->RegisterBuiltinCommands();
 
+    // Create event bridge for TCP event subscription
+    instance_->eventBridge_ = std::make_unique<EventBridge>();
+    instance_->eventBridge_->ConnectToMessageBus(kernel.Messages());
+    kernel.Services().Register("events", instance_->eventBridge_.get());
+
     kernel.Services().Register("console", instance_.get());
     return true;
 }
@@ -49,6 +55,10 @@ void ConsoleModule::Shutdown() {
     if (instance_) {
         if (instance_->socket_) {
             instance_->socket_->Stop();
+        }
+        if (instance_->eventBridge_ && instance_->kernel_) {
+            instance_->eventBridge_->DisconnectFromMessageBus(instance_->kernel_->Messages());
+            instance_->kernel_->Services().Unregister("events");
         }
         if (instance_->kernel_) {
             instance_->kernel_->Services().Unregister("console");
@@ -396,6 +406,7 @@ void ConsoleModule::RegisterBuiltinCommands() {
     RegisterLogCommands(commands_);
     RegisterUtilityCommands(commands_);
     RegisterConfigCommands(commands_);
+    RegisterEntityCommands(commands_);
 
     // -- listen --
     commands_.Register({"listen", "listen [port]", "Start TCP console server (default: 9090)",

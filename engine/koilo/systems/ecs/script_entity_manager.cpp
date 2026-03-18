@@ -255,4 +255,14 @@ Vector3D ScriptEntityManager::ScriptGetAngularVelocity(double id) const {
     return GetAngularVelocity(Entity(static_cast<EntityID>(id)));
 }
 
+std::vector<Entity> ScriptEntityManager::GetAllEntities() const {
+    std::vector<Entity> result;
+    result.reserve(indexToEntity_.size());
+    for (auto& [idx, ent] : indexToEntity_) {
+        if (manager_->IsEntityValid(ent))
+            result.push_back(ent);
+    }
+    return result;
+}
+
 } // namespace koilo

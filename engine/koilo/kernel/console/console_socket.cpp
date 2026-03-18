@@ -1,4 +1,5 @@
 #include <koilo/kernel/console/console_socket.hpp>
+#include <koilo/kernel/console/event_bridge.hpp>
 #include <koilo/kernel/kernel.hpp>
 #include <koilo/kernel/thread_pool.hpp>
 #include <koilo/kernel/logging/log.hpp>
@@ -162,6 +163,14 @@ void ConsoleSocket::HandleClient(int clientFd) {
     ConsoleSession session(kernel_, registry_);
     session.SetOutputFormat(ConsoleOutputFormat::Json);
 
+    // Register with event bridge for TCP event subscriptions
+    auto* bridge = kernel_.Services().Get<EventBridge>("events");
+    EventBridge::ClientToken token = 0;
+    if (bridge) {
+        token = bridge->RegisterClient(clientFd);
+        g_eventBridgeToken = token;
+    }
+
     // Send welcome
     const char* welcome = "{\"status\":\"connected\",\"engine\":\"koilo\",\"version\":\"0.3.2\"}\n";
     ::send(clientFd, welcome, static_cast<int>(std::strlen(welcome)), 0);
@@ -211,6 +220,12 @@ void ConsoleSocket::HandleClient(int clientFd) {
 
             ::send(clientFd, response.c_str(), static_cast<int>(response.size()), 0);
         }
+    }
+
+    // Unregister from event bridge
+    if (bridge && token != 0) {
+        bridge->UnregisterClient(token);
+        g_eventBridgeToken = 0;
     }
 
     {

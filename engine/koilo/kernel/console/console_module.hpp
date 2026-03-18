@@ -11,6 +11,7 @@
 #include <koilo/kernel/console/command_registry.hpp>
 #include <koilo/kernel/console/console_session.hpp>
 #include <koilo/kernel/console/console_socket.hpp>
+#include <koilo/kernel/console/event_bridge.hpp>
 #include <koilo/core/interfaces/iconsole_widget.hpp>
 #include <memory>
 #include "../../registry/reflect_macros.hpp"
@@ -44,6 +45,9 @@ public:
 
     /// Register all built-in commands.
     void RegisterBuiltinCommands();
+
+    /// Access the event bridge for TCP event subscriptions.
+    EventBridge* Events() { return eventBridge_.get(); }
 
     /// Access the socket server (may be null if not started).
     ConsoleSocket* Socket() { return socket_.get(); }
@@ -87,6 +91,7 @@ private:
     CommandRegistry commands_;
     std::unique_ptr<ConsoleSession> session_;
     std::unique_ptr<ConsoleSocket> socket_;
+    std::unique_ptr<EventBridge> eventBridge_;
     std::unique_ptr<ConsoleWidget> widget_;
     KoiloKernel* kernel_ = nullptr;
 

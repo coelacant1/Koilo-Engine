@@ -41,6 +41,9 @@ void RegisterUtilityCommands(CommandRegistry& registry);
 /// Register config store commands (config.list, config.get, config.set, config.save, config.load).
 void RegisterConfigCommands(CommandRegistry& registry);
 
+/// Register entity/scene inspection commands (entity.list, entity.inspect, scene.hierarchy, etc.).
+void RegisterEntityCommands(CommandRegistry& registry);
+
 /// Try interpreting a command as a CVar name (get/set fallback).
 ConsoleResult TryCVarFallback(const std::string& name, const std::vector<std::string>& args);
 
