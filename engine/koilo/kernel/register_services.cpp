@@ -12,6 +12,7 @@ namespace koilo {
 
 void RegisterCoreServices(KoiloKernel& kernel) {
     auto& svc = kernel.Services();
+    // These retrieve the kernel-owned instances (installed via SetInstance)
     svc.Register("time",         &TimeManager::GetInstance());
     svc.Register("debug_draw",   &DebugDraw::GetInstance());
     svc.Register("profiler",     &Profiler::GetInstance());

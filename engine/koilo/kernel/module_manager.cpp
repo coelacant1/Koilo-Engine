@@ -1,6 +1,6 @@
 #include <koilo/kernel/module_manager.hpp>
+#include <koilo/kernel/logging/log.hpp>
 #include <algorithm>
-#include <cstdio>
 #include <queue>
 
 namespace koilo {
@@ -18,7 +18,7 @@ ModuleId ModuleManager::RegisterModule(const ModuleDesc& desc, Cap grantedCaps) 
 
     // Check for duplicate registration
     if (nameIndex_.find(desc.name) != nameIndex_.end()) {
-        std::fprintf(stderr, "[Kernel] Module already registered: %s\n", desc.name);
+        KL_WARN("Kernel", "Module already registered: %s", desc.name);
         return 0;
     }
 
@@ -43,8 +43,8 @@ bool ModuleManager::InitializeAll(KoiloKernel& kernel) {
 
         // Verify granted caps satisfy required caps
         if (!HasCap(entry.grantedCaps, entry.desc.requiredCaps)) {
-            std::fprintf(stderr, "[Kernel] Module '%s' requires capabilities not granted\n",
-                         entry.desc.name);
+            KL_ERR("Kernel", "Module '%s' requires capabilities not granted",
+                   entry.desc.name);
             entry.state = ModuleState::Error;
             return false;
         }
@@ -53,14 +53,22 @@ bool ModuleManager::InitializeAll(KoiloKernel& kernel) {
 
         if (entry.desc.Init) {
             if (!entry.desc.Init(kernel)) {
-                std::fprintf(stderr, "[Kernel] Module '%s' initialization failed\n",
-                             entry.desc.name);
+                KL_ERR("Kernel", "Module '%s' initialization failed",
+                       entry.desc.name);
                 entry.state = ModuleState::Error;
                 return false;
             }
         }
 
         entry.state = ModuleState::Running;
+
+        // Subscribe module's OnMessage handler to the bus
+        if (entry.desc.OnMessage) {
+            auto handler = entry.desc.OnMessage;
+            entry.busSubId = bus_.SubscribeAll([handler](const Message& msg) {
+                handler(msg);
+            });
+        }
 
         // Notify other modules
         struct { const char* name; ModuleId id; } payload{entry.desc.name, entry.id};
@@ -85,6 +93,13 @@ void ModuleManager::ShutdownAll() {
         auto& entry = entries_[*it];
         if (entry.state == ModuleState::Running) {
             entry.state = ModuleState::ShuttingDown;
+
+            // Unsubscribe module from the bus before shutdown
+            if (entry.busSubId != 0) {
+                bus_.Unsubscribe(entry.busSubId);
+                entry.busSubId = 0;
+            }
+
             if (entry.desc.Shutdown) {
                 entry.desc.Shutdown();
             }
@@ -159,8 +174,8 @@ bool ModuleManager::ResolveDependencies(std::vector<size_t>& order) const {
             const char* depName = entry.desc.dependencies[d];
             auto it = nameIndex_.find(depName);
             if (it == nameIndex_.end()) {
-                std::fprintf(stderr, "[Kernel] Module '%s' depends on unknown module '%s'\n",
-                             entry.desc.name, depName);
+                KL_ERR("Kernel", "Module '%s' depends on unknown module '%s'",
+                       entry.desc.name, depName);
                 return false;
             }
             // depIdx must init before i
@@ -190,7 +205,7 @@ bool ModuleManager::ResolveDependencies(std::vector<size_t>& order) const {
     }
 
     if (order.size() != n) {
-        std::fprintf(stderr, "[Kernel] Circular dependency detected among modules\n");
+        KL_ERR("Kernel", "Circular dependency detected among modules");
         return false;
     }
 

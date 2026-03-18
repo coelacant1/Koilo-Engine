@@ -1,4 +1,6 @@
 #include <koilo/kernel/console/console_session.hpp>
+#include <koilo/kernel/console/console_commands.hpp>
+#include <koilo/kernel/cvar/cvar_system.hpp>
 #include <koilo/kernel/kernel.hpp>
 #include <sstream>
 
@@ -40,6 +42,13 @@ ConsoleResult ConsoleSession::Execute(const std::string& input) {
 
     auto result = registry_.Execute(kernel_, command, args);
 
+    // If command not found, try CVar fallback (typing cvar name gets/sets it)
+    if (result.status == ConsoleResult::Status::NotFound) {
+        auto cvarResult = TryCVarFallback(command, args);
+        if (cvarResult.status != ConsoleResult::Status::Error || !cvarResult.text.empty())
+            result = cvarResult;
+    }
+
     // Deliver output via callback if set
     if (outputCb_) {
         outputCb_(FormatResult(result));
@@ -59,8 +68,13 @@ std::vector<std::string> ConsoleSession::Complete(const std::string& input) cons
     bool endsWithSpace = !input.empty() && input.back() == ' ';
 
     if (tokens.size() == 1 && !endsWithSpace) {
-        // Completing command name
-        return registry_.Complete(kernel_, "", {}, tokens[0]);
+        // Completing command name - also include CVar names
+        auto matches = registry_.Complete(kernel_, "", {}, tokens[0]);
+        CVarSystem::Get().ForEach([&](const CVarParameter& p) {
+            if (p.name.compare(0, tokens[0].size(), tokens[0]) == 0)
+                matches.push_back(p.name);
+        });
+        return matches;
     }
 
     // Completing arguments

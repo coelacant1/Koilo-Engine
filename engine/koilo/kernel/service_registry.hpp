@@ -13,6 +13,8 @@
 
 namespace koilo {
 
+class MessageBus;
+
 /// Runtime service discovery. Modules register named services;
 /// other modules discover them without compile-time coupling.
 class ServiceRegistry {
@@ -22,6 +24,9 @@ public:
 
     ServiceRegistry(const ServiceRegistry&) = delete;
     ServiceRegistry& operator=(const ServiceRegistry&) = delete;
+
+    /// Attach a message bus for service lifecycle events.
+    void SetBus(MessageBus* bus) { bus_ = bus; }
 
     /// Register a service. Overwrites if name already registered.
     void Register(const std::string& name, void* service);
@@ -50,6 +55,7 @@ public:
 
 private:
     std::unordered_map<std::string, void*> services_;
+    MessageBus* bus_ = nullptr;
 };
 
 } // namespace koilo

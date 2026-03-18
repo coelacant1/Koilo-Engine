@@ -6,8 +6,9 @@
 namespace koilo {
 
 Sky& Sky::GetInstance() {
-    static Sky instance;
-    return instance;
+    if (s_instance) return *s_instance;
+    static Sky fallback;
+    return fallback;
 }
 
 void Sky::Enable() {

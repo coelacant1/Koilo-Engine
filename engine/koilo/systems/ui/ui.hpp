@@ -272,6 +272,9 @@ private:
     /// Pre-layout pass: auto-size text widgets that haven't been given explicit sizes.
     void AutoSizeTextWidgets();
 
+    /// Append debug overlay text (watched CVars) to the draw list.
+    void AppendDebugOverlay(int viewportW, int viewportH);
+
     KL_DECLARE_FIELDS(UI)
     KL_DECLARE_METHODS(UI)
     KL_DECLARE_DESCRIBE(UI)

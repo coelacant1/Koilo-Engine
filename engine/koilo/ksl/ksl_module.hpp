@@ -3,6 +3,7 @@
 
 #include "ksl_shader.hpp"
 #include "ksl_elf_loader.hpp"
+#include <koilo/kernel/logging/log.hpp>
 #include <string>
 #include <fstream>
 #include <sstream>
@@ -50,7 +51,7 @@ public:
 
         // Load via ELF loader
         if (!elfLoader_.Load(data.data(), data.size(), symbols)) {
-            fprintf(stderr, "KSL: Failed to load %s: %s\n",
+            KL_ERR("KSL", "Failed to load %s: %s",
                     path.c_str(), elfLoader_.GetError());
             return false;
         }
@@ -104,7 +105,7 @@ public:
         if (!linked) {
             char log[1024];
             glGetProgramInfoLog(glProgram_, sizeof(log), nullptr, log);
-            fprintf(stderr, "KSL shader link error: %s\n", log);
+            KL_ERR("KSL", "Shader link error: %s", log);
             glDeleteProgram(glProgram_);
             glProgram_ = 0;
             return false;
@@ -201,7 +202,7 @@ private:
         if (!ok) {
             char log[512];
             glGetShaderInfoLog(s, 512, nullptr, log);
-            fprintf(stderr, "KSL shader compile error: %s\n", log);
+            KL_ERR("KSL", "Shader compile error: %s", log);
             glDeleteShader(s);
             return 0;
         }

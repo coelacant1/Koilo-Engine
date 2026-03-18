@@ -25,10 +25,16 @@ std::vector<std::string> CommandRegistry::Complete(KoiloKernel& kernel, const st
         return it->second.completer(kernel, args, partial);
     }
 
-    // Default: complete command names
+    // Default: complete command names (case-insensitive prefix match)
     std::vector<std::string> matches;
+    std::string lowerPartial = partial;
+    std::transform(lowerPartial.begin(), lowerPartial.end(),
+                   lowerPartial.begin(), ::tolower);
     for (auto& [cmdName, _] : commands_) {
-        if (cmdName.find(partial) == 0) {
+        std::string lowerCmd = cmdName;
+        std::transform(lowerCmd.begin(), lowerCmd.end(),
+                       lowerCmd.begin(), ::tolower);
+        if (lowerCmd.find(lowerPartial) == 0) {
             matches.push_back(cmdName);
         }
     }

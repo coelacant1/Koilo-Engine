@@ -34,6 +34,7 @@
 #endif
 
 #include <cstdint>
+#include <koilo/kernel/logging/log.hpp>
 
 namespace koilo {
 namespace platform {
@@ -98,7 +99,7 @@ inline int PinToPerformanceCore() {
     CPU_ZERO(&cpuset);
     CPU_SET(chosen, &cpuset);
     if (sched_setaffinity(0, sizeof(cpuset), &cpuset) == 0) {
-        std::fprintf(stderr, "[ThreadAffinity] Pinned to core %d (%zu performance cores available)\n",
+        KL_DBG("ThreadAffinity", "Pinned to core %d (%zu performance cores available)",
                      chosen, perfCores.size());
         return chosen;
     }
@@ -123,7 +124,7 @@ inline int PinToPerformanceCore() {
 
     DWORD_PTR mask = static_cast<DWORD_PTR>(1) << chosen;
     if (SetThreadAffinityMask(GetCurrentThread(), mask) != 0) {
-        std::fprintf(stderr, "[ThreadAffinity] Pinned to core %d (%d cores available)\n",
+        KL_DBG("ThreadAffinity", "Pinned to core %d (%d cores available)",
                      chosen, nprocs);
         return chosen;
     }
@@ -140,7 +141,7 @@ inline int PinToPerformanceCore() {
         reinterpret_cast<thread_policy_t>(&policy),
         THREAD_AFFINITY_POLICY_COUNT);
     if (ret == KERN_SUCCESS) {
-        std::fprintf(stderr, "[ThreadAffinity] Set affinity tag (macOS hint)\n");
+        KL_DBG("ThreadAffinity", "Set affinity tag (macOS hint)");
         return 0;
     }
     return -1;

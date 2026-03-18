@@ -184,6 +184,11 @@ private:
     };
     std::unordered_map<std::string, PipelineCacheEntry> pipelineCache_;
 
+    // Cached CVar state for detecting pipeline-invalidating changes
+    bool cachedWireframe_ = false;
+    bool cachedCulling_   = true;
+    bool cachedDepthTest_ = true;
+
     VkShaderModule vertModule_ = VK_NULL_HANDLE;
     VkPipeline     pinkPipeline_ = VK_NULL_HANDLE; // Error fallback
 

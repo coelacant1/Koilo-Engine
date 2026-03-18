@@ -8,6 +8,7 @@
 #include <koilo/systems/scene/camera/cameralayout.hpp>
 #include <koilo/systems/render/canvas2d.hpp>
 #include <koilo/systems/render/irenderbackend.hpp>
+#include <koilo/kernel/logging/log.hpp>
 #include <sys/stat.h>
 #include <cstdio>
 
@@ -65,11 +66,11 @@ void KoiloApplication::Update(float deltaTime) {
     if (hotReloadEnabled) {
         long currentModTime = GetFileModificationTime();
         if (currentModTime > lastModifiedTime) {
-            printf("[Hot Reload] Script changed, reloading...\n");
+            KL_LOG("HotReload", "Script changed, reloading...");
             if (LoadScript(scriptPath.c_str())) {
-                printf("[Hot Reload] Reload successful\n");
+                KL_LOG("HotReload", "Reload successful");
             } else {
-                printf("[Hot Reload] Reload failed: %s\n", engine->GetError());
+                KL_ERR("HotReload", "Reload failed: %s", engine->GetError());
             }
         }
     }
@@ -91,7 +92,7 @@ void KoiloApplication::Update(float deltaTime) {
 void KoiloApplication::EnableHotReload(bool enable) {
     hotReloadEnabled = enable;
     if (enable) {
-        printf("[Hot Reload] Enabled for %s\n", scriptPath.c_str());
+        KL_LOG("HotReload", "Enabled for %s", scriptPath.c_str());
     }
 }
 

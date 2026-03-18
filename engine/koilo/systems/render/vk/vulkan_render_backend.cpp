@@ -34,6 +34,8 @@
 #include <koilo/systems/profiling/performanceprofiler.hpp>
 #include <koilo/debug/debugdraw.hpp>
 #include <koilo/systems/render/canvas2d.hpp>
+#include <koilo/systems/render/render_cvars.hpp>
+#include <koilo/kernel/logging/log.hpp>
 
 #include <iostream>
 #include <fstream>
@@ -382,8 +384,8 @@ void VulkanRenderBackend::EndOneShot(VkCommandBuffer cmd) {
             case VK_ERROR_OUT_OF_DEVICE_MEMORY: errName = "VK_ERROR_OUT_OF_DEVICE_MEMORY"; break;
             default: break;
         }
-        fprintf(stderr, "[VulkanRenderBackend] vkQueueSubmit failed in EndOneShot (%s, %d)\n",
-                errName, (int)result);
+        KL_ERR("VulkanRender", "vkQueueSubmit failed in EndOneShot (%s, %d)",
+               errName, (int)result);
     }
     vkQueueWaitIdle(graphicsQueue_);
     vkFreeCommandBuffers(device_, cmdPool_, 1, &cmd);
@@ -752,7 +754,7 @@ bool VulkanRenderBackend::CreateShaderModules() {
     // Load vertex shader SPIR-V
     const auto& vertSPV = kslRegistry_.GetVertexSPIRV();
     if (vertSPV.empty()) {
-        fprintf(stderr, "[VulkanRenderBackend] No vertex SPIR-V available\n");
+        KL_ERR("VulkanRender", "No vertex SPIR-V available");
         return false;
     }
 
@@ -762,7 +764,7 @@ bool VulkanRenderBackend::CreateShaderModules() {
     moduleInfo.pCode = vertSPV.data();
 
     if (vkCreateShaderModule(device_, &moduleInfo, nullptr, &vertModule_) != VK_SUCCESS) {
-        fprintf(stderr, "[VulkanRenderBackend] Failed to create vertex shader module\n");
+        KL_ERR("VulkanRender", "Failed to create vertex shader module");
         return false;
     }
 
@@ -835,11 +837,11 @@ bool VulkanRenderBackend::CreateScenePipeline(const std::string& name,
     vpInfo.viewportCount = 1;
     vpInfo.scissorCount = 1;
 
-    // Rasterization
+    // Rasterization (reads CVars for wireframe and culling)
     VkPipelineRasterizationStateCreateInfo rastInfo{};
     rastInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-    rastInfo.polygonMode = VK_POLYGON_MODE_FILL;
-    rastInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+    rastInfo.polygonMode = cvar_r_wireframe.Get() ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
+    rastInfo.cullMode = cvar_r_culling.Get() ? VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_NONE;
     rastInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     rastInfo.lineWidth = 1.0f;
 
@@ -895,7 +897,7 @@ bool VulkanRenderBackend::CreateScenePipeline(const std::string& name,
 
 void VulkanRenderBackend::InitShaderPipelines() {
     auto shaderNames = kslRegistry_.ListSPIRVShaders();
-    printf("[VulkanRenderBackend] Loading %zu SPIR-V shader pipelines\n", shaderNames.size());
+    KL_LOG("VulkanRender", "Loading %zu SPIR-V shader pipelines", shaderNames.size());
 
     // Shaders that use different vertex inputs or descriptor layouts
     static const std::unordered_set<std::string> kSkipShaders = {
@@ -909,16 +911,17 @@ void VulkanRenderBackend::InitShaderPipelines() {
         if (fragSPV.empty()) continue;
 
         PipelineCacheEntry entry;
-        if (CreateScenePipeline(name, fragSPV, true, true,
+        bool useDepth = cvar_r_depthtest.Get();
+        if (CreateScenePipeline(name, fragSPV, useDepth, useDepth,
                                 entry.pipeline, entry.fragModule)) {
             pipelineCache_[name] = entry;
         } else {
-            fprintf(stderr, "[VulkanRenderBackend] Failed to create pipeline for '%s'\n",
-                    name.c_str());
+            KL_ERR("VulkanRender", "Failed to create pipeline for '%s'",
+                   name.c_str());
         }
     }
 
-    printf("[VulkanRenderBackend] Created %zu pipelines\n", pipelineCache_.size());
+    KL_LOG("VulkanRender", "Created %zu pipelines", pipelineCache_.size());
 }
 
 // ============================================================================
@@ -963,7 +966,7 @@ bool VulkanRenderBackend::CreateBlitPipeline() {
         if (blitFragModule_) { vkDestroyShaderModule(device_, blitFragModule_, nullptr); blitFragModule_ = VK_NULL_HANDLE; }
     }
     if (!blitVertModule_ || !blitFragModule_) {
-        fprintf(stderr, "[VulkanRenderBackend] Failed to load blit SPIR-V shaders\n");
+        KL_ERR("VulkanRender", "Failed to load blit SPIR-V shaders");
         return false;
     }
 
@@ -1093,7 +1096,7 @@ bool VulkanRenderBackend::CreateBlitPipeline() {
     pipeInfo.subpass = 0;
 
     if (vkCreateGraphicsPipelines(device_, VK_NULL_HANDLE, 1, &pipeInfo, nullptr, &blitPipeline_) != VK_SUCCESS) {
-        fprintf(stderr, "[VulkanRenderBackend] Failed to create blit pipeline\n");
+        KL_ERR("VulkanRender", "Failed to create blit pipeline");
         return false;
     }
 
@@ -1317,7 +1320,7 @@ bool VulkanRenderBackend::CreateSkyResources() {
 bool VulkanRenderBackend::Initialize() {
     if (initialized_) return true;
     if (!display_ || !display_->IsInitialized()) {
-        fprintf(stderr, "[VulkanRenderBackend] Display backend not initialized\n");
+        KL_ERR("VulkanRender", "Display backend not initialized");
         return false;
     }
 
@@ -1333,7 +1336,7 @@ bool VulkanRenderBackend::Initialize() {
     poolInfo.queueFamilyIndex = graphicsFamily_;
 
     if (vkCreateCommandPool(device_, &poolInfo, nullptr, &cmdPool_) != VK_SUCCESS) {
-        fprintf(stderr, "[VulkanRenderBackend] Failed to create command pool\n");
+        KL_ERR("VulkanRender", "Failed to create command pool");
         return false;
     }
 
@@ -1358,20 +1361,20 @@ bool VulkanRenderBackend::Initialize() {
     for (const auto& sp : searchPaths) {
         int count = kslRegistry_.ScanSPIRVDirectory(sp.spirv);
         if (count > 0) {
-            printf("[VulkanRenderBackend] Loaded %d SPIR-V shaders from %s\n", count, sp.spirv.c_str());
+            KL_LOG("VulkanRender", "Loaded %d SPIR-V shaders from %s", count, sp.spirv.c_str());
             // Also load .kso CPU modules from parent directory for material parameter support
             std::string ksoDir = sp.spirv;
             auto pos = ksoDir.rfind("/spirv");
             if (pos != std::string::npos) ksoDir = ksoDir.substr(0, pos);
             int ksoCount = kslRegistry_.ScanDirectory(ksoDir, "", &symbols);
             if (ksoCount > 0)
-                printf("[VulkanRenderBackend] Loaded %d KSO CPU modules from %s\n", ksoCount, ksoDir.c_str());
+                KL_LOG("VulkanRender", "Loaded %d KSO CPU modules from %s", ksoCount, ksoDir.c_str());
             break;
         }
     }
 
     if (!kslRegistry_.HasSPIRV()) {
-        fprintf(stderr, "[VulkanRenderBackend] No SPIR-V shaders found\n");
+        KL_ERR("VulkanRender", "No SPIR-V shaders found");
         return false;
     }
 
@@ -1380,31 +1383,31 @@ bool VulkanRenderBackend::Initialize() {
 
     // Create descriptor layouts, pool, and scene descriptors
     if (!CreateDescriptorLayouts()) {
-        fprintf(stderr, "[VulkanRenderBackend] Failed to create descriptor layouts\n");
+        KL_ERR("VulkanRender", "Failed to create descriptor layouts");
         return false;
     }
     if (!CreateDescriptorPool()) {
-        fprintf(stderr, "[VulkanRenderBackend] Failed to create descriptor pool\n");
+        KL_ERR("VulkanRender", "Failed to create descriptor pool");
         return false;
     }
     if (!CreatePipelineLayout()) {
-        fprintf(stderr, "[VulkanRenderBackend] Failed to create pipeline layout\n");
+        KL_ERR("VulkanRender", "Failed to create pipeline layout");
         return false;
     }
     if (!CreateSceneDescriptors()) {
-        fprintf(stderr, "[VulkanRenderBackend] Failed to create scene descriptors\n");
+        KL_ERR("VulkanRender", "Failed to create scene descriptors");
         return false;
     }
 
     // Create initial off-screen render target (will be resized on first RenderDirect)
     if (!CreateOffscreenTarget(64, 64)) {
-        fprintf(stderr, "[VulkanRenderBackend] Failed to create off-screen target\n");
+        KL_ERR("VulkanRender", "Failed to create off-screen target");
         return false;
     }
 
     // Create vertex shader module
     if (!CreateShaderModules()) {
-        fprintf(stderr, "[VulkanRenderBackend] Failed to create shader modules\n");
+        KL_ERR("VulkanRender", "Failed to create shader modules");
         return false;
     }
 
@@ -1417,15 +1420,15 @@ bool VulkanRenderBackend::Initialize() {
 
     // Blit pipeline (fullscreen quad to composite off-screen -> swapchain)
     if (!CreateBlitPipeline()) {
-        fprintf(stderr, "[VulkanRenderBackend] Warning: Blit pipeline creation failed\n");
+        KL_WARN("VulkanRender", "Blit pipeline creation failed");
     }
 
     // Debug line pipeline (grid, axes, debug visualization)
     if (!CreateLinePipeline()) {
-        fprintf(stderr, "[VulkanRenderBackend] Warning: Line pipeline creation failed (debug lines disabled)\n");
+        KL_WARN("VulkanRender", "Line pipeline creation failed (debug lines disabled)");
     }
 
-    printf("[VulkanRenderBackend] Initialized successfully (Vulkan)\n");
+    KL_LOG("VulkanRender", "Initialized successfully (Vulkan)");
     initialized_ = true;
     return true;
 }
@@ -1705,7 +1708,7 @@ VulkanRenderBackend::TextureCacheEntry& VulkanRenderBackend::UploadTexture(Textu
     samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     if (vkCreateSampler(device_, &samplerInfo, nullptr, &entry.sampler) != VK_SUCCESS) {
-        fprintf(stderr, "[VulkanRenderBackend] Failed to create texture sampler\n");
+        KL_ERR("VulkanRender", "Failed to create texture sampler");
         return entry;
     }
 
@@ -1716,7 +1719,7 @@ VulkanRenderBackend::TextureCacheEntry& VulkanRenderBackend::UploadTexture(Textu
     allocInfo.descriptorSetCount = 1;
     allocInfo.pSetLayouts = &textureLayout_;
     if (vkAllocateDescriptorSets(device_, &allocInfo, &entry.descSet) != VK_SUCCESS) {
-        fprintf(stderr, "[VulkanRenderBackend] Failed to allocate texture descriptor set\n");
+        KL_ERR("VulkanRender", "Failed to allocate texture descriptor set");
         return entry;
     }
 
@@ -1809,7 +1812,7 @@ VulkanRenderBackend::MaterialCacheEntry& VulkanRenderBackend::GetOrCreateMateria
     allocInfo.descriptorSetCount = 1;
     allocInfo.pSetLayouts = &materialLayout_;
     if (vkAllocateDescriptorSets(device_, &allocInfo, &entry.descSet) != VK_SUCCESS) {
-        fprintf(stderr, "[VulkanRenderBackend] Failed to allocate material descriptor set\n");
+        KL_ERR("VulkanRender", "Failed to allocate material descriptor set");
         return entry;
     }
 
@@ -1916,7 +1919,8 @@ VkPipeline VulkanRenderBackend::GetPipelineForMaterial(const KSLMaterial* kmat) 
     if (fragSPV.empty()) return pinkPipeline_;
 
     PipelineCacheEntry entry;
-    if (CreateScenePipeline(name, fragSPV, true, true,
+    bool useDepth = cvar_r_depthtest.Get();
+    if (CreateScenePipeline(name, fragSPV, useDepth, useDepth,
                             entry.pipeline, entry.fragModule)) {
         pipelineCache_[name] = entry;
         return entry.pipeline;
@@ -2059,6 +2063,21 @@ void VulkanRenderBackend::RenderDirect(Scene* scene, CameraBase* camera) {
     KL_PERF_SCOPE("GPU.Total");
     if (!initialized_ || !scene || !camera || camera->Is2D()) {
         return;
+    }
+
+    // Rebuild scene pipelines if render CVars changed
+    {
+        bool wire  = cvar_r_wireframe.Get();
+        bool cull  = cvar_r_culling.Get();
+        bool depth = cvar_r_depthtest.Get();
+        if (wire != cachedWireframe_ || cull != cachedCulling_ || depth != cachedDepthTest_) {
+            cachedWireframe_ = wire;
+            cachedCulling_   = cull;
+            cachedDepthTest_ = depth;
+            vkDeviceWaitIdle(device_);
+            CleanupPipelineCache();
+            InitShaderPipelines();
+        }
     }
 
     Vector2D minCoord = camera->GetCameraMinCoordinate();
@@ -2473,7 +2492,7 @@ void VulkanRenderBackend::CompositeCanvasOverlays(int screenW, int screenH) {
 
         if (vkCreateGraphicsPipelines(device_, VK_NULL_HANDLE, 1, &pipeInfo,
                                        nullptr, &overlayPipeline_) != VK_SUCCESS) {
-            fprintf(stderr, "[VulkanRenderBackend] Failed to create overlay pipeline\n");
+            KL_ERR("VulkanRender", "Failed to create overlay pipeline");
             return;
         }
     }

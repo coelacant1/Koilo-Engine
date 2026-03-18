@@ -8,8 +8,8 @@
 namespace koilo {
 
 void RegisterGPUCommands(CommandRegistry& registry) {
-    // -- gpu-list --
-    registry.Register({"gpu-list", "gpu-list", "List available GPU devices",
+    // -- gpu.list --
+    registry.Register({"gpu.list", "gpu.list", "List available GPU devices",
         [](KoiloKernel&, const std::vector<std::string>&) -> ConsoleResult {
             auto& reg = GPURegistry::Get();
             if (!reg.HasDevices()) {
@@ -32,8 +32,8 @@ void RegisterGPUCommands(CommandRegistry& registry) {
         }, nullptr
     });
 
-    // -- gpu-info --
-    registry.Register({"gpu-info", "gpu-info", "Show active GPU details",
+    // -- gpu.info --
+    registry.Register({"gpu.info", "gpu.info", "Show active GPU details",
         [](KoiloKernel&, const std::vector<std::string>&) -> ConsoleResult {
             auto& reg = GPURegistry::Get();
             auto* gpu = reg.GetSelected();

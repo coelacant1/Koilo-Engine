@@ -87,36 +87,30 @@ struct ProfileStats {
  * @brief Central profiling system for performance measurement.
  */
 class Profiler {
+public:
+    Profiler();
+    Profiler(const Profiler&) = delete;
+    Profiler& operator=(const Profiler&) = delete;
+
+    static Profiler& GetInstance();
+    static void SetInstance(Profiler* inst) { s_instance = inst; }
+    static void ClearInstance()             { s_instance = nullptr; }
+
 private:
-    // Profiling state
+    static inline Profiler* s_instance = nullptr;
+
     bool enabled;
     std::chrono::high_resolution_clock::time_point startTime;
-
-    // Current frame results
     std::vector<ProfileResult> results;
-
-    // Statistics per scope name
     std::unordered_map<std::string, ProfileStats> stats;
-
-    // Current depth (for hierarchical scopes)
     int currentDepth;
-
-    // Thread safety
     std::mutex mutex;
-
-    // Frame timing
     double frameStartTime;
     double lastFrameTime;
     double fps;
     int frameCount;
 
-    Profiler();
-
 public:
-    /**
-     * @brief Gets the singleton instance.
-     */
-    static Profiler& GetInstance();
 
     /**
      * @brief Enables profiling.

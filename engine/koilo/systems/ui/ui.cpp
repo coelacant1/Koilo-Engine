@@ -11,6 +11,8 @@
 #include <koilo/systems/input/keycodes.hpp>
 #include <koilo/registry/global_registry.hpp>
 #include <koilo/scripting/reflection_bridge.hpp>
+#include <koilo/kernel/logging/log.hpp>
+#include <koilo/kernel/debug_overlay.hpp>
 #include <cstring>
 #include <cmath>
 
@@ -392,10 +394,11 @@ void UI::AutoSizeTextWidgets() {
 
 /// Render UI to a Color888 buffer via software path.
 void UI::RenderToBuffer(Color888* buffer, int width, int height) {
-    // Skip if the root has no children - the opaque clear would overwrite
-    // the scene/canvas content with the UI background color.
+    // Skip if the root has no children AND no debug overlay
     auto* root = ctx_.GetWidget(ctx_.Root());
-    if (!root || root->childCount == 0) return;
+    bool hasWidgets = root && root->childCount > 0;
+    bool hasOverlay = g_debugOverlay && g_debugOverlay->HasWatches();
+    if (!hasWidgets && !hasOverlay) return;
 
     ctx_.SetViewport(static_cast<float>(width), static_cast<float>(height));
     AutoSizeTextWidgets();
@@ -407,6 +410,7 @@ void UI::RenderToBuffer(Color888* buffer, int width, int height) {
     drawList_.Clear();
     font::Font* f = font_.IsLoaded() ? &font_ : nullptr;
     drawList_.BuildFromContext(ctx_, f, 0);
+    AppendDebugOverlay(width, height);
 
     // Render via software path
     swRenderer_.Resize(width, height);
@@ -464,7 +468,8 @@ void UI::RenderGPU(int viewportW, int viewportH) {
     ctx_.UpdateTransitions(dt);
 
     // Skip draw list rebuild when nothing changed; re-render cached list
-    if (!ctx_.IsRenderDirty()) {
+    // (force rebuild if debug overlay is active since values change each frame)
+    if (!ctx_.IsRenderDirty() && (!g_debugOverlay || !g_debugOverlay->HasWatches())) {
         if (drawList_.Size() > 0)
             glRenderer_.Render(drawList_, viewportW, viewportH);
         return;
@@ -499,6 +504,7 @@ void UI::RenderGPU(int viewportW, int viewportH) {
         glRenderer_.UploadFontAtlas(font_.Atlas());
     }
 
+    AppendDebugOverlay(viewportW, viewportH);
     glRenderer_.Render(drawList_, viewportW, viewportH);
 }
 #endif
@@ -532,7 +538,7 @@ void UI::RenderVulkanGPU(int viewportW, int viewportH, VkCommandBuffer cmd) {
     if (dt > 0.1f) dt = 0.1f;
     ctx_.UpdateTransitions(dt);
 
-    if (!ctx_.IsRenderDirty()) {
+    if (!ctx_.IsRenderDirty() && (!g_debugOverlay || !g_debugOverlay->HasWatches())) {
         if (drawList_.Size() > 0)
             vkRenderer_->Render(drawList_, viewportW, viewportH, cmd);
         return;
@@ -561,6 +567,7 @@ void UI::RenderVulkanGPU(int viewportW, int viewportH, VkCommandBuffer cmd) {
         vkRenderer_->UploadFontAtlas(font_.Atlas());
     }
 
+    AppendDebugOverlay(viewportW, viewportH);
     vkRenderer_->Render(drawList_, viewportW, viewportH, cmd);
 }
 
@@ -611,7 +618,7 @@ int UI::LoadMarkup(const char* kmlPath, const char* kssPath) {
         ctx_.SetParent(rootIdx, ctx_.Root());
     } else {
         for (const auto& err : loader.Errors()) {
-            fprintf(stderr, "[KML] Line %d: %s\n", err.line, err.message.c_str());
+            KL_ERR("KML", "Line %d: %s", err.line, err.message.c_str());
         }
     }
     return rootIdx;
@@ -626,7 +633,7 @@ int UI::LoadMarkupString(const char* kml, const char* kss) {
         ctx_.SetParent(rootIdx, ctx_.Root());
     } else {
         for (const auto& err : loader.Errors()) {
-            fprintf(stderr, "[KML] Line %d: %s\n", err.line, err.message.c_str());
+            KL_ERR("KML", "Line %d: %s", err.line, err.message.c_str());
         }
     }
     return rootIdx;
@@ -894,6 +901,49 @@ bool UI::IsIdle() const {
 // ============================================================================
 // Reflection Registration
 // ============================================================================
+
+void UI::AppendDebugOverlay(int viewportW, int viewportH) {
+    if (!g_debugOverlay || !g_debugOverlay->HasWatches()) return;
+
+    font::Font* f = font_.IsLoaded() ? &font_ : nullptr;
+    if (!f) return;
+
+    std::string text = g_debugOverlay->BuildText();
+    if (text.empty()) return;
+
+    const float fontSize = 13.0f;
+    const float lineH = 16.0f;
+    const float padX = 6.0f;
+    const float padY = 4.0f;
+
+    // Count lines
+    int lineCount = 1;
+    for (char c : text) if (c == '\n') ++lineCount;
+    if (!text.empty() && text.back() == '\n') --lineCount;
+
+    float boxW = 280.0f;
+    float boxH = lineCount * lineH + padY * 2;
+    float boxX = viewportW - boxW - 8.0f;
+    float boxY = 8.0f;
+
+    // Semi-transparent background
+    drawList_.AddSolidRect(boxX, boxY, boxW, boxH, ui::Color4{0, 0, 0, 180});
+
+    // Render text line by line
+    float y = boxY + padY + f->Ascent() * (fontSize / f->PixelSize());
+    const char* p = text.c_str();
+    while (*p) {
+        const char* eol = p;
+        while (*eol && *eol != '\n') ++eol;
+
+        // Temporary null-terminate for EmitTextGlyphs
+        std::string line(p, eol);
+        drawList_.DrawText(line.c_str(), boxX + padX, y, fontSize,
+                           ui::Color4{220, 220, 220, 255});
+        y += lineH;
+        p = (*eol == '\n') ? eol + 1 : eol;
+    }
+}
 
 KL_DEFINE_FIELDS(UI)
 KL_END_FIELDS

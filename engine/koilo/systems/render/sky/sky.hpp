@@ -14,8 +14,12 @@ namespace koilo {
 class Sky {
 public:
     Sky() = default;
+    Sky(const Sky&) = delete;
+    Sky& operator=(const Sky&) = delete;
 
     static Sky& GetInstance();
+    static void SetInstance(Sky* inst) { s_instance = inst; }
+    static void ClearInstance()        { s_instance = nullptr; }
 
     // --- Control ---
     void Enable();
@@ -55,6 +59,8 @@ public:
                          int moonX, int moonY, bool moonVis) const;
 
 private:
+    static inline Sky* s_instance = nullptr;
+
     float timeOfDay_ = 12.0f;
     float timeSpeed_ = 0.5f;
     bool  enabled_   = false;

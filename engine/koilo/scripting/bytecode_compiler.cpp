@@ -406,16 +406,21 @@ void BytecodeCompiler::CompileIfStatement(const scripting::IfStatementNode* node
     if (hasError_) return;
 
     size_t jumpToElse = current_->Emit(OpCode::JUMP_IF_FALSE, 0);
+    current_->Emit(OpCode::POP);  // pop truthy condition
 
     CompileBlock(node->thenBlock);
 
     if (!node->elseBlock.empty()) {
         size_t jumpOverElse = current_->Emit(OpCode::JUMP, 0);
         current_->PatchJump(jumpToElse);
+        current_->Emit(OpCode::POP);  // pop falsy condition
         CompileBlock(node->elseBlock);
         current_->PatchJump(jumpOverElse);
     } else {
+        size_t jumpOverPop = current_->Emit(OpCode::JUMP, 0);
         current_->PatchJump(jumpToElse);
+        current_->Emit(OpCode::POP);  // pop falsy condition
+        current_->PatchJump(jumpOverPop);
     }
 }
 

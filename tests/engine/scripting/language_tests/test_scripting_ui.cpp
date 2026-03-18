@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Input & UI Scripting Bindings
 #include "helpers.hpp"
+#include <koilo/systems/input/inputmanager.hpp>
 
 void TestInputManager() {
     std::cout << "--- InputManager ---" << std::endl;
