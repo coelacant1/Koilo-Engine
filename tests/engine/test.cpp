@@ -214,6 +214,7 @@
 #include "systems/render/testopenglrenderbackend.hpp"
 #endif
 #include "systems/render/testsoftwarerenderbackend.hpp"
+#include "systems/render/rhi/testrhitypes.hpp"
 #include "systems/scene/animation/testanimationchannel.hpp"
 #include "systems/scene/animation/testanimationclip.hpp"
 #include "systems/scene/animation/testanimationlayer.hpp"
@@ -496,6 +497,7 @@ int main(int /*argc*/, char ** /*argv*/) {
     TestOpenGLRenderBackend::RunAllTests();
 #endif
     TestSoftwareRenderBackend::RunAllTests();
+    TestRHITypes::RunAllTests();
     TestAnimationChannel::RunAllTests();
     TestAnimationClip::RunAllTests();
     TestAnimationLayer::RunAllTests();

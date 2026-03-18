@@ -197,6 +197,8 @@ file(GLOB_RECURSE KL_SYSTEMS_SOURCES
 list(FILTER KL_SYSTEMS_SOURCES EXCLUDE REGEX ".*/systems/display/.*")
 list(FILTER KL_SYSTEMS_SOURCES EXCLUDE REGEX ".*/systems/render/gl/.*")
 list(FILTER KL_SYSTEMS_SOURCES EXCLUDE REGEX ".*/systems/render/vk/.*")
+list(FILTER KL_SYSTEMS_SOURCES EXCLUDE REGEX ".*/systems/render/rhi/vulkan/.*")
+list(FILTER KL_SYSTEMS_SOURCES EXCLUDE REGEX ".*/systems/render/rhi/opengl/.*")
 list(FILTER KL_SYSTEMS_SOURCES EXCLUDE REGEX ".*/systems/ui/render/ui_gl_renderer\\.cpp")
 list(FILTER KL_SYSTEMS_SOURCES EXCLUDE REGEX ".*/systems/ui/render/ui_vk_renderer\\.cpp")
 if(NOT KOILO_ENABLE_AI)

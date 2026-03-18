@@ -800,7 +800,7 @@ template<typename T> T* GetReflectedObject(const char* name);
 const std::map<std::string, std::string>& GetDisplayConfig() const;
 ```
 
-### Host↔Script Communication
+### Host<->Script Communication
 ```cpp
 void SetGlobal(const std::string& name, const Value& value);
 Value GetGlobal(const std::string& name) const;

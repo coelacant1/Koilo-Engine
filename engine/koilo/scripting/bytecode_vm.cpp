@@ -102,7 +102,7 @@ std::unordered_map<std::string, Value>& BytecodeVM::AllocMap() {
 }
 
 // ============================================================================
-// Value conversion (VM ↔ engine boundary)
+// Value conversion (VM <-> engine boundary)
 // ============================================================================
 
 Value BytecodeVM::ToValue(NanBoxedValue nb) {
