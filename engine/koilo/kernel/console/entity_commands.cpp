@@ -244,7 +244,7 @@ void RegisterEntityCommands(CommandRegistry& registry) {
             if (!entities)
                 return ConsoleResult::Error("Entity system not available");
 
-            // Parse path: "42.pos.X" -> id=42, field="pos.X"
+            // Parse path: "42.pos.X" - id=42, field="pos.X"
             std::string path = args[0];
             auto dotPos = path.find('.');
             if (dotPos == std::string::npos)
