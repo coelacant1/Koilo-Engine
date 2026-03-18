@@ -11,17 +11,20 @@
 #include <string>
 #include <thread>
 #include <atomic>
+#include <mutex>
 #include <vector>
+#include <condition_variable>
 #include "../../registry/reflect_macros.hpp"
 
 namespace koilo {
 
 class KoiloKernel;
 class CommandRegistry;
+class ThreadPool;
 
 /// TCP socket server for remote console access.
 /// Accepts connections on a configurable port and executes commands
-/// via a ConsoleSession. Output format defaults to JSON for machine parsing.
+/// via a ConsoleSession. Client handlers run on the kernel ThreadPool.
 class ConsoleSocket {
 public:
     ConsoleSocket(KoiloKernel& kernel, CommandRegistry& registry);
@@ -29,6 +32,9 @@ public:
 
     ConsoleSocket(const ConsoleSocket&) = delete;
     ConsoleSocket& operator=(const ConsoleSocket&) = delete;
+
+    /// Bind to the kernel thread pool. Must be called before Start.
+    void SetPool(ThreadPool* pool) { pool_ = pool; }
 
     /// Start listening on the given port. Returns false on error.
     bool Start(uint16_t port = 9090);
@@ -45,11 +51,17 @@ private:
 
     KoiloKernel&     kernel_;
     CommandRegistry& registry_;
+    ThreadPool*      pool_ = nullptr;
     int              serverFd_ = -1;
     uint16_t         port_ = 0;
     std::atomic<bool> running_{false};
     std::thread       acceptThread_;
-    std::vector<std::thread> clientThreads_;
+
+    // Track active client handlers for clean shutdown.
+    std::atomic<int>        activeClients_{0};
+    std::mutex              clientMutex_;
+    std::condition_variable clientCV_;
+    std::vector<int>        clientFds_;     // guarded by clientMutex_
 
     KL_BEGIN_FIELDS(ConsoleSocket)
         /* No reflected fields. */

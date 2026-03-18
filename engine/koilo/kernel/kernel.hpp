@@ -13,7 +13,15 @@
 #include <koilo/kernel/service_registry.hpp>
 #include <koilo/kernel/module_manager.hpp>
 #include <koilo/kernel/capabilities.hpp>
+#include <koilo/kernel/config/config_store.hpp>
+#include <koilo/kernel/thread_pool.hpp>
+#include <koilo/core/time/timemanager.hpp>
+#include <koilo/debug/debugdraw.hpp>
+#include <koilo/debug/profiler.hpp>
 #include "../registry/reflect_macros.hpp"
+#include <memory>
+
+namespace koilo { class Sky; }
 
 namespace koilo {
 
@@ -54,6 +62,8 @@ public:
     MessageBus&       Messages()    { return bus_; }
     ServiceRegistry&  Services()    { return services_; }
     ModuleManager&    Modules()     { return modules_; }
+    ConfigStore&      GetConfig()   { return config_; }
+    ThreadPool&       Pool()        { return pool_; }
 
     // --- Module convenience ---
 
@@ -77,6 +87,10 @@ public:
     /// Shut down all modules and clean up.
     void Shutdown();
 
+    /// Check whether a module has a capability, logging a warning on failure.
+    /// Returns true if the module holds the required cap.
+    bool RequireCap(ModuleId caller, Cap required, const char* operation = nullptr);
+
     bool IsRunning() const { return running_; }
 
 private:
@@ -85,7 +99,15 @@ private:
     MessageBus      bus_;
     ServiceRegistry services_;
     ModuleManager   modules_;
+    ConfigStore     config_;
+    ThreadPool      pool_;
     bool            running_ = false;
+
+    // Kernel-owned singletons (installed via SetInstance on construction)
+    TimeManager             timeManager_;
+    DebugDraw               debugDraw_;
+    Profiler                profiler_;
+    std::unique_ptr<Sky>    sky_;
 
     KL_BEGIN_FIELDS(KoiloKernel)
         /* No reflected fields. */

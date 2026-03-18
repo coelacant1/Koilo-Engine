@@ -13,7 +13,6 @@
 #include <koilo/scripting/bytecode_vm.hpp>
 #include <koilo/scripting/signal_registry.hpp>
 #include <koilo/assets/koilomesh_loader.hpp>
-#include <koilo/systems/input/inputmanager.hpp>
 #include <koilo/debug/debugdraw.hpp>
 #include <koilo/systems/ecs/script_entity_manager.hpp>
 #include <koilo/systems/world/script_world_manager.hpp>
@@ -37,12 +36,10 @@ class ScriptAudioManager;
 class Sky;
 class KoiloKernel;
 class IRenderBackend;
+class InputManager;
 class PixelGroup;
 class Camera;
-class CameraLayout;
 class Scene;
-class Canvas2D;
-class Transform;
 
 namespace scripting {
 
@@ -257,7 +254,7 @@ public:
      * @brief Get the scene created from SCENE block camera/objects
      * @return Scene pointer, or nullptr if no camera defined in script
      */
-    Scene* GetScene() const { return scene_.get(); }
+    Scene* GetScene() const;
     
     /**
      * @brief Get the physics world (via physics module)
@@ -265,9 +262,9 @@ public:
      */
     PhysicsWorld* GetPhysicsWorld();
     
-    InputManager* GetInputManager() { return &inputManager_; }
-    UI* GetUI() { return ui_.get(); }
-    ParticleSystem* GetParticleSystem() { return particleSystem_.get(); }
+    InputManager* GetInputManager();
+    UI* GetUI();
+    ParticleSystem* GetParticleSystem();
     ScriptEntityManager* GetEntities() { return &scriptEntities_; }
     ScriptAIManager* GetAI();
     ScriptAudioManager* GetAudio();
@@ -284,13 +281,13 @@ public:
      * @brief Get the camera created from SCENE block
      * @return Camera pointer, or nullptr if no camera defined in script
      */
-    Camera* GetCamera() const { return camera_.get(); }
+    Camera* GetCamera() const;
     
     /**
      * @brief Get the pixel group created from DISPLAY dimensions
      * @return PixelGroup pointer, or nullptr if no camera defined in script
      */
-    PixelGroup* GetPixelGroup() const { return pixelGroup_.get(); }
+    PixelGroup* GetPixelGroup() const;
     
     /**
      * @brief Get a state property value (e.g., color from state block)
@@ -383,8 +380,8 @@ public:
     // Set render backend (default: SoftwareRenderBackend)
     void SetRenderBackend(std::unique_ptr<IRenderBackend> backend);
     
-    // Get current render backend
-    IRenderBackend* GetRenderBackend() const { return renderBackend_.get(); }
+    // Get current render backend (via RenderModule)
+    IRenderBackend* GetRenderBackend();
     
     // Register an object as a script-accessible global (used by modules)
     void RegisterGlobal(const char* name, const char* className, void* instance) override;
@@ -462,23 +459,12 @@ private:
     // Scene data (legacy ObjectData for backward compatibility)
     std::map<std::string, ObjectData> objects;
     
-    // Rendering objects created from script
-    std::unique_ptr<PixelGroup> pixelGroup_;
-    std::unique_ptr<Camera> camera_;
-    std::unique_ptr<CameraLayout> cameraLayout_;
-    std::unique_ptr<Transform> cameraTransform_;
-    std::unique_ptr<Scene> scene_;
-    InputManager inputManager_;
+    // Rendering objects created from script (scene/camera now in SceneModule)
     ScriptEntityManager scriptEntities_;
     ScriptWorldManager scriptWorld_;
     std::map<std::string, void*> materialInstances_;
     std::vector<MorphableMesh*> ownedMeshes_;
     
-    // Core subsystems (directly owned - module-managed systems removed)
-    std::unique_ptr<UI> ui_;
-    std::unique_ptr<ParticleSystem> particleSystem_;
-
-    // Temp counter base: saved after BuildScene so Update temps can recycle names
     int sceneCounterBase_ = 0;
 
     // External module loader (for user/third-party ELF modules)
@@ -490,7 +476,6 @@ private:
     std::unique_ptr<CompiledScript> compiledScript_;
     std::unique_ptr<BytecodeVM> vm_;
     SignalRegistry signalRegistry_;
-    std::unique_ptr<IRenderBackend> renderBackend_;
     
     // Member access path cache struct (used by setter/getter paths)
     struct SplitPath {
@@ -544,6 +529,8 @@ private:
     void RegisterWorldGlobal();
     void RegisterStaticGlobals();
     void RegisterDefaultModules();
+    void RegisterEngineServices();
+    void UnregisterEngineServices();
     
     // Path resolution
     std::string ResolveAssetPath(const std::string& assetPath) const;

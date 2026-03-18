@@ -97,6 +97,7 @@ private:
         ModuleId    id;
         ModuleState state;
         Cap         grantedCaps;
+        MessageBus::SubscriptionId busSubId = 0; // 0 = not subscribed
 
         KL_BEGIN_FIELDS(ModuleEntry)
             KL_FIELD(ModuleEntry, desc, "Desc", 0, 0),

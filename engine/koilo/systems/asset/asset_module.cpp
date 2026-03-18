@@ -6,8 +6,8 @@
 #include "asset_module.hpp"
 #include <koilo/kernel/kernel.hpp>
 #include <koilo/kernel/console/console_module.hpp>
+#include <koilo/kernel/logging/log.hpp>
 #include <koilo/scripting/koiloscript_engine.hpp>
-#include <cstdio>
 #include <sstream>
 #include <iomanip>
 #include <algorithm>
@@ -28,7 +28,7 @@ ModuleInfo AssetModule::GetInfo() const {
 bool AssetModule::Initialize(KoiloKernel& kernel) {
     kernel_ = &kernel;
     instance_ = this;
-    jobQueue_.Start();
+    jobQueue_.SetPool(&kernel.Pool());
     SetupFileWatcher();
     RegisterConsoleCommands();
 
@@ -61,7 +61,6 @@ void AssetModule::Render(Color888*, int, int) {
 }
 
 void AssetModule::Shutdown() {
-    jobQueue_.Stop();
     watcher_.Clear();
 
     // Unregister from kernel services.
@@ -83,7 +82,7 @@ const ModuleDesc& AssetModule::GetModuleDesc() {
     static ModuleDesc desc{};
     desc.name = "koilo.asset";
     desc.version = KL_VERSION(0, 1, 0);
-    desc.requiredCaps = Cap::None;
+    desc.requiredCaps = Cap::FileRead;
     desc.Init = &AssetModule::Init;
     desc.Tick = &AssetModule::Tick;
     desc.OnMessage = &AssetModule::HandleMessage;
@@ -124,7 +123,7 @@ void AssetModule::SetupFileWatcher() {
         AssetHandle handle = registry_.FindByPath(path);
         if (handle.IsNull()) return;
 
-        printf("[AssetModule] File changed: %s - marking for reload\n", path.c_str());
+        KL_LOG("AssetModule", "File changed: %s - marking for reload", path.c_str());
         registry_.SetState(handle, AssetState::Registered);
 
         // Cascade invalidation to dependents.
@@ -173,7 +172,7 @@ AssetHandle AssetModule::Load(const std::string& path) {
         std::string targetExt = converter->GetTargetExtension();
         std::string targetPath = path.substr(0, dot) + targetExt;
         if (!converter->Convert(path, targetPath)) {
-            printf("[AssetModule] Conversion failed for %s: %s\n",
+            KL_ERR("AssetModule", "Conversion failed for %s: %s",
                    path.c_str(), converter->GetLastError().c_str());
             registry_.SetState(handle, AssetState::Failed);
             return handle;
@@ -232,7 +231,7 @@ void AssetModule::LoadAsync(const std::string& path, AssetJobQueue::LoadCallback
             watcher_.Watch(path);
         } else {
             registry_.SetState(result.handle, AssetState::Failed);
-            printf("[AssetModule] Async load failed for %s: %s\n",
+            KL_ERR("AssetModule", "Async load failed for %s: %s",
                    path.c_str(), result.error.c_str());
         }
         if (callback) callback(result);

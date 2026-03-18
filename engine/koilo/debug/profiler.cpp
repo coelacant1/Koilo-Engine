@@ -14,8 +14,9 @@ Profiler::Profiler()
 }
 
 Profiler& Profiler::GetInstance() {
-    static Profiler instance;
-    return instance;
+    if (s_instance) return *s_instance;
+    static Profiler fallback;
+    return fallback;
 }
 
 void koilo::Profiler::BeginFrame() {

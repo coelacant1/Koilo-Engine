@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file asset_job_queue.hpp
- * @brief Async asset loading via a background worker thread.
+ * @brief Async asset loading via the kernel ThreadPool.
  *
- * Jobs are submitted from the main thread and executed on a worker thread.
- * Completed results are collected back on the main thread via
- * ProcessCompleted(), which calls user callbacks with a configurable
+ * Jobs are submitted from the main thread and dispatched to the kernel
+ * thread pool. Completed results are collected back on the main thread
+ * via ProcessCompleted(), which calls user callbacks with a configurable
  * per-frame budget.
  *
  * @date 02/11/2026
@@ -18,13 +18,13 @@
 #include <memory>
 #include <string>
 #include <mutex>
-#include <condition_variable>
-#include <thread>
 #include <deque>
 #include <atomic>
 #include "../../registry/reflect_macros.hpp"
 
 namespace koilo {
+
+class ThreadPool;
 
 /**
  * @struct AssetLoadResult
@@ -56,27 +56,24 @@ struct AssetLoadResult {
 
 /**
  * @class AssetJobQueue
- * @brief Schedules asset load/unload work on a background thread.
+ * @brief Schedules asset load/unload work on the kernel thread pool.
  */
 class AssetJobQueue {
 public:
     /// Callback invoked on the main thread when a load completes.
     using LoadCallback = std::function<void(const AssetLoadResult&)>;
 
-    /// The actual load function executed on the worker thread.
+    /// The actual load function executed on a pool thread.
     /// Must be thread-safe. Returns the loaded data + byte size.
     using LoadFunction = std::function<AssetLoadResult(AssetHandle)>;
 
     AssetJobQueue();
     ~AssetJobQueue();
 
-    /// Start the worker thread. Call once during initialization.
-    void Start();
+    /// Bind to a thread pool. Must be called before RequestLoad.
+    void SetPool(ThreadPool* pool) { pool_ = pool; }
 
-    /// Stop the worker thread. Blocks until the thread joins.
-    void Stop();
-
-    /// Submit an async load request.
+    /// Submit an async load request (dispatched to thread pool).
     void RequestLoad(AssetHandle handle, LoadFunction loader, LoadCallback callback);
 
     /// Process completed jobs on the main thread.
@@ -84,37 +81,16 @@ public:
     /// Returns number of callbacks invoked.
     int ProcessCompleted(int maxPerFrame = 4);
 
-    /// Number of jobs currently pending or in flight.
-    size_t PendingCount() const;
+    /// Number of jobs currently in-flight (submitted but not yet completed on main thread).
+    size_t PendingCount() const { return inFlight_.load(std::memory_order_relaxed); }
 
-    /// Check if a specific handle has a pending/in-flight job.
+    /// Check if a specific handle has an in-flight job.
     bool IsLoading(AssetHandle handle) const;
 
-    /// Check if the worker thread is running.
-    bool IsRunning() const { return running_.load(); }
+    /// Check if the queue is bound to a pool and operational.
+    bool IsRunning() const { return pool_ != nullptr; }
 
 private:
-    struct Job {
-        AssetHandle   handle;
-        LoadFunction  loader;
-        LoadCallback  callback;
-
-        KL_BEGIN_FIELDS(Job)
-            KL_FIELD(Job, handle, "Handle", 0, 0),
-            KL_FIELD(Job, loader, "Loader", 0, 0),
-            KL_FIELD(Job, callback, "Callback", 0, 0)
-        KL_END_FIELDS
-
-        KL_BEGIN_METHODS(Job)
-            /* No reflected methods. */
-        KL_END_METHODS
-
-        KL_BEGIN_DESCRIBE(Job)
-            /* No reflected ctors. */
-        KL_END_DESCRIBE(Job)
-
-    };
-
     struct CompletedJob {
         AssetLoadResult result;
         LoadCallback    callback;
@@ -134,21 +110,16 @@ private:
 
     };
 
-    // Worker thread state.
-    std::thread             worker_;
-    std::atomic<bool>       running_{false};
-    std::atomic<bool>       stopRequested_{false};
+    ThreadPool*                  pool_ = nullptr;
+    std::atomic<size_t>          inFlight_{0};
 
-    // Pending jobs (main thread enqueues, worker dequeues).
-    mutable std::mutex      pendingMutex_;
-    std::condition_variable pendingCV_;
-    std::deque<Job>         pendingJobs_;
+    // In-flight handles (for IsLoading queries).
+    mutable std::mutex           handleMutex_;
+    std::deque<AssetHandle>      activeHandles_;
 
-    // Completed jobs (worker enqueues, main thread dequeues).
-    mutable std::mutex      completedMutex_;
-    std::deque<CompletedJob> completedJobs_;
-
-    void WorkerLoop();
+    // Completed jobs (pool threads enqueue, main thread dequeues).
+    mutable std::mutex           completedMutex_;
+    std::deque<CompletedJob>     completedJobs_;
 
     KL_BEGIN_FIELDS(AssetJobQueue)
         /* No reflected fields. */

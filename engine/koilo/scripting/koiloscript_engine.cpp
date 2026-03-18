@@ -23,9 +23,15 @@
 #include <koilo/systems/render/sky/sky.hpp>
 #include <koilo/systems/physics/physicsworld.hpp>
 #include <koilo/systems/physics/physics_module.hpp>
+#include <koilo/systems/input/input_module.hpp>
+#include <koilo/systems/ui/ui_module.hpp>
+#include <koilo/systems/render/render_module.hpp>
+#include <koilo/systems/scene/scene_module.hpp>
+#include <koilo/kernel/kernel.hpp>
 #include <koilo/systems/ui/ui.hpp>
 #ifdef KOILO_ENABLE_PARTICLES
 #include <koilo/systems/particles/particlesystem.hpp>
+#include <koilo/systems/particles/particle_module.hpp>
 #endif
 #ifdef KOILO_ENABLE_AI
 #include <koilo/systems/ai/script_ai_manager.hpp>
@@ -65,6 +71,7 @@ KoiloScriptEngine::KoiloScriptEngine(platform::IScriptFileReader* fileReader, bo
 }
 
 KoiloScriptEngine::~KoiloScriptEngine() {
+    UnregisterEngineServices();
     CleanupAllPersistentObjects();
     for (auto* mesh : ownedMeshes_) {
         delete mesh;
@@ -98,6 +105,45 @@ ScriptAudioManager* KoiloScriptEngine::GetAudio() {
 #else
     return nullptr;
 #endif
+}
+
+ParticleSystem* KoiloScriptEngine::GetParticleSystem() {
+#ifdef KOILO_ENABLE_PARTICLES
+    auto* mod = dynamic_cast<ParticleModule*>(moduleLoader_.GetModule("particles"));
+    return mod ? mod->GetSystem() : nullptr;
+#else
+    return nullptr;
+#endif
+}
+
+InputManager* KoiloScriptEngine::GetInputManager() {
+    auto* mod = dynamic_cast<InputModule*>(moduleLoader_.GetModule("input"));
+    return mod ? &mod->GetManager() : nullptr;
+}
+
+UI* KoiloScriptEngine::GetUI() {
+    auto* mod = dynamic_cast<UIModule*>(moduleLoader_.GetModule("ui"));
+    return mod ? mod->GetUI() : nullptr;
+}
+
+IRenderBackend* KoiloScriptEngine::GetRenderBackend() {
+    auto* mod = dynamic_cast<RenderModule*>(moduleLoader_.GetModule("render"));
+    return mod ? mod->GetBackend() : nullptr;
+}
+
+Scene* KoiloScriptEngine::GetScene() const {
+    auto* mod = dynamic_cast<SceneModule*>(const_cast<ModuleLoader&>(moduleLoader_).GetModule("scene"));
+    return mod ? mod->GetScene() : nullptr;
+}
+
+Camera* KoiloScriptEngine::GetCamera() const {
+    auto* mod = dynamic_cast<SceneModule*>(const_cast<ModuleLoader&>(moduleLoader_).GetModule("scene"));
+    return mod ? mod->GetCamera() : nullptr;
+}
+
+PixelGroup* KoiloScriptEngine::GetPixelGroup() const {
+    auto* mod = dynamic_cast<SceneModule*>(const_cast<ModuleLoader&>(moduleLoader_).GetModule("scene"));
+    return mod ? mod->GetPixelGroup() : nullptr;
 }
 
 bool KoiloScriptEngine::LoadScript(const char* filepath) {
@@ -260,6 +306,11 @@ bool KoiloScriptEngine::BuildScene() {
     // Read display config - init code or defaults may have set values
     displayConfig = displayConfigObj_.ToConfigMap();
     
+    // Initialize modules so GetModule() works for BuildCamera/RegisterXGlobal
+    if (kernel_) {
+        moduleLoader_.InitializeAll(*kernel_);
+    }
+    
     // Build camera/scene from display dimensions (creates scene object)
     BuildCamera();
     
@@ -269,11 +320,6 @@ bool KoiloScriptEngine::BuildScene() {
     RegisterDebugGlobal();
     RegisterEntitiesGlobal();
     RegisterWorldGlobal();
-    
-    // Initialize external modules (if any loaded via ELF)
-    if (kernel_) {
-        moduleLoader_.InitializeAll(*kernel_);
-    }
     
     // Call fn Setup() if defined - loads assets, builds scene objects
     if (compiledScript_ && vm_) {
@@ -291,6 +337,23 @@ bool KoiloScriptEngine::BuildScene() {
     
     if (!hasError) engineState_ = EngineState::SceneBuilt;
     sceneCounterBase_ = activeCtx_->tempCounter;
+
+    // Expose subsystems through the kernel service registry
+    RegisterEngineServices();
+
+    // Mirror display config into kernel ConfigStore
+    if (kernel_) {
+        auto& cfg = kernel_->GetConfig();
+        cfg.SetString("display.type", displayConfigObj_.GetType().c_str());
+        cfg.SetInt("display.width",       displayConfigObj_.GetWidth());
+        cfg.SetInt("display.height",      displayConfigObj_.GetHeight());
+        cfg.SetInt("display.pixelWidth",  displayConfigObj_.GetPixelWidth());
+        cfg.SetInt("display.pixelHeight", displayConfigObj_.GetPixelHeight());
+        cfg.SetInt("display.brightness",  displayConfigObj_.GetBrightness());
+        cfg.SetInt("display.targetFPS",   displayConfigObj_.GetTargetFPS());
+        cfg.SetBool("display.capFPS",     displayConfigObj_.GetCapFPS());
+    }
+
     return !hasError;
 }
 
@@ -312,13 +375,9 @@ void KoiloScriptEngine::ExecuteUpdate() {
     activeCtx_->variables["deltaTime"] = Value(deltaTime);
     activeCtx_->variables["fps"]       = Value(TimeManager::GetInstance().GetFPS());
     
-    // Update input state (swap previous/current frames)
-    inputManager_.Update();
+    // Input is now updated by InputModule via moduleLoader_.UpdateAll()
     
-    // Update core subsystems
-#ifdef KOILO_ENABLE_PARTICLES
-    if (particleSystem_) particleSystem_->Update();
-#endif
+    // Update core subsystems (particles managed by ParticleModule)
     moduleLoader_.UpdateAll(deltaTime);
 
     // Update sky time-of-day
@@ -809,9 +868,9 @@ double KoiloScriptEngine::GetScriptVariableNum(const std::string& name) const {
 }
 
 void KoiloScriptEngine::SetRenderBackend(std::unique_ptr<IRenderBackend> backend) {
-    renderBackend_ = std::move(backend);
-    if (renderBackend_ && !renderBackend_->IsInitialized()) {
-        renderBackend_->Initialize();
+    auto* mod = dynamic_cast<RenderModule*>(moduleLoader_.GetModule("render"));
+    if (mod) {
+        mod->SetBackend(std::move(backend));
     }
 }
 
@@ -877,16 +936,19 @@ void KoiloScriptEngine::RenderFrame(Color888* buffer, int width, int height) {
     KL_PROFILE_SCOPE("RenderFrame");
     if (!buffer) return;
 
-    if (scene_ && camera_) {
-        if (!renderBackend_) {
-            renderBackend_ = std::make_unique<SoftwareRenderBackend>();
-            renderBackend_->Initialize();
-        }
+    auto* renderMod = dynamic_cast<RenderModule*>(moduleLoader_.GetModule("render"));
+    auto* scene = GetScene();
+    auto* camera = GetCamera();
+
+    if (scene && camera) {
         {
             KL_PROFILE_SCOPE("Rasterize");
-            renderBackend_->Render(scene_.get(), camera_.get());
+            if (renderMod) {
+                renderMod->RenderFrame(scene, camera, buffer, width, height);
+            } else {
+                std::memset(buffer, 0, width * height * sizeof(Color888));
+            }
         }
-        renderBackend_->ReadPixels(buffer, width, height);
 
         // Debug draw overlay (grid, axes, lines, etc.) into output buffer
         {
@@ -905,7 +967,7 @@ void KoiloScriptEngine::RenderFrame(Color888* buffer, int width, int height) {
                                  clamp255(c.b * 255.0f)),
                         line.depthTest, buffer, width, height);
                 }
-                DebugRenderer::Render(dd, camera_.get(), buffer, width, height,
+                DebugRenderer::Render(dd, camera, buffer, width, height,
                                       nullptr, 0, 0,
                                       /*renderLines=*/false);
                 dd.Update();
@@ -918,25 +980,20 @@ void KoiloScriptEngine::RenderFrame(Color888* buffer, int width, int height) {
     // Composite user-created canvases
     Canvas2D::CompositeAll(buffer, width, height);
 
-    // Render subsystems (particles then UI overlay)
+    // Render subsystems via modules (particles=Render, UI=Overlay phases)
     { KL_PROFILE_SCOPE("Subsystems");
-#ifdef KOILO_ENABLE_PARTICLES
-      if (particleSystem_) particleSystem_->Render(buffer, width, height);
-#endif
-      if (ui_) ui_->RenderToBuffer(buffer, width, height);
       moduleLoader_.RenderAll(buffer, width, height);
     }
 }
 
 void KoiloScriptEngine::RenderFrameGPU() {
     KL_PROFILE_SCOPE("RenderFrame");
-    if (!scene_ || !camera_ || !renderBackend_) return;
-    // Use RenderDirect to skip PBO readback - FBO stays on GPU for BlitToScreen
-    auto* gpuBackend = dynamic_cast<IGPURenderBackend*>(renderBackend_.get());
-    if (gpuBackend) {
-        gpuBackend->RenderDirect(scene_.get(), camera_.get());
-    } else {
-        renderBackend_->Render(scene_.get(), camera_.get());
+    auto* scene = GetScene();
+    auto* camera = GetCamera();
+    if (!scene || !camera) return;
+    auto* renderMod = dynamic_cast<RenderModule*>(moduleLoader_.GetModule("render"));
+    if (renderMod) {
+        renderMod->RenderFrameGPU(scene, camera);
     }
     // Expire one-frame debug primitives (grid, axes, etc.)
     auto& dd = DebugDraw::GetInstance();
@@ -944,32 +1001,13 @@ void KoiloScriptEngine::RenderFrameGPU() {
 }
 
 void KoiloScriptEngine::RenderUIOverlay(int viewportW, int viewportH, float dt) {
-#ifdef KL_HAVE_OPENGL_BACKEND
-    if (!ui_) return;
-    // Skip UI initialization and rendering if no UI content was loaded.
-    // The UI constructor always creates a __root panel (index >= 0), so
-    // check whether the root has any children.  Creating GL resources
-    // (program, VAO, textures) when there are no widgets to render
-    // corrupts the scene framebuffer on Wayland/Mesa.
-    int root = ui_->Context().Root();
-    if (root < 0) return;
-    auto* rootWidget = ui_->Context().GetWidget(root);
-    if (!rootWidget || rootWidget->childCount == 0) return;
-    if (!ui_->HasFont())
-        ui_->LoadFont("assets/fonts/NotoSansMono-VariableFont_wdth,wght.ttf", 14.0f);
-    ui_->UpdateAnimations(dt);
-    if (!ui_->InitializeGPU()) return;
-    ui_->RenderGPU(viewportW, viewportH);
-#else
-    (void)viewportW; (void)viewportH; (void)dt;
-#endif
+    auto* mod = dynamic_cast<UIModule*>(moduleLoader_.GetModule("ui"));
+    if (mod) mod->RenderGPUOverlay(viewportW, viewportH, dt);
 }
 
 void KoiloScriptEngine::UpdateUIAnimations(float dt) {
-    if (!ui_) return;
-    if (!ui_->HasFont())
-        ui_->LoadFont("assets/fonts/NotoSansMono-VariableFont_wdth,wght.ttf", 14.0f);
-    ui_->UpdateAnimations(dt);
+    auto* mod = dynamic_cast<UIModule*>(moduleLoader_.GetModule("ui"));
+    if (mod) mod->UpdateAnimations(dt);
 }
 
 } // namespace scripting

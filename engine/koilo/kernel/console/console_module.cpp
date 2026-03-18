@@ -16,7 +16,7 @@ const ModuleDesc& ConsoleModule::GetModuleDesc() {
     static ModuleDesc desc{};
     desc.name = "koilo.console";
     desc.version = KL_VERSION(0, 1, 0);
-    desc.requiredCaps = Cap::Debug;
+    desc.requiredCaps = Cap::Debug | Cap::ConsoleAdmin;
     desc.Init = &ConsoleModule::Init;
     desc.Tick = &ConsoleModule::Tick;
     desc.OnMessage = &ConsoleModule::OnMessage;
@@ -68,6 +68,7 @@ IConsoleWidget* ConsoleModule::Widget() {
 bool ConsoleModule::StartSocket(uint16_t port) {
     if (!socket_) {
         socket_ = std::make_unique<ConsoleSocket>(*kernel_, commands_);
+        socket_->SetPool(&kernel_->Pool());
     }
     return socket_->Start(port);
 }
@@ -390,6 +391,11 @@ void ConsoleModule::RegisterBuiltinCommands() {
     RegisterMessageCommands(commands_);
     RegisterServiceCommands(commands_);
     RegisterMemoryCommands(commands_);
+    RegisterGPUCommands(commands_);
+    RegisterCVarCommands(commands_);
+    RegisterLogCommands(commands_);
+    RegisterUtilityCommands(commands_);
+    RegisterConfigCommands(commands_);
 
     // -- listen --
     commands_.Register({"listen", "listen [port]", "Start TCP console server (default: 9090)",

@@ -8,7 +8,7 @@
 #include <vulkan/vulkan.h>
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
-#include <cstdio>
+#include <koilo/kernel/logging/log.hpp>
 #include <cstring>
 #include <algorithm>
 #include <limits>
@@ -25,12 +25,12 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallback(
     const VkDebugUtilsMessengerCallbackDataEXT* data,
     void* /*user*/)
 {
-    const char* level = "INFO";
-    if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)   level = "ERROR";
-    else if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) level = "WARN";
-
-    if (severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
-        printf("[Vulkan %s] %s\n", level, data->pMessage);
+    if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+        KL_ERR("Vulkan", "%s", data->pMessage);
+    else if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+        KL_WARN("Vulkan", "%s", data->pMessage);
+    else
+        KL_LOG("Vulkan", "%s", data->pMessage);
     return VK_FALSE;
 }
 
@@ -65,14 +65,14 @@ bool VulkanBackend::Initialize() {
     // Initialize SDL video
     if (!SDL_WasInit(SDL_INIT_VIDEO)) {
         if (!SDL_Init(SDL_INIT_VIDEO)) {
-            printf("[VulkanBackend] SDL_Init failed: %s\n", SDL_GetError());
+            KL_ERR("VulkanBackend", "SDL_Init failed: %s", SDL_GetError());
             return false;
         }
     }
 
     // Load Vulkan library through SDL
     if (!SDL_Vulkan_LoadLibrary(nullptr)) {
-        printf("[VulkanBackend] SDL_Vulkan_LoadLibrary failed: %s\n", SDL_GetError());
+        KL_ERR("VulkanBackend", "SDL_Vulkan_LoadLibrary failed: %s", SDL_GetError());
         return false;
     }
 
@@ -86,7 +86,7 @@ bool VulkanBackend::Initialize() {
                                static_cast<int>(windowHeight_),
                                flags);
     if (!window_) {
-        printf("[VulkanBackend] SDL_CreateWindow failed: %s\n", SDL_GetError());
+        KL_ERR("VulkanBackend", "SDL_CreateWindow failed: %s", SDL_GetError());
         return false;
     }
 
@@ -112,9 +112,9 @@ bool VulkanBackend::Initialize() {
 
     initialized_ = true;
 
-    printf("[VulkanBackend] GPU: %s\n", gpuInfos_[selectedGPU_].name.c_str());
-    printf("[VulkanBackend] Swapchain: %ux%u\n", swapExtentW_, swapExtentH_);
-    printf("[VulkanBackend] Initialized successfully.\n");
+    KL_LOG("VulkanBackend", "GPU: %s", gpuInfos_[selectedGPU_].name.c_str());
+    KL_LOG("VulkanBackend", "Swapchain: %ux%u", swapExtentW_, swapExtentH_);
+    KL_LOG("VulkanBackend", "Initialized successfully.");
     return true;
 }
 
@@ -222,8 +222,8 @@ void VulkanBackend::SwapOnly() {
     // End command buffer + submit
     VkResult endResult = vkEndCommandBuffer(commandBuffers_[currentFrame_]);
     if (endResult != VK_SUCCESS) {
-        fprintf(stderr, "[VulkanBackend] vkEndCommandBuffer failed: %d (frame %d)\n",
-                (int)endResult, currentFrame_);
+        KL_ERR("VulkanBackend", "vkEndCommandBuffer failed: %d (frame %d)",
+               (int)endResult, currentFrame_);
     }
 
     // Submit
@@ -247,8 +247,8 @@ void VulkanBackend::SwapOnly() {
 
     VkResult submitResult = vkQueueSubmit(graphicsQueue_, 1, &submitInfo, inFlightFences_[currentFrame_]);
     if (submitResult != VK_SUCCESS) {
-        fprintf(stderr, "[VulkanBackend] SwapOnly vkQueueSubmit failed: %d (frame %d)\n",
-                (int)submitResult, currentFrame_);
+        KL_ERR("VulkanBackend", "SwapOnly vkQueueSubmit failed: %d (frame %d)",
+               (int)submitResult, currentFrame_);
     }
 
     // Present
@@ -526,7 +526,7 @@ bool VulkanBackend::CreateInstance() {
     Uint32 sdlExtCount = 0;
     const char* const* sdlExts = SDL_Vulkan_GetInstanceExtensions(&sdlExtCount);
     if (!sdlExts) {
-        printf("[VulkanBackend] SDL_Vulkan_GetInstanceExtensions failed\n");
+        KL_ERR("VulkanBackend", "SDL_Vulkan_GetInstanceExtensions failed");
         return false;
     }
 
@@ -563,7 +563,7 @@ bool VulkanBackend::CreateInstance() {
 
     VkResult result = vkCreateInstance(&createInfo, nullptr, &instance_);
     if (result != VK_SUCCESS) {
-        printf("[VulkanBackend] vkCreateInstance failed: %d\n", result);
+        KL_ERR("VulkanBackend", "vkCreateInstance failed: %d", result);
         return false;
     }
     return true;
@@ -595,7 +595,7 @@ bool VulkanBackend::SetupDebugMessenger() {
 
 bool VulkanBackend::CreateSurface() {
     if (!SDL_Vulkan_CreateSurface(window_, instance_, nullptr, &surface_)) {
-        printf("[VulkanBackend] SDL_Vulkan_CreateSurface failed: %s\n", SDL_GetError());
+        KL_ERR("VulkanBackend", "SDL_Vulkan_CreateSurface failed: %s", SDL_GetError());
         return false;
     }
     return true;
@@ -609,7 +609,7 @@ bool VulkanBackend::EnumerateGPUs() {
     uint32_t count = 0;
     vkEnumeratePhysicalDevices(instance_, &count, nullptr);
     if (count == 0) {
-        printf("[VulkanBackend] No Vulkan-capable GPUs found\n");
+        KL_ERR("VulkanBackend", "No Vulkan-capable GPUs found");
         return false;
     }
 
@@ -641,7 +641,7 @@ bool VulkanBackend::EnumerateGPUs() {
         gpuInfos_.push_back(info);
 
         const char* type = info.isDiscrete ? "discrete" : "integrated";
-        printf("[VulkanBackend] GPU %u: %s (%s, VRAM: %lu MB)\n",
+        KL_LOG("VulkanBackend", "GPU %u: %s (%s, VRAM: %lu MB)",
                i, info.name.c_str(), type, static_cast<unsigned long>(vram / (1024*1024)));
     }
 
@@ -677,7 +677,7 @@ bool VulkanBackend::SelectGPU(uint32_t index) {
     }
 
     if (!foundGraphics || !foundPresent) {
-        printf("[VulkanBackend] GPU %u lacks required queue families\n", index);
+        KL_ERR("VulkanBackend", "GPU %u lacks required queue families", index);
         return false;
     }
 
@@ -744,7 +744,7 @@ bool VulkanBackend::CreateLogicalDevice() {
 
     VkResult result = vkCreateDevice(physicalDevice_, &createInfo, nullptr, &device_);
     if (result != VK_SUCCESS) {
-        printf("[VulkanBackend] vkCreateDevice failed: %d\n", result);
+        KL_ERR("VulkanBackend", "vkCreateDevice failed: %d", result);
         return false;
     }
 
@@ -790,7 +790,7 @@ bool VulkanBackend::CreateSwapchain() {
         }
     }
 
-    printf("[VulkanBackend] Swapchain format: %u, view format: %u (mutable: %s)\n",
+    KL_LOG("VulkanBackend", "Swapchain format: %u, view format: %u (mutable: %s)",
            swapImageFormat_, swapViewFormat_,
            mutableFormatSupported_ ? "yes" : "no");
 
@@ -869,7 +869,7 @@ bool VulkanBackend::CreateSwapchain() {
 
     VkResult result = vkCreateSwapchainKHR(device_, &createInfo, nullptr, &swapchain_);
     if (result != VK_SUCCESS) {
-        printf("[VulkanBackend] vkCreateSwapchainKHR failed: %d\n", result);
+        KL_ERR("VulkanBackend", "vkCreateSwapchainKHR failed: %d", result);
         return false;
     }
 
@@ -903,7 +903,7 @@ bool VulkanBackend::CreateImageViews() {
         createInfo.subresourceRange.layerCount     = 1;
 
         if (vkCreateImageView(device_, &createInfo, nullptr, &swapImageViews_[i]) != VK_SUCCESS) {
-            printf("[VulkanBackend] Failed to create image view %zu\n", i);
+            KL_ERR("VulkanBackend", "Failed to create image view %zu", i);
             return false;
         }
     }
@@ -952,7 +952,7 @@ bool VulkanBackend::CreateRenderPass() {
     rpInfo.pDependencies   = &dep;
 
     if (vkCreateRenderPass(device_, &rpInfo, nullptr, &renderPass_) != VK_SUCCESS) {
-        printf("[VulkanBackend] Failed to create render pass\n");
+        KL_ERR("VulkanBackend", "Failed to create render pass");
         return false;
     }
     return true;
@@ -975,7 +975,7 @@ bool VulkanBackend::CreateFramebuffers() {
         fbInfo.layers          = 1;
 
         if (vkCreateFramebuffer(device_, &fbInfo, nullptr, &swapFramebuffers_[i]) != VK_SUCCESS) {
-            printf("[VulkanBackend] Failed to create framebuffer %zu\n", i);
+            KL_ERR("VulkanBackend", "Failed to create framebuffer %zu", i);
             return false;
         }
     }
@@ -993,7 +993,7 @@ bool VulkanBackend::CreateCommandPool() {
     poolInfo.queueFamilyIndex = graphicsFamily_;
 
     if (vkCreateCommandPool(device_, &poolInfo, nullptr, &commandPool_) != VK_SUCCESS) {
-        printf("[VulkanBackend] Failed to create command pool\n");
+        KL_ERR("VulkanBackend", "Failed to create command pool");
         return false;
     }
     return true;
@@ -1007,7 +1007,7 @@ bool VulkanBackend::CreateCommandBuffers() {
     allocInfo.commandBufferCount = kMaxFramesInFlight;
 
     if (vkAllocateCommandBuffers(device_, &allocInfo, commandBuffers_) != VK_SUCCESS) {
-        printf("[VulkanBackend] Failed to allocate command buffers\n");
+        KL_ERR("VulkanBackend", "Failed to allocate command buffers");
         return false;
     }
     return true;
@@ -1028,7 +1028,7 @@ bool VulkanBackend::CreateSyncObjects() {
     for (int i = 0; i < kMaxFramesInFlight; i++) {
         if (vkCreateSemaphore(device_, &semInfo, nullptr, &imageAvailableSems_[i]) != VK_SUCCESS ||
             vkCreateFence(device_, &fenceInfo, nullptr, &inFlightFences_[i]) != VK_SUCCESS) {
-            printf("[VulkanBackend] Failed to create sync objects\n");
+            KL_ERR("VulkanBackend", "Failed to create sync objects");
             return false;
         }
     }
@@ -1038,7 +1038,7 @@ bool VulkanBackend::CreateSyncObjects() {
     renderFinishedSems_.resize(imageCount, VK_NULL_HANDLE);
     for (uint32_t i = 0; i < imageCount; i++) {
         if (vkCreateSemaphore(device_, &semInfo, nullptr, &renderFinishedSems_[i]) != VK_SUCCESS) {
-            printf("[VulkanBackend] Failed to create render-finished semaphore %u\n", i);
+            KL_ERR("VulkanBackend", "Failed to create render-finished semaphore %u", i);
             return false;
         }
     }

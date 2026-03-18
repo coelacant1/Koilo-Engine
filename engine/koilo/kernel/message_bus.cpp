@@ -1,4 +1,5 @@
 #include <koilo/kernel/message_bus.hpp>
+#include <koilo/kernel/logging/log.hpp>
 #include <algorithm>
 
 namespace koilo {
@@ -33,6 +34,11 @@ void MessageBus::Send(const Message& msg) {
         ringTail_ = (ringTail_ + 1) % ringCapacity_;
         --ringCount_;
         ++totalDropped_;
+        // Rate-limited warning: only on first drop and then every 100th
+        if (totalDropped_ == 1 || totalDropped_ % 100 == 0) {
+            KL_WARN("MessageBus", "Ring buffer overflow - %zu message(s) dropped (capacity=%zu)",
+                     totalDropped_, ringCapacity_);
+        }
     }
     ringBuffer_[ringHead_] = msg;
     ringHead_ = (ringHead_ + 1) % ringCapacity_;

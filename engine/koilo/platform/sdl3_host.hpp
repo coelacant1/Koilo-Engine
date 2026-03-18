@@ -58,6 +58,10 @@
 #include <thread>
 #include <algorithm>
 #include <atomic>
+#include <koilo/kernel/cvar/cvar_system.hpp>
+#include <koilo/systems/render/render_cvars.hpp>
+#include <koilo/kernel/sim_cvars.hpp>
+#include <koilo/kernel/logging/log.hpp>
 
 namespace koilo {
 
@@ -91,7 +95,7 @@ struct SDL3Host {
 
         if (modulesDir) {
             int loaded = engine.GetModuleLoader().ScanAndLoad(modulesDir);
-            printf("[koilo] Loaded %d module(s) from %s\n", loaded, modulesDir);
+            KL_LOG("koilo", "Loaded %d module(s) from %s", loaded, modulesDir);
         }
 
         if (!LoadAndBuild(engine)) return 1;
@@ -128,12 +132,12 @@ struct SDL3Host {
 private:
     bool LoadAndBuild(scripting::KoiloScriptEngine& engine) {
         if (!scriptPath || !engine.LoadScript(scriptPath)) {
-            printf("Failed to load script: %s\nError: %s\n",
+            KL_ERR("koilo", "Failed to load script: %s - %s",
                    scriptPath ? scriptPath : "(null)", engine.GetError());
             return false;
         }
         if (!engine.BuildScene()) {
-            printf("Failed to build scene: %s\n", engine.GetError());
+            KL_ERR("koilo", "Failed to build scene: %s", engine.GetError());
             return false;
         }
         return true;
@@ -148,11 +152,11 @@ private:
         int pixW = info.pixelWidth > 0 ? info.pixelWidth : 192;
         int pixH = info.pixelHeight> 0 ? info.pixelHeight: 108;
 
-        // Frame cap
-        bool capFPS = info.capFPS && !forceUncapped;
-        float targetFrameTime = 0.0f;
-        if (capFPS && info.targetFPS > 0.0f)
-            targetFrameTime = 1.0f / info.targetFPS;
+        // Frame cap - seed r.maxfps CVar from script info
+        if (info.capFPS && info.targetFPS > 0.0f)
+            cvar_r_maxfps.Set(static_cast<int>(info.targetFPS));
+        if (forceUncapped)
+            cvar_r_maxfps.Set(0);
 
         // Create display backend
         std::unique_ptr<IDisplayBackend> displayOwner;
@@ -168,7 +172,7 @@ private:
                 gpuDisplayPtr = vk.get();
                 displayOwner = std::move(vk);
             } else {
-                printf("[SDL3Host] Vulkan init failed, falling back to OpenGL\n");
+                KL_WARN("SDL3Host", "Vulkan init failed, falling back to OpenGL");
             }
         }
 #endif
@@ -176,18 +180,19 @@ private:
 #ifdef KL_HAVE_OPENGL_BACKEND
             auto gl = std::make_unique<OpenGLBackend>(winW, winH, windowTitle, false, true);
             if (!gl->Initialize()) {
-                printf("Failed to initialize OpenGL display backend\n");
+                KL_ERR("SDL3Host", "Failed to initialize OpenGL display backend");
                 return 1;
             }
             gpuDisplayPtr = gl.get();
             displayOwner = std::move(gl);
 #else
-            printf("No display backend available (Vulkan failed, OpenGL not compiled)\n");
+            KL_ERR("SDL3Host", "No display backend available");
             return 1;
 #endif
         }
         IGPUDisplayBackend& gpuDisplay = *gpuDisplayPtr;
-        gpuDisplay.SetVSyncEnabled(enableVSync);
+        if (enableVSync) cvar_r_vsync.Set(true);
+        gpuDisplay.SetVSyncEnabled(cvar_r_vsync.Get());
         if (forceSoftware) gpuDisplay.SetNearestFiltering(true);
 
         // Select render backend
@@ -286,8 +291,15 @@ private:
             // Re-check idle state after processing events
             uiIdle = uiPtr && uiPtr->IsIdle();
 
-            // When UI-only and still idle after events, skip the full render cycle
-            if (!sceneActive && uiIdle && !hadEvents) {
+            // If shutdown was requested, exit before starting a new frame.
+            // This avoids submitting command buffers with stale image layouts
+            // during the teardown sequence.
+            if (!running) break;
+
+            // When UI-only and still idle after events, skip the full render cycle.
+            // Require at least 2 rendered frames first so the initial frame gets
+            // presented via SwapOnly (which submits the previous iteration's work).
+            if (!sceneActive && uiIdle && !hadEvents && frameNum >= 2) {
                 if (enableProfiler) profiler.EndFrame();
                 continue;
             }
@@ -299,11 +311,16 @@ private:
                 if (!firstFrame) gpuDisplay.SwapOnly();
                 firstFrame = false;
 
-                kernel.Tick(dt);
-                engine.ExecuteUpdate();
-                if (engine.HasError()) {
-                    printf("Script error: %s\n", engine.GetError());
-                    running = false; break;
+                // Simulation pause: skip tick unless stepping
+                bool simPaused = cvar_sim_pause.Get();
+                if (!simPaused || g_simStepFrames.load() > 0) {
+                    if (simPaused) g_simStepFrames.fetch_sub(1);
+                    kernel.Tick(dt);
+                    engine.ExecuteUpdate();
+                    if (engine.HasError()) {
+                        KL_ERR("koilo", "Script error: %s", engine.GetError());
+                        running = false; break;
+                    }
                 }
 
                 engine.RenderFrameGPU();
@@ -329,11 +346,15 @@ private:
                 }
             } else {
                 // Software render path
-                kernel.Tick(dt);
-                engine.ExecuteUpdate();
-                if (engine.HasError()) {
-                    printf("Script error: %s\n", engine.GetError());
-                    running = false; break;
+                bool simPaused = cvar_sim_pause.Get();
+                if (!simPaused || g_simStepFrames.load() > 0) {
+                    if (simPaused) g_simStepFrames.fetch_sub(1);
+                    kernel.Tick(dt);
+                    engine.ExecuteUpdate();
+                    if (engine.HasError()) {
+                        KL_ERR("koilo", "Script error: %s", engine.GetError());
+                        running = false; break;
+                    }
                 }
 
                 engine.RenderFrame(fb.data(), pixW, pixH);
@@ -371,12 +392,14 @@ private:
                 profiler.PrintReport();
             }
 
-            // Frame cap
-            if (capFPS && targetFrameTime > 0.0f) {
+            // Frame cap (re-read r.maxfps CVar each frame)
+            int cvarMaxFps = cvar_r_maxfps.Get();
+            float curTargetFrameTime = (cvarMaxFps > 0) ? (1.0f / static_cast<float>(cvarMaxFps)) : 0.0f;
+            if (!forceUncapped && curTargetFrameTime > 0.0f) {
                 uint64_t frameEnd = SDL_GetPerformanceCounter();
                 float elapsed = static_cast<float>(frameEnd - now) /
                                 static_cast<float>(freq);
-                float remaining = targetFrameTime - elapsed;
+                float remaining = curTargetFrameTime - elapsed;
                 if (remaining > 0.001f) {
                     std::this_thread::sleep_for(
                         std::chrono::microseconds(
@@ -385,13 +408,21 @@ private:
             }
 
             // Estimated max FPS console report (every 300 frames when capped)
-            if (capFPS && frameNum % 300 == 0 && estMaxFPS > 0.0) {
-                printf("[Host] Est. max FPS: %.0f  (capped at %.0f)\n",
-                       estMaxFPS, info.targetFPS);
+            if (cvarMaxFps > 0 && !forceUncapped && frameNum % 300 == 0 && estMaxFPS > 0.0) {
+                KL_LOG("Host", "Est. max FPS: %.0f  (capped at %d)",
+                       estMaxFPS, cvarMaxFps);
             }
         }
 
-        if (!firstFrame) gpuDisplay.SwapOnly();
+        // Wait for any in-flight GPU work to complete before destroying
+        // resources.  Don't submit the last recorded frame - it may reference
+        // images whose layouts are stale after the quit interrupt, and the
+        // frame would never be displayed anyway.
+#ifdef KL_HAVE_VULKAN_BACKEND
+        if (vkDisplay) {
+            vkDeviceWaitIdle(vkDisplay->GetDevice());
+        }
+#endif
 
         // Shut down render backend and UI GPU resources before display backend
         // so Vulkan resources are destroyed while the VkDevice is still alive.

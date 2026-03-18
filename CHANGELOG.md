@@ -4,6 +4,70 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.3.4] - 2026-3-18
+Service registration, CVar system, structured logging, module modularization, and critical bug fixes.
+
+### Added
+- **CVar system** (`engine/koilo/kernel/cvar/`)
+  - `CVar<T>` template with int, float, bool, and string types
+  - Automatic registration, console integration, and change callbacks
+  - `sim_cvars` - simulation pause/step CVars for frame debugging
+  - `render_cvars` - wireframe, culling, depth test, and max FPS CVars
+  - Console commands: `cvar.list`, `cvar.get`, `cvar.set`, `cvar.reset`
+- **Config system** (`engine/koilo/kernel/config/`)
+  - `ConfigStore` - hierarchical key-value configuration with INI-style persistence
+  - `IConfigProvider` interface for pluggable config backends
+  - Console commands: `config.get`, `config.set`, `config.list`, `config.save`, `config.load`
+- **Structured logging** (`engine/koilo/kernel/logging/`)
+  - `KL_LOG`, `KL_WARN`, `KL_ERR` macros with channel-tagged output
+  - `LogSystem` with per-channel verbosity, ring buffer history, and output sinks
+  - Console commands: `log.level`, `log.history`, `log.channels`, `log.filter`
+- **Thread pool** (`engine/koilo/kernel/thread_pool.*`)
+  - Work-stealing thread pool with priority queues (Low, Normal, High)
+  - Registered as kernel service; used by console socket and asset pipeline
+- **Debug overlay** (`engine/koilo/kernel/debug_overlay.*`)
+  - FPS counter, frame time graph, and memory stats overlay
+  - Toggleable via CVar or console command
+- **Module implementations** (IModule-based kernel modules)
+  - `SceneModule` - scene and camera lifecycle as a kernel module
+  - `InputModule` - input state management as a kernel module
+  - `RenderModule` - render backend orchestration as a kernel module
+  - `UIModule` - UI system lifecycle as a kernel module
+  - `ParticleModule` - particle system as a kernel module
+- **Console commands**
+  - `utility_commands.cpp` - uptime, version, clear, echo, help improvements
+  - `log_commands.cpp` - structured log querying and channel management
+  - `message_commands.cpp` - message bus tap/untap/send/dispatch/flush
+  - `service_commands.cpp` - service listing with type info and health checks
+
+### Changed
+- **Service registration** (`register_services.cpp`, `service_registry.*`)
+  - Services now registered with string names and typed accessors
+  - Thread pool, config store, CVar system, and log system registered as kernel services
+- **Module manager** (`module_manager.*`)
+  - Phase-ordered initialization (Core -> Simulation -> Render -> Overlay)
+  - Capability checking integrated into module lifecycle
+- **Kernel** (`kernel.cpp/hpp`)
+  - Expanded with CVar system, config store, and log system ownership
+  - `Shutdown()` dispatches `MSG_SHUTDOWN` signal before module teardown
+- **Asset job queue** (`asset_job_queue.*`)
+  - Migrated from internal thread to kernel thread pool
+  - Priority-based job scheduling
+- **Vulkan render backend** (`vulkan_render_backend.*`)
+  - CVar-driven wireframe, culling, and depth test toggling
+  - Pipeline cache rebuild on CVar change
+- **Script engine module initialization** (`koiloscript_engine.cpp`)
+  - `moduleLoader_.InitializeAll()` now called before `BuildCamera()` so scene/camera modules are available during setup
+- **Render loop idle-skip** (`sdl3_host.hpp`)
+  - Idle-skip optimization now requires at least 2 rendered frames before activating, ensuring the first frame is presented and the window becomes visible
+
+### Fixed
+- **Vulkan validation errors on shutdown** - Early break in render loop on quit signal prevents submitting command buffers with stale image layouts; `vkDeviceWaitIdle()` replaces final `SwapOnly()` during teardown
+- **Shutdown hang requiring double Ctrl+C** - `ConsoleSocket::Stop()` now calls `shutdown(fd, SHUT_RDWR)` on server and client sockets before `close()`, reliably unblocking `accept()` and `recv()` on Linux
+- **Scene never created / window not rendering** - Module initialization order fixed: `InitializeAll()` moved before `BuildCamera()` so `GetModule("scene")` finds the initialized `SceneModule`
+- **Bytecode compiler `if`-statement stack leak** - `CompileIfStatement` now emits `POP` for the condition value on both true and false branches, matching the `while` loop pattern; prevents stack overflow in scripts with many `if` statements inside loops
+- **Console session** - Command parsing edge cases and output formatting fixes
+
 ## [0.3.3] - 2026-3-17
 Vulkan render backend, kernel architecture, module system, and compile-time backend selection. (Unshelving some unfinished content - Kernel + Vulkan)
 

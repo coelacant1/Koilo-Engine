@@ -132,6 +132,11 @@ public:
 
     friend class CanvasDrawContext;
 
+    /// Emit text glyphs into the draw list (for debug overlays).
+    /// Requires a font to be set via BuildFromContext or SetFont.
+    void DrawText(const char* text, float x, float y,
+                  float fontSize, Color4 color);
+
     // -- Widget tree -> draw commands -----------------------------
 
     /** @brief Build draw commands for the entire UI tree. */

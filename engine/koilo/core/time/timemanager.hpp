@@ -27,10 +27,22 @@ namespace koilo {
  */
 class TimeManager {
 public:
+    /// Return the active instance. If the kernel has installed one via
+    /// SetInstance(), that is returned; otherwise falls back to a
+    /// process-wide Meyer's singleton (useful in tests without a kernel).
     static TimeManager& GetInstance() {
-        static TimeManager instance;
-        return instance;
+        if (s_instance) return *s_instance;
+        static TimeManager fallback;
+        return fallback;
     }
+
+    /// Install a kernel-owned instance as the active singleton.
+    static void SetInstance(TimeManager* inst) { s_instance = inst; }
+    static void ClearInstance()                { s_instance = nullptr; }
+
+    TimeManager() = default;
+    TimeManager(const TimeManager&) = delete;
+    TimeManager& operator=(const TimeManager&) = delete;
 
     // Called once per frame by the engine to advance time.
     void Tick(float dt) {
@@ -72,9 +84,7 @@ public:
     KL_END_DESCRIBE(TimeManager)
 
 private:
-    TimeManager() = default;
-    TimeManager(const TimeManager&) = delete;
-    TimeManager& operator=(const TimeManager&) = delete;
+    static inline TimeManager* s_instance = nullptr;
 
     float    deltaTime_  = 0.0f;
     float    totalTime_  = 0.0f;

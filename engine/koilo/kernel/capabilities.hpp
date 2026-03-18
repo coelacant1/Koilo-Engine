@@ -3,6 +3,30 @@
  * @file capabilities.hpp
  * @brief Capability bitmask for module permission checks.
  *
+ * The Koilo capability system provides sandboxing for modules. Each module
+ * declares its requiredCaps in its ModuleDesc; the kernel verifies at init
+ * time that the granted caps satisfy the requirement (granted ⊇ required).
+ *
+ * Built-in modules receive CAP_TRUSTED (all bits set). External / untrusted
+ * modules receive CAP_SANDBOX (memory + file-read + debug only).
+ *
+ * Runtime enforcement:
+ *   - KoiloKernel::RequireCap(moduleId, cap, "operation") - returns false
+ *     and logs a warning if the module lacks the required capability.
+ *   - Console: `grant <module> <cap>` / `revoke <module> <cap>` to adjust
+ *     at runtime for debugging.
+ *   - Console: `caps [module]` to inspect current capability state.
+ *
+ * Capability bits:
+ *   memory.alloc   - Arena/linear/scratch allocation
+ *   file.read      - Read files from disk (assets, configs)
+ *   file.write     - Write files to disk (screenshots, logs)
+ *   gpu.access     - Vulkan/OpenGL device access
+ *   network        - TCP/UDP socket operations
+ *   module.load    - Dynamic module loading
+ *   console.admin  - Full console access (execute any command)
+ *   debug          - Debug/profiling tools
+ *
  * @date 11/03/2025
  * @author Coela
  */

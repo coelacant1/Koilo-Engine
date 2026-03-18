@@ -1,39 +1,58 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file asset_job_queue.cpp
- * @brief AssetJobQueue implementation - background worker thread.
+ * @brief AssetJobQueue implementation - dispatches to kernel ThreadPool.
  */
 #include <koilo/kernel/asset/asset_job_queue.hpp>
+#include <koilo/kernel/thread_pool.hpp>
+#include <algorithm>
 
 namespace koilo {
 
 AssetJobQueue::AssetJobQueue() = default;
-
-AssetJobQueue::~AssetJobQueue() {
-    Stop();
-}
-
-void AssetJobQueue::Start() {
-    if (running_.load()) return;
-    stopRequested_.store(false);
-    running_.store(true);
-    worker_ = std::thread(&AssetJobQueue::WorkerLoop, this);
-}
-
-void AssetJobQueue::Stop() {
-    if (!running_.load()) return;
-    stopRequested_.store(true);
-    pendingCV_.notify_all();
-    if (worker_.joinable()) worker_.join();
-    running_.store(false);
-}
+AssetJobQueue::~AssetJobQueue() = default;
 
 void AssetJobQueue::RequestLoad(AssetHandle handle, LoadFunction loader, LoadCallback callback) {
+    if (!pool_) return;
+
+    // Track the handle as in-flight.
     {
-        std::lock_guard<std::mutex> lock(pendingMutex_);
-        pendingJobs_.push_back({handle, std::move(loader), std::move(callback)});
+        std::lock_guard<std::mutex> lock(handleMutex_);
+        activeHandles_.push_back(handle);
     }
-    pendingCV_.notify_one();
+    inFlight_.fetch_add(1, std::memory_order_relaxed);
+
+    // Capture by value - the lambda outlives this call.
+    pool_->Enqueue([this, handle, loader = std::move(loader),
+                    callback = std::move(callback)]() mutable {
+        AssetLoadResult result;
+        try {
+            result = loader(handle);
+        } catch (const std::exception& e) {
+            result.handle = handle;
+            result.success = false;
+            result.error = e.what();
+        } catch (...) {
+            result.handle = handle;
+            result.success = false;
+            result.error = "Unknown exception during asset load";
+        }
+
+        // Enqueue completed result for main-thread processing.
+        {
+            std::lock_guard<std::mutex> lock(completedMutex_);
+            completedJobs_.push_back({std::move(result), std::move(callback)});
+        }
+
+        // Remove from active handles.
+        {
+            std::lock_guard<std::mutex> lock(handleMutex_);
+            auto it = std::find_if(activeHandles_.begin(), activeHandles_.end(),
+                [&](const AssetHandle& h) { return h == handle; });
+            if (it != activeHandles_.end()) activeHandles_.erase(it);
+        }
+        inFlight_.fetch_sub(1, std::memory_order_relaxed);
+    }, JobPriority::Normal);
 }
 
 int AssetJobQueue::ProcessCompleted(int maxPerFrame) {
@@ -57,53 +76,12 @@ int AssetJobQueue::ProcessCompleted(int maxPerFrame) {
     return invoked;
 }
 
-size_t AssetJobQueue::PendingCount() const {
-    std::lock_guard<std::mutex> lock(pendingMutex_);
-    return pendingJobs_.size();
-}
-
 bool AssetJobQueue::IsLoading(AssetHandle handle) const {
-    std::lock_guard<std::mutex> lock(pendingMutex_);
-    for (const auto& job : pendingJobs_) {
-        if (job.handle == handle) return true;
+    std::lock_guard<std::mutex> lock(handleMutex_);
+    for (const auto& h : activeHandles_) {
+        if (h == handle) return true;
     }
     return false;
-}
-
-void AssetJobQueue::WorkerLoop() {
-    while (!stopRequested_.load()) {
-        Job job;
-        {
-            std::unique_lock<std::mutex> lock(pendingMutex_);
-            pendingCV_.wait(lock, [this] {
-                return !pendingJobs_.empty() || stopRequested_.load();
-            });
-            if (stopRequested_.load()) break;
-            if (pendingJobs_.empty()) continue;
-            job = std::move(pendingJobs_.front());
-            pendingJobs_.pop_front();
-        }
-
-        // Execute the load function on this worker thread.
-        AssetLoadResult result;
-        try {
-            result = job.loader(job.handle);
-        } catch (const std::exception& e) {
-            result.handle = job.handle;
-            result.success = false;
-            result.error = e.what();
-        } catch (...) {
-            result.handle = job.handle;
-            result.success = false;
-            result.error = "Unknown exception during asset load";
-        }
-
-        // Enqueue the result for main-thread processing.
-        {
-            std::lock_guard<std::mutex> lock(completedMutex_);
-            completedJobs_.push_back({std::move(result), std::move(job.callback)});
-        }
-    }
 }
 
 } // namespace koilo

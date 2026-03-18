@@ -23,8 +23,9 @@ DebugDraw::DebugDraw() : enabled(true) {
 }
 
 DebugDraw& DebugDraw::GetInstance() {
-    static DebugDraw instance;
-    return instance;
+    if (s_instance) return *s_instance;
+    static DebugDraw fallback;
+    return fallback;
 }
 
 void koilo::DebugDraw::Update() {

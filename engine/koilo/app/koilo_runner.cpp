@@ -18,6 +18,15 @@
 #include <koilo/platform/sdl3_host.hpp>
 #include <koilo/kernel/kernel.hpp>
 #include <koilo/kernel/console/console_module.hpp>
+#include <koilo/kernel/logging/log_system.hpp>
+#include <koilo/kernel/logging/log.hpp>
+#include <koilo/kernel/debug_overlay.hpp>
+
+// Force-link CVar translation units from static libraries.
+extern "C" void koilo_render_cvars_anchor();
+extern "C" void koilo_sim_cvars_anchor();
+static volatile auto s_forceLink_renderCvars = &koilo_render_cvars_anchor;
+static volatile auto s_forceLink_simCvars = &koilo_sim_cvars_anchor;
 #include <koilo/kernel/register_services.hpp>
 #include <koilo/platform/desktop_file_reader.hpp>
 #include <koilo/scripting/koiloscript_engine.hpp>
@@ -56,6 +65,8 @@ static void SignalHandler(int) {
 // -- Kernel bootstrap (shared by all modes) --------------------------
 
 struct KoiloInstance {
+    koilo::LogSystem                    logSystem;      // Must be first - other ctors may log
+    koilo::DebugOverlay                 debugOverlay;   // On-screen watch overlay
     koilo::KoiloKernel                  kernel;
     koilo::platform::DesktopFileReader  reader;
     koilo::scripting::KoiloScriptEngine engine{&reader};
@@ -70,13 +81,13 @@ struct KoiloInstance {
         koilo::RegisterCoreServices(kernel);
 
         if (!kernel.InitializeModules()) {
-            fprintf(stderr, "[koilo] Failed to initialize kernel modules\n");
+            KL_ERR("koilo", "Failed to initialize kernel modules");
             return false;
         }
 
         console = koilo::ConsoleModule::Instance();
         if (!console) {
-            fprintf(stderr, "[koilo] Console module not available\n");
+            KL_ERR("koilo", "Console module not available");
             return false;
         }
 
@@ -165,7 +176,7 @@ static void RegisterREPLCommands(KoiloInstance& inst, int argc, char** argv) {
             if (!ra.script) {
                 return koilo::ConsoleResult::Error("No script path specified.");
             }
-            printf("[koilo] Launching display: %s\n", ra.script);
+            KL_LOG("koilo", "Launching display: %s", ra.script);
 
             koilo::SDL3Host host;
             host.scriptPath    = ra.script;
@@ -259,7 +270,7 @@ int main(int argc, char** argv) {
     KoiloInstance inst;
     if (!inst.Boot()) return 1;
 
-    printf("[koilo] TCP console server on localhost:9090\n");
+    KL_LOG("koilo", "TCP console server on localhost:9090");
 
     // Mode 1: --console-exec "command" - run one command, exit
     if (consoleExec) {
@@ -280,7 +291,7 @@ int main(int argc, char** argv) {
     // Mode 3: interactive REPL
     RegisterREPLCommands(inst, argc, argv);
     PrintBanner();
-    printf("[koilo] TCP console server on localhost:9090\n\n");
+    KL_LOG("koilo", "TCP console server on localhost:9090");
 
     std::string line;
     while (g_running) {

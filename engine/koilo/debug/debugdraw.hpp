@@ -197,23 +197,25 @@ struct DebugText {
  * @brief Central system for debug visualization.
  */
 class DebugDraw {
+public:
+    DebugDraw();
+    DebugDraw(const DebugDraw&) = delete;
+    DebugDraw& operator=(const DebugDraw&) = delete;
+
+    static DebugDraw& GetInstance();
+    static void SetInstance(DebugDraw* inst) { s_instance = inst; }
+    static void ClearInstance()              { s_instance = nullptr; }
+
 private:
-    // Debug primitives
+    static inline DebugDraw* s_instance = nullptr;
+
     std::vector<DebugLine> lines;
     std::vector<DebugSphere> spheres;
     std::vector<DebugBox> boxes;
     std::vector<DebugText> texts;
-
-    // Enabled state
     bool enabled;
 
-    DebugDraw();
-
 public:
-    /**
-     * @brief Gets the singleton instance.
-     */
-    static DebugDraw& GetInstance();
 
     /**
      * @brief Enables debug drawing.

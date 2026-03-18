@@ -1,6 +1,8 @@
 #include <koilo/kernel/console/console_socket.hpp>
 #include <koilo/kernel/kernel.hpp>
-#include <cstdio>
+#include <koilo/kernel/thread_pool.hpp>
+#include <koilo/kernel/logging/log.hpp>
+#include <algorithm>
 #include <cstring>
 
 #ifdef _WIN32
@@ -36,14 +38,14 @@ bool ConsoleSocket::Start(uint16_t port) {
 #ifdef _WIN32
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-        std::fprintf(stderr, "[Console] WSAStartup failed\n");
+        KL_ERR("Console", "WSAStartup failed");
         return false;
     }
 #endif
 
     serverFd_ = static_cast<int>(socket(AF_INET, SOCK_STREAM, 0));
     if (serverFd_ < 0) {
-        std::fprintf(stderr, "[Console] Failed to create socket: %d\n", SOCKET_ERROR_CODE);
+        KL_ERR("Console", "Failed to create socket: %d", SOCKET_ERROR_CODE);
         return false;
     }
 
@@ -59,14 +61,14 @@ bool ConsoleSocket::Start(uint16_t port) {
     addr.sin_port = htons(port);
 
     if (bind(serverFd_, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)) < 0) {
-        std::fprintf(stderr, "[Console] Failed to bind port %u: %d\n", port, SOCKET_ERROR_CODE);
+        KL_ERR("Console", "Failed to bind port %u: %d", port, SOCKET_ERROR_CODE);
         CLOSE_SOCKET(serverFd_);
         serverFd_ = -1;
         return false;
     }
 
     if (listen(serverFd_, 4) < 0) {
-        std::fprintf(stderr, "[Console] Failed to listen: %d\n", SOCKET_ERROR_CODE);
+        KL_ERR("Console", "Failed to listen: %d", SOCKET_ERROR_CODE);
         CLOSE_SOCKET(serverFd_);
         serverFd_ = -1;
         return false;
@@ -76,7 +78,7 @@ bool ConsoleSocket::Start(uint16_t port) {
     running_.store(true);
     acceptThread_ = std::thread(&ConsoleSocket::AcceptLoop, this);
 
-    std::fprintf(stderr, "[Console] Listening on 127.0.0.1:%u\n", port);
+    KL_LOG("Console", "Listening on 127.0.0.1:%u", port);
     return true;
 }
 
@@ -84,19 +86,43 @@ void ConsoleSocket::Stop() {
     if (!running_.load()) return;
     running_.store(false);
 
+    // shutdown() unblocks any thread blocked in accept()/recv() on this
+    // socket, which close() alone does not reliably do on Linux.
     if (serverFd_ >= 0) {
+        ::shutdown(serverFd_,
+#ifdef _WIN32
+                   SD_BOTH
+#else
+                   SHUT_RDWR
+#endif
+        );
         CLOSE_SOCKET(serverFd_);
         serverFd_ = -1;
+    }
+
+    // Shut down all active client sockets so recv() unblocks.
+    {
+        std::lock_guard<std::mutex> lock(clientMutex_);
+        for (int fd : clientFds_) {
+            ::shutdown(fd,
+#ifdef _WIN32
+                       SD_BOTH
+#else
+                       SHUT_RDWR
+#endif
+            );
+        }
     }
 
     if (acceptThread_.joinable()) {
         acceptThread_.join();
     }
 
-    for (auto& t : clientThreads_) {
-        if (t.joinable()) t.join();
+    // Wait for all active client handlers to finish.
+    {
+        std::unique_lock<std::mutex> lock(clientMutex_);
+        clientCV_.wait(lock, [this] { return activeClients_.load() == 0; });
     }
-    clientThreads_.clear();
 }
 
 void ConsoleSocket::AcceptLoop() {
@@ -114,12 +140,25 @@ void ConsoleSocket::AcceptLoop() {
             continue;
         }
 
-        std::fprintf(stderr, "[Console] Client connected\n");
-        clientThreads_.emplace_back(&ConsoleSocket::HandleClient, this, clientFd);
+        KL_LOG("Console", "Client connected");
+
+        if (pool_) {
+            pool_->Enqueue([this, clientFd]() { HandleClient(clientFd); },
+                           JobPriority::Low);
+        } else {
+            // Fallback: handle inline on accept thread (single-client mode).
+            HandleClient(clientFd);
+        }
     }
 }
 
 void ConsoleSocket::HandleClient(int clientFd) {
+    activeClients_.fetch_add(1, std::memory_order_relaxed);
+    {
+        std::lock_guard<std::mutex> lock(clientMutex_);
+        clientFds_.push_back(clientFd);
+    }
+
     ConsoleSession session(kernel_, registry_);
     session.SetOutputFormat(ConsoleOutputFormat::Json);
 
@@ -174,8 +213,17 @@ void ConsoleSocket::HandleClient(int clientFd) {
         }
     }
 
+    {
+        std::lock_guard<std::mutex> lock(clientMutex_);
+        clientFds_.erase(
+            std::remove(clientFds_.begin(), clientFds_.end(), clientFd),
+            clientFds_.end());
+    }
     CLOSE_SOCKET(clientFd);
-    std::fprintf(stderr, "[Console] Client disconnected\n");
+    KL_LOG("Console", "Client disconnected");
+
+    activeClients_.fetch_sub(1, std::memory_order_relaxed);
+    clientCV_.notify_all();
 }
 
 } // namespace koilo

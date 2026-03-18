@@ -1720,5 +1720,10 @@ void CanvasDrawContext::DrawText(float x, float y, const char* text,
     dl_.EmitTextGlyphs(text, ox_ + x, textY, fontSize, color);
 }
 
+void UIDrawList::DrawText(const char* text, float x, float y,
+                          float fontSize, Color4 color) {
+    EmitTextGlyphs(text, x, y, fontSize, color);
+}
+
 } // namespace ui
 } // namespace koilo
