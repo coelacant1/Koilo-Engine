@@ -47,3 +47,39 @@
     static ksl::ParamList Params() {                                        \
         return ksl::ParamList{ nullptr, 0 };                                \
     }
+
+// -- Shader metadata (render hints, etc.) ----------------------------
+//
+// Shaders can declare arbitrary key-value metadata that the engine reads
+// at load time.  This is used for render hints (depthTest, cullMode, etc.)
+// and is extensible to any future shader-level property.
+//
+// struct MySkyShader : public ksl::Shader {
+//     KSL_META_BEGIN(MySkyShader)
+//         KSL_META_INT("depthTest",  0)
+//         KSL_META_INT("depthWrite", 0)
+//         KSL_META_INT("cullMode",   0)
+//     KSL_META_END
+// };
+
+#define KSL_META_BEGIN(CLASS)                                               \
+    static ksl::MetaList Meta() {                                           \
+        static const ksl::MetaEntry _meta[] = {
+
+#define KSL_META_INT(KEY, VAL)                                              \
+    ksl::MetaEntry{ KEY, ksl::MetaType::Int, { .intVal = (VAL) } },
+
+#define KSL_META_FLOAT(KEY, VAL)                                            \
+    ksl::MetaEntry{ KEY, ksl::MetaType::Float, { .floatVal = (VAL) } },
+
+#define KSL_META_END                                                        \
+        };                                                                  \
+        return ksl::MetaList{ _meta,                                        \
+            static_cast<int>(sizeof(_meta) / sizeof(_meta[0])) };           \
+    }
+
+// For shaders with no metadata (default render settings)
+#define KSL_NO_META                                                         \
+    static ksl::MetaList Meta() {                                           \
+        return ksl::MetaList{ nullptr, 0 };                                 \
+    }

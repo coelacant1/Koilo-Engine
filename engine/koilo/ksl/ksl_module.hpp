@@ -35,6 +35,18 @@ public:
 #endif
     }
 
+    /// True if GLSL source is available for RHI shader creation.
+    bool HasGLSLSource() const { return !glslFragSource_.empty(); }
+
+    /// True if the module can provide GPU shading (GL program or GLSL source).
+    bool HasShaderData() const { return HasGPU() || HasGLSLSource(); }
+
+    /// Retained GLSL fragment shader source (available on all platforms).
+    const std::string& GetGLSLFragmentSource() const { return glslFragSource_; }
+
+    /// Retained GLSL vertex shader source (available on all platforms).
+    const std::string& GetGLSLVertexSource() const { return glslVertSource_; }
+
     // Load .kso (ELF) for CPU shading - unified across all platforms
     bool LoadKSO(const std::string& path, const KSLSymbolTable& symbols) {
         // Read file into memory
@@ -71,18 +83,35 @@ public:
                 requiredAttribs_ = info->requiredAttribs;
             }
         }
+
+        // Resolve optional metadata (render hints etc.)
+        auto metaFn = elfLoader_.GetSymbol<KSLMetadataFn>("ksl_metadata");
+        if (metaFn) {
+            int count = 0;
+            const MetaEntry* entries = metaFn(&count);
+            if (entries && count > 0) {
+                metadata_.assign(entries, entries + count);
+            }
+        }
+
         return shadeFn_ != nullptr;
     }
 
-    // Load .glsl file and compile to GL program
+    // Load .glsl file and compile to GL program.
+    // Also retains GLSL source strings for RHI shader creation (Phase 17f).
     bool LoadGLSL(const std::string& path, const std::string& vertexSrc) {
-#ifdef KL_HAVE_OPENGL_BACKEND
         std::ifstream file(path);
         if (!file.is_open()) return false;
 
         std::stringstream ss;
         ss << file.rdbuf();
         std::string fragSrc = ss.str();
+
+        // Retain GLSL source for backend-agnostic shader creation via RHI
+        glslFragSource_ = fragSrc;
+        glslVertSource_ = vertexSrc;
+
+#ifdef KL_HAVE_OPENGL_BACKEND
 
         GLuint vs = CompileShader(GL_VERTEX_SHADER, vertexSrc.c_str());
         GLuint fs = CompileShader(GL_FRAGMENT_SHADER, fragSrc.c_str());
@@ -120,7 +149,9 @@ public:
 
         return true;
 #else
-        return false;
+        // No GL context available - GLSL source is retained for RHI
+        // shader creation but no GL program is compiled.
+        return !glslFragSource_.empty();
 #endif
     }
 
@@ -138,6 +169,27 @@ public:
     KSLShadeFn GetShadeFn() const { return shadeFn_; }
 
     uint8_t GetRequiredAttribs() const { return requiredAttribs_; }
+
+    /// @brief Return the metadata list loaded from the .kso module.
+    MetaList GetMetadata() const { return {metadata_.data(), static_cast<int>(metadata_.size())}; }
+
+    /// @brief Look up an integer metadata value by key. Returns fallback if not found.
+    int GetMetaInt(const char* key, int fallback = 0) const {
+        for (const auto& e : metadata_) {
+            if (e.type == MetaType::Int && std::strcmp(e.key, key) == 0)
+                return e.intVal;
+        }
+        return fallback;
+    }
+
+    /// @brief Look up a float metadata value by key. Returns fallback if not found.
+    float GetMetaFloat(const char* key, float fallback = 0.0f) const {
+        for (const auto& e : metadata_) {
+            if (e.type == MetaType::Float && std::strcmp(e.key, key) == 0)
+                return e.floatVal;
+        }
+        return fallback;
+    }
 
     ParamList GetParams() const {
         if (paramsFn_) {
@@ -189,6 +241,9 @@ public:
         setParamFn_ = nullptr;
         paramsFn_ = nullptr;
         requiredAttribs_ = SHADE_ATTRIB_ALL;
+        metadata_.clear();
+        glslFragSource_.clear();
+        glslVertSource_.clear();
     }
 
 private:
@@ -222,6 +277,13 @@ private:
     KSLShadeFn    shadeFn_ = nullptr;
     KSLParamsFn   paramsFn_ = nullptr;
     uint8_t       requiredAttribs_ = SHADE_ATTRIB_ALL;
+
+    // Shader metadata (render hints, etc.) loaded from .kso
+    std::vector<MetaEntry> metadata_;
+
+    // GLSL source retention for backend-agnostic RHI shader creation (Phase 17f)
+    std::string glslFragSource_;
+    std::string glslVertSource_;
 
     // GPU (GL program)
 #ifdef KL_HAVE_OPENGL_BACKEND

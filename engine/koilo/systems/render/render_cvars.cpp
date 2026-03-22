@@ -18,6 +18,7 @@ AutoCVar_Bool  cvar_r_vsync     {"r.vsync",      "Enable vertical sync",        
 AutoCVar_Bool  cvar_r_shadows   {"r.shadows",    "Enable shadow rendering",            true};
 AutoCVar_Bool  cvar_r_drawcalls {"r.drawcalls",  "Show draw call count in HUD",        false};
 AutoCVar_Bool  cvar_r_depthtest {"r.depthtest",  "Enable depth testing",               true};
+AutoCVar_Bool  cvar_r_legacy_backend {"r.legacy_backend", "Use legacy per-backend rendering (bypass unified pipeline)", false};
 
 } // namespace koilo
 

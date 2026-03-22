@@ -18,7 +18,6 @@
 
 #include <koilo/systems/render/igpu_render_backend.hpp>
 #include <koilo/ksl/ksl_registry.hpp>
-#include <koilo/registry/reflect_macros.hpp>
 
 #include <vulkan/vulkan.h>
 
@@ -317,31 +316,6 @@ private:
     void RenderSky(VkCommandBuffer cmd, CameraBase* camera, int vpW, int vpH);
     void RenderDebugLines(const float* viewMat, const float* projMat);
     VkPipeline GetPipelineForMaterial(const KSLMaterial* kmat);
-
-    #ifdef KL_HAVE_VULKAN_BACKEND
-    KL_BEGIN_FIELDS(VulkanRenderBackend)
-        /* No reflected fields. */
-    KL_END_FIELDS
-
-    KL_BEGIN_METHODS(VulkanRenderBackend)
-        KL_METHOD_AUTO(VulkanRenderBackend, Initialize, "Initialize"),
-        KL_METHOD_AUTO(VulkanRenderBackend, Shutdown, "Shutdown"),
-        KL_METHOD_AUTO(VulkanRenderBackend, IsInitialized, "Is initialized"),
-        KL_METHOD_AUTO(VulkanRenderBackend, Render, "Render"),
-        KL_METHOD_AUTO(VulkanRenderBackend, RenderDirect, "Render direct"),
-        KL_METHOD_AUTO(VulkanRenderBackend, ReadPixels, "Read pixels"),
-        KL_METHOD_AUTO(VulkanRenderBackend, GetName, "Get name"),
-        KL_METHOD_AUTO(VulkanRenderBackend, BlitToScreen, "Blit to screen"),
-        KL_METHOD_AUTO(VulkanRenderBackend, CompositeCanvasOverlays, "Composite canvas overlays"),
-        KL_METHOD_AUTO(VulkanRenderBackend, PrepareFrame, "Prepare frame"),
-        KL_METHOD_AUTO(VulkanRenderBackend, FinishFrame, "Finish frame")
-    KL_END_METHODS
-
-    KL_BEGIN_DESCRIBE(VulkanRenderBackend)
-        /* No reflected ctors - requires VulkanBackend* (not reflectable). */
-    KL_END_DESCRIBE(VulkanRenderBackend)
-    #endif
-
 };
 
 } // namespace koilo

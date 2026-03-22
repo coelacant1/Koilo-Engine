@@ -29,6 +29,8 @@ VkFormat VulkanRHIDevice::ToVkFormat(RHIFormat fmt) {
         case RHIFormat::RG16F:              return VK_FORMAT_R16G16_SFLOAT;
         case RHIFormat::RGBA16F:            return VK_FORMAT_R16G16B16A16_SFLOAT;
         case RHIFormat::RGBA32F:            return VK_FORMAT_R32G32B32A32_SFLOAT;
+        case RHIFormat::RGB32F:             return VK_FORMAT_R32G32B32_SFLOAT;
+        case RHIFormat::RG32F:              return VK_FORMAT_R32G32_SFLOAT;
         case RHIFormat::R32F:               return VK_FORMAT_R32_SFLOAT;
         case RHIFormat::D16_Unorm:          return VK_FORMAT_D16_UNORM;
         case RHIFormat::D24_Unorm_S8_Uint:  return VK_FORMAT_D24_UNORM_S8_UINT;
@@ -114,42 +116,130 @@ bool VulkanRHIDevice::Initialize() {
         return false;
     }
 
-    // Create descriptor pool
+    // Create per-frame descriptor pools (one per frame in flight).
+    // Each frame only resets its own pool after its fence is waited on,
+    // avoiding the race where one frame's pool is reset while the other
+    // frame's command buffer still references its descriptor sets.
     VkDescriptorPoolSize poolSizes[] = {
-        {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         256},
-        {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,  256},
-        {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,          64},
+        {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         512},
+        {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,  64},
+        {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 512},
+        {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,         128},
     };
     VkDescriptorPoolCreateInfo dpInfo{};
     dpInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     dpInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-    dpInfo.maxSets = 512;
-    dpInfo.poolSizeCount = 3;
+    dpInfo.maxSets = 1024;
+    dpInfo.poolSizeCount = 4;
     dpInfo.pPoolSizes = poolSizes;
-    if (vkCreateDescriptorPool(device_, &dpInfo, nullptr, &descriptorPool_) != VK_SUCCESS) {
-        KL_ERR("RHI", "Failed to create descriptor pool");
-        return false;
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        if (vkCreateDescriptorPool(device_, &dpInfo, nullptr,
+                                   &descriptorPools_[i]) != VK_SUCCESS) {
+            KL_ERR("RHI", "Failed to create descriptor pool %u", i);
+            return false;
+        }
     }
 
-    // Create descriptor set layouts
-    // Set 0: single uniform buffer (scene/transform data)
+    // -- Scene pipeline descriptor set layouts --------------------------
+    // Matches KSL SPIR-V binding conventions:
+    //   Set 0: scene data (transform UBO, light SSBO, scene UBO, audio SSBO)
+    //   Set 1: material UBO
+    //   Set 2: texture samplers (up to 8)
+
+    // Set 0: Scene data - 4 bindings
+    {
+        VkDescriptorSetLayoutBinding bindings[4] = {};
+        // Binding 0: Transform UBO (vertex + fragment)
+        bindings[0].binding = 0;
+        bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        bindings[0].descriptorCount = 1;
+        bindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+        // Binding 1: Light buffer SSBO (fragment)
+        bindings[1].binding = 1;
+        bindings[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        bindings[1].descriptorCount = 1;
+        bindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+        // Binding 2: Scene globals UBO (fragment)
+        bindings[2].binding = 2;
+        bindings[2].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        bindings[2].descriptorCount = 1;
+        bindings[2].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+        // Binding 3: Audio samples SSBO (fragment)
+        bindings[3].binding = 3;
+        bindings[3].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        bindings[3].descriptorCount = 1;
+        bindings[3].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+        VkDescriptorSetLayoutCreateInfo layoutInfo{};
+        layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        layoutInfo.bindingCount = 4;
+        layoutInfo.pBindings = bindings;
+        if (vkCreateDescriptorSetLayout(device_, &layoutInfo, nullptr, &sceneSetLayout_) != VK_SUCCESS) {
+            KL_ERR("RHI", "Failed to create scene descriptor set layout");
+            return false;
+        }
+    }
+    // Set 1: Material UBO
     {
         VkDescriptorSetLayoutBinding binding{};
         binding.binding = 0;
         binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         binding.descriptorCount = 1;
-        binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+        binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
         VkDescriptorSetLayoutCreateInfo layoutInfo{};
         layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
         layoutInfo.bindingCount = 1;
         layoutInfo.pBindings = &binding;
-        if (vkCreateDescriptorSetLayout(device_, &layoutInfo, nullptr, &uniformLayout_) != VK_SUCCESS) {
-            KL_ERR("RHI", "Failed to create uniform descriptor set layout");
+        if (vkCreateDescriptorSetLayout(device_, &layoutInfo, nullptr, &materialSetLayout_) != VK_SUCCESS) {
+            KL_ERR("RHI", "Failed to create material descriptor set layout");
             return false;
         }
     }
-    // Set 1: single combined image sampler
+    // Set 2: Texture samplers (up to 8)
+    {
+        std::array<VkDescriptorSetLayoutBinding, 8> bindings{};
+        for (uint32_t i = 0; i < 8; ++i) {
+            bindings[i].binding = i;
+            bindings[i].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            bindings[i].descriptorCount = 1;
+            bindings[i].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+        }
+
+        VkDescriptorSetLayoutCreateInfo layoutInfo{};
+        layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        layoutInfo.bindingCount = 8;
+        layoutInfo.pBindings = bindings.data();
+        if (vkCreateDescriptorSetLayout(device_, &layoutInfo, nullptr, &textureSetLayout_) != VK_SUCCESS) {
+            KL_ERR("RHI", "Failed to create texture descriptor set layout");
+            return false;
+        }
+    }
+    // Scene pipeline layout: 3 sets + push constants
+    {
+        VkDescriptorSetLayout layouts[] = {sceneSetLayout_, materialSetLayout_, textureSetLayout_};
+
+        VkPushConstantRange pushRange{};
+        pushRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+        pushRange.offset = 0;
+        pushRange.size = 128;
+
+        VkPipelineLayoutCreateInfo layoutInfo{};
+        layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        layoutInfo.setLayoutCount = 3;
+        layoutInfo.pSetLayouts = layouts;
+        layoutInfo.pushConstantRangeCount = 1;
+        layoutInfo.pPushConstantRanges = &pushRange;
+
+        if (vkCreatePipelineLayout(device_, &layoutInfo, nullptr,
+                                    &scenePipelineLayout_) != VK_SUCCESS) {
+            KL_ERR("RHI", "Failed to create scene pipeline layout");
+            return false;
+        }
+    }
+
+    // -- Blit pipeline descriptor set layouts ---------------------------
+    // Set 0: one combined image sampler (the offscreen color texture)
     {
         VkDescriptorSetLayoutBinding binding{};
         binding.binding = 0;
@@ -161,31 +251,41 @@ bool VulkanRHIDevice::Initialize() {
         layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
         layoutInfo.bindingCount = 1;
         layoutInfo.pBindings = &binding;
-        if (vkCreateDescriptorSetLayout(device_, &layoutInfo, nullptr, &textureLayout_) != VK_SUCCESS) {
-            KL_ERR("RHI", "Failed to create texture descriptor set layout");
+        if (vkCreateDescriptorSetLayout(device_, &layoutInfo, nullptr, &blitSamplerLayout_) != VK_SUCCESS) {
+            KL_ERR("RHI", "Failed to create blit sampler layout");
             return false;
         }
     }
-
-    // Create default pipeline layout (set 0 = uniform, set 1 = texture, push constants)
+    // Set 1: optional UBO (overlay alpha, etc.)
     {
-        VkDescriptorSetLayout layouts[] = {uniformLayout_, textureLayout_};
+        VkDescriptorSetLayoutBinding binding{};
+        binding.binding = 0;
+        binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        binding.descriptorCount = 1;
+        binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-        VkPushConstantRange pushRange{};
-        pushRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-        pushRange.offset = 0;
-        pushRange.size = 128;
+        VkDescriptorSetLayoutCreateInfo layoutInfo{};
+        layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        layoutInfo.bindingCount = 1;
+        layoutInfo.pBindings = &binding;
+        if (vkCreateDescriptorSetLayout(device_, &layoutInfo, nullptr, &blitUBOLayout_) != VK_SUCCESS) {
+            KL_ERR("RHI", "Failed to create blit UBO layout");
+            return false;
+        }
+    }
+    // Blit pipeline layout: 2 sets
+    {
+        VkDescriptorSetLayout layouts[] = {blitSamplerLayout_, blitUBOLayout_};
 
         VkPipelineLayoutCreateInfo layoutInfo{};
         layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         layoutInfo.setLayoutCount = 2;
         layoutInfo.pSetLayouts = layouts;
-        layoutInfo.pushConstantRangeCount = 1;
-        layoutInfo.pPushConstantRanges = &pushRange;
+        layoutInfo.pushConstantRangeCount = 0;
 
         if (vkCreatePipelineLayout(device_, &layoutInfo, nullptr,
-                                    &defaultPipelineLayout_) != VK_SUCCESS) {
-            KL_ERR("RHI", "Failed to create default pipeline layout");
+                                    &blitPipelineLayout_) != VK_SUCCESS) {
+            KL_ERR("RHI", "Failed to create blit pipeline layout");
             return false;
         }
     }
@@ -207,6 +307,26 @@ bool VulkanRHIDevice::Initialize() {
     limits_.maxBoundDescriptorSets = props.limits.maxBoundDescriptorSets;
     limits_.maxSamplers           = props.limits.maxDescriptorSetSamplers;
     limits_.maxAnisotropy         = props.limits.maxSamplerAnisotropy;
+
+    // -- Dynamic uniform ring buffer ----------------------------------
+    // A large HOST_COHERENT buffer shared by all per-draw uniform writes.
+    // Each UpdateBuffer for a uniform buffer writes to the NEXT slice,
+    // so GPU sees per-draw data instead of the last-written overwrite.
+    uniformMinAlign_ = static_cast<uint32_t>(
+        props.limits.minUniformBufferOffsetAlignment);
+    if (uniformMinAlign_ == 0) uniformMinAlign_ = 256;
+    uniformRingSize_ = 4u * 1024u * 1024u; // 4 MB
+    if (!CreateVkBuffer(uniformRingSize_,
+                        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                        VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                        uniformRingBuffer_, uniformRingMemory_)) {
+        KL_ERR("RHI", "Failed to create uniform ring buffer");
+        return false;
+    }
+    vkMapMemory(device_, uniformRingMemory_, 0, uniformRingSize_,
+                0, &uniformRingMapped_);
+    uniformRingOffset_ = 0;
 
     // Query features
     VkPhysicalDeviceFeatures features;
@@ -236,6 +356,27 @@ void VulkanRHIDevice::Shutdown() {
     if (!initialized_) return;
     vkDeviceWaitIdle(device_);
 
+    // Flush all deferred texture deletions across all frame slots
+    for (uint32_t f = 0; f < kMaxFramesInFlight; ++f) {
+        for (auto& s : pendingTextureDeletes_[f]) {
+            if (s.sampler != VK_NULL_HANDLE) vkDestroySampler(device_, s.sampler, nullptr);
+            if (s.view != VK_NULL_HANDLE)    vkDestroyImageView(device_, s.view, nullptr);
+            if (s.image != VK_NULL_HANDLE)   vkDestroyImage(device_, s.image, nullptr);
+            if (s.memory != VK_NULL_HANDLE)  vkFreeMemory(device_, s.memory, nullptr);
+        }
+        pendingTextureDeletes_[f].clear();
+    }
+
+    // Flush all deferred buffer deletions across all frame slots
+    for (uint32_t f = 0; f < kMaxFramesInFlight; ++f) {
+        for (auto& s : pendingBufferDeletes_[f]) {
+            if (s.mapped)  vkUnmapMemory(device_, s.memory);
+            if (s.buffer != VK_NULL_HANDLE) vkDestroyBuffer(device_, s.buffer, nullptr);
+            if (s.memory != VK_NULL_HANDLE) vkFreeMemory(device_, s.memory, nullptr);
+        }
+        pendingBufferDeletes_[f].clear();
+    }
+
     // Destroy all remaining resources
     for (uint32_t i = 1; i < static_cast<uint32_t>(framebuffers_.slots.size()); ++i) {
         auto& s = framebuffers_.slots[i];
@@ -250,6 +391,8 @@ void VulkanRHIDevice::Shutdown() {
             vkDestroyPipelineLayout(device_, s.layout, nullptr);
     }
     for (uint32_t i = 1; i < static_cast<uint32_t>(renderPasses_.slots.size()); ++i) {
+        // Skip the swapchain pass - its VkRenderPass is owned by the display
+        if (swapchainPassHandle_.IsValid() && i == swapchainPassHandle_.id) continue;
         auto& s = renderPasses_.slots[i];
         if (s.pass != VK_NULL_HANDLE)
             vkDestroyRenderPass(device_, s.pass, nullptr);
@@ -273,15 +416,40 @@ void VulkanRHIDevice::Shutdown() {
         if (s.memory != VK_NULL_HANDLE) vkFreeMemory(device_, s.memory, nullptr);
     }
 
-    // Destroy infrastructure
-    if (defaultPipelineLayout_ != VK_NULL_HANDLE)
-        vkDestroyPipelineLayout(device_, defaultPipelineLayout_, nullptr);
-    if (uniformLayout_ != VK_NULL_HANDLE)
-        vkDestroyDescriptorSetLayout(device_, uniformLayout_, nullptr);
-    if (textureLayout_ != VK_NULL_HANDLE)
-        vkDestroyDescriptorSetLayout(device_, textureLayout_, nullptr);
-    if (descriptorPool_ != VK_NULL_HANDLE)
-        vkDestroyDescriptorPool(device_, descriptorPool_, nullptr);
+    // Destroy the uniform ring buffer
+    if (uniformRingMapped_) {
+        vkUnmapMemory(device_, uniformRingMemory_);
+        uniformRingMapped_ = nullptr;
+    }
+    if (uniformRingBuffer_ != VK_NULL_HANDLE) {
+        vkDestroyBuffer(device_, uniformRingBuffer_, nullptr);
+        uniformRingBuffer_ = VK_NULL_HANDLE;
+    }
+    if (uniformRingMemory_ != VK_NULL_HANDLE) {
+        vkFreeMemory(device_, uniformRingMemory_, nullptr);
+        uniformRingMemory_ = VK_NULL_HANDLE;
+    }
+
+    // Destroy pipeline layouts
+    if (scenePipelineLayout_ != VK_NULL_HANDLE)
+        vkDestroyPipelineLayout(device_, scenePipelineLayout_, nullptr);
+    if (blitPipelineLayout_ != VK_NULL_HANDLE)
+        vkDestroyPipelineLayout(device_, blitPipelineLayout_, nullptr);
+    // Destroy descriptor set layouts
+    if (sceneSetLayout_ != VK_NULL_HANDLE)
+        vkDestroyDescriptorSetLayout(device_, sceneSetLayout_, nullptr);
+    if (materialSetLayout_ != VK_NULL_HANDLE)
+        vkDestroyDescriptorSetLayout(device_, materialSetLayout_, nullptr);
+    if (textureSetLayout_ != VK_NULL_HANDLE)
+        vkDestroyDescriptorSetLayout(device_, textureSetLayout_, nullptr);
+    if (blitSamplerLayout_ != VK_NULL_HANDLE)
+        vkDestroyDescriptorSetLayout(device_, blitSamplerLayout_, nullptr);
+    if (blitUBOLayout_ != VK_NULL_HANDLE)
+        vkDestroyDescriptorSetLayout(device_, blitUBOLayout_, nullptr);
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        if (descriptorPools_[i] != VK_NULL_HANDLE)
+            vkDestroyDescriptorPool(device_, descriptorPools_[i], nullptr);
+    }
     if (frameFence_ != VK_NULL_HANDLE)
         vkDestroyFence(device_, frameFence_, nullptr);
     if (cmdPool_ != VK_NULL_HANDLE)
@@ -512,6 +680,7 @@ RHIBuffer VulkanRHIDevice::CreateBuffer(const RHIBufferDesc& desc) {
     BufferSlot slot{};
     slot.size = desc.size;
     slot.hostVisible = desc.hostVisible;
+    slot.isUniform = HasFlag(desc.usage, RHIBufferUsage::Uniform);
 
     if (!CreateVkBuffer(desc.size, vkUsage, memProps, slot.buffer, slot.memory)) {
         KL_ERR("RHI", "Failed to create buffer (%s)", desc.debugName ? desc.debugName : "unnamed");
@@ -524,9 +693,18 @@ RHIBuffer VulkanRHIDevice::CreateBuffer(const RHIBufferDesc& desc) {
 void VulkanRHIDevice::DestroyBuffer(RHIBuffer handle) {
     if (!handle.IsValid() || !buffers_.Valid(handle.id)) return;
     auto& s = buffers_.Get(handle.id);
-    if (s.mapped) { vkUnmapMemory(device_, s.memory); s.mapped = nullptr; }
-    if (s.buffer != VK_NULL_HANDLE) vkDestroyBuffer(device_, s.buffer, nullptr);
-    if (s.memory != VK_NULL_HANDLE) vkFreeMemory(device_, s.memory, nullptr);
+
+    if (frameActive_) {
+        // Defer destruction - command buffer may still reference this buffer.
+        // Queue to the current frame slot's deferred list; it will be flushed
+        // when this slot is reused (after its fence has been waited on).
+        pendingBufferDeletes_[currentPoolIndex_].push_back(s);
+    } else {
+        if (s.mapped) { vkUnmapMemory(device_, s.memory); s.mapped = nullptr; }
+        if (s.buffer != VK_NULL_HANDLE) vkDestroyBuffer(device_, s.buffer, nullptr);
+        if (s.memory != VK_NULL_HANDLE) vkFreeMemory(device_, s.memory, nullptr);
+    }
+
     buffers_.Free(handle.id);
 }
 
@@ -567,10 +745,12 @@ RHITexture VulkanRHIDevice::CreateTexture(const RHITextureDesc& desc) {
     slot.view = CreateVkImageView(slot.image, vkFmt, aspect);
 
     // Create default sampler
+    VkFilter vkFilter = (desc.filter == RHISamplerFilter::Nearest)
+                        ? VK_FILTER_NEAREST : VK_FILTER_LINEAR;
     VkSamplerCreateInfo samplerInfo{};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    samplerInfo.magFilter = VK_FILTER_LINEAR;
-    samplerInfo.minFilter = VK_FILTER_LINEAR;
+    samplerInfo.magFilter = vkFilter;
+    samplerInfo.minFilter = vkFilter;
     samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
@@ -584,10 +764,19 @@ RHITexture VulkanRHIDevice::CreateTexture(const RHITextureDesc& desc) {
 void VulkanRHIDevice::DestroyTexture(RHITexture handle) {
     if (!handle.IsValid() || !textures_.Valid(handle.id)) return;
     auto& s = textures_.Get(handle.id);
-    if (s.sampler != VK_NULL_HANDLE) vkDestroySampler(device_, s.sampler, nullptr);
-    if (s.view != VK_NULL_HANDLE)    vkDestroyImageView(device_, s.view, nullptr);
-    if (s.image != VK_NULL_HANDLE)   vkDestroyImage(device_, s.image, nullptr);
-    if (s.memory != VK_NULL_HANDLE)  vkFreeMemory(device_, s.memory, nullptr);
+
+    if (frameActive_) {
+        // Defer destruction - command buffer may still reference this texture.
+        // Queue to the current frame slot's deferred list; it will be flushed
+        // when this slot is reused (after its fence has been waited on).
+        pendingTextureDeletes_[currentPoolIndex_].push_back(s);
+    } else {
+        if (s.sampler != VK_NULL_HANDLE) vkDestroySampler(device_, s.sampler, nullptr);
+        if (s.view != VK_NULL_HANDLE)    vkDestroyImageView(device_, s.view, nullptr);
+        if (s.image != VK_NULL_HANDLE)   vkDestroyImage(device_, s.image, nullptr);
+        if (s.memory != VK_NULL_HANDLE)  vkFreeMemory(device_, s.memory, nullptr);
+    }
+
     textures_.Free(handle.id);
 }
 
@@ -770,6 +959,11 @@ RHIPipeline VulkanRHIDevice::CreatePipeline(const RHIPipelineDesc& desc) {
     if (desc.renderPass.IsValid() && renderPasses_.Valid(desc.renderPass.id))
         vkPass = renderPasses_.Get(desc.renderPass.id).pass;
 
+    // Select pipeline layout based on hint
+    VkPipelineLayout selectedLayout = scenePipelineLayout_;
+    if (desc.layoutHint == RHIPipelineDesc::LayoutHint::Blit)
+        selectedLayout = blitPipelineLayout_;
+
     // Create pipeline
     VkGraphicsPipelineCreateInfo pipelineInfo{};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -783,12 +977,12 @@ RHIPipeline VulkanRHIDevice::CreatePipeline(const RHIPipelineDesc& desc) {
     pipelineInfo.pDepthStencilState  = &depthStencil;
     pipelineInfo.pColorBlendState    = &colorBlend;
     pipelineInfo.pDynamicState       = &dynamicState;
-    pipelineInfo.layout              = defaultPipelineLayout_;
+    pipelineInfo.layout              = selectedLayout;
     pipelineInfo.renderPass          = vkPass;
     pipelineInfo.subpass             = 0;
 
     PipelineSlot slot{};
-    slot.layout = defaultPipelineLayout_;
+    slot.layout = selectedLayout;
     slot.ownsLayout = false;
 
     if (vkCreateGraphicsPipelines(device_, VK_NULL_HANDLE, 1, &pipelineInfo,
@@ -798,7 +992,8 @@ RHIPipeline VulkanRHIDevice::CreatePipeline(const RHIPipelineDesc& desc) {
         return {};
     }
 
-    return {pipelines_.Alloc(slot)};
+    uint32_t pipeId = pipelines_.Alloc(slot);
+    return {pipeId};
 }
 
 void VulkanRHIDevice::DestroyPipeline(RHIPipeline handle) {
@@ -828,7 +1023,9 @@ RHIRenderPass VulkanRHIDevice::CreateRenderPass(const RHIRenderPassDesc& desc) {
         att.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         att.initialLayout = (desc.colorAttachments[i].loadOp == RHILoadOp::Load)
             ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_UNDEFINED;
-        att.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        att.finalLayout = desc.colorAttachments[i].sampleAfterPass
+            ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+            : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
         VkAttachmentReference ref{};
         ref.attachment = static_cast<uint32_t>(attachments.size());
@@ -865,15 +1062,33 @@ RHIRenderPass VulkanRHIDevice::CreateRenderPass(const RHIRenderPassDesc& desc) {
     subpass.pColorAttachments    = colorRefs.data();
     subpass.pDepthStencilAttachment = desc.hasDepth ? &depthRef : nullptr;
 
-    VkSubpassDependency dep{};
-    dep.srcSubpass    = VK_SUBPASS_EXTERNAL;
-    dep.dstSubpass    = 0;
-    dep.srcStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
-                      | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-    dep.dstStageMask  = dep.srcStageMask;
-    dep.srcAccessMask = 0;
-    dep.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
-                      | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    // Check if any attachment needs to transition for shader sampling
+    bool needsSampleTransition = false;
+    for (uint32_t i = 0; i < desc.colorAttachmentCount; ++i)
+        needsSampleTransition |= desc.colorAttachments[i].sampleAfterPass;
+
+    VkSubpassDependency deps[2] = {};
+    uint32_t depCount = 1;
+
+    deps[0].srcSubpass    = VK_SUBPASS_EXTERNAL;
+    deps[0].dstSubpass    = 0;
+    deps[0].srcStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+                          | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    deps[0].dstStageMask  = deps[0].srcStageMask;
+    deps[0].srcAccessMask = 0;
+    deps[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
+                          | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+    if (needsSampleTransition) {
+        // Ensure color writes complete before fragment shader reads in a later pass
+        deps[1].srcSubpass    = 0;
+        deps[1].dstSubpass    = VK_SUBPASS_EXTERNAL;
+        deps[1].srcStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        deps[1].dstStageMask  = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        deps[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        deps[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        depCount = 2;
+    }
 
     VkRenderPassCreateInfo rpInfo{};
     rpInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -881,8 +1096,8 @@ RHIRenderPass VulkanRHIDevice::CreateRenderPass(const RHIRenderPassDesc& desc) {
     rpInfo.pAttachments    = attachments.data();
     rpInfo.subpassCount    = 1;
     rpInfo.pSubpasses      = &subpass;
-    rpInfo.dependencyCount = 1;
-    rpInfo.pDependencies   = &dep;
+    rpInfo.dependencyCount = depCount;
+    rpInfo.pDependencies   = deps;
 
     RenderPassSlot slot{};
     if (vkCreateRenderPass(device_, &rpInfo, nullptr, &slot.pass) != VK_SUCCESS) {
@@ -952,10 +1167,29 @@ void VulkanRHIDevice::UpdateBuffer(RHIBuffer handle, const void* data,
     auto& s = buffers_.Get(handle.id);
 
     if (s.hostVisible) {
+        // For uniform buffers during an active frame, also write to the ring
+        // buffer so each draw gets its own slice of data.
+        if (s.isUniform && frameActive_ && uniformRingMapped_) {
+            uint32_t aligned = (uniformRingOffset_ + uniformMinAlign_ - 1)
+                             & ~(uniformMinAlign_ - 1);
+            if (aligned + size <= uniformRingSize_) {
+                std::memcpy(static_cast<uint8_t*>(uniformRingMapped_) + aligned,
+                            data, size);
+                s.ringOffset = aligned;
+                uniformRingOffset_ = static_cast<uint32_t>(aligned + size);
+            }
+            // Fall through to also write to the original buffer so that on
+            // frames where this buffer is NOT UpdateBuffer'd, the fallback
+            // path (ringOffset == UINT32_MAX) reads valid data.
+        }
         void* mapped = nullptr;
-        vkMapMemory(device_, s.memory, offset, size, 0, &mapped);
-        std::memcpy(mapped, data, size);
-        vkUnmapMemory(device_, s.memory);
+        VkResult mapResult = vkMapMemory(device_, s.memory, offset, size, 0, &mapped);
+        if (mapResult == VK_SUCCESS && mapped) {
+            std::memcpy(mapped, data, size);
+            vkUnmapMemory(device_, s.memory);
+        }
+        if (!s.isUniform || s.ringOffset == UINT32_MAX)
+            s.ringOffset = UINT32_MAX; // not ring-backed
     } else {
         // Staging upload
         VkBuffer staging;
@@ -1048,17 +1282,58 @@ void VulkanRHIDevice::UnmapBuffer(RHIBuffer handle) {
 // -- Command recording -----------------------------------------------
 
 void VulkanRHIDevice::BeginFrame() {
-    vkWaitForFences(device_, 1, &frameFence_, VK_TRUE, UINT64_MAX);
-    vkResetFences(device_, 1, &frameFence_);
+    // Acquire the display's command buffer. This waits on the current
+    // frame's fence, guaranteeing that the GPU has finished executing
+    // this frame slot's previous command buffer. After this point,
+    // resources used by that prior submission are safe to reclaim.
+    cmdBuffer_ = display_->BeginFrame();
+    if (!cmdBuffer_) return;
 
-    // Reclaim all descriptor sets allocated during the previous frame.
-    vkResetDescriptorPool(device_, descriptorPool_, 0);
+    // Advance to this frame's descriptor pool (matches display's double-buffering)
+    currentPoolIndex_ = display_->GetCurrentFrame() % kMaxFramesInFlight;
 
-    vkResetCommandBuffer(cmdBuffer_, 0);
+    // Flush deferred texture deletions queued during THIS frame slot's
+    // previous use. The fence wait above guarantees completeness.
+    auto& texDeletions = pendingTextureDeletes_[currentPoolIndex_];
+    for (auto& s : texDeletions) {
+        if (s.sampler != VK_NULL_HANDLE) vkDestroySampler(device_, s.sampler, nullptr);
+        if (s.view != VK_NULL_HANDLE)    vkDestroyImageView(device_, s.view, nullptr);
+        if (s.image != VK_NULL_HANDLE)   vkDestroyImage(device_, s.image, nullptr);
+        if (s.memory != VK_NULL_HANDLE)  vkFreeMemory(device_, s.memory, nullptr);
+    }
+    texDeletions.clear();
 
-    VkCommandBufferBeginInfo beginInfo{};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    vkBeginCommandBuffer(cmdBuffer_, &beginInfo);
+    // Flush deferred buffer deletions (same lifecycle as textures).
+    auto& bufDeletions = pendingBufferDeletes_[currentPoolIndex_];
+    for (auto& s : bufDeletions) {
+        if (s.mapped)  vkUnmapMemory(device_, s.memory);
+        if (s.buffer != VK_NULL_HANDLE) vkDestroyBuffer(device_, s.buffer, nullptr);
+        if (s.memory != VK_NULL_HANDLE) vkFreeMemory(device_, s.memory, nullptr);
+    }
+    bufDeletions.clear();
+
+    // Reset this frame slot's descriptor pool (safe - fence waited above).
+    vkResetDescriptorPool(device_, descriptorPools_[currentPoolIndex_], 0);
+
+    // Reset active pipeline layout so the first BindUniformBuffer of the
+    // new frame defaults to scenePipelineLayout_ (not the previous frame's
+    // blit layout, which would cause a descriptor type mismatch).
+    activePipelineLayout_ = VK_NULL_HANDLE;
+
+    // Invalidate cached scene set 0 (pool was reset, old sets are gone).
+    cachedSceneSet0_ = VK_NULL_HANDLE;
+    sceneSet0Written_ = 0;
+    sceneSet0Dirty_ = false;
+    sceneSet0Flushed_ = false;
+
+    // Reset uniform ring buffer write head for this frame.
+    uniformRingOffset_ = 0;
+    // Clear per-buffer ring offsets so that buffers not UpdateBuffer'd
+    // this frame fall back to reading from their original VkBuffer.
+    for (size_t i = 1; i < buffers_.slots.size(); ++i) {
+        buffers_.slots[i].ringOffset = UINT32_MAX;
+    }
+
     frameActive_ = true;
 }
 
@@ -1092,8 +1367,23 @@ void VulkanRHIDevice::EndRenderPass() {
 
 void VulkanRHIDevice::BindPipeline(RHIPipeline pipeline) {
     if (!pipeline.IsValid() || !pipelines_.Valid(pipeline.id)) return;
-    vkCmdBindPipeline(cmdBuffer_, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                      pipelines_.Get(pipeline.id).pipeline);
+    auto& slot = pipelines_.Get(pipeline.id);
+    vkCmdBindPipeline(cmdBuffer_, VK_PIPELINE_BIND_POINT_GRAPHICS, slot.pipeline);
+
+    // Invalidate the cached scene set 0 when the EFFECTIVE pipeline layout
+    // changes (e.g. scene - blit or vice-versa).  VK_NULL_HANDLE defaults
+    // to scenePipelineLayout_ in BindUniformBuffer, so a null - scene
+    // transition is NOT a real layout change and must not invalidate.
+    VkPipelineLayout effectiveOld = (activePipelineLayout_ != VK_NULL_HANDLE)
+                                  ? activePipelineLayout_
+                                  : scenePipelineLayout_;
+    if (slot.layout != effectiveOld) {
+        cachedSceneSet0_ = VK_NULL_HANDLE;
+        sceneSet0Written_ = 0;
+        sceneSet0Dirty_ = false;
+        sceneSet0Flushed_ = false;
+    }
+    activePipelineLayout_ = slot.layout;
 }
 
 void VulkanRHIDevice::BindVertexBuffer(RHIBuffer buffer,
@@ -1116,48 +1406,151 @@ void VulkanRHIDevice::BindUniformBuffer(RHIBuffer buffer, uint32_t set,
                                          size_t offset, size_t range) {
     if (!buffer.IsValid() || !buffers_.Valid(buffer.id)) return;
 
-    // Allocate a descriptor set from the pool
-    VkDescriptorSetLayout layout = (set == 0) ? uniformLayout_ : uniformLayout_;
+    VkPipelineLayout pipeLayout = activePipelineLayout_;
+    if (pipeLayout == VK_NULL_HANDLE) pipeLayout = scenePipelineLayout_;
+
+    // Select the correct descriptor set layout for this set index.
+    // For scene layout: set 0=scene, 1=material, 2=textures
+    // For blit layout:  set 0=sampler, 1=UBO
+    VkDescriptorSetLayout dsLayout = VK_NULL_HANDLE;
+    VkDescriptorType descType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    bool useSceneSet0Cache = false;
+
+    if (pipeLayout == blitPipelineLayout_) {
+        dsLayout = (set == 0) ? blitSamplerLayout_ : blitUBOLayout_;
+    } else {
+        // Scene pipeline - determine type by binding:
+        //   Set 0, Binding 1 = SSBO (lights), Binding 3 = SSBO (audio)
+        //   Everything else = UBO
+        if (set == 0) {
+            dsLayout = sceneSetLayout_;
+            useSceneSet0Cache = true;
+            if (binding == 1 || binding == 3)
+                descType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        } else if (set == 1) {
+            dsLayout = materialSetLayout_;
+        } else {
+            dsLayout = textureSetLayout_;
+        }
+    }
+
+    // -- Scene set 0: write-accumulate with deferred bind --------------
+    //
+    // sceneSetLayout_ has 4 bindings (transform, lights, scene, audio)
+    // that are written by separate BindUniformBuffer calls.  We accumulate
+    // writes into one descriptor set and defer vkCmdBindDescriptorSets
+    // until the next Draw/DrawIndexed call (see FlushPendingDescriptorBinds).
+    //
+    // Per-mesh re-binds of the same buffer are skipped entirely: the
+    // descriptor already references the buffer and only its CONTENT
+    // changes (via UpdateBuffer), which doesn't require a descriptor update.
+    if (useSceneSet0Cache) {
+        if (cachedSceneSet0_ == VK_NULL_HANDLE) {
+            VkDescriptorSetAllocateInfo allocInfo{};
+            allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+            allocInfo.descriptorPool = descriptorPools_[currentPoolIndex_];
+            allocInfo.descriptorSetCount = 1;
+            allocInfo.pSetLayouts = &dsLayout;
+
+            if (vkAllocateDescriptorSets(device_, &allocInfo, &cachedSceneSet0_) != VK_SUCCESS) {
+                KL_ERR("RHI", "Failed to allocate scene set 0");
+                return;
+            }
+            sceneSet0Written_ = 0;
+            sceneSet0Dirty_ = true;
+            sceneSet0Flushed_ = false;
+        }
+
+        // Store binding info (indexed by binding number).  All writes are
+        // deferred to FlushPendingDescriptorBinds().
+        //
+        // Ring-backed uniform buffers (those written to the ring buffer by
+        // UpdateBuffer) ALWAYS update here because the ring offset changes
+        // per draw.  Non-ring bindings (lights, scene globals, audio) are
+        // written once and then skipped via the bitmask.
+        auto& s = buffers_.Get(buffer.id);
+        bool usesRing = (s.isUniform && s.ringOffset != UINT32_MAX);
+
+        if (usesRing || !(sceneSet0Written_ & (1u << binding))) {
+            auto& sb = sceneSet0Bindings_[binding];
+            sb.descType = descType;
+            if (usesRing) {
+                sb.bufInfo.buffer = uniformRingBuffer_;
+                sb.bufInfo.offset = s.ringOffset;
+                sb.bufInfo.range  = s.size;
+            } else {
+                sb.bufInfo.buffer = s.buffer;
+                sb.bufInfo.offset = offset;
+                sb.bufInfo.range  = (range > 0)
+                                  ? static_cast<VkDeviceSize>(range) : s.size;
+            }
+
+            sceneSet0Written_ |= (1u << binding);
+            sceneSet0Dirty_ = true;
+        }
+
+        return; // Bind deferred to FlushPendingDescriptorBinds()
+    }
+
+    // -- All other sets: allocate-write-bind per call ------------------
+
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = descriptorPool_;
+    allocInfo.descriptorPool = descriptorPools_[currentPoolIndex_];
     allocInfo.descriptorSetCount = 1;
-    allocInfo.pSetLayouts = &layout;
+    allocInfo.pSetLayouts = &dsLayout;
 
     VkDescriptorSet descSet;
     if (vkAllocateDescriptorSets(device_, &allocInfo, &descSet) != VK_SUCCESS) {
-        KL_ERR("RHI", "Failed to allocate uniform descriptor set");
+        KL_ERR("RHI", "Failed to allocate descriptor set (set=%u, binding=%u)", set, binding);
         return;
     }
 
     auto& s = buffers_.Get(buffer.id);
     VkDescriptorBufferInfo bufInfo{};
-    bufInfo.buffer = s.buffer;
-    bufInfo.offset = offset;
-    bufInfo.range  = (range > 0) ? range : s.size;
+    if (s.isUniform && s.ringOffset != UINT32_MAX) {
+        bufInfo.buffer = uniformRingBuffer_;
+        bufInfo.offset = s.ringOffset;
+        bufInfo.range  = s.size;
+    } else {
+        bufInfo.buffer = s.buffer;
+        bufInfo.offset = offset;
+        bufInfo.range  = (range > 0) ? range : s.size;
+    }
 
     VkWriteDescriptorSet write{};
     write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     write.dstSet = descSet;
     write.dstBinding = binding;
     write.descriptorCount = 1;
-    write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    write.descriptorType = descType;
     write.pBufferInfo = &bufInfo;
     vkUpdateDescriptorSets(device_, 1, &write, 0, nullptr);
 
     vkCmdBindDescriptorSets(cmdBuffer_, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            defaultPipelineLayout_, set, 1, &descSet, 0, nullptr);
+                            pipeLayout, set, 1, &descSet, 0, nullptr);
 }
 
 void VulkanRHIDevice::BindTexture(RHITexture texture,
                                    uint32_t set, uint32_t binding) {
     if (!texture.IsValid() || !textures_.Valid(texture.id)) return;
 
+    VkPipelineLayout pipeLayout = activePipelineLayout_;
+    if (pipeLayout == VK_NULL_HANDLE) pipeLayout = scenePipelineLayout_;
+
+    // Select the correct descriptor set layout for texture binding
+    VkDescriptorSetLayout dsLayout = VK_NULL_HANDLE;
+    if (pipeLayout == blitPipelineLayout_) {
+        dsLayout = blitSamplerLayout_;
+    } else {
+        dsLayout = textureSetLayout_;
+    }
+
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = descriptorPool_;
+    allocInfo.descriptorPool = descriptorPools_[currentPoolIndex_];
     allocInfo.descriptorSetCount = 1;
-    allocInfo.pSetLayouts = &textureLayout_;
+    allocInfo.pSetLayouts = &dsLayout;
 
     VkDescriptorSet descSet;
     if (vkAllocateDescriptorSets(device_, &allocInfo, &descSet) != VK_SUCCESS) {
@@ -1181,7 +1574,7 @@ void VulkanRHIDevice::BindTexture(RHITexture texture,
     vkUpdateDescriptorSets(device_, 1, &write, 0, nullptr);
 
     vkCmdBindDescriptorSets(cmdBuffer_, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            defaultPipelineLayout_, set, 1, &descSet, 0, nullptr);
+                            pipeLayout, set, 1, &descSet, 0, nullptr);
 }
 
 void VulkanRHIDevice::SetViewport(const RHIViewport& vp) {
@@ -1212,36 +1605,82 @@ void VulkanRHIDevice::PushConstants(RHIShaderStage stages, const void* data,
     if (static_cast<uint8_t>(stages) & static_cast<uint8_t>(RHIShaderStage::Compute))
         vkStages |= VK_SHADER_STAGE_COMPUTE_BIT;
 
-    vkCmdPushConstants(cmdBuffer_, defaultPipelineLayout_, vkStages, offset, size, data);
+    VkPipelineLayout pipeLayout = activePipelineLayout_;
+    if (pipeLayout == VK_NULL_HANDLE) pipeLayout = scenePipelineLayout_;
+    vkCmdPushConstants(cmdBuffer_, pipeLayout, vkStages, offset, size, data);
+}
+
+void VulkanRHIDevice::FlushPendingDescriptorBinds() {
+    if (cachedSceneSet0_ == VK_NULL_HANDLE || !sceneSet0Dirty_) return;
+
+    // If the set was already flushed (written+bound to the command buffer),
+    // we CANNOT call vkUpdateDescriptorSets on it - that violates the
+    // UPDATE_AFTER_BIND rule.  Allocate a fresh set instead.
+    if (sceneSet0Flushed_) {
+        VkDescriptorSet freshSet = VK_NULL_HANDLE;
+        VkDescriptorSetAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        allocInfo.descriptorPool = descriptorPools_[currentPoolIndex_];
+        allocInfo.descriptorSetCount = 1;
+        allocInfo.pSetLayouts = &sceneSetLayout_;
+        if (vkAllocateDescriptorSets(device_, &allocInfo, &freshSet) != VK_SUCCESS) {
+            KL_ERR("RHI", "Failed to re-allocate scene set 0 for deferred writes");
+            return;
+        }
+        cachedSceneSet0_ = freshSet;
+    }
+
+    // Write ALL stored bindings to the (possibly fresh) descriptor set.
+    uint32_t writeCount = 0;
+    VkWriteDescriptorSet writes[kMaxSceneSet0Bindings];
+    for (uint32_t b = 0; b < kMaxSceneSet0Bindings; ++b) {
+        if (!(sceneSet0Written_ & (1u << b))) continue;
+        auto& sb = sceneSet0Bindings_[b];
+        auto& w  = writes[writeCount];
+        w = {};
+        w.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        w.dstSet          = cachedSceneSet0_;
+        w.dstBinding      = b;
+        w.descriptorCount = 1;
+        w.descriptorType  = sb.descType;
+        w.pBufferInfo     = &sb.bufInfo;
+        ++writeCount;
+    }
+    if (writeCount > 0) {
+        vkUpdateDescriptorSets(device_, writeCount, writes, 0, nullptr);
+    }
+
+    VkPipelineLayout pipeLayout = activePipelineLayout_;
+    if (pipeLayout == VK_NULL_HANDLE) pipeLayout = scenePipelineLayout_;
+    vkCmdBindDescriptorSets(cmdBuffer_, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            pipeLayout, 0, 1, &cachedSceneSet0_, 0, nullptr);
+    sceneSet0Dirty_ = false;
+    sceneSet0Flushed_ = true;
 }
 
 void VulkanRHIDevice::Draw(uint32_t vertexCount, uint32_t instanceCount,
                             uint32_t firstVertex, uint32_t firstInstance) {
+    FlushPendingDescriptorBinds();
     vkCmdDraw(cmdBuffer_, vertexCount, instanceCount, firstVertex, firstInstance);
 }
 
 void VulkanRHIDevice::DrawIndexed(uint32_t indexCount, uint32_t instanceCount,
                                    uint32_t firstIndex, int32_t vertexOffset,
                                    uint32_t firstInstance) {
+    FlushPendingDescriptorBinds();
     vkCmdDrawIndexed(cmdBuffer_, indexCount, instanceCount, firstIndex,
                      vertexOffset, firstInstance);
 }
 
 void VulkanRHIDevice::EndFrame() {
-    if (!frameActive_) return;
-    vkEndCommandBuffer(cmdBuffer_);
-
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &cmdBuffer_;
-
-    vkQueueSubmit(graphicsQueue_, 1, &submitInfo, frameFence_);
+    // No-op: the display's SwapOnly() handles command buffer ending,
+    // queue submission with semaphore synchronization, and presentation.
+    // We just clear our frame-active flag so descriptor pool is recycled.
     frameActive_ = false;
 }
 
 void VulkanRHIDevice::Present() {
-    // Presentation is delegated to VulkanBackend display layer
+    // Submit + present via the display backend.
     if (display_) display_->SwapOnly();
 }
 
@@ -1260,6 +1699,31 @@ void VulkanRHIDevice::GetSwapchainSize(uint32_t& outWidth,
 void VulkanRHIDevice::OnResize(uint32_t /*width*/, uint32_t /*height*/) {
     // VulkanBackend handles swapchain recreation internally.
     // This hook is available for future per-resize resource updates.
+}
+
+void VulkanRHIDevice::BeginSwapchainRenderPass(const RHIClearValue& clear) {
+    (void)clear;  // Display's render pass uses its own clear values
+    if (!display_) return;
+
+    // Delegate to the display's swapchain render pass.
+    // The display must be in an active frame (BeginFrame already called).
+    display_->BeginSwapchainRenderPass();
+}
+
+RHIRenderPass VulkanRHIDevice::GetSwapchainRenderPass() const {
+    if (swapchainPassHandle_.IsValid()) return swapchainPassHandle_;
+    if (!display_) return {};
+
+    // Wrap the display's native VkRenderPass in an RHI handle.
+    // The slot is NOT destroyed during Shutdown because the VkRenderPass
+    // is owned by the display backend, not by us.
+    VkRenderPass nativePass = display_->GetRenderPass();
+    if (nativePass == VK_NULL_HANDLE) return {};
+
+    RenderPassSlot slot{};
+    slot.pass = nativePass;
+    swapchainPassHandle_ = {const_cast<VulkanRHIDevice*>(this)->renderPasses_.Alloc(slot)};
+    return swapchainPassHandle_;
 }
 
 } // namespace koilo::rhi

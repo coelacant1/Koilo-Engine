@@ -16,6 +16,7 @@
 #include <string>
 #include <functional>
 #include <vector>
+#include "../../registry/reflect_macros.hpp"
 
 namespace koilo {
 
@@ -127,6 +128,22 @@ public:
 
 private:
     CVarParameter* param_;
+
+    KL_BEGIN_FIELDS(AutoCVar_Int)
+        /* No reflected fields. */
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(AutoCVar_Int)
+        KL_METHOD_AUTO(AutoCVar_Int, Get, "Get"),
+        KL_METHOD_AUTO(AutoCVar_Int, Set, "Set"),
+        KL_METHOD_AUTO(AutoCVar_Int, GetParam, "Get param"),
+        KL_METHOD_AUTO(AutoCVar_Int, OnChanged, "On changed")
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(AutoCVar_Int)
+        KL_CTOR(AutoCVar_Int, const char*, const char*, int32_t, CVarFlags)
+    KL_END_DESCRIBE(AutoCVar_Int)
+
 };
 
 /// Float CVar.
@@ -143,6 +160,22 @@ public:
 
 private:
     CVarParameter* param_;
+
+    KL_BEGIN_FIELDS(AutoCVar_Float)
+        /* No reflected fields. */
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(AutoCVar_Float)
+        KL_METHOD_AUTO(AutoCVar_Float, Get, "Get"),
+        KL_METHOD_AUTO(AutoCVar_Float, Set, "Set"),
+        KL_METHOD_AUTO(AutoCVar_Float, GetParam, "Get param"),
+        KL_METHOD_AUTO(AutoCVar_Float, OnChanged, "On changed")
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(AutoCVar_Float)
+        KL_CTOR(AutoCVar_Float, const char*, const char*, float, CVarFlags)
+    KL_END_DESCRIBE(AutoCVar_Float)
+
 };
 
 /// Bool CVar.
@@ -159,6 +192,22 @@ public:
 
 private:
     CVarParameter* param_;
+
+    KL_BEGIN_FIELDS(AutoCVar_Bool)
+        /* No reflected fields. */
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(AutoCVar_Bool)
+        KL_METHOD_AUTO(AutoCVar_Bool, Get, "Get"),
+        KL_METHOD_AUTO(AutoCVar_Bool, Set, "Set"),
+        KL_METHOD_AUTO(AutoCVar_Bool, GetParam, "Get param"),
+        KL_METHOD_AUTO(AutoCVar_Bool, OnChanged, "On changed")
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(AutoCVar_Bool)
+        KL_CTOR(AutoCVar_Bool, const char*, const char*, bool, CVarFlags)
+    KL_END_DESCRIBE(AutoCVar_Bool)
+
 };
 
 /// String CVar.
@@ -175,6 +224,22 @@ public:
 
 private:
     CVarParameter* param_;
+
+    KL_BEGIN_FIELDS(AutoCVar_String)
+        /* No reflected fields. */
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(AutoCVar_String)
+        KL_METHOD_AUTO(AutoCVar_String, Get, "Get"),
+        KL_METHOD_AUTO(AutoCVar_String, Set, "Set"),
+        KL_METHOD_AUTO(AutoCVar_String, GetParam, "Get param"),
+        KL_METHOD_AUTO(AutoCVar_String, OnChanged, "On changed")
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(AutoCVar_String)
+        KL_CTOR(AutoCVar_String, const char*, const char*, const char*, CVarFlags)
+    KL_END_DESCRIBE(AutoCVar_String)
+
 };
 
 } // namespace koilo

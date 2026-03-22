@@ -1934,14 +1934,46 @@ VkPipeline VulkanRenderBackend::GetPipelineForMaterial(const KSLMaterial* kmat) 
 // ============================================================================
 
 void VulkanRenderBackend::RenderSky(VkCommandBuffer cmd, CameraBase* camera, int vpW, int vpH) {
-    if (!cmd || !camera || !skyVBO_) return;
+    if (!cmd || !camera || !skyVBO_) {
+        static int dbg0 = 0;
+        if (dbg0++ < 3) { FILE* f = fopen("/tmp/vksky.log", "a"); if(f) { fprintf(f, "early-out: cmd=%p cam=%p vbo=%p\n", (void*)cmd, (void*)camera, (void*)skyVBO_); fclose(f); } }
+        return;
+    }
 
     Sky& sky = Sky::GetInstance();
     bool hasSky = sky.IsEnabled() || camera->HasSkyGradient();
-    if (!hasSky) return;
+    if (!hasSky) {
+        static int dbg1 = 0;
+        if (dbg1++ < 3) { FILE* f = fopen("/tmp/vksky.log", "a"); if(f) { fprintf(f, "no sky: enabled=%d gradient=%d\n", (int)sky.IsEnabled(), (int)camera->HasSkyGradient()); fclose(f); } }
+        return;
+    }
 
     KSLMaterial* kmat = sky.GetMaterial();
-    if (!kmat || !kmat->IsBound() || !kmat->GetModule()) return;
+    if (!kmat || !kmat->IsBound() || !kmat->GetModule()) {
+        static int dbg2 = 0;
+        if (dbg2++ < 3) { FILE* f = fopen("/tmp/vksky.log", "a"); if(f) { fprintf(f, "no mat: kmat=%p bound=%d mod=%p\n", (void*)kmat, kmat ? (int)kmat->IsBound() : -1, kmat ? (void*)kmat->GetModule() : nullptr); fclose(f); } }
+        return;
+    }
+    static int dbg3 = 0;
+    if (dbg3++ < 5) {
+        FILE* f = fopen("/tmp/vksky.log", "a");
+        if (f) {
+            void* inst = kmat->GetInstance();
+            ksl::ParamList params = kmat->GetModule()->GetParams();
+            fprintf(f, "rendering: shader=%s inst=%p params=%d\n", kmat->GetModule()->Name().c_str(), inst, params.count);
+            if (inst && params.decls) {
+                auto* src = static_cast<const uint8_t*>(inst);
+                for (int i = 0; i < params.count; ++i) {
+                    const auto& d = params.decls[i];
+                    if (d.type == ksl::ParamType::Vec3) {
+                        const float* fv = reinterpret_cast<const float*>(src + d.offset);
+                        fprintf(f, "  %s = (%.3f, %.3f, %.3f)\n", d.name, fv[0], fv[1], fv[2]);
+                    }
+                }
+            }
+            fclose(f);
+        }
+    }
 
     // Create sky pipeline on first use (no depth test - sky is background)
     if (!skyPipeline_) {
@@ -1987,6 +2019,14 @@ void VulkanRenderBackend::RenderSky(VkCommandBuffer cmd, CameraBase* camera, int
 
 void VulkanRenderBackend::RenderDebugLines(const float* viewMat, const float* projMat) {
     auto& dd = DebugDraw::GetInstance();
+    static int dl_dbg = 0;
+    if (dl_dbg < 5) {
+        FILE* f = fopen("/tmp/vksky.log", "a");
+        if (f) { fprintf(f, "DebugLines: enabled=%d lines=%zu pipeline=%p mapped=%p\n",
+                (int)dd.IsEnabled(), dd.IsEnabled() ? dd.GetLines().size() : 0u,
+                (void*)linePipeline_, (void*)lineUBOMapped_); fclose(f); }
+        dl_dbg++;
+    }
     if (!dd.IsEnabled()) return;
     const auto& lines = dd.GetLines();
     if (lines.empty() || !linePipeline_ || !lineUBOMapped_) return;
@@ -2061,6 +2101,14 @@ void VulkanRenderBackend::RenderDebugLines(const float* viewMat, const float* pr
 
 void VulkanRenderBackend::RenderDirect(Scene* scene, CameraBase* camera) {
     KL_PERF_SCOPE("GPU.Total");
+    static int rd_dbg = 0;
+    if (rd_dbg < 5) {
+        FILE* f = fopen("/tmp/vksky.log", "a");
+        if (f) { fprintf(f, "RenderDirect frame %d: init=%d scene=%p cam=%p is2D=%d\n",
+                rd_dbg, (int)initialized_, (void*)scene, (void*)camera,
+                camera ? (int)camera->Is2D() : -1); fclose(f); }
+    }
+    rd_dbg++;
     if (!initialized_ || !scene || !camera || camera->Is2D()) {
         return;
     }
@@ -2663,12 +2711,13 @@ void VulkanRenderBackend::CompositeCanvasOverlays(int screenW, int screenH) {
 // ============================================================================
 
 void VulkanRenderBackend::PrepareFrame() {
-    // Per-frame resource preparation (descriptor set rotation etc.)
-    // Currently no-op - single-buffered descriptors for simplicity.
+    // Legacy backend: display frame is started lazily in BlitToScreen().
+    // No preparation needed here.
 }
 
 void VulkanRenderBackend::FinishFrame() {
-    // Post-render finalization. Currently no-op.
+    // Submit the display's command buffer and present.
+    if (display_) display_->SwapOnly();
 }
 
 } // namespace koilo

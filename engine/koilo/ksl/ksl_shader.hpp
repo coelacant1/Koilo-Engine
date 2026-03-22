@@ -124,6 +124,27 @@ enum ShadeAttrib : uint8_t {
     SHADE_ATTRIB_ALL     = 0xFF
 };
 
+// --- Shader metadata (key-value pairs for render hints etc.) ---
+
+/// @brief Type tag for a metadata entry value.
+enum class MetaType : uint8_t { Int, Float };
+
+/// @brief Single key-value metadata entry declared by a shader.
+struct MetaEntry {
+    const char* key;
+    MetaType    type;
+    union {
+        int32_t intVal;
+        float   floatVal;
+    };
+};
+
+/// @brief List of metadata entries returned by a shader module.
+struct MetaList {
+    const MetaEntry* entries;
+    int              count;
+};
+
 // --- C ABI for .so modules ---
 
 struct KSLShaderInfo {
@@ -140,6 +161,7 @@ using KSLSetParamFn   = void (*)(void*, const char*, const void*, int, int);
 using KSLShadeFn      = vec4 (*)(void*, const ShadeInput*);
 using KSLInfoFn       = const KSLShaderInfo* (*)();
 using KSLParamsFn     = const ParamDecl* (*)(int*);
+using KSLMetadataFn   = const MetaEntry* (*)(int*);
 
 } // namespace ksl
 

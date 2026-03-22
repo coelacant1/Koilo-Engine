@@ -278,8 +278,6 @@ private:
     KL_DECLARE_FIELDS(UI)
     KL_DECLARE_METHODS(UI)
     KL_DECLARE_DESCRIBE(UI)
-
-
 };
 
 } // namespace koilo

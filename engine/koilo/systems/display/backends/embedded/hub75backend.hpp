@@ -24,7 +24,6 @@
 #pragma once
 
 #include <koilo/systems/display/idisplaybackend.hpp>
-#include "../../../../registry/reflect_macros.hpp"
 
 namespace koilo {
 
@@ -67,6 +66,7 @@ struct HUB75Config {
           clk_pin(13), lat_pin(14), oe_pin(15),
           panelWidth(64), panelHeight(32), chainLength(1), scanPattern(0),
           brightness(128), colorDepth(8), refreshRate(60), _pad(0) {}
+
 } __attribute__((packed));
 
 /**
@@ -120,39 +120,6 @@ private:
     uint8_t ApplyGamma(uint8_t value) const;
     void BuildGammaTable();
     void SwapBuffers();
-
-    KL_BEGIN_FIELDS(HUB75Backend)
-        /* No reflected fields. */
-    KL_END_FIELDS
-
-    KL_BEGIN_METHODS(HUB75Backend)
-        KL_METHOD_AUTO(HUB75Backend, Shutdown, "Shutdown"),
-        KL_METHOD_AUTO(HUB75Backend, IsInitialized, "Is initialized"),
-        KL_METHOD_AUTO(HUB75Backend, GetInfo, "Get info"),
-        KL_METHOD_AUTO(HUB75Backend, HasCapability, "Has capability"),
-        KL_METHOD_AUTO(HUB75Backend, Present, "Present"),
-        KL_METHOD_AUTO(HUB75Backend, WaitVSync, "Wait vsync"),
-        KL_METHOD_AUTO(HUB75Backend, Clear, "Clear"),
-        KL_METHOD_AUTO(HUB75Backend, SetRefreshRate, "Set refresh rate"),
-        KL_METHOD_AUTO(HUB75Backend, SetOrientation, "Set orientation"),
-        KL_METHOD_AUTO(HUB75Backend, SetBrightness, "Set brightness"),
-        KL_METHOD_AUTO(HUB75Backend, SetVSyncEnabled, "Set vsync enabled"),
-        KL_METHOD_AUTO(HUB75Backend, GetColorDepth, "Get color depth"),
-        KL_METHOD_AUTO(HUB75Backend, SetGammaCorrectionEnabled, "Set gamma correction enabled"),
-        KL_METHOD_AUTO(HUB75Backend, IsGammaCorrectionEnabled, "Is gamma correction enabled"),
-        KL_METHOD_AUTO(HUB75Backend, SetScanPattern, "Set scan pattern"),
-        KL_METHOD_AUTO(HUB75Backend, GetConfig, "Get config")
-    KL_END_METHODS
-
-    // Reflection disabled - causes template issues with default parameters
-    // TODO: Fix reflection for default constructor parameters
-    /*
-    KL_BEGIN_DESCRIBE(HUB75Backend)
-        KL_CTOR(HUB75Backend, const HUB75Config& config),
-        KL_CTOR(HUB75Backend, uint16_t width, uint16_t height, uint8_t chainLength)
-    KL_END_DESCRIBE(HUB75Backend)
-    */
-
 };
 
 } // namespace koilo
