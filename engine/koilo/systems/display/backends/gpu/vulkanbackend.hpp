@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 #include <functional>
+#include "../../../../registry/reflect_macros.hpp"
 
 // Forward declarations
 struct SDL_Window;
@@ -65,6 +66,24 @@ struct VulkanGPUInfo {
     uint32_t    deviceID;
     bool        isDiscrete;
     uint64_t    vramBytes;
+
+    KL_BEGIN_FIELDS(VulkanGPUInfo)
+        KL_FIELD(VulkanGPUInfo, index, "Index", 0, 4294967295),
+        KL_FIELD(VulkanGPUInfo, name, "Name", 0, 0),
+        KL_FIELD(VulkanGPUInfo, vendorID, "Vendor id", 0, 4294967295),
+        KL_FIELD(VulkanGPUInfo, deviceID, "Device id", 0, 4294967295),
+        KL_FIELD(VulkanGPUInfo, isDiscrete, "Is discrete", 0, 1),
+        KL_FIELD(VulkanGPUInfo, vramBytes, "Vram bytes", 0, 18446744073709551615)
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(VulkanGPUInfo)
+        /* No reflected methods. */
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(VulkanGPUInfo)
+        /* No reflected ctors. */
+    KL_END_DESCRIBE(VulkanGPUInfo)
+
 };
 
 static constexpr int kMaxFramesInFlight = 2;
@@ -244,6 +263,49 @@ private:
 
     // Utility
     uint32_t FindMemoryType(uint32_t typeFilter, uint32_t properties);
+
+    KL_BEGIN_FIELDS(VulkanBackend)
+        /* No reflected fields. */
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(VulkanBackend)
+        KL_METHOD_AUTO(VulkanBackend, Shutdown, "Shutdown"),
+        KL_METHOD_AUTO(VulkanBackend, IsInitialized, "Is initialized"),
+        KL_METHOD_AUTO(VulkanBackend, GetInfo, "Get info"),
+        KL_METHOD_AUTO(VulkanBackend, HasCapability, "Has capability"),
+        KL_METHOD_AUTO(VulkanBackend, Present, "Present"),
+        KL_METHOD_AUTO(VulkanBackend, WaitVSync, "Wait vsync"),
+        KL_METHOD_AUTO(VulkanBackend, Clear, "Clear"),
+        KL_METHOD_AUTO(VulkanBackend, SetRefreshRate, "Set refresh rate"),
+        KL_METHOD_AUTO(VulkanBackend, SetOrientation, "Set orientation"),
+        KL_METHOD_AUTO(VulkanBackend, SetBrightness, "Set brightness"),
+        KL_METHOD_AUTO(VulkanBackend, SetVSyncEnabled, "Set vsync enabled"),
+        KL_METHOD_AUTO(VulkanBackend, PresentNoSwap, "Present no swap"),
+        KL_METHOD_AUTO(VulkanBackend, SetNearestFiltering, "Set nearest filtering"),
+        KL_METHOD_AUTO(VulkanBackend, PrepareDefaultFramebuffer, "Prepare default framebuffer"),
+        KL_METHOD_AUTO(VulkanBackend, GetSelectedGPUIndex, "Get selected gpuindex"),
+        KL_METHOD_AUTO(VulkanBackend, GetInstance, "Get instance"),
+        KL_METHOD_AUTO(VulkanBackend, GetPhysicalDevice, "Get physical device"),
+        KL_METHOD_AUTO(VulkanBackend, GetDevice, "Get device"),
+        KL_METHOD_AUTO(VulkanBackend, GetGraphicsQueue, "Get graphics queue"),
+        KL_METHOD_AUTO(VulkanBackend, GetGraphicsFamily, "Get graphics family"),
+        KL_METHOD_AUTO(VulkanBackend, GetRenderPass, "Get render pass"),
+        KL_METHOD_AUTO(VulkanBackend, GetSwapchainWidth, "Get swapchain width"),
+        KL_METHOD_AUTO(VulkanBackend, GetSwapchainHeight, "Get swapchain height"),
+        KL_METHOD_AUTO(VulkanBackend, GetSwapchainFormat, "Get swapchain format"),
+        KL_METHOD_AUTO(VulkanBackend, GetCurrentFrame, "Get current frame"),
+        KL_METHOD_AUTO(VulkanBackend, BeginFrame, "Begin frame"),
+        KL_METHOD_AUTO(VulkanBackend, BeginSwapchainRenderPass, "Begin swapchain render pass"),
+        KL_METHOD_AUTO(VulkanBackend, SetTitle, "Set title"),
+        KL_METHOD_AUTO(VulkanBackend, SetFullscreen, "Set fullscreen"),
+        KL_METHOD_AUTO(VulkanBackend, IsWindowOpen, "Is window open"),
+        KL_METHOD_AUTO(VulkanBackend, GetWindowSize, "Get window size")
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(VulkanBackend)
+        KL_CTOR(VulkanBackend, uint32_t, uint32_t, const std::string&, bool, bool)
+    KL_END_DESCRIBE(VulkanBackend)
+
 };
 
 } // namespace koilo

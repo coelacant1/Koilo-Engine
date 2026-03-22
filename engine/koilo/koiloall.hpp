@@ -85,13 +85,19 @@
 #include <koilo/kernel/asset/asset_job_queue.hpp>
 #include <koilo/kernel/asset/asset_manifest.hpp>
 #include <koilo/kernel/capabilities.hpp>
+#include <koilo/kernel/config/config_store.hpp>
 #include <koilo/kernel/console/command_registry.hpp>
 #include <koilo/kernel/console/console_commands.hpp>
 #include <koilo/kernel/console/console_module.hpp>
 #include <koilo/kernel/console/console_result.hpp>
 #include <koilo/kernel/console/console_session.hpp>
 #include <koilo/kernel/console/console_socket.hpp>
+#include <koilo/kernel/console/event_bridge.hpp>
+#include <koilo/kernel/cvar/cvar_system.hpp>
+#include <koilo/kernel/debug_overlay.hpp>
 #include <koilo/kernel/kernel.hpp>
+#include <koilo/kernel/logging/log.hpp>
+#include <koilo/kernel/logging/log_system.hpp>
 #include <koilo/kernel/memory/allocation_tag.hpp>
 #include <koilo/kernel/message_bus.hpp>
 #include <koilo/kernel/module.hpp>
@@ -99,6 +105,8 @@
 #include <koilo/kernel/module_loader.hpp>
 #include <koilo/kernel/module_manager.hpp>
 #include <koilo/kernel/register_services.hpp>
+#include <koilo/kernel/sim_cvars.hpp>
+#include <koilo/kernel/thread_pool.hpp>
 #include <koilo/ksl/ksl.hpp>
 #include <koilo/ksl/ksl_elf_types.hpp>
 #include <koilo/ksl/ksl_macros.hpp>
@@ -142,13 +150,9 @@
 #include <koilo/systems/audio/audiosource.hpp>
 #include <koilo/systems/audio/script_audio_manager.hpp>
 #include <koilo/systems/display/backends/embedded/hub75backend.hpp>
-#ifdef KL_HAVE_OPENGL_BACKEND
 #include <koilo/systems/display/backends/gpu/openglbackend.hpp>
-#endif
 #include <koilo/systems/display/backends/gpu/sdl3backend.hpp>
-#ifdef KL_HAVE_VULKAN_BACKEND
 #include <koilo/systems/display/backends/gpu/vulkanbackend.hpp>
-#endif
 #include <koilo/systems/display/backends/nullbackend.hpp>
 #include <koilo/systems/display/displayinfo.hpp>
 #include <koilo/systems/display/displaymanager.hpp>
@@ -161,11 +165,13 @@
 #include <koilo/systems/ecs/entitymanager.hpp>
 #include <koilo/systems/ecs/script_entity_manager.hpp>
 #include <koilo/systems/input/gamepad.hpp>
+#include <koilo/systems/input/input_module.hpp>
 #include <koilo/systems/input/inputmanager.hpp>
 #include <koilo/systems/input/keyboard.hpp>
 #include <koilo/systems/input/keycodes.hpp>
 #include <koilo/systems/input/mouse.hpp>
 #include <koilo/systems/particles/particle.hpp>
+#include <koilo/systems/particles/particle_module.hpp>
 #include <koilo/systems/particles/particleemitter.hpp>
 #include <koilo/systems/particles/particlesystem.hpp>
 #include <koilo/systems/physics/boundarymotionsimulator.hpp>
@@ -186,18 +192,24 @@
 #include <koilo/systems/render/canvas2d.hpp>
 #include <koilo/systems/render/core/pixel.hpp>
 #include <koilo/systems/render/core/pixelgroup.hpp>
-#ifdef KL_HAVE_OPENGL_BACKEND
 #include <koilo/systems/render/gl/opengl_render_backend.hpp>
-#endif
 #include <koilo/systems/render/gl/render_backend_factory.hpp>
 #include <koilo/systems/render/gl/software_render_backend.hpp>
 #include <koilo/systems/render/material/imaterial.hpp>
 #include <koilo/systems/render/material/implementations/kslmaterial.hpp>
+#include <koilo/systems/render/pipeline/material_binder.hpp>
+#include <koilo/systems/render/pipeline/mesh_cache.hpp>
+#include <koilo/systems/render/pipeline/render_pipeline.hpp>
+#include <koilo/systems/render/pipeline/texture_cache.hpp>
 #include <koilo/systems/render/raster/helpers/rastertriangle2d.hpp>
 #include <koilo/systems/render/raster/helpers/rastertriangle3d.hpp>
 #include <koilo/systems/render/raster/rasterizer.hpp>
 #include <koilo/systems/render/ray/rayintersection.hpp>
 #include <koilo/systems/render/ray/raytracer.hpp>
+#include <koilo/systems/render/render_cvars.hpp>
+#include <koilo/systems/render/render_module.hpp>
+#include <koilo/systems/render/rhi/rhi_caps.hpp>
+#include <koilo/systems/render/rhi/rhi_types.hpp>
 #include <koilo/systems/render/shader/ishader.hpp>
 #include <koilo/systems/render/sky/sky.hpp>
 #include <koilo/systems/render/vk/vulkan_render_backend.hpp>
@@ -224,6 +236,7 @@
 #include <koilo/systems/scene/morphablemesh.hpp>
 #include <koilo/systems/scene/primitivemesh.hpp>
 #include <koilo/systems/scene/scene.hpp>
+#include <koilo/systems/scene/scene_module.hpp>
 #include <koilo/systems/scene/scenenode.hpp>
 #include <koilo/systems/scene/sprite.hpp>
 #include <koilo/systems/world/level.hpp>

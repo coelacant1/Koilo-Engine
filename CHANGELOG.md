@@ -4,39 +4,80 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.3.7] - 2026-3-20
+Unified render pipeline, shared caches, Vulkan validation fixes, and clean build fixes.
+
+### Added
+- Unified `RenderPipeline` using `IRHIDevice`, replacing duplicated backend scene traversal
+- Shared `MeshCache`, `TextureCache`, and `MaterialBinder` for backend-agnostic resource management
+- `ShaderResolver` for built-in shader name mapping (blit, overlay, debug line, pink error, sky)
+- Deferred descriptor set write pattern for scene set 0 with automatic re-allocation on post-flush writes
+- Per-frame deferred buffer and texture deletion queued behind GPU fence waits
+- Per-frame descriptor pools (one per frame in flight)
+- `sampleAfterPass` flag on `RHIColorAttachment` for render pass final layout control
+- `r_backend` CVar for runtime render backend selection
+- Swapchain render pass API on `IRHIDevice`
+- `build.sh` flags: `--no-vulkan`, `--no-opengl`, `--software-only`, `--skip-ns`, `--debug`
+- SDL3Backend fallback display for pure software-only builds (no GL/VK dependency)
+
+### Changed
+- Vulkan descriptor set layouts restructured into scene (3 sets) and blit (2 sets) pipelines
+- `BindUniformBuffer` fully deferred for scene set 0, no immediate Vulkan calls
+- `BindPipeline` uses effective-layout-aware cache invalidation
+- `BeginFrame` reordered so fence wait precedes pool reset and deferred deletion flush
+- `UploadLights` now runs before `RenderSky` so all set 0 bindings populate before first draw
+- KSL modules expose SPIR-V accessors; registry gains `GetModuleByName`
+- SDL3Host frame loop updated for RenderFrameGPU -> BlitToScreen -> Overlay -> UI -> Present sequence
+- Removed `updatekoiloregistry.py` from CMake build (reflection registry is manual-only now)
+- Reflection entry generator classifies GPU backend paths as platform-specific (software-only linker fix)
+
+### Fixed
+- Descriptor set 0 incomplete bindings from per-call allocation replaced with deferred accumulation
+- Descriptor set updated after bind (UPDATE_AFTER_BIND violation) fixed with fresh-set replay
+- Buffer and texture destruction while GPU in-flight via per-frame deferred deletion queues
+- Render pipeline binding order causing partial set 0 flushes before lights were uploaded
+- Descriptor type mismatch from stale pipeline layout carrying across frames
+- Descriptor pool reset while other frame's command buffer still in-flight
+- Offscreen-to-blit image layout transition missing proper subpass dependency
+- Sky and pink error shader vertex format mismatches
+- Overlay rendering outside active render pass
+- Texture upload missing TransferDst usage flag
+- Broken KL_* reflection macros in 18+ files that prevented clean builds
+- Clean build from scratch now works for all backend configurations
+
 ## [0.3.6] - 2026-3-18
 Render Hardware Interface (RHI) abstraction layer with Vulkan and OpenGL drivers.
 
 ### Added
-- **RHI type system** (`engine/koilo/systems/render/rhi/rhi_types.hpp`, 306 lines)
-  - 7 opaque handle types with null sentinels: Buffer, Texture, Shader, Pipeline, RenderPass, Framebuffer, DescriptorSet
-  - 14 pixel/depth formats (R8 through D32F_S8), buffer/texture usage flags, shader stages
-  - Complete pipeline state: topology, rasterizer, depth/stencil, blend, vertex attributes
-  - Descriptor structs: `RHIBufferDesc`, `RHITextureDesc`, `RHIPipelineDesc`, `RHIRenderPassDesc`
-  - Utility helpers: `RHIFormatBytesPerPixel`, `RHIFormatIsDepth`, `HasFlag` operators
+- **RHI type system** (`engine/koilo/systems/render/rhi/rhi_types.hpp`)
+ - 7 opaque handle types with null sentinels: Buffer, Texture, Shader, Pipeline, RenderPass, Framebuffer, DescriptorSet
+ - 14 pixel/depth formats (R8 through D32F_S8), buffer/texture usage flags, shader stages
+ - Complete pipeline state: topology, rasterizer, depth/stencil, blend, vertex attributes
+ - Descriptor structs: `RHIBufferDesc`, `RHITextureDesc`, `RHIPipelineDesc`, `RHIRenderPassDesc`
+ - Utility helpers: `RHIFormatBytesPerPixel`, `RHIFormatIsDepth`, `HasFlag` operators
 - **RHI device interface** (`engine/koilo/systems/render/rhi/rhi_device.hpp`)
-  - `IRHIDevice` pure virtual interface (~35 methods) covering lifecycle, capabilities, resource CRUD, data transfer, command recording, and presentation
-  - Backend-agnostic contract enabling single render pipeline for all GPU APIs
+ - `IRHIDevice` pure virtual interface (~35 methods) covering lifecycle, capabilities, resource CRUD, data transfer, command recording, and presentation
+ - Backend-agnostic contract enabling single render pipeline for all GPU APIs
 - **RHI capability system** (`engine/koilo/systems/render/rhi/rhi_caps.hpp`)
-  - `RHIFeature` enum (10 features): timestamp queries, compute, multi-draw indirect, bindless textures, push constants, storage buffers, geometry/tessellation shaders, async compute, depth clamp
-  - `RHILimits` struct (14 hardware limits) queried from device at initialization
-- **Vulkan RHI driver** (`engine/koilo/systems/render/rhi/vulkan/`, 1504 lines)
-  - Full `IRHIDevice` implementation using Vulkan API with SlotArray handle-VkObject mapping
-  - Resource lifecycle: buffer/texture/shader/pipeline/renderpass/framebuffer create/destroy
-  - Command recording: render pass begin/end, pipeline/buffer/texture binding, draw/draw-indexed
-  - Descriptor pool with per-frame reset to prevent set exhaustion
-  - Push constants, dynamic viewport/scissor, staging buffer transfers with layout transitions
-  - Device limit/feature queries from `VkPhysicalDeviceProperties` and `VkPhysicalDeviceFeatures`
-- **OpenGL RHI driver** (`engine/koilo/systems/render/rhi/opengl/`, 1077 lines)
-  - Full `IRHIDevice` implementation using OpenGL 3.3+ with immediate-mode GL calls
-  - SlotArray pattern matching Vulkan driver for consistent handle management
-  - Format conversion tables (RHIFormat <-> GL internal/pixel/type), topology/blend/compare mapping
-  - Push constants emulated via reserved UBO at binding 7
-  - Persistent VAO with lazy reconfiguration on vertex state change
-  - Proper ordered shutdown: framebuffers - pipelines - shaders - textures - buffers
-- **RHI smoke tests** (`tests/engine/systems/render/rhi/`, 12 tests)
-  - Handle null sentinel and equality, format helpers, usage flag composition
-  - Descriptor struct defaults, capability feature flags, limits defaults
+ - `RHIFeature` enum (10 features): timestamp queries, compute, multi-draw indirect, bindless textures, push constants, storage buffers, geometry/tessellation shaders, async compute, depth clamp
+ - `RHILimits` struct (14 hardware limits) queried from device at initialization
+- **Vulkan RHI driver** (`engine/koilo/systems/render/rhi/vulkan/`)
+ - Full `IRHIDevice` implementation using Vulkan API with SlotArray handle-VkObject mapping
+ - Resource lifecycle: buffer/texture/shader/pipeline/renderpass/framebuffer create/destroy
+ - Command recording: render pass begin/end, pipeline/buffer/texture binding, draw/draw-indexed
+ - Descriptor pool with per-frame reset to prevent set exhaustion
+ - Push constants, dynamic viewport/scissor, staging buffer transfers with layout transitions
+ - Device limit/feature queries from `VkPhysicalDeviceProperties` and `VkPhysicalDeviceFeatures`
+- **OpenGL RHI driver** (`engine/koilo/systems/render/rhi/opengl/`)
+ - Full `IRHIDevice` implementation using OpenGL 3.3+ with immediate-mode GL calls
+ - SlotArray pattern matching Vulkan driver for consistent handle management
+ - Format conversion tables (RHIFormat <-> GL internal/pixel/type), topology/blend/compare mapping
+ - Push constants emulated via reserved UBO at binding 7
+ - Persistent VAO with lazy reconfiguration on vertex state change
+ - Proper ordered shutdown: framebuffers - pipelines - shaders - textures - buffers
+- **RHI smoke tests** (`tests/engine/systems/render/rhi/`)
+ - Handle null sentinel and equality, format helpers, usage flag composition
+ - Descriptor struct defaults, capability feature flags, limits defaults
 
 ### Changed
 - **CMake** - RHI driver sources excluded from main glob and conditionally compiled via display CMakeLists (Vulkan section / OpenGL section), matching existing backend pattern
@@ -48,22 +89,22 @@ Runtime inspection, console intelligence, state snapshots, and TCP event streami
 
 ### Added
 - **Entity console commands** (`engine/koilo/kernel/console/entity_commands.cpp`)
-  - `entity.list [tag]` - enumerate all live entities with optional tag filter
-  - `entity.inspect <id|tag>` - show transform, velocity, scene node, and component details
-  - `entity.set <id>.<field> <value>` - set entity position, scale, velocity, or tag at runtime
-  - `entity.watch <id>.<field>` / `entity.unwatch` - pin entity fields to the debug overlay
-  - `scene.hierarchy` - walk and print the scene graph tree with node names, meshes, and positions
-  - `help --json` - structured JSON output of the full command registry for tooling
+ - `entity.list [tag]` - enumerate all live entities with optional tag filter
+ - `entity.inspect <id|tag>` - show transform, velocity, scene node, and component details
+ - `entity.set <id>.<field> <value>` - set entity position, scale, velocity, or tag at runtime
+ - `entity.watch <id>.<field>` / `entity.unwatch` - pin entity fields to the debug overlay
+ - `scene.hierarchy` - walk and print the scene graph tree with node names, meshes, and positions
+ - `help --json` - structured JSON output of the full command registry for tooling
 - **State save/load system** (`state.save`, `state.load`, `state.list`)
-  - Saves entity transforms + velocities, CVars, and camera position to named snapshots
-  - Tag-based entity matching on restore for cross-session state transfer
-  - Snapshots stored as `states/<name>/` with `entities.json`, `cvars.cfg`, `camera.json`
+ - Saves entity transforms + velocities, CVars, and camera position to named snapshots
+ - Tag-based entity matching on restore for cross-session state transfer
+ - Snapshots stored as `states/<name>/` with `entities.json`, `cvars.cfg`, `camera.json`
 - **TCP event subscription** (`engine/koilo/kernel/console/event_bridge.hpp`)
-  - `EventBridge` service bridges MessageBus events to subscribed TCP console clients
-  - `subscribe <event,...>` / `unsubscribe [event,...]` / `subscriptions` commands
-  - Per-client subscription tracking with thread-local token per connection
-  - Supports all 14 built-in event types (module, asset, scene, entity lifecycle)
-  - JSON-line push format for real-time event streaming to external tools
+ - `EventBridge` service bridges MessageBus events to subscribed TCP console clients
+ - `subscribe <event,...>` / `unsubscribe [event,...]` / `subscriptions` commands
+ - Per-client subscription tracking with thread-local token per connection
+ - Supports all 14 built-in event types (module, asset, scene, entity lifecycle)
+ - JSON-line push format for real-time event streaming to external tools
 - **`ScriptEntityManager::GetAllEntities()`** - public method to iterate all valid entities
 
 ### Changed
@@ -75,57 +116,57 @@ Service registration, CVar system, structured logging, module modularization, an
 
 ### Added
 - **CVar system** (`engine/koilo/kernel/cvar/`)
-  - `CVar<T>` template with int, float, bool, and string types
-  - Automatic registration, console integration, and change callbacks
-  - `sim_cvars` - simulation pause/step CVars for frame debugging
-  - `render_cvars` - wireframe, culling, depth test, and max FPS CVars
-  - Console commands: `cvar.list`, `cvar.get`, `cvar.set`, `cvar.reset`
+ - `CVar<T>` template with int, float, bool, and string types
+ - Automatic registration, console integration, and change callbacks
+ - `sim_cvars` - simulation pause/step CVars for frame debugging
+ - `render_cvars` - wireframe, culling, depth test, and max FPS CVars
+ - Console commands: `cvar.list`, `cvar.get`, `cvar.set`, `cvar.reset`
 - **Config system** (`engine/koilo/kernel/config/`)
-  - `ConfigStore` - hierarchical key-value configuration with INI-style persistence
-  - `IConfigProvider` interface for pluggable config backends
-  - Console commands: `config.get`, `config.set`, `config.list`, `config.save`, `config.load`
+ - `ConfigStore` - hierarchical key-value configuration with INI-style persistence
+ - `IConfigProvider` interface for pluggable config backends
+ - Console commands: `config.get`, `config.set`, `config.list`, `config.save`, `config.load`
 - **Structured logging** (`engine/koilo/kernel/logging/`)
-  - `KL_LOG`, `KL_WARN`, `KL_ERR` macros with channel-tagged output
-  - `LogSystem` with per-channel verbosity, ring buffer history, and output sinks
-  - Console commands: `log.level`, `log.history`, `log.channels`, `log.filter`
+ - `KL_LOG`, `KL_WARN`, `KL_ERR` macros with channel-tagged output
+ - `LogSystem` with per-channel verbosity, ring buffer history, and output sinks
+ - Console commands: `log.level`, `log.history`, `log.channels`, `log.filter`
 - **Thread pool** (`engine/koilo/kernel/thread_pool.*`)
-  - Work-stealing thread pool with priority queues (Low, Normal, High)
-  - Registered as kernel service; used by console socket and asset pipeline
+ - Work-stealing thread pool with priority queues (Low, Normal, High)
+ - Registered as kernel service; used by console socket and asset pipeline
 - **Debug overlay** (`engine/koilo/kernel/debug_overlay.*`)
-  - FPS counter, frame time graph, and memory stats overlay
-  - Toggleable via CVar or console command
+ - FPS counter, frame time graph, and memory stats overlay
+ - Toggleable via CVar or console command
 - **Module implementations** (IModule-based kernel modules)
-  - `SceneModule` - scene and camera lifecycle as a kernel module
-  - `InputModule` - input state management as a kernel module
-  - `RenderModule` - render backend orchestration as a kernel module
-  - `UIModule` - UI system lifecycle as a kernel module
-  - `ParticleModule` - particle system as a kernel module
+ - `SceneModule` - scene and camera lifecycle as a kernel module
+ - `InputModule` - input state management as a kernel module
+ - `RenderModule` - render backend orchestration as a kernel module
+ - `UIModule` - UI system lifecycle as a kernel module
+ - `ParticleModule` - particle system as a kernel module
 - **Console commands**
-  - `utility_commands.cpp` - uptime, version, clear, echo, help improvements
-  - `log_commands.cpp` - structured log querying and channel management
-  - `message_commands.cpp` - message bus tap/untap/send/dispatch/flush
-  - `service_commands.cpp` - service listing with type info and health checks
+ - `utility_commands.cpp` - uptime, version, clear, echo, help improvements
+ - `log_commands.cpp` - structured log querying and channel management
+ - `message_commands.cpp` - message bus tap/untap/send/dispatch/flush
+ - `service_commands.cpp` - service listing with type info and health checks
 
 ### Changed
 - **Service registration** (`register_services.cpp`, `service_registry.*`)
-  - Services now registered with string names and typed accessors
-  - Thread pool, config store, CVar system, and log system registered as kernel services
+ - Services now registered with string names and typed accessors
+ - Thread pool, config store, CVar system, and log system registered as kernel services
 - **Module manager** (`module_manager.*`)
-  - Phase-ordered initialization (Core -> Simulation -> Render -> Overlay)
-  - Capability checking integrated into module lifecycle
+ - Phase-ordered initialization (Core -> Simulation -> Render -> Overlay)
+ - Capability checking integrated into module lifecycle
 - **Kernel** (`kernel.cpp/hpp`)
-  - Expanded with CVar system, config store, and log system ownership
-  - `Shutdown()` dispatches `MSG_SHUTDOWN` signal before module teardown
+ - Expanded with CVar system, config store, and log system ownership
+ - `Shutdown()` dispatches `MSG_SHUTDOWN` signal before module teardown
 - **Asset job queue** (`asset_job_queue.*`)
-  - Migrated from internal thread to kernel thread pool
-  - Priority-based job scheduling
+ - Migrated from internal thread to kernel thread pool
+ - Priority-based job scheduling
 - **Vulkan render backend** (`vulkan_render_backend.*`)
-  - CVar-driven wireframe, culling, and depth test toggling
-  - Pipeline cache rebuild on CVar change
+ - CVar-driven wireframe, culling, and depth test toggling
+ - Pipeline cache rebuild on CVar change
 - **Script engine module initialization** (`koiloscript_engine.cpp`)
-  - `moduleLoader_.InitializeAll()` now called before `BuildCamera()` so scene/camera modules are available during setup
+ - `moduleLoader_.InitializeAll()` now called before `BuildCamera()` so scene/camera modules are available during setup
 - **Render loop idle-skip** (`sdl3_host.hpp`)
-  - Idle-skip optimization now requires at least 2 rendered frames before activating, ensuring the first frame is presented and the window becomes visible
+ - Idle-skip optimization now requires at least 2 rendered frames before activating, ensuring the first frame is presented and the window becomes visible
 
 ### Fixed
 - **Vulkan validation errors on shutdown** - Early break in render loop on quit signal prevents submitting command buffers with stale image layouts; `vkDeviceWaitIdle()` replaces final `SwapOnly()` during teardown
@@ -139,42 +180,42 @@ Vulkan render backend, kernel architecture, module system, and compile-time back
 
 ### Added
 - **Vulkan render backend** (`engine/koilo/systems/render/vk/`)
-  - Full Vulkan rendering pipeline with SPIR-V shader compilation
+ - Full Vulkan rendering pipeline with SPIR-V shader compilation
 - **Vulkan display backend** (`engine/koilo/systems/display/backends/gpu/vulkanbackend.*`)
-  - SDL3 + Vulkan surface integration with multi-GPU enumeration and selection
-  - Discrete GPU preference with automatic fallback
-  - VSync support, fullscreen toggle, and dynamic window resizing
-  - `IGPUDisplayBackend` interface shared with OpenGL backend
+ - SDL3 + Vulkan surface integration with multi-GPU enumeration and selection
+ - Discrete GPU preference with automatic fallback
+ - VSync support, fullscreen toggle, and dynamic window resizing
+ - `IGPUDisplayBackend` interface shared with OpenGL backend
 - **Kernel architecture** (`engine/koilo/kernel/`)
-  - `KoiloKernel` - central engine kernel with service registry, message bus, and module manager
-  - `ServiceRegistry` - name-based typed service discovery
-  - `MessageBus` - ring-buffered pub/sub messaging with deferred and immediate delivery
-  - `ModuleManager` - module lifecycle, phase-ordered initialization, dependency resolution
-  - `IModule` - unified module interface with Initialize/Update/Render/Shutdown lifecycle
-  - Capability-based permission system for module sandboxing
-  - Message types for module lifecycle, assets, scene, and ECS events
+ - `KoiloKernel` - central engine kernel with service registry, message bus, and module manager
+ - `ServiceRegistry` - name-based typed service discovery
+ - `MessageBus` - ring-buffered pub/sub messaging with deferred and immediate delivery
+ - `ModuleManager` - module lifecycle, phase-ordered initialization, dependency resolution
+ - `IModule` - unified module interface with Initialize/Update/Render/Shutdown lifecycle
+ - Capability-based permission system for module sandboxing
+ - Message types for module lifecycle, assets, scene, and ECS events
 - **Kernel console** (`engine/koilo/kernel/console/`)
-  - `ConsoleModule` with `CommandRegistry` for extensible command system
-  - `ConsoleSession` with history, tab completion, and output formatting
-  - `ConsoleSocket` - TCP server for remote console access on port 9090
-  - Built-in commands: reflection introspection, memory stats, message bus, service listing, GPU info
-  - `ConsoleWidget` - in-engine UI console panel
+ - `ConsoleModule` with `CommandRegistry` for extensible command system
+ - `ConsoleSession` with history, tab completion, and output formatting
+ - `ConsoleSocket` - TCP server for remote console access on port 9090
+ - Built-in commands: reflection introspection, memory stats, message bus, service listing, GPU info
+ - `ConsoleWidget` - in-engine UI console panel
 - **Kernel memory** (`engine/koilo/kernel/memory/`)
-  - Arena allocator (frame-temporary, 4MB default)
-  - Linear allocator (scratch buffer, 1MB default)
-  - Pool allocator for fixed-size block allocation
-  - Allocation tagging for memory tracking
+ - Arena allocator (frame-temporary, 4MB default)
+ - Linear allocator (scratch buffer, 1MB default)
+ - Pool allocator for fixed-size block allocation
+ - Allocation tagging for memory tracking
 - **Kernel asset pipeline** (`engine/koilo/kernel/asset/`)
-  - Asset registry with handle-based reference management
-  - Async job queue with worker thread for background asset loading
-  - Asset manifest and converter registry
+ - Asset registry with handle-based reference management
+ - Async job queue with worker thread for background asset loading
+ - Asset manifest and converter registry
 - **Module implementations**
-  - `AssetModule` - asset loading, file watching, hot-reload via message bus
-  - `PhysicsModule` - physics world integration as kernel module
-  - `AIModule` - behavior tree and pathfinding as kernel module
-  - `AudioModule` - audio system as kernel module
+ - `AssetModule` - asset loading, file watching, hot-reload via message bus
+ - `PhysicsModule` - physics world integration as kernel module
+ - `AIModule` - behavior tree and pathfinding as kernel module
+ - `AudioModule` - audio system as kernel module
 - **SPIR-V shader sources** (`shaders/`)
-  - `scene.vert`, `blit.vert/frag`, `ui.vert/frag` - core Vulkan shaders
+ - `scene.vert`, `blit.vert/frag`, `ui.vert/frag` - core Vulkan shaders
 - `KOILO_USE_OPENGL` CMake option for explicit OpenGL opt-in
 - `koilo_runner.cpp` - standalone script runner entry point
 - Run scripts for all example projects (`examples/*/run.sh`)
@@ -202,15 +243,15 @@ UI code quality: hpp/cpp splits, coding standards fixes, dirty-flag rendering (a
 
 ### Changed
 - **hpp/cpp splits** - Separated header-only UI files into proper hpp/cpp pairs for faster incremental builds and cleaner interfaces:
-  - `ui_context.hpp/cpp` (core context, event handling, widget management)
-  - `draw_list.hpp/cpp` (draw command generation and widget emitters)
-  - `kml_builder.hpp/cpp` (KML markup parser and widget construction)
-  - `kss_parser.hpp/cpp` (KSS stylesheet parser)
-  - `layout.hpp/cpp` (flexbox-style layout engine)
-  - `event.hpp/cpp` (hit testing and event dispatch)
-  - `theme.hpp/cpp` (style resolution and theme management)
-  - `canvas2d.hpp/cpp` (Canvas2D immediate-mode draw context)
-  - `color_picker.hpp/cpp` (HSV color picker panel)
+ - `ui_context.hpp/cpp` (core context, event handling, widget management)
+ - `draw_list.hpp/cpp` (draw command generation and widget emitters)
+ - `kml_builder.hpp/cpp` (KML markup parser and widget construction)
+ - `kss_parser.hpp/cpp` (KSS stylesheet parser)
+ - `layout.hpp/cpp` (flexbox-style layout engine)
+ - `event.hpp/cpp` (hit testing and event dispatch)
+ - `theme.hpp/cpp` (style resolution and theme management)
+ - `canvas2d.hpp/cpp` (Canvas2D immediate-mode draw context)
+ - `color_picker.hpp/cpp` (HSV color picker panel)
 - Aligned all UI source files to project coding standards
 - Dropdown popup rendering deferred to overlay pass so menus draw above sibling widgets
 
@@ -237,15 +278,15 @@ UI system, rendering fixes, and naming cleanup.
 
 ### Added
 - **UI system** (`engine/koilo/systems/ui/`)
-  - KML (Koilo Markup Language) and KSS (Koilo Style Sheet) for declarative UI
-  - Custom TTF renderer for UI text; upgrade from characters used in previous Canvas2D examples
-  - 23 widget types: panel, button, label, slider, checkbox, dropdown, treenode, splitpane, floatingpanel, and others
-  - GPU-accelerated and software rendering paths
-  - CSS-like selectors, pseudo-classes, variables, media queries, and transitions
-  - Hierarchy tree view with expand/collapse and connector lines (not finished)
-  - Floating panel system with minimize, close, and bottom tray
-  - UI demo example (`examples/ui_demo/`)
-  - Reference documentation (`docs/ui/kml_kss.md`)
+ - KML (Koilo Markup Language) and KSS (Koilo Style Sheet) for declarative UI
+ - Custom TTF renderer for UI text; upgrade from characters used in previous Canvas2D examples
+ - 23 widget types: panel, button, label, slider, checkbox, dropdown, treenode, splitpane, floatingpanel, and others
+ - GPU-accelerated and software rendering paths
+ - CSS-like selectors, pseudo-classes, variables, media queries, and transitions
+ - Hierarchy tree view with expand/collapse and connector lines (not finished)
+ - Floating panel system with minimize, close, and bottom tray
+ - UI demo example (`examples/ui_demo/`)
+ - Reference documentation (`docs/ui/kml_kss.md`)
 
 ### Changed
 - Software render path now swaps immediately after present for reliable display on Wayland
@@ -255,26 +296,26 @@ Major architectural restructure: PTX -> Koilo rename, unified engine layout, Koi
 
 ### Added
 - **KoiloScript Language (KSL)** (`engine/koilo/ksl/`)
-  - Compile-time shader system replacing the old material/shader class hierarchy
-  - ELF-based module loader, symbol resolution, and shader registry
-  - 19 built-in KSL shaders (`shaders/*.ksl.hpp`): PBR, Phong, gradient, procedural noise, audio reactive, spectrum analyzer, and others
-  - KSL compiler and codegen tooling (`tools/ksl/`)
-  - VSCode syntax extension (`tools/vscode-koiloscript/`)
+ - Compile-time shader system replacing the old material/shader class hierarchy
+ - ELF-based module loader, symbol resolution, and shader registry
+ - 19 built-in KSL shaders (`shaders/*.ksl.hpp`): PBR, Phong, gradient, procedural noise, audio reactive, spectrum analyzer, and others
+ - KSL compiler and codegen tooling (`tools/ksl/`)
+ - VSCode syntax extension (`tools/vscode-koiloscript/`)
 - **SplinePath system** (`engine/koilo/core/math/`)
-  - 1D and 3D spline path interpolation with Catmull-Rom support
+ - 1D and 3D spline path interpolation with Catmull-Rom support
 - **SDL2 platform backend** (`engine/koilo/platform/sdl2_host.hpp`, `engine/koilo/systems/display/backends/gpu/sdl2backend.*`)
-  - SDL2 host with input helper for windowed rendering
+ - SDL2 host with input helper for windowed rendering
 - **OpenGL render backend** (`engine/koilo/systems/render/gl/`)
-  - Render backend abstraction with OpenGL and software implementations
-  - Factory pattern for backend selection
+ - Render backend abstraction with OpenGL and software implementations
+ - Factory pattern for backend selection
 - **KoiloMesh asset pipeline** (`tools/asset-conversion/`)
-  - Offline OBJ/FBX -> `.kmesh` converter with UV and texture support
-  - Binary mesh format with KOIM header, vertex/index/UV/material chunks
+ - Offline OBJ/FBX -> `.kmesh` converter with UV and texture support
+ - Binary mesh format with KOIM header, vertex/index/UV/material chunks
 - **Example projects** (`examples/`)
-  - Module demos, OBJ scene loading, 3D scene, space shooter, stress test, and syntax demo
+ - Module demos, OBJ scene loading, 3D scene, space shooter, stress test, and syntax demo
 - **Documentation** (`docs/`)
-  - Architecture overview and optimization guide
-  - KSL specification, reflection system, KoiloMesh format, custom modules, KoiloScript spec
+ - Architecture overview and optimization guide
+ - KSL specification, reflection system, KoiloMesh format, custom modules, KoiloScript spec
 
 ### Changed
 - Unified engine layout: merged `engine/include/` and `engine/src/` into `engine/koilo/`
@@ -295,32 +336,32 @@ Core gameplay systems (ECS, Particles, AI, World Management, Profiling)
 
 ### Added
 - **Entity Component System (ECS)** (`engine/include/koilo/systems/ecs/`)
-  - Entity handles with generation counters for stale handle detection
-  - Dense component storage for cache-friendly iteration
-  - Template-based type-safe component API
-  - Component masks and query system for efficient entity filtering
-  - Core components: `TransformComponent` (wraps existing Transform), `VelocityComponent`, `TagComponent`
+ - Entity handles with generation counters for stale handle detection
+ - Dense component storage for cache-friendly iteration
+ - Template-based type-safe component API
+ - Component masks and query system for efficient entity filtering
+ - Core components: `TransformComponent` (wraps existing Transform), `VelocityComponent`, `TagComponent`
 - **Particle System** (`engine/include/koilo/systems/particles/`)
-  - Particle pooling (pre-allocated, zero runtime allocations)
-  - Multiple emission shapes: Point, Sphere, Box, Cone, Circle
-  - Lifetime-based interpolation for size, color, and alpha
-  - Physics simulation (gravity, velocity, acceleration)
-  - Burst emission and custom update callbacks
+ - Particle pooling (pre-allocated, zero runtime allocations)
+ - Multiple emission shapes: Point, Sphere, Box, Cone, Circle
+ - Lifetime-based interpolation for size, color, and alpha
+ - Physics simulation (gravity, velocity, acceleration)
+ - Burst emission and custom update callbacks
 - **AI System** (`engine/include/koilo/systems/ai/`)
-  - **Behavior Trees**: Composites (Sequence, Selector, Parallel), Decorators (Inverter, Repeater, Succeeder), Leaves (Action, Condition, Wait)
-  - **State Machines**: State callbacks (Enter/Update/Exit), automatic transition checking with conditions
-  - **Pathfinding**: A* algorithm on grid, multiple heuristics (Manhattan, Euclidean, Diagonal), terrain costs, diagonal movement support
+ - **Behavior Trees**: Composites (Sequence, Selector, Parallel), Decorators (Inverter, Repeater, Succeeder), Leaves (Action, Condition, Wait)
+ - **State Machines**: State callbacks (Enter/Update/Exit), automatic transition checking with conditions
+ - **Pathfinding**: A* algorithm on grid, multiple heuristics (Manhattan, Euclidean, Diagonal), terrain costs, diagonal movement support
 - **World Management** (`engine/include/koilo/systems/world/`)
-  - Level loading/unloading with state machine (Unloaded/Loading/Loaded/Active/Unloading)
-  - Level streaming based on viewer position with configurable radius
-  - Level metadata and callbacks (OnLoad/OnUnload)
-  - `LevelSerializer` for JSON/Binary/XML serialization formats
-  - Level/Scene integration (Level can reference Scene for rendering)
+ - Level loading/unloading with state machine (Unloaded/Loading/Loaded/Active/Unloading)
+ - Level streaming based on viewer position with configurable radius
+ - Level metadata and callbacks (OnLoad/OnUnload)
+ - `LevelSerializer` for JSON/Binary/XML serialization formats
+ - Level/Scene integration (Level can reference Scene for rendering)
 - **Profiling Tools** (`engine/include/koilo/systems/profiling/`)
-  - **PerformanceProfiler**: Frame timing, FPS tracking, code section profiling with RAII helpers (`KL_PROFILE_SCOPE`, `KL_PROFILE_FUNCTION`)
-  - **MemoryProfiler**: Allocation tracking by tag, leak detection, peak usage tracking, formatted output (`KL_TRACK_ALLOC`, `KL_TRACK_FREE`)
-  - Historical statistics (min/max/avg over configurable frame history)
-  - Performance and memory reports with percentage breakdowns
+ - **PerformanceProfiler**: Frame timing, FPS tracking, code section profiling with RAII helpers (`KL_PROFILE_SCOPE`, `KL_PROFILE_FUNCTION`)
+ - **MemoryProfiler**: Allocation tracking by tag, leak detection, peak usage tracking, formatted output (`KL_TRACK_ALLOC`, `KL_TRACK_FREE`)
+ - Historical statistics (min/max/avg over configurable frame history)
+ - Performance and memory reports with percentage breakdowns
 
 ### Changed
 - Renamed `SceneSerializer` to `LevelSerializer` for architectural clarity (distinguishes Level serialization from Scene rendering)
@@ -397,33 +438,33 @@ Python wrapper for runtime reflection, and a number of safety/formatting fixes.
 
 ### Added
 - `lib/koilo_python/koilo/reflection.py`
-  - A self-contained `ctypes`-based wrapper that loads the reflection shared
-    library and provides `KoiloReflection`/`KoiloClass`/`KoiloField` helpers for
-    Python usage (demo in `lib/koilo_python/reflection_demo.py`).
+ - A self-contained `ctypes`-based wrapper that loads the reflection shared
+ library and provides `KoiloReflection`/`KoiloClass`/`KoiloField` helpers for
+ Python usage (demo in `lib/koilo_python/reflection_demo.py`).
 - `lib/koilo_c_api/README.md`
-  - Documentation for C ABI layer exposing registry functions
+ - Documentation for C ABI layer exposing registry functions
 - `lib/koilo_python/README.md`
-  - Documentation for using the Python ctypes wrapper and demo commands
+ - Documentation for using the Python ctypes wrapper and demo commands
 
 ### Changed
 - `.scripts/BuildSharedReflectLib.py` (finalized)
-  - Runs `GenerateKoiloAll.py`, scans `lib/koilo` headers for reflection describes,
-    generates `src/reflection_entry_gen.cpp` that forces `Class::Describe()` calls,
-    builds a static `libkoilo` and links it into `koilo_reflect.so`.
+ - Runs `GenerateKoiloAll.py`, scans `lib/koilo` headers for reflection describes,
+ generates `src/reflection_entry_gen.cpp` that forces `Class::Describe()` calls,
+ builds a static `libkoilo` and links it into `koilo_reflect.so`.
 - Header scanner in `.scripts/BuildSharedReflectLib.py` hardened
-  - Skips macro-definition lines and comment/span constructs, filters placeholder
-    tokens (e.g., `CLASS`), avoids nested/unqualified type names, and attempts
-    to qualify names with enclosing namespaces when detected
+ - Skips macro-definition lines and comment/span constructs, filters placeholder
+ tokens (e.g., `CLASS`), avoids nested/unqualified type names, and attempts
+ to qualify names with enclosing namespaces when detected
 
 ### Fixed
 - Ensure `koilo_reflect.so` contains the full registry at runtime by generating
-  and compiling `reflection_entry_gen.cpp` so all `Class::Describe()` statics are
-  emitted and initialised when the shared library is loaded
+ and compiling `reflection_entry_gen.cpp` so all `Class::Describe()` statics are
+ emitted and initialised when the shared library is loaded
 
 ### Notes / Next Tasks
 - The header scanner is heuristic-based; consider a C++ parser
 - Optionally add a standalone CLI generator to emit `src/reflection_entry_gen.cpp`
-  without invoking the full PlatformIO build pipeline
+ without invoking the full PlatformIO build pipeline
 
 
 ## [0.1.4] - 2025-09-21
@@ -431,15 +472,15 @@ Added to .hpp automatic macro configuration to handle additional edge cases
 
 ### Added
 - reflect_capi.cpp
-  - Backend link between C ABI -> C++ Koilo library
+ - Backend link between C ABI -> C++ Koilo library
 - reflect.h
-  - Header for C ABI/API
+ - Header for C ABI/API
 - tasks.json
-  - Task file for setting up header smoke test (unfinished)
-  - Task for initializing/setting up the python workspace/venv
-  - Task for updating the Koilo registry macros in all of the .hpp files
+ - Task file for setting up header smoke test (unfinished)
+ - Task for initializing/setting up the python workspace/venv
+ - Task for updating the Koilo registry macros in all of the .hpp files
 - BuildSharedReflectLib.py
-  - Working on build script for C ABI
+ - Working on build script for C ABI
 - KoiloEngine virtual environment with automatic configuration when called via task
 
 ### Changed
@@ -463,13 +504,13 @@ Automatic .hpp macro configuration
 
 ### Added
 - UpdateKoiloRegistry.py
-  - Automatically generate and link Koilo macro functions to initialize registry
+ - Automatically generate and link Koilo macro functions to initialize registry
 
 ### Changed
 - All .hpp files
-  - Now include base macro calls for registry initialization
-  - Overloaded functions not fixed, require manual tweaking
-  - Added reflect_macros.hpp include to all .hpp files
+ - Now include base macro calls for registry initialization
+ - Overloaded functions not fixed, require manual tweaking
+ - Added reflect_macros.hpp include to all .hpp files
 
 ### Next Tasks
 - Fix all overloaded functions, macro calls will fail due to overlap
@@ -480,32 +521,32 @@ Updated reflection for C++
 
 ### Added 
 - global_registry.hpp
-  - list of class description objects
+ - list of class description objects
 
 ### Changed
 - demangle.hpp
-  - Simplified
+ - Simplified
 - reflect_helpers.hpp
-  - Improved invokers
-  - Streamlined field and method searching
-  - Added Pretty printing for demangled strings for types/signatures/constructors
+ - Improved invokers
+ - Streamlined field and method searching
+ - Added Pretty printing for demangled strings for types/signatures/constructors
 - reflect_macros.hpp
-  - Streamlined
-  - Implemented via global registry
-  - Implemented constructor creation
+ - Streamlined
+ - Implemented via global registry
+ - Implemented constructor creation
 - reflect_make.hpp
-  - Major restructure
-  - Implemented custom type span creation
-  - Changed invokers to use box return and new apply tuple functions
-  - Simplfied method/static methods/const methods
+ - Major restructure
+ - Implemented custom type span creation
+ - Changed invokers to use box return and new apply tuple functions
+ - Simplfied method/static methods/const methods
 
 ### Removed
 - reflectable.hpp
-  - No longer necessary with new implementation
+ - No longer necessary with new implementation
 
 ### Next Tasks
 - Implement UpdateKoiloRegistry.py to automatically configure C++ headers for new registry macros 
-  - Pay attention to ignoring operators/etc
+ - Pay attention to ignoring operators/etc
 - Implmement koilo_lua
 - Implement koilo_capi/reflect_capi (cpp mapping side)
 - Implement koilo_platform for library static/library linking for runtime initialization via capi on mcus and posix
@@ -516,19 +557,19 @@ First working end-to-end reflection pipeline: discover -> access -> invoke.
 
 ### Added
 - registry.hpp
-  - Define FieldDecl, MethodDesc, FieldList, MethodList
-  - Add FieldAccess helpers for safe get/set
-  - Provide simple demangle wrapper for type names
+ - Define FieldDecl, MethodDesc, FieldList, MethodList
+ - Add FieldAccess helpers for safe get/set
+ - Provide simple demangle wrapper for type names
 - reflectable.hpp
-  - Base CRTP template Reflectable<T> with static Fields() and Methods() hooks
+ - Base CRTP template Reflectable<T> with static Fields() and Methods() hooks
 - reflect_make.hpp
-  - Generic helpers (make_field, make_method, make_smethod)
-  - Type-safe argument unpacking & return boxing (works for void + value returns)
-  - Removes need for N-arg boilerplate macros
+ - Generic helpers (make_field, make_method, make_smethod)
+ - Type-safe argument unpacking & return boxing (works for void + value returns)
+ - Removes need for N-arg boilerplate macros
 - reflect_macros.hpp
-  - Macros KL_FIELD, KL_METHOD, KL_SMETHOD as thin sugar over make_*
-  - KL_BEGIN_FIELDS/METHODS & KL_END_FIELDS/METHODS for static arrays
-  - Simplified and future-proof (handles const/non-const, static, multiple args)
+ - Macros KL_FIELD, KL_METHOD, KL_SMETHOD as thin sugar over make_*
+ - KL_BEGIN_FIELDS/METHODS & KL_END_FIELDS/METHODS for static arrays
+ - Simplified and future-proof (handles const/non-const, static, multiple args)
 
 ### Changed
 - Updated RGBColor to declare reflected fields (R, G, B) and methods (Scale, Add, HueShift, ToString, InterpolateColors)
@@ -536,10 +577,10 @@ First working end-to-end reflection pipeline: discover -> access -> invoke.
 
 ### Testing
 - registry_test.cpp:
-  - Enumerates fields with demangled type names
-  - Dynamically reads/writes fields (R, G, B)
-  - Dynamically invokes methods (Add, Scale, HueShift, ToString, InterpolateColors)
-  - Prints expected round-trip values
+ - Enumerates fields with demangled type names
+ - Dynamically reads/writes fields (R, G, B)
+ - Dynamically invokes methods (Add, Scale, HueShift, ToString, InterpolateColors)
+ - Prints expected round-trip values
 
 
 ## [0.1.0] - 2025-08-18
@@ -677,7 +718,7 @@ Building out and decoupling functionality
 - Material shaders
 - Make ray trace function to replace rasterize
 - Split effect from scene and add to compositor
-  - Render post
+ - Render post
 
 
 ## [0.0.2] - 2025-06-18
@@ -687,8 +728,8 @@ Building out and decoupling functionality
 ### Added
 - GitHub markdowns for issues/funding/pr templates/contributing/etc
 - Importing rendering and rasterizing backend from ProtoTracer
-    - Upper Camel Case files are unconverted
-    - Empty files are in-progress
+ - Upper Camel Case files are unconverted
+ - Empty files are in-progress
 - Change Log
  
 ### Changed

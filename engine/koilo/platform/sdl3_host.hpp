@@ -48,6 +48,7 @@
 #ifdef KL_HAVE_VULKAN_BACKEND
 #include <koilo/systems/display/backends/gpu/vulkanbackend.hpp>
 #endif
+#include <koilo/systems/display/backends/gpu/sdl3backend.hpp>
 #include <koilo/systems/display/framebuffer.hpp>
 #include <koilo/systems/render/gl/render_backend_factory.hpp>
 #include <koilo/systems/profiling/performanceprofiler.hpp>
@@ -76,7 +77,8 @@ struct SDL3Host {
     bool forceSoftware   = false;
     bool forceUncapped   = false;
     bool enableConsole   = false;
-    bool preferVulkan    = false;
+    bool preferVulkan    = true;
+    bool preferOpenGL    = false;
     int  profilerInterval = 120;  // Print report every N frames (0 = never)
     const char* modulesDir = nullptr;
     std::atomic<bool>* externalStop = nullptr;  // If set, RunLoop exits when *externalStop == false
@@ -163,7 +165,7 @@ private:
         IGPUDisplayBackend* gpuDisplayPtr = nullptr;
 #ifdef KL_HAVE_VULKAN_BACKEND
         VulkanBackend* vkDisplay = nullptr;
-        if (preferVulkan) {
+        if (preferVulkan && !preferOpenGL) {
             auto vk = std::make_unique<VulkanBackend>(
                 static_cast<uint32_t>(winW), static_cast<uint32_t>(winH),
                 std::string(windowTitle), false, true);
@@ -176,24 +178,55 @@ private:
             }
         }
 #endif
+#ifdef KL_HAVE_OPENGL_BACKEND
+        if (!displayOwner && !forceSoftware) {
+            auto gl = std::make_unique<OpenGLBackend>(winW, winH, windowTitle, false, true);
+            if (gl->Initialize()) {
+                gpuDisplayPtr = gl.get();
+                displayOwner = std::move(gl);
+            } else {
+                KL_WARN("SDL3Host", "OpenGL init failed, falling back to software");
+            }
+        }
+#endif
+        // Pure software fallback: SDL3Backend provides a window without OpenGL/Vulkan
+        SDL3Backend* sdlSoftwareDisplay = nullptr;
         if (!displayOwner) {
 #ifdef KL_HAVE_OPENGL_BACKEND
+            // Use OpenGL as a display surface for software rendering
             auto gl = std::make_unique<OpenGLBackend>(winW, winH, windowTitle, false, true);
             if (!gl->Initialize()) {
-                KL_ERR("SDL3Host", "Failed to initialize OpenGL display backend");
+                KL_ERR("SDL3Host", "Failed to initialize any display backend");
                 return 1;
             }
             gpuDisplayPtr = gl.get();
             displayOwner = std::move(gl);
 #else
-            KL_ERR("SDL3Host", "No display backend available");
-            return 1;
+            // No GPU backend -- use pure SDL3 software display
+            auto sdl = std::make_unique<SDL3Backend>(
+                static_cast<uint32_t>(winW), static_cast<uint32_t>(winH),
+                std::string(windowTitle), false, true);
+            if (!sdl->Initialize()) {
+                KL_ERR("SDL3Host", "Failed to initialize SDL3 software display");
+                return 1;
+            }
+            sdlSoftwareDisplay = sdl.get();
+            displayOwner = std::move(sdl);
+            forceSoftware = true;
+            KL_LOG("SDL3Host", "Using pure SDL3 software display");
 #endif
         }
-        IGPUDisplayBackend& gpuDisplay = *gpuDisplayPtr;
-        if (enableVSync) cvar_r_vsync.Set(true);
-        gpuDisplay.SetVSyncEnabled(cvar_r_vsync.Get());
-        if (forceSoftware) gpuDisplay.SetNearestFiltering(true);
+        IGPUDisplayBackend* gpuDisplayRaw = gpuDisplayPtr;
+        if (gpuDisplayRaw) {
+            if (enableVSync) cvar_r_vsync.Set(true);
+            gpuDisplayRaw->SetVSyncEnabled(cvar_r_vsync.Get());
+            if (forceSoftware) gpuDisplayRaw->SetNearestFiltering(true);
+        } else if (sdlSoftwareDisplay) {
+            if (enableVSync) {
+                cvar_r_vsync.Set(true);
+                sdlSoftwareDisplay->SetVSyncEnabled(true);
+            }
+        }
 
         // Select render backend
         if (!forceSoftware) {
@@ -217,7 +250,6 @@ private:
         // Frame state
         std::vector<Color888> fb(pixW * pixH);
         bool   running    = true;
-        bool   firstFrame = true;
         int    frameNum   = 0;
         uint64_t freq     = SDL_GetPerformanceFrequency();
         uint64_t lastTick = SDL_GetPerformanceCounter();
@@ -308,8 +340,8 @@ private:
             kernel.BeginFrame();
 
             if (gpuBackend) {
-                if (!firstFrame) gpuDisplay.SwapOnly();
-                firstFrame = false;
+                // Begin GPU frame (acquires swapchain, starts cmd buffer)
+                gpuBackend->PrepareFrame();
 
                 // Simulation pause: skip tick unless stepping
                 bool simPaused = cvar_sim_pause.Get();
@@ -324,7 +356,6 @@ private:
                 }
 
                 engine.RenderFrameGPU();
-                gpuDisplay.PrepareDefaultFramebuffer(winW, winH);
                 gpuBackend->BlitToScreen(winW, winH);
                 gpuBackend->CompositeCanvasOverlays(winW, winH);
 #ifdef KL_HAVE_VULKAN_BACKEND
@@ -344,6 +375,17 @@ private:
                 {
                     engine.RenderUIOverlay(winW, winH, dt);
                 }
+
+                // End GPU frame (submits cmd buffer + presents)
+                gpuBackend->FinishFrame();
+
+                // OpenGL GPU backends render to the default framebuffer but
+                // don't own the window swap.  Vulkan manages its own present
+                // inside FinishFrame, so only swap for non-Vulkan displays.
+#ifdef KL_HAVE_VULKAN_BACKEND
+                if (!vkDisplay)
+#endif
+                    gpuDisplayRaw->SwapOnly();
             } else {
                 // Software render path
                 bool simPaused = cvar_sim_pause.Get();
@@ -362,8 +404,12 @@ private:
                 Framebuffer framebuffer(
                     reinterpret_cast<uint8_t*>(fb.data()),
                     pixW, pixH, PixelFormat::RGB888);
-                gpuDisplay.PresentNoSwap(framebuffer);
-                gpuDisplay.SwapOnly();
+                if (gpuDisplayRaw) {
+                    gpuDisplayRaw->PresentNoSwap(framebuffer);
+                    gpuDisplayRaw->SwapOnly();
+                } else if (sdlSoftwareDisplay) {
+                    sdlSoftwareDisplay->Present(framebuffer);
+                }
             }
 
             kernel.EndFrame();
@@ -450,8 +496,14 @@ private:
                 modulesDir = argv[++i];
             else if (std::strcmp(argv[i], "--console") == 0)
                 enableConsole = true;
-            else if (std::strcmp(argv[i], "--vulkan") == 0)
+            else if (std::strcmp(argv[i], "--vulkan") == 0) {
                 preferVulkan = true;
+                preferOpenGL = false;
+            }
+            else if (std::strcmp(argv[i], "--opengl") == 0) {
+                preferOpenGL = true;
+                preferVulkan = false;
+            }
         }
     }
 };
