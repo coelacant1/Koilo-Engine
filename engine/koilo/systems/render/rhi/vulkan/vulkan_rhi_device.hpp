@@ -101,6 +101,8 @@ public:
     void Present() override;
 
     // -- Swapchain ---------------------------------------------------
+    void BeginSwapchainRenderPass(const RHIClearValue& clear) override;
+    RHIRenderPass GetSwapchainRenderPass() const override;
     void GetSwapchainSize(uint32_t& outWidth,
                            uint32_t& outHeight) const override;
     void OnResize(uint32_t width, uint32_t height) override;
@@ -143,7 +145,12 @@ private:
         VkDeviceMemory memory = VK_NULL_HANDLE;
         VkDeviceSize   size   = 0;
         bool           hostVisible = false;
+        bool           isUniform   = false;
         void*          mapped = nullptr;
+        // When a uniform buffer is UpdateBuffer'd during an active frame,
+        // its data is copied into the ring buffer at this offset.
+        // UINT32_MAX means "not ring-backed this frame."
+        uint32_t       ringOffset = UINT32_MAX;
     };
 
     struct TextureSlot {
@@ -201,6 +208,10 @@ private:
     VkCommandBuffer BeginOneShot();
     void            EndOneShot(VkCommandBuffer cmd);
 
+    /// Flush any deferred descriptor set binds (scene set 0) into the
+    /// command buffer.  Must be called before Draw/DrawIndexed.
+    void FlushPendingDescriptorBinds();
+
     static VkFormat       ToVkFormat(RHIFormat fmt);
     static VkBufferUsageFlags ToVkBufferUsage(RHIBufferUsage usage);
 
@@ -218,6 +229,12 @@ private:
     VkFence          frameFence_ = VK_NULL_HANDLE;
     bool             frameActive_ = false;
 
+    // RHI handle wrapping the display's swapchain render pass.
+    // Created lazily in GetSwapchainRenderPass(). Not destroyed
+    // on Shutdown because the underlying VkRenderPass is owned
+    // by the display backend.
+    mutable RHIRenderPass swapchainPassHandle_ = {};
+
     // Slot arrays
     SlotArray<BufferSlot>      buffers_;
     SlotArray<TextureSlot>     textures_;
@@ -229,11 +246,70 @@ private:
     RHIFeature supportedFeatures_ = static_cast<RHIFeature>(0);
     RHILimits  limits_{};
 
-    // Descriptor management (simple single-set layout for now)
-    VkDescriptorPool      descriptorPool_  = VK_NULL_HANDLE;
-    VkDescriptorSetLayout uniformLayout_   = VK_NULL_HANDLE;
-    VkDescriptorSetLayout textureLayout_   = VK_NULL_HANDLE;
-    VkPipelineLayout      defaultPipelineLayout_ = VK_NULL_HANDLE;
+    // Descriptor management - three layouts matching KSL SPIR-V conventions:
+    // Scene:  Set 0 = scene (UBO+SSBO+UBO+SSBO), Set 1 = material UBO, Set 2 = textures
+    // Blit:   Set 0 = sampler, Set 1 = optional UBO
+    static constexpr uint32_t kMaxFramesInFlight = 2;
+    VkDescriptorPool      descriptorPools_[kMaxFramesInFlight] = {};
+    uint32_t              currentPoolIndex_ = 0;
+
+    // Scene pipeline layout (3 descriptor sets)
+    VkDescriptorSetLayout sceneSetLayout_    = VK_NULL_HANDLE; // set 0: 4 bindings
+    VkDescriptorSetLayout materialSetLayout_ = VK_NULL_HANDLE; // set 1: 1 UBO binding
+    VkDescriptorSetLayout textureSetLayout_  = VK_NULL_HANDLE; // set 2: 8 samplers
+    VkPipelineLayout      scenePipelineLayout_ = VK_NULL_HANDLE;
+
+    // Blit pipeline layout (2 descriptor sets)
+    VkDescriptorSetLayout blitSamplerLayout_ = VK_NULL_HANDLE; // set 0: 1 sampler
+    VkDescriptorSetLayout blitUBOLayout_     = VK_NULL_HANDLE; // set 1: 1 UBO
+    VkPipelineLayout      blitPipelineLayout_  = VK_NULL_HANDLE;
+
+    // Currently bound pipeline layout (set by BindPipeline)
+    VkPipelineLayout      activePipelineLayout_ = VK_NULL_HANDLE;
+
+    // Cached scene descriptor set 0 - avoids allocating a new descriptor set
+    // on every BindUniformBuffer(_, 0, _) call.  sceneSetLayout_ has 4 bindings
+    // (transform UBO, light SSBO, scene UBO, audio SSBO) that get written
+    // incrementally across separate BindUniformBuffer calls.  Without caching,
+    // each call would allocate a fresh set with only ONE binding written,
+    // overwriting the previous bind and leaving other bindings uninitialized.
+    //
+    // Fully-deferred pattern:
+    //   1. BindUniformBuffer(_, 0, N): store binding info, mark dirty
+    //   2. Draw()/DrawIndexed(): flush - vkUpdateDescriptorSets + vkCmdBindDescriptorSets
+    //   3. Per-mesh re-binds with same buffer: skip entirely (bitmask no-op)
+    //   4. If new bindings arrive after first flush: allocate fresh set, replay all
+    VkDescriptorSet       cachedSceneSet0_ = VK_NULL_HANDLE;
+    uint32_t              sceneSet0Written_ = 0;  // bitmask of bindings stored
+    bool                  sceneSet0Dirty_  = false; // needs flush
+    bool                  sceneSet0Flushed_ = false; // set was already written+bound
+
+    static constexpr uint32_t kMaxSceneSet0Bindings = 4;
+    struct SceneSet0Binding {
+        VkDescriptorBufferInfo bufInfo{};
+        VkDescriptorType       descType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    };
+    SceneSet0Binding      sceneSet0Bindings_[kMaxSceneSet0Bindings] = {};
+
+    // Deferred texture deletion queue - textures destroyed during a frame are
+    // queued here and actually freed at the start of the NEXT frame that uses
+    // the same pool index (after its fence has been waited on, guaranteeing
+    // the prior command buffer referencing these resources has completed).
+    std::vector<TextureSlot> pendingTextureDeletes_[kMaxFramesInFlight];
+
+    // Deferred buffer deletion queue - same lifecycle as textures.
+    std::vector<BufferSlot> pendingBufferDeletes_[kMaxFramesInFlight];
+
+    // -- Dynamic uniform ring buffer -----------------------------------
+    // Per-draw UBO data (e.g. transform matrices) is written here instead
+    // of overwriting a single shared HOST_COHERENT buffer.  Each draw gets
+    // its own slice of the ring, so the GPU sees correct per-draw data.
+    VkBuffer       uniformRingBuffer_  = VK_NULL_HANDLE;
+    VkDeviceMemory uniformRingMemory_  = VK_NULL_HANDLE;
+    void*          uniformRingMapped_  = nullptr;
+    uint32_t       uniformRingOffset_  = 0;
+    uint32_t       uniformRingSize_    = 0;  // total ring buffer size
+    uint32_t       uniformMinAlign_    = 256; // minUniformBufferOffsetAlignment
 };
 
 } // namespace koilo::rhi

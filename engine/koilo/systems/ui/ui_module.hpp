@@ -13,6 +13,7 @@
 
 #include <koilo/kernel/unified_module.hpp>
 #include <memory>
+#include "../../registry/reflect_macros.hpp"
 
 namespace koilo {
 
@@ -42,6 +43,24 @@ private:
 
     /// Ensure font is loaded (lazy init).
     void EnsureFont();
+
+    KL_BEGIN_FIELDS(UIModule)
+        /* No reflected fields. */
+    KL_END_FIELDS
+
+    KL_BEGIN_METHODS(UIModule)
+        KL_METHOD_AUTO(UIModule, GetInfo, "Get info"),
+        KL_METHOD_AUTO(UIModule, Initialize, "Initialize"),
+        KL_METHOD_AUTO(UIModule, Update, "Update"),
+        KL_METHOD_AUTO(UIModule, Render, "Render"),
+        KL_METHOD_AUTO(UIModule, Shutdown, "Shutdown"),
+        KL_METHOD_AUTO(UIModule, GetUI, "Get ui")
+    KL_END_METHODS
+
+    KL_BEGIN_DESCRIBE(UIModule)
+        KL_CTOR0(UIModule)
+    KL_END_DESCRIBE(UIModule)
+
 };
 
 } // namespace koilo

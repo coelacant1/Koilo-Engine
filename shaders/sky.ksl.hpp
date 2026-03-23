@@ -11,6 +11,12 @@ struct KSL_SkyShader : public ksl::Shader {
         KSL_PARAM(ksl::vec3, bottomColor, "Sky bottom color", 0.0f, 1.0f)
     KSL_PARAMS_END
 
+    KSL_META_BEGIN(KSL_SkyShader)
+        KSL_META_INT("depthTest",  0)
+        KSL_META_INT("depthWrite", 0)
+        KSL_META_INT("cullMode",   0)
+    KSL_META_END
+
     ksl::vec4 shade(const ksl::ShadeInput& in) const override {
         float t = in.uv.y;
         ksl::vec3 c = ksl::mix(bottomColor, topColor, t);
