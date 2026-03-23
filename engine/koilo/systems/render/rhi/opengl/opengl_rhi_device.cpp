@@ -29,6 +29,8 @@ GLenum OpenGLRHIDevice::ToGLInternalFormat(RHIFormat fmt) {
         case RHIFormat::RG16F:              return GL_RG16F;
         case RHIFormat::RGBA16F:            return GL_RGBA16F;
         case RHIFormat::RGBA32F:            return GL_RGBA32F;
+        case RHIFormat::RGB32F:             return GL_RGB32F;
+        case RHIFormat::RG32F:              return GL_RG32F;
         case RHIFormat::R32F:               return GL_R32F;
         case RHIFormat::D16_Unorm:          return GL_DEPTH_COMPONENT16;
         case RHIFormat::D24_Unorm_S8_Uint:  return GL_DEPTH24_STENCIL8;
@@ -43,8 +45,10 @@ GLenum OpenGLRHIDevice::ToGLPixelFormat(RHIFormat fmt) {
         case RHIFormat::R8_Unorm:
         case RHIFormat::R32F:               return GL_RED;
         case RHIFormat::RG8_Unorm:
-        case RHIFormat::RG16F:              return GL_RG;
-        case RHIFormat::RGB8_Unorm:         return GL_RGB;
+        case RHIFormat::RG16F:
+        case RHIFormat::RG32F:              return GL_RG;
+        case RHIFormat::RGB8_Unorm:
+        case RHIFormat::RGB32F:             return GL_RGB;
         case RHIFormat::RGBA8_Unorm:
         case RHIFormat::RGBA8_SRGB:
         case RHIFormat::RGBA16F:
@@ -137,8 +141,10 @@ GLint OpenGLRHIDevice::VertexAttrComponentCount(RHIFormat fmt) {
         case RHIFormat::R8_Unorm:
         case RHIFormat::R32F:     return 1;
         case RHIFormat::RG8_Unorm:
-        case RHIFormat::RG16F:    return 2;
-        case RHIFormat::RGB8_Unorm: return 3;
+        case RHIFormat::RG16F:
+        case RHIFormat::RG32F:    return 2;
+        case RHIFormat::RGB8_Unorm:
+        case RHIFormat::RGB32F:   return 3;
         case RHIFormat::RGBA8_Unorm:
         case RHIFormat::BGRA8_Unorm:
         case RHIFormat::RGBA16F:
@@ -157,6 +163,8 @@ GLenum OpenGLRHIDevice::VertexAttrGLType(RHIFormat fmt) {
         case RHIFormat::RG16F:
         case RHIFormat::RGBA16F:      return GL_HALF_FLOAT;
         case RHIFormat::R32F:
+        case RHIFormat::RG32F:
+        case RHIFormat::RGB32F:
         case RHIFormat::RGBA32F:      return GL_FLOAT;
         default:                      return GL_FLOAT;
     }
@@ -343,9 +351,10 @@ RHITexture OpenGLRHIDevice::CreateTexture(const RHITextureDesc& desc) {
     }
 
     // Default sampler
+    GLint glFilter = (desc.filter == RHISamplerFilter::Nearest) ? GL_NEAREST : GL_LINEAR;
     glGenSamplers(1, &slot.sampler);
-    glSamplerParameteri(slot.sampler, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glSamplerParameteri(slot.sampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glSamplerParameteri(slot.sampler, GL_TEXTURE_MIN_FILTER, glFilter);
+    glSamplerParameteri(slot.sampler, GL_TEXTURE_MAG_FILTER, glFilter);
     glSamplerParameteri(slot.sampler, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glSamplerParameteri(slot.sampler, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 

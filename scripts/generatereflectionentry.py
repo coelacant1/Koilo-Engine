@@ -114,14 +114,23 @@ def qualify_name(raw: str, txt: str):
             for nm in ns_re2.finditer(txt[:parent_pos]):
                 brace_idx = txt.find('{', nm.end())
                 if brace_idx != -1 and brace_idx < parent_pos:
-                    part2 = txt[nm.end():parent_pos]
-                    if part2.count('{') > part2.count('}'):
-                        for seg in nm.group(1).split('::'):
-                            if seg:
-                                namespaces.append(seg)
+                    # Check if this namespace's opening brace is still open at parent_pos
+                    depth = 1
+                    pos = brace_idx + 1
+                    while pos < len(txt) and depth > 0:
+                        if txt[pos] == '{': depth += 1
+                        elif txt[pos] == '}': depth -= 1
+                        pos += 1
+                    close_pos = pos - 1
+                    if close_pos < parent_pos:
+                        continue  # namespace closed before parent class
+                    for seg in nm.group(1).split('::'):
+                        if seg:
+                            namespaces.append(seg)
             if namespaces:
                 namespaces = [ns for ns in namespaces if ns not in ('std', 'detail')]
-                return '::'.join(namespaces + [nested_name])
+                deduped = list(dict.fromkeys(namespaces))
+                return '::'.join(deduped + [nested_name])
             return nested_name
 
     # fallback: try to detect enclosing namespaces
@@ -130,11 +139,20 @@ def qualify_name(raw: str, txt: str):
     for nm in ns_re.finditer(txt[:decl_pos]):
         brace_idx = txt.find('{', nm.end())
         if brace_idx != -1 and brace_idx < decl_pos:
-            part = txt[nm.end():decl_pos]
-            if part.count('{') > part.count('}'):
-                for seg in nm.group(1).split('::'):
-                    if seg:
-                        namespaces.append(seg)
+            # Check if this namespace's opening brace is still open at decl_pos
+            # by finding the matching closing brace
+            depth = 1
+            pos = brace_idx + 1
+            while pos < len(txt) and depth > 0:
+                if txt[pos] == '{': depth += 1
+                elif txt[pos] == '}': depth -= 1
+                pos += 1
+            close_pos = pos - 1
+            if close_pos < decl_pos:
+                continue  # namespace is closed before declaration, skip it
+            for seg in nm.group(1).split('::'):
+                if seg:
+                    namespaces.append(seg)
 
     if namespaces:
         # Filter out standard library namespaces that may appear in the file
@@ -176,6 +194,15 @@ def is_platform_class(cls_name, candidates):
             if '/koiloapplication.' in rel:
                 return True
             if '/systems/render/engine/' in rel:
+                return True
+            # GPU render backends (conditionally compiled)
+            if '/systems/render/gl/' in rel:
+                return True
+            if '/systems/render/vk/' in rel:
+                return True
+            if '/systems/render/rhi/vulkan/' in rel:
+                return True
+            if '/systems/render/rhi/opengl/' in rel:
                 return True
             # Classes with direct DisplayManager dependency
             if raw in PLATFORM_CLASSES:

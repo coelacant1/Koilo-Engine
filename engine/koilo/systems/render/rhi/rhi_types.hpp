@@ -60,8 +60,10 @@ enum class RHIFormat : uint8_t {
     // HDR / float
     RG16F,
     RGBA16F,
-    RGBA32F,
     R32F,
+    RG32F,
+    RGB32F,
+    RGBA32F,
     // Depth / stencil
     D16_Unorm,
     D24_Unorm_S8_Uint,
@@ -81,8 +83,10 @@ inline uint8_t RHIFormatBytesPerPixel(RHIFormat fmt) {
         case RHIFormat::BGRA8_SRGB:        return 4;
         case RHIFormat::RG16F:              return 4;
         case RHIFormat::RGBA16F:            return 8;
-        case RHIFormat::RGBA32F:            return 16;
         case RHIFormat::R32F:               return 4;
+        case RHIFormat::RG32F:              return 8;
+        case RHIFormat::RGB32F:             return 12;
+        case RHIFormat::RGBA32F:            return 16;
         case RHIFormat::D16_Unorm:          return 2;
         case RHIFormat::D24_Unorm_S8_Uint:  return 4;
         case RHIFormat::D32F:               return 4;
@@ -146,6 +150,12 @@ inline RHITextureUsage operator&(RHITextureUsage a, RHITextureUsage b) {
 inline bool HasFlag(RHITextureUsage val, RHITextureUsage flag) {
     return (static_cast<uint8_t>(val) & static_cast<uint8_t>(flag)) != 0;
 }
+
+// -- Sampler filter ---------------------------------------------------
+enum class RHISamplerFilter : uint8_t {
+    Nearest,
+    Linear,
+};
 
 // -- Shader stages ---------------------------------------------------
 enum class RHIShaderStage : uint8_t {
@@ -213,6 +223,7 @@ struct RHITextureDesc {
     uint32_t        arrayLayers = 1;
     RHIFormat       format = RHIFormat::RGBA8_Unorm;
     RHITextureUsage usage  = RHITextureUsage::Sampled;
+    RHISamplerFilter filter = RHISamplerFilter::Linear;
     const char*     debugName = nullptr;
 };
 
@@ -243,6 +254,13 @@ struct RHIDepthStencilState {
     bool         stencilTest = false;
 };
 
+/// Render flags derived from shader metadata (depthTest, cullMode, etc.).
+/// Used by the material binder to create pipeline variants automatically.
+struct RenderFlags {
+    RHIDepthStencilState depthStencil = {};
+    RHICullMode          cullMode     = RHICullMode::Back;
+};
+
 /// Graphics pipeline creation descriptor.
 struct RHIPipelineDesc {
     RHIShader       vertexShader   = {};
@@ -261,6 +279,14 @@ struct RHIPipelineDesc {
     RHIDepthStencilState depthStencil = {};
     RHIBlendState        blend        = {};
 
+    // Pipeline layout hint: determines which descriptor set layout to use
+    // Scene = 3-set layout (scene+material+textures), Blit = sampler+optional UBO
+    enum class LayoutHint : uint8_t {
+        Scene = 0,  // Set 0: scene UBO+SSBO, Set 1: material UBO, Set 2: textures
+        Blit  = 1,  // Set 0: sampler, Set 1: optional UBO
+    };
+    LayoutHint layoutHint = LayoutHint::Scene;
+
     const char* debugName = nullptr;
 };
 
@@ -269,6 +295,7 @@ struct RHIColorAttachment {
     RHIFormat  format  = RHIFormat::RGBA8_Unorm;
     RHILoadOp  loadOp  = RHILoadOp::Clear;
     RHIStoreOp storeOp = RHIStoreOp::Store;
+    bool sampleAfterPass = false; // if true, final layout = SHADER_READ_ONLY_OPTIMAL
 };
 
 /// Render pass creation descriptor.

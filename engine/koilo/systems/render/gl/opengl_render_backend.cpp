@@ -788,7 +788,10 @@ OpenGLRenderBackend::MeshCacheEntry& OpenGLRenderBackend::UploadMesh(Mesh* mesh)
         verts.push_back({p1.X, p1.Y, p1.Z, n.X, n.Y, n.Z, u0, v0});
         verts.push_back({p2.X, p2.Y, p2.Z, n.X, n.Y, n.Z, u1, v1});
         verts.push_back({p3.X, p3.Y, p3.Z, n.X, n.Y, n.Z, u2, v2});
-        // Re-upload vertex data for animated meshes
+    }
+
+    // Re-upload vertex data for animated meshes (version changed but entry exists)
+    if (it != meshCache_.end()) {
         MeshCacheEntry& entry = it->second;
         GLsizeiptr dataSize = static_cast<GLsizeiptr>(verts.size() * sizeof(GLVertex));
         glBindBuffer(GL_ARRAY_BUFFER, entry.vbo);

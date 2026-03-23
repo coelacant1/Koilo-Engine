@@ -146,6 +146,19 @@ public:
 
     // -- Swapchain / surface -----------------------------------------
 
+    /// Begin a render pass that targets the swapchain (screen).
+    /// The device manages the swapchain framebuffer internally.
+    /// Default implementation does nothing (override in GPU backends).
+    virtual void BeginSwapchainRenderPass(const RHIClearValue& clear) {
+        (void)clear;
+    }
+
+    /// Get the render pass handle used for swapchain rendering.
+    /// Pipelines that render to the screen (blit, overlay) must be
+    /// created with this render pass for compatibility.
+    /// Returns an invalid handle if the device doesn't support it.
+    virtual RHIRenderPass GetSwapchainRenderPass() const { return {}; }
+
     /// Get current swapchain dimensions.
     virtual void GetSwapchainSize(uint32_t& outWidth,
                                    uint32_t& outHeight) const = 0;

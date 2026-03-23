@@ -106,9 +106,24 @@ def detect_required_attribs(source_path: str) -> int:
     return flags
 
 
+def detect_has_metadata(source_path: str) -> bool:
+    """Check if the shader declares KSL_META_BEGIN."""
+    with open(source_path, "r") as f:
+        content = f.read()
+    return bool(re.search(r'KSL_META_BEGIN', content))
+
+
 def generate_wrapper(shader_include: str, class_name: str, display_name: str,
-                     required_attribs: int = 0xFF) -> str:
+                     required_attribs: int = 0xFF, has_metadata: bool = False) -> str:
     """Generate the C ABI wrapper source code."""
+    metadata_fn = ""
+    if has_metadata:
+        metadata_fn = """
+    const ksl::MetaEntry* ksl_metadata(int* count) {
+        auto m = ShaderType::Meta();
+        *count = m.count;
+        return m.entries;
+    }"""
     return f'''// Auto-generated KSL wrapper - do not edit
 #include <cstdlib>
 #include <cstring>
@@ -177,6 +192,7 @@ extern "C" {{
         *count = p.count;
         return p.decls;
     }}
+{metadata_fn}
 }}
 '''
 
@@ -194,7 +210,9 @@ def compile_kso(source: str, output: str, target: str, compiler: str,
     with tempfile.TemporaryDirectory() as tmpdir:
         wrapper_path = os.path.join(tmpdir, "ksl_wrapper.cpp")
         attribs = detect_required_attribs(source)
-        wrapper_src = generate_wrapper(os.path.basename(source), class_name, display_name, attribs)
+        has_meta = detect_has_metadata(source)
+        wrapper_src = generate_wrapper(os.path.basename(source), class_name,
+                                       display_name, attribs, has_meta)
 
         with open(wrapper_path, "w") as f:
             f.write(wrapper_src)

@@ -35,14 +35,19 @@ public:
 
         if (!fs::exists(dir) || !fs::is_directory(dir)) return 0;
 
+        // Retain vertex shader source for RHI shader creation (Phase 17f)
+        if (!vertexShaderSrc.empty()) {
+            vertexShaderSource_ = vertexShaderSrc;
+        }
+
         auto endsWith = [](const std::string& s, const std::string& suffix) {
             return s.size() >= suffix.size() &&
                    s.compare(s.size() - suffix.size(), suffix.size(), suffix) == 0;
         };
 
-        // Try loading uber-shader first
-        bool hasUber = false;
+        // Try loading uber-shader first (GL only)
 #ifdef KL_HAVE_OPENGL_BACKEND
+        bool hasUber = false;
         std::string uberGlsl = dir + "/uber.glsl";
         std::string uberIds  = dir + "/uber_ids.txt";
         if (!vertexShaderSrc.empty() && fs::exists(uberGlsl) && fs::exists(uberIds)) {
@@ -102,6 +107,11 @@ public:
                     hasGPU = true;
                 }
             } else if (fs::exists(glslPath) && !vertexShaderSrc.empty()) {
+                hasGPU = mod->LoadGLSL(glslPath, vertexShaderSrc);
+            }
+#else
+            // No GL context - load GLSL for source retention (RHI shader creation)
+            if (fs::exists(glslPath) && !vertexShaderSrc.empty()) {
                 hasGPU = mod->LoadGLSL(glslPath, vertexShaderSrc);
             }
 #endif
@@ -186,6 +196,12 @@ public:
     /** Check if SPIR-V data is loaded. */
     bool HasSPIRV() const { return !spirvData_.empty() && !vertexSPIRV_.empty(); }
 
+    /** Get retained GLSL vertex shader source (for RHI shader creation). */
+    const std::string& GetVertexShaderSource() const { return vertexShaderSource_; }
+
+    /** Check if GLSL source is available for RHI shader creation. */
+    bool HasGLSLSources() const { return !vertexShaderSource_.empty(); }
+
     /** Get list of loaded SPIR-V shader names. */
     std::vector<std::string> ListSPIRVShaders() const {
         std::vector<std::string> names;
@@ -239,6 +255,7 @@ public:
         modules_.clear();
         vertexSPIRV_.clear();
         spirvData_.clear();
+        vertexShaderSource_.clear();
     }
 
 private:
@@ -251,6 +268,9 @@ private:
     // SPIR-V bytecode storage (loaded but not consumed until Vulkan backend creates pipelines)
     std::vector<uint32_t> vertexSPIRV_;
     std::unordered_map<std::string, std::vector<uint32_t>> spirvData_;
+
+    // GLSL source retention for RHI shader creation (Phase 17f)
+    std::string vertexShaderSource_;
 
     /** Read a binary file as uint32_t words (SPIR-V format). */
     static std::vector<uint32_t> ReadBinaryFile(const std::string& path) {

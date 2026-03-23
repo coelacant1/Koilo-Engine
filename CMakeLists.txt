@@ -26,7 +26,7 @@ option(KOILO_ENABLE_AI "Build AI subsystem (pathfinding, behavior trees)" ON)
 option(KOILO_ENABLE_AUDIO "Build audio subsystem (SDL3 audio)" ON)
 option(KOILO_ENABLE_PARTICLES "Build particle subsystem" ON)
 option(KOILO_USE_VULKAN "Build Vulkan render backend and compile SPIR-V shaders" ON)
-option(KOILO_USE_OPENGL "Build OpenGL render backend" OFF)
+option(KOILO_USE_OPENGL "Build OpenGL render backend" ON)
 set(KL_UNITY_DIR ${CMAKE_SOURCE_DIR}/external/unity CACHE PATH "Path to Unity test framework")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
@@ -57,13 +57,11 @@ find_package(Python3 COMPONENTS Interpreter REQUIRED)
 # Generation custom commands / targets
 add_custom_command(
   OUTPUT ${KL_GEN_DIR}/koilo/koiloall.hpp
-  BYPRODUCTS ${KL_GEN_DIR}/.koilo_reflect_cache.json
   COMMAND ${CMAKE_COMMAND} -E make_directory ${KL_GEN_DIR}/koilo
   COMMAND Python3::Interpreter ${KL_SCRIPTS_DIR}/generatekoiloall.py --root ${CMAKE_SOURCE_DIR}/engine/koilo --output ${KL_GEN_DIR}/koilo/koiloall.hpp
-  COMMAND Python3::Interpreter ${KL_SCRIPTS_DIR}/updatekoiloregistry.py --root ${CMAKE_SOURCE_DIR}/engine/koilo --write --cache-file ${KL_GEN_DIR}/.koilo_reflect_cache.json
-  DEPENDS ${KL_SCRIPTS_DIR}/generatekoiloall.py ${KL_SCRIPTS_DIR}/updatekoiloregistry.py ${KL_SCRIPTS_DIR}/consoleoutput.py
+  DEPENDS ${KL_SCRIPTS_DIR}/generatekoiloall.py ${KL_SCRIPTS_DIR}/consoleoutput.py
   WORKING_DIRECTORY ${KL_SCRIPTS_DIR}
-  COMMENT "Generating reflection umbrella header and Koilo registry cache"
+  COMMENT "Generating reflection umbrella header (koiloall.hpp)"
   VERBATIM
 )
 

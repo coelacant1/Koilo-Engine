@@ -21,6 +21,9 @@ extern "C" {
 // to run before most other static initializers.
 __attribute__((constructor(101)))
 static void koilo_request_discrete_gpu() {
+    // Mesa PRIME: use discrete GPU via DRI
+    setenv("DRI_PRIME", "1", 0);
+    // NVIDIA proprietary PRIME: offload to discrete GPU
     setenv("__NV_PRIME_RENDER_OFFLOAD", "1", 0);
     setenv("__GLX_VENDOR_LIBRARY_NAME", "nvidia", 0);
 }
