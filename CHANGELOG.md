@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.3.8] - 2026-3-21
+Vulkan shutdown crash fix, software display path fix, console improvements, and OpenGL performance.
+
+### Added
+- Interactive line editor for the console REPL (history, cursor movement, word/line delete, tab completion, screen clear)
+- `--vulkan` and `--opengl` flags to prefer a specific render backend
+- GPU selection hints in `--help` for hybrid laptops (DRI_PRIME, NVIDIA offload)
+
+### Changed
+- RenderPipeline sorts draw calls by pipeline and material to minimize GPU state changes (issue #7)
+- Hoisted per-frame transform UBO upload out of per-mesh loop (was re-uploading identical data per draw)
+- All `glGetUniformLocation` calls in OpenGL backend now use cached lookups
+- Removed dead `SetUniform3c`/`SetUniform3v` helper functions
+
+### Fixed
+- Vulkan shutdown segfault caused by ODR violation in KSLRegistry/KSLModule (issue #4)
+  - `KSLRegistry` and `KSLModule` had member variables behind `#ifdef KL_HAVE_OPENGL_BACKEND`, but `koiloengine_display` was compiled WITH the define while `koilo_engine` was compiled WITHOUT it, giving each translation unit a different class layout
+  - Fix: member variables are now always present (plain int types); only GL API calls remain behind `#ifdef`
+- Use-after-free in KSLMaterial::Unbind() during shutdown
+  - KSLMaterial held raw pointer to KSLModule destroyed with the registry; late-running script engine cleanup called Unbind() on freed module
+  - Fix: clear static registry pointer before destroying it; guard Unbind() with registry-alive check
+- Null out Vulkan handles in slot after Destroy*() calls (defense-in-depth)
+- Software display path pixel format mismatch (issue #5)
+  - SDL3Backend mapped RGB888 (3 bpp) to SDL_PIXELFORMAT_XRGB8888 (4 bpp), causing stride mismatch and corrupted/interlaced output
+  - Fix: use SDL_PIXELFORMAT_RGB24/BGR24 to match framebuffer byte width
+
 ## [0.3.7] - 2026-3-20
 Unified render pipeline, shared caches, Vulkan validation fixes, and clean build fixes.
 

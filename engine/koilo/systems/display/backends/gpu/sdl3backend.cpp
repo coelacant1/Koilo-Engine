@@ -111,13 +111,6 @@ bool SDL3Backend::Present(const Framebuffer& fb) {
             std::cerr << "Failed to create texture: " << SDL_GetError() << std::endl;
             return false;
         }
-        
-        // Debug: verify texture dimensions
-        float actualW, actualH;
-        SDL_GetTextureSize(texture_, &actualW, &actualH);
-        
-        std::cout << "[SDL3Backend] Created texture: requested " << fb.width << "x" << fb.height 
-                  << ", actual " << static_cast<int>(actualW) << "x" << static_cast<int>(actualH) << "\n";
     }
 
     // Upload pixel data to texture
@@ -126,19 +119,6 @@ bool SDL3Backend::Present(const Framebuffer& fb) {
     if (!SDL_LockTexture(texture_, nullptr, &pixels, &pitch)) {
         std::cerr << "Failed to lock texture: " << SDL_GetError() << std::endl;
         return false;
-    }
-
-    // Debug: print first few pixels being uploaded to SDL
-    static bool debugPrinted = false;
-    if (!debugPrinted) {
-        const uint8_t* data = static_cast<const uint8_t*>(fb.data);
-        std::cout << "[SDL3Backend] Uploading framebuffer to SDL:\n";
-        std::cout << "  Dimensions: " << fb.width << "x" << fb.height << "\n";
-        std::cout << "  Format: " << (fb.format == PixelFormat::RGB888 ? "RGB888" : "BGR888") << "\n";
-        std::cout << "  Stride: " << fb.stride << ", SDL pitch: " << pitch << "\n";
-        std::cout << "  First pixel (0,0) bytes: [" << (int)data[0] << "," << (int)data[1] << "," << (int)data[2] << "]\n";
-        std::cout << "  Pixel at index 799 bytes: [" << (int)data[799*3] << "," << (int)data[799*3+1] << "," << (int)data[799*3+2] << "]\n";
-        debugPrinted = true;
     }
 
     // Copy framebuffer data to texture
@@ -297,12 +277,6 @@ bool SDL3Backend::InitSDL() {
 
     // Enable text input events (required on some platforms for SDL_EVENT_TEXT_INPUT)
     SDL_StartTextInput(window_);
-    
-    // Debug: Verify actual window size
-    int actualW, actualH;
-    SDL_GetWindowSize(window_, &actualW, &actualH);
-    std::cout << "[SDL3Backend] Requested window: " << windowWidth_ << "x" << windowHeight_ << "\n";
-    std::cout << "[SDL3Backend] Actual window: " << actualW << "x" << actualH << "\n";
 
     // Create renderer
     renderer_ = SDL_CreateRenderer(window_, nullptr);
@@ -379,9 +353,9 @@ void SDL3Backend::CalculateViewport(uint32_t fbWidth, uint32_t fbHeight,
 uint32_t SDL3Backend::ConvertPixelFormat(PixelFormat format) {
     switch (format) {
         case PixelFormat::RGB888:
-            return SDL_PIXELFORMAT_XRGB8888;
+            return SDL_PIXELFORMAT_RGB24;
         case PixelFormat::BGR888:
-            return SDL_PIXELFORMAT_XBGR8888;
+            return SDL_PIXELFORMAT_BGR24;
         case PixelFormat::RGBA8888:
             return SDL_PIXELFORMAT_RGBA8888;
         case PixelFormat::BGRA8888:
@@ -389,7 +363,7 @@ uint32_t SDL3Backend::ConvertPixelFormat(PixelFormat format) {
         case PixelFormat::RGB565:
             return SDL_PIXELFORMAT_RGB565;
         default:
-            return SDL_PIXELFORMAT_XRGB8888;
+            return SDL_PIXELFORMAT_RGB24;
     }
 }
 

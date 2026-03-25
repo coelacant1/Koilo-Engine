@@ -27,13 +27,7 @@ public:
 
     const std::string& Name() const { return name_; }
     bool HasCPU() const { return shadeFn_ != nullptr; }
-    bool HasGPU() const {
-#ifdef KL_HAVE_OPENGL_BACKEND
-        return glProgram_ != 0;
-#else
-        return false;
-#endif
-    }
+    bool HasGPU() const { return glProgram_ != 0; }
 
     /// True if GLSL source is available for RHI shader creation.
     bool HasGLSLSource() const { return !glslFragSource_.empty(); }
@@ -201,16 +195,16 @@ public:
     }
 
 #ifdef KL_HAVE_OPENGL_BACKEND
-    GLuint GetGLProgram() const { return glProgram_; }
-    GLint GetUniformView() const { return uView_; }
-    GLint GetUniformProjection() const { return uProjection_; }
-    GLint GetUniformModel() const { return uModel_; }
-    GLint GetUniformCameraPos() const { return uCameraPos_; }
-    GLint GetUniformTime() const { return uTime_; }
+    GLuint GetGLProgram() const { return static_cast<GLuint>(glProgram_); }
+    GLint GetUniformView() const { return static_cast<GLint>(uView_); }
+    GLint GetUniformProjection() const { return static_cast<GLint>(uProjection_); }
+    GLint GetUniformModel() const { return static_cast<GLint>(uModel_); }
+    GLint GetUniformCameraPos() const { return static_cast<GLint>(uCameraPos_); }
+    GLint GetUniformTime() const { return static_cast<GLint>(uTime_); }
 
     // Uber-shader: share a single GL program across all modules
     void SetUberProgram(GLuint prog, int shaderID) {
-        glProgram_ = prog;
+        glProgram_ = static_cast<unsigned int>(prog);
         uberShaderID_ = shaderID;
         isUber_ = true;
         // Cache standard uniform locations from uber program
@@ -222,17 +216,17 @@ public:
     }
 
     void DetachGLProgram() { glProgram_ = 0; }
+#endif
     bool IsUber() const { return isUber_; }
     int GetUberShaderID() const { return uberShaderID_; }
-#endif
 
     void Unload() {
 #ifdef KL_HAVE_OPENGL_BACKEND
         if (glProgram_ && !isUber_) { glDeleteProgram(glProgram_); }
+#endif
         glProgram_ = 0;
         isUber_ = false;
         uberShaderID_ = -1;
-#endif
         elfLoader_.Unload();
         shadeFn_ = nullptr;
         infoFn_ = nullptr;
@@ -285,17 +279,15 @@ private:
     std::string glslFragSource_;
     std::string glslVertSource_;
 
-    // GPU (GL program)
-#ifdef KL_HAVE_OPENGL_BACKEND
-    GLuint glProgram_ = 0;
-    GLint uView_ = -1;
-    GLint uProjection_ = -1;
-    GLint uModel_ = -1;
-    GLint uCameraPos_ = -1;
-    GLint uTime_ = -1;
+    // GPU (GL program) - always present for consistent layout across TUs (ODR).
+    unsigned int glProgram_ = 0;
+    int uView_ = -1;
+    int uProjection_ = -1;
+    int uModel_ = -1;
+    int uCameraPos_ = -1;
+    int uTime_ = -1;
     bool isUber_ = false;
     int uberShaderID_ = -1;
-#endif
 };
 
 } // namespace ksl

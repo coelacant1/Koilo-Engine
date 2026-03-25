@@ -705,6 +705,10 @@ void VulkanRHIDevice::DestroyBuffer(RHIBuffer handle) {
         if (s.memory != VK_NULL_HANDLE) vkFreeMemory(device_, s.memory, nullptr);
     }
 
+    // Clear handles so Shutdown() slot iteration won't double-destroy.
+    s.buffer = VK_NULL_HANDLE;
+    s.memory = VK_NULL_HANDLE;
+    s.mapped = nullptr;
     buffers_.Free(handle.id);
 }
 
@@ -777,6 +781,11 @@ void VulkanRHIDevice::DestroyTexture(RHITexture handle) {
         if (s.memory != VK_NULL_HANDLE)  vkFreeMemory(device_, s.memory, nullptr);
     }
 
+    // Clear handles so Shutdown() slot iteration won't double-destroy.
+    s.sampler = VK_NULL_HANDLE;
+    s.view    = VK_NULL_HANDLE;
+    s.image   = VK_NULL_HANDLE;
+    s.memory  = VK_NULL_HANDLE;
     textures_.Free(handle.id);
 }
 
@@ -800,6 +809,7 @@ void VulkanRHIDevice::DestroyShader(RHIShader handle) {
     if (!handle.IsValid() || !shaders_.Valid(handle.id)) return;
     auto& s = shaders_.Get(handle.id);
     if (s.module != VK_NULL_HANDLE) vkDestroyShaderModule(device_, s.module, nullptr);
+    s.module = VK_NULL_HANDLE;
     shaders_.Free(handle.id);
 }
 
@@ -1002,6 +1012,8 @@ void VulkanRHIDevice::DestroyPipeline(RHIPipeline handle) {
     if (s.pipeline != VK_NULL_HANDLE) vkDestroyPipeline(device_, s.pipeline, nullptr);
     if (s.ownsLayout && s.layout != VK_NULL_HANDLE)
         vkDestroyPipelineLayout(device_, s.layout, nullptr);
+    s.pipeline = VK_NULL_HANDLE;
+    s.layout   = VK_NULL_HANDLE;
     pipelines_.Free(handle.id);
 }
 
@@ -1111,6 +1123,7 @@ void VulkanRHIDevice::DestroyRenderPass(RHIRenderPass handle) {
     if (!handle.IsValid() || !renderPasses_.Valid(handle.id)) return;
     auto& s = renderPasses_.Get(handle.id);
     if (s.pass != VK_NULL_HANDLE) vkDestroyRenderPass(device_, s.pass, nullptr);
+    s.pass = VK_NULL_HANDLE;
     renderPasses_.Free(handle.id);
 }
 
@@ -1156,6 +1169,7 @@ void VulkanRHIDevice::DestroyFramebuffer(RHIFramebuffer handle) {
     auto& s = framebuffers_.Get(handle.id);
     if (s.framebuffer != VK_NULL_HANDLE)
         vkDestroyFramebuffer(device_, s.framebuffer, nullptr);
+    s.framebuffer = VK_NULL_HANDLE;
     framebuffers_.Free(handle.id);
 }
 

@@ -232,13 +232,7 @@ public:
 
     size_t Count() const { return modules_.size(); }
 
-    bool HasUberShader() const {
-#ifdef KL_HAVE_OPENGL_BACKEND
-        return uberProgram_ != 0;
-#else
-        return false;
-#endif
-    }
+    bool HasUberShader() const { return uberProgram_ != 0; }
 
 #ifdef KL_HAVE_OPENGL_BACKEND
     unsigned int GetUberProgram() const { return uberProgram_; }
@@ -248,10 +242,10 @@ public:
 #ifdef KL_HAVE_OPENGL_BACKEND
         if (uberProgram_) {
             glDeleteProgram(uberProgram_);
-            uberProgram_ = 0;
         }
-        uberShaderIDs_.clear();
 #endif
+        uberProgram_ = 0;
+        uberShaderIDs_.clear();
         modules_.clear();
         vertexSPIRV_.clear();
         spirvData_.clear();
@@ -260,10 +254,9 @@ public:
 
 private:
     std::unordered_map<std::string, std::unique_ptr<KSLModule>> modules_;
-#ifdef KL_HAVE_OPENGL_BACKEND
+    // Always present so every TU sees the same layout (ODR compliance).
     unsigned int uberProgram_ = 0;
     std::unordered_map<std::string, int> uberShaderIDs_;
-#endif
 
     // SPIR-V bytecode storage (loaded but not consumed until Vulkan backend creates pipelines)
     std::vector<uint32_t> vertexSPIRV_;

@@ -216,7 +216,7 @@ public:
     }
 
     void Unbind() {
-        if (instance_ && module_) {
+        if (instance_ && module_ && s_registry_) {
             module_->DestroyInstance(instance_);
         }
         instance_ = nullptr;

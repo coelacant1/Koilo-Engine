@@ -536,10 +536,10 @@ void VulkanRenderBackend::DestroyOffscreenTarget() {
 
 bool VulkanRenderBackend::CreateDescriptorLayouts() {
     // Set 0: Scene data
-    //   Binding 0: TransformUBO (vertex+fragment) -- model/view/proj/cameraPos
-    //   Binding 1: LightBuffer SSBO (fragment) -- array of Light structs
-    //   Binding 2: SceneUBO (fragment) -- lightCount, time, etc.
-    //   Binding 3: AudioSampleBuffer SSBO (fragment) -- audio samples for reactive shaders
+    //   Binding 0: TransformUBO (vertex+fragment) - model/view/proj/cameraPos
+    //   Binding 1: LightBuffer SSBO (fragment) - array of Light structs
+    //   Binding 2: SceneUBO (fragment) - lightCount, time, etc.
+    //   Binding 3: AudioSampleBuffer SSBO (fragment) - audio samples for reactive shaders
     {
         VkDescriptorSetLayoutBinding bindings[4] = {};
         bindings[0].binding = 0;
@@ -656,7 +656,7 @@ bool VulkanRenderBackend::CreateSceneDescriptors() {
                             lightSSBO_, lightSSBOMemory_, &lightSSBOMapped_))
         return false;
 
-    // Allocate audio SSBO (placeholder -- 4 bytes minimum for runtime-sized array)
+    // Allocate audio SSBO (placeholder - 4 bytes minimum for runtime-sized array)
     if (!CreateBuffer(4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
                       audioSSBO_, audioSSBOMemory_))
@@ -2308,7 +2308,7 @@ void VulkanRenderBackend::RenderDirect(Scene* scene, CameraBase* camera) {
 
     } // end GPU.Meshes scope
 
-    // Debug lines (grid, axes, etc.) -- drawn in offscreen pass with scene view/projection
+    // Debug lines (grid, axes, etc.) - drawn in offscreen pass with scene view/projection
     { KL_PERF_SCOPE("GPU.DebugLines");
         RenderDebugLines(&viewT.M[0][0], &projT.M[0][0]);
     }

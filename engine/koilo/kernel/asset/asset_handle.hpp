@@ -108,9 +108,11 @@ inline const char* AssetStateName(AssetState s) {
 } // namespace koilo
 
 // Hash support for use in unordered containers.
+namespace std {
 template<>
-struct std::hash<koilo::AssetHandle> {
+struct hash<koilo::AssetHandle> {
     size_t operator()(koilo::AssetHandle h) const noexcept {
-        return std::hash<uint32_t>{}(h.value);
+        return hash<uint32_t>{}(h.value);
     }
 };
+} // namespace std

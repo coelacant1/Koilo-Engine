@@ -117,15 +117,6 @@ struct GLVertex {
 // Shader registry helpers
 // ============================================================================
 
-static inline void SetUniform3c(GLuint prog, const char* name, const Color888& c) {
-    glUniform3f(glGetUniformLocation(prog, name),
-                c.R / 255.0f, c.G / 255.0f, c.B / 255.0f);
-}
-
-static inline void SetUniform3v(GLuint prog, const char* name, const Vector3D& v) {
-    glUniform3f(glGetUniformLocation(prog, name), v.X, v.Y, v.Z);
-}
-
 // --- Debug line shaders ---
 static const char* s_lineVertSrc = R"(
 #version 330 core
@@ -460,27 +451,26 @@ bool OpenGLRenderBackend::InitShaders() {
 
 void OpenGLRenderBackend::SetLightUniforms(unsigned int prog, const std::vector<Light>& lights) {
     int count = static_cast<int>(std::min(lights.size(), static_cast<size_t>(16)));
-    glUniform1i(glGetUniformLocation(prog, "u_lightCount"), count);
+    glUniform1i(GetKSLUniform(prog, "u_lightCount"), count);
 
     for (int i = 0; i < count; ++i) {
         Light& l = const_cast<Light&>(lights[i]);
         char buf[64];
 
-        // KSL struct-style uniforms: u_lights[i].field
         snprintf(buf, sizeof(buf), "u_lights[%d].position", i);
-        SetUniform3v(prog, buf, l.GetPosition());
+        glUniform3f(GetKSLUniform(prog, buf), l.GetPosition().X, l.GetPosition().Y, l.GetPosition().Z);
 
         snprintf(buf, sizeof(buf), "u_lights[%d].color", i);
-        SetUniform3v(prog, buf, l.GetIntensity());
+        glUniform3f(GetKSLUniform(prog, buf), l.GetIntensity().X, l.GetIntensity().Y, l.GetIntensity().Z);
 
         snprintf(buf, sizeof(buf), "u_lights[%d].intensity", i);
-        glUniform1f(glGetUniformLocation(prog, buf), 1.0f);
+        glUniform1f(GetKSLUniform(prog, buf), 1.0f);
 
         snprintf(buf, sizeof(buf), "u_lights[%d].falloff", i);
-        glUniform1f(glGetUniformLocation(prog, buf), l.GetFalloff());
+        glUniform1f(GetKSLUniform(prog, buf), l.GetFalloff());
 
         snprintf(buf, sizeof(buf), "u_lights[%d].curve", i);
-        glUniform1f(glGetUniformLocation(prog, buf), l.GetCurveA());
+        glUniform1f(GetKSLUniform(prog, buf), l.GetCurveA());
     }
 }
 
@@ -867,15 +857,16 @@ void OpenGLRenderBackend::RenderSky(CameraBase* camera, int vpW, int vpH) {
     glUseProgram(prog);
     // Set u_shaderID for uber-shader dispatch
     if (kmat->GetModule()->IsUber()) {
-        GLint sidLoc = glGetUniformLocation(prog, "u_shaderID");
+        GLint sidLoc = GetKSLUniform(prog, "u_shaderID");
         if (sidLoc >= 0)
             glUniform1i(sidLoc, kmat->GetModule()->GetUberShaderID());
     }
     // Set identity model/view/projection so the sky quad stays at NDC
     float identity[16] = {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1};
-    glUniformMatrix4fv(glGetUniformLocation(prog, "u_model"), 1, GL_FALSE, identity);
-    glUniformMatrix4fv(glGetUniformLocation(prog, "u_view"), 1, GL_FALSE, identity);
-    glUniformMatrix4fv(glGetUniformLocation(prog, "u_projection"), 1, GL_FALSE, identity);
+    const auto& u = GetUniforms(prog);
+    glUniformMatrix4fv(u.model, 1, GL_FALSE, identity);
+    glUniformMatrix4fv(u.view, 1, GL_FALSE, identity);
+    glUniformMatrix4fv(u.projection, 1, GL_FALSE, identity);
     BindKSLMaterialUniforms(prog, *kmat, *this);
     BindKSLTextures(prog, *kmat);
 
@@ -1331,8 +1322,7 @@ void OpenGLRenderBackend::BlitToScreen(int screenW, int screenH) {
     glUseProgram(overlayProgram_);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, colorTex_);
-    GLint texLoc = glGetUniformLocation(overlayProgram_, "u_texture");
-    glUniform1i(texLoc, 0);
+    glUniform1i(GetKSLUniform(overlayProgram_, "u_texture"), 0);
 
     glBindVertexArray(blitVao_);
     glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -1375,10 +1365,9 @@ void OpenGLRenderBackend::RenderDebugLines(const float* viewMat, const float* pr
     if (verts.empty()) return;
 
     glUseProgram(lineProgram_);
-    GLint viewLoc = glGetUniformLocation(lineProgram_, "u_view");
-    GLint projLoc = glGetUniformLocation(lineProgram_, "u_projection");
-    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, viewMat);
-    glUniformMatrix4fv(projLoc, 1, GL_FALSE, projMat);
+    const auto& lineU = GetUniforms(lineProgram_);
+    glUniformMatrix4fv(lineU.view, 1, GL_FALSE, viewMat);
+    glUniformMatrix4fv(lineU.projection, 1, GL_FALSE, projMat);
 
     glBindVertexArray(lineVao_);
     glBindBuffer(GL_ARRAY_BUFFER, lineVbo_);
@@ -1410,8 +1399,7 @@ void OpenGLRenderBackend::CompositeCanvasOverlays(int screenW, int screenH) {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     glUseProgram(overlayProgram_);
-    GLint texLoc = glGetUniformLocation(overlayProgram_, "u_texture");
-    glUniform1i(texLoc, 0);
+    glUniform1i(GetKSLUniform(overlayProgram_, "u_texture"), 0);
     glActiveTexture(GL_TEXTURE0);
 
     for (auto* canvas : canvases) {

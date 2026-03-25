@@ -18,6 +18,7 @@
 #include <koilo/platform/sdl3_host.hpp>
 #include <koilo/kernel/kernel.hpp>
 #include <koilo/kernel/console/console_module.hpp>
+#include <koilo/kernel/console/line_editor.hpp>
 #include <koilo/kernel/logging/log_system.hpp>
 #include <koilo/kernel/logging/log.hpp>
 #include <koilo/kernel/debug_overlay.hpp>
@@ -225,7 +226,9 @@ static void PrintUsage(const char* prog) {
     printf("Display options:\n");
     printf("  --script <path>        Path to .ks script file\n");
     printf("  --title <name>         Window title (default: \"KoiloEngine\")\n");
-    printf("  --software             Force software rendering\n");
+    printf("  --vulkan               Prefer Vulkan backend\n");
+    printf("  --opengl               Prefer OpenGL backend\n");
+    printf("  --software             Force software rendering (CPU only)\n");
     printf("  --vsync                Enable vertical sync\n");
     printf("  --uncapped             Disable FPS cap\n");
     printf("  --profiler             Enable performance profiler\n");
@@ -233,6 +236,10 @@ static void PrintUsage(const char* prog) {
     printf("  --modules-dir <path>   Pre-load .so modules from directory\n");
     printf("  --console              Start TCP console alongside display\n");
     printf("  --help                 Show this help message\n");
+    printf("\nGPU selection (hybrid laptops):\n");
+    printf("  DRI_PRIME=1 %s ...                   Use discrete GPU (Mesa)\n", prog);
+    printf("  __NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia %s ...\n", prog);
+    printf("                                         Use discrete GPU (NVIDIA)\n");
 }
 
 // -- Main ------------------------------------------------------------
@@ -293,13 +300,16 @@ int main(int argc, char** argv) {
     PrintBanner();
     KL_LOG("koilo", "TCP console server on localhost:9090");
 
+    koilo::LineEditor editor;
+    auto& session = inst.console->Session();
+    editor.SetHistory(&session.History());
+    editor.SetCompleter([&session](const std::string& input) {
+        return session.Complete(input);
+    });
+
     std::string line;
     while (g_running) {
-        printf("koilo> ");
-        fflush(stdout);
-
-        if (!std::getline(std::cin, line)) {
-            printf("\n");
+        if (!editor.ReadLine("koilo> ", line)) {
             break;
         }
 

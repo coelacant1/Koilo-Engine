@@ -248,7 +248,10 @@ void RenderPipeline::Shutdown() {
     }
 
     KL_LOG("RenderPipeline", "Shutdown: releasing registry...");
-    // Release owned registry
+    // Clear static registry pointer before destroying it so late-running
+    // KSLMaterial destructors (from script engine cleanup) won't call into
+    // freed KSLModule objects.
+    KSLMaterial::SetRegistry(nullptr);
     ownedRegistry_.reset();
 
     initialized_ = false;
@@ -894,7 +897,16 @@ void RenderPipeline::RenderMeshes(Scene* scene,
     unsigned int meshCount = scene->GetMeshCount();
     Mesh**       meshes    = scene->GetMeshes();
 
-    RHIPipeline lastPipeline{};
+    // -- Build draw list with pre-resolved pipelines --------------------
+    struct DrawEntry {
+        unsigned int meshIndex;
+        RHIPipeline  pipeline;
+        const MaterialBinding* binding;
+        KSLMaterial* kmat;
+    };
+    static std::vector<DrawEntry> drawList;
+    drawList.clear();
+    drawList.reserve(meshCount);
 
     for (unsigned int i = 0; i < meshCount; ++i) {
         Mesh* mesh = meshes[i];
@@ -906,7 +918,6 @@ void RenderPipeline::RenderMeshes(Scene* scene,
         IMaterial* material = mesh->GetMaterial();
         if (!material) continue;
 
-        // Resolve pipeline via MaterialBinder
         KSLMaterial* kmat = material->IsKSL()
             ? static_cast<KSLMaterial*>(material) : nullptr;
 
@@ -925,44 +936,50 @@ void RenderPipeline::RenderMeshes(Scene* scene,
         }
         if (!pipeline.IsValid()) continue;
 
-        // Bind pipeline (cached to minimize state changes)
-        if (pipeline != lastPipeline) {
-            device->BindPipeline(pipeline);
-            lastPipeline = pipeline;
+        drawList.push_back({i, pipeline, binding, kmat});
+    }
+
+    // -- Sort by (pipeline, material) to minimize state changes ---------
+    std::sort(drawList.begin(), drawList.end(),
+        [](const DrawEntry& a, const DrawEntry& b) {
+            if (a.pipeline.id != b.pipeline.id)
+                return a.pipeline.id < b.pipeline.id;
+            return reinterpret_cast<uintptr_t>(a.kmat)
+                 < reinterpret_cast<uintptr_t>(b.kmat);
+        });
+
+    // -- Render sorted draws --------------------------------------------
+    RHIPipeline lastPipeline{};
+    const KSLMaterial* lastMat = nullptr;
+
+    for (const auto& entry : drawList) {
+        // Bind pipeline (skip if unchanged)
+        if (entry.pipeline != lastPipeline) {
+            device->BindPipeline(entry.pipeline);
+            lastPipeline = entry.pipeline;
         }
 
-        // Upload per-mesh transform
-        // NOTE: Vertex data is already in world space (baked by
-        // Mesh::UpdateTransform on the CPU side).  We use an identity
-        // model matrix so the GPU doesn't apply the transform twice.
-        {
-            TransformUBO ubo{};
-            for (int i = 0; i < 4; ++i) ubo.model[i * 4 + i] = 1.0f;
-            std::memcpy(ubo.view, view, 64);
-            std::memcpy(ubo.projection, proj, 64);
-            std::memcpy(ubo.cameraPos, cameraPos, 16);
-            device->UpdateBuffer(transformUBO_, &ubo, sizeof(ubo));
-            device->BindUniformBuffer(transformUBO_, 0, 0);
-        }
+        // Bind material UBO + texture (skip if same material as previous)
+        if (entry.kmat != lastMat) {
+            if (entry.binding && entry.binding->valid) {
+                device->BindUniformBuffer(entry.binding->uniformBuffer, 1, 0,
+                                          0, entry.binding->uniformSize);
+            }
 
-        // Bind material UBO (set 1)
-        if (binding && binding->valid) {
-            device->BindUniformBuffer(binding->uniformBuffer, 1, 0,
-                                      0, binding->uniformSize);
-        }
-
-        // Bind texture (set 2)
-        if (kmat && kmat->TextureCount() > 0) {
-            Texture* tex = kmat->GetTexture(0);
-            if (tex) {
-                RHITexture gpuTex = textureCache_->GetOrUpload(tex);
-                if (gpuTex.IsValid()) {
-                    device->BindTexture(gpuTex, 2, 0);
+            if (entry.kmat && entry.kmat->TextureCount() > 0) {
+                Texture* tex = entry.kmat->GetTexture(0);
+                if (tex) {
+                    RHITexture gpuTex = textureCache_->GetOrUpload(tex);
+                    if (gpuTex.IsValid()) {
+                        device->BindTexture(gpuTex, 2, 0);
+                    }
                 }
             }
+            lastMat = entry.kmat;
         }
 
         // Upload mesh and draw
+        Mesh* mesh = meshes[entry.meshIndex];
         const CachedMesh* cached = meshCache_->GetOrUpload(mesh);
         if (cached && cached->vertexBuffer.IsValid()) {
             device->BindVertexBuffer(cached->vertexBuffer);
