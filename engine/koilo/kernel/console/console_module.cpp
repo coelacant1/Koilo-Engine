@@ -284,7 +284,7 @@ void ConsoleModule::RegisterBuiltinCommands() {
     commands_.Register({"alias", "alias [name] [command...]", "Create/list/remove command aliases",
         [this](KoiloKernel&, const std::vector<std::string>& args) -> ConsoleResult {
             if (args.empty()) {
-                auto& aliases = session_->Aliases();
+                auto& aliases = commands_.Aliases();
                 if (aliases.empty()) return ConsoleResult::Ok("No aliases defined.");
                 std::ostringstream ss;
                 for (auto& [name, expansion] : aliases) {
@@ -293,7 +293,7 @@ void ConsoleModule::RegisterBuiltinCommands() {
                 return ConsoleResult::Ok(ss.str());
             }
             if (args.size() == 1) {
-                session_->RemoveAlias(args[0]);
+                commands_.RemoveAlias(args[0]);
                 return ConsoleResult::Ok("Alias '" + args[0] + "' removed.");
             }
             std::string expansion;
@@ -301,7 +301,7 @@ void ConsoleModule::RegisterBuiltinCommands() {
                 if (i > 1) expansion += ' ';
                 expansion += args[i];
             }
-            session_->SetAlias(args[0], expansion);
+            commands_.SetAlias(args[0], expansion);
             return ConsoleResult::Ok("Alias '" + args[0] + "' = '" + expansion + "'");
         }, nullptr
     });

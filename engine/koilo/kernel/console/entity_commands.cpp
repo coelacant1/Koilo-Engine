@@ -153,6 +153,14 @@ void RegisterEntityCommands(CommandRegistry& registry) {
             if (!filter.empty()) header << " matching '" << filter << "'";
             header << " (" << count << "/" << total << "):\n";
 
+            if (count == 0) {
+                auto* scene = GetScene(kernel);
+                if (scene && scene->GetMeshCount() > 0) {
+                    header << "  (no ECS entities -- scene has "
+                           << scene->GetMeshCount() << " meshes via script; use scene.hierarchy)\n";
+                }
+            }
+
             return ConsoleResult::Ok(header.str() + ss.str(), jsonSs.str());
         }, nullptr
     });
@@ -445,36 +453,27 @@ void RegisterEntityCommands(CommandRegistry& registry) {
     // scene.hierarchy - display scene graph tree
     // ---------------------------------------------------------------
     registry.Register({"scene.hierarchy", "scene.hierarchy",
-        "Display the scene graph node hierarchy",
+        "Display the scene graph node hierarchy and mesh list",
         [](KoiloKernel& kernel, const std::vector<std::string>&) -> ConsoleResult {
             auto* scene = GetScene(kernel);
             if (!scene)
                 return ConsoleResult::Error("Scene not available");
 
+            unsigned int meshCount = scene->GetMeshCount();
+            size_t nodeCount = scene->GetNodeCount();
+
+            if (nodeCount == 0 && meshCount == 0)
+                return ConsoleResult::Ok("Scene is empty (0 nodes, 0 meshes)");
+
             std::ostringstream ss;
             std::ostringstream jsonSs;
-            jsonSs << "[";
+            jsonSs << "{";
             int count = 0;
 
-            // Walk all owned nodes - find root nodes (no parent)
-            size_t nodeCount = scene->GetNodeCount();
-            if (nodeCount == 0)
-                return ConsoleResult::Ok("Scene is empty (0 nodes)");
-
-            // Iterate scene nodes by trying names from the internal map
-            // Scene exposes Find() and GetNodeCount(), and CreateObject()
-            // We need to walk the owned nodes - they're accessible via the
-            // flat mesh list and node lookup
-
-            // Since Scene doesn't expose direct node iteration, we use
-            // the mesh list + node lookup as a proxy. But actually, we
-            // need the internal ownedNodes_. Let's use the scene's flat
-            // mesh list to find node names, then traverse from there.
-
-            // Better approach: use ScriptEntityManager to find all entities
-            // with scene nodes, then show their hierarchy
+            // Walk scene graph nodes (entity-attached roots)
             auto* entities = GetEntities(kernel);
-            if (entities) {
+            if (entities && nodeCount > 0) {
+                jsonSs << "\"nodes\":[";
                 int maxId = entities->GetCount() + 100;
                 for (int i = 0; i < maxId; ++i) {
                     Entity ent{static_cast<EntityID>(i)};
@@ -482,27 +481,51 @@ void RegisterEntityCommands(CommandRegistry& registry) {
 
                     SceneNode* node = entities->GetNode(ent);
                     if (!node) continue;
-                    // Only process root nodes (no parent or parent not entity-owned)
                     if (node->GetParent()) continue;
 
                     WalkHierarchy(node, 0, ss, jsonSs, count);
                 }
+                jsonSs << "]";
             }
 
-            // Also show nodes found via Scene directly
-            // If scene exposes mesh-attached nodes we haven't seen
-            for (unsigned int m = 0; m < scene->GetMeshCount(); ++m) {
-                Mesh* mesh = scene->GetMesh(m);
-                if (!mesh) continue;
-                // Meshes in the scene flat list but we've already shown
-                // entity-attached nodes. This catches orphan meshes.
+            // List flat mesh array (always present for script-loaded scenes)
+            if (meshCount > 0) {
+                if (count > 0) ss << "\n";
+                ss << "Meshes (" << meshCount << "):\n";
+                if (count > 0) jsonSs << ",";
+                jsonSs << "\"meshes\":[";
+                uint32_t totalTris = 0;
+                for (unsigned int m = 0; m < meshCount; ++m) {
+                    Mesh* mesh = scene->GetMesh(m);
+                    if (!mesh) continue;
+
+                    ITriangleGroup* tg = mesh->GetTriangleGroup();
+                    uint32_t triCount = tg ? tg->GetTriangleCount() : 0;
+                    totalTris += triCount;
+                    IMaterial* mat = mesh->GetMaterial();
+                    Transform* xf = mesh->GetTransform();
+                    Vector3D pos = xf ? xf->GetPosition() : Vector3D(0, 0, 0);
+
+                    ss << "  [" << m << "] "
+                       << triCount << " tris"
+                       << "  mat=" << (mat ? (mat->IsKSL() ? "KSL" : "basic") : "none")
+                       << "  pos=" << FormatVec(pos)
+                       << (mesh->IsEnabled() ? "" : "  (disabled)") << "\n";
+
+                    if (m > 0) jsonSs << ",";
+                    jsonSs << "{\"index\":" << m
+                           << ",\"triangles\":" << triCount
+                           << ",\"enabled\":" << (mesh->IsEnabled() ? "true" : "false")
+                           << ",\"position\":[" << pos.X << "," << pos.Y << "," << pos.Z << "]}";
+                }
+                jsonSs << "]";
             }
 
-            jsonSs << "]";
+            jsonSs << "}";
 
             std::ostringstream header;
-            header << "Scene hierarchy (" << count << " nodes, "
-                   << scene->GetMeshCount() << " meshes, "
+            header << "Scene (" << count << " nodes, "
+                   << meshCount << " meshes, "
                    << scene->GetTotalTriangleCount() << " triangles):\n";
 
             return ConsoleResult::Ok(header.str() + ss.str(), jsonSs.str());
@@ -654,30 +677,32 @@ void RegisterEntityCommands(CommandRegistry& registry) {
             if (system(mkdirCmd.c_str()) != 0)
                 return ConsoleResult::Error("Failed to create directory: " + dir);
 
-            // Save entities
+            // Save entities (always write, even if empty)
             auto* entities = GetEntities(kernel);
-            if (entities) {
+            {
                 std::ostringstream jsonSs;
                 jsonSs << "[\n";
-                auto allEntities = entities->GetAllEntities();
-                int count = 0;
-                for (auto& ent : allEntities) {
-                    if (count > 0) jsonSs << ",\n";
-                    EntityID id = ent.GetID();
-                    std::string tag = entities->GetTag(ent);
-                    Vector3D pos = entities->GetPosition(ent);
-                    Quaternion rot = entities->GetRotation(ent);
-                    Vector3D scl = entities->GetScale(ent);
-                    Vector3D vel = entities->GetVelocity(ent);
+                if (entities) {
+                    auto allEntities = entities->GetAllEntities();
+                    int count = 0;
+                    for (auto& ent : allEntities) {
+                        if (count > 0) jsonSs << ",\n";
+                        EntityID id = ent.GetID();
+                        std::string tag = entities->GetTag(ent);
+                        Vector3D pos = entities->GetPosition(ent);
+                        Quaternion rot = entities->GetRotation(ent);
+                        Vector3D scl = entities->GetScale(ent);
+                        Vector3D vel = entities->GetVelocity(ent);
 
-                    jsonSs << "  {\"id\":" << id
-                           << ",\"tag\":\"" << tag << "\""
-                           << ",\"pos\":[" << pos.X << "," << pos.Y << "," << pos.Z << "]"
-                           << ",\"rot\":[" << rot.W << "," << rot.X << "," << rot.Y << "," << rot.Z << "]"
-                           << ",\"scale\":[" << scl.X << "," << scl.Y << "," << scl.Z << "]"
-                           << ",\"vel\":[" << vel.X << "," << vel.Y << "," << vel.Z << "]"
-                           << "}";
-                    ++count;
+                        jsonSs << "  {\"id\":" << id
+                               << ",\"tag\":\"" << tag << "\""
+                               << ",\"pos\":[" << pos.X << "," << pos.Y << "," << pos.Z << "]"
+                               << ",\"rot\":[" << rot.W << "," << rot.X << "," << rot.Y << "," << rot.Z << "]"
+                               << ",\"scale\":[" << scl.X << "," << scl.Y << "," << scl.Z << "]"
+                               << ",\"vel\":[" << vel.X << "," << vel.Y << "," << vel.Z << "]"
+                               << "}";
+                        ++count;
+                    }
                 }
                 jsonSs << "\n]";
 
@@ -827,12 +852,13 @@ void RegisterEntityCommands(CommandRegistry& registry) {
                 if (entry->d_type != DT_DIR) continue;
 
                 std::string name = entry->d_name;
-                std::string entPath = statesDir + "/" + name + "/entities.json";
 
-                // Check if it has entities.json
-                std::ifstream test(entPath);
-                if (!test.is_open()) continue;
-                test.close();
+                // Valid snapshot if it has entities.json OR cvars.cfg
+                std::string entPath = statesDir + "/" + name + "/entities.json";
+                std::string cvarPath = statesDir + "/" + name + "/cvars.cfg";
+                std::ifstream testEnt(entPath);
+                std::ifstream testCvar(cvarPath);
+                if (!testEnt.is_open() && !testCvar.is_open()) continue;
 
                 ss << "  " << name << "\n";
                 if (count > 0) jsonSs << ",";

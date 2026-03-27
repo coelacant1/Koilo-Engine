@@ -57,4 +57,17 @@ std::vector<std::string> CommandRegistry::ListCommands() const {
     return names;
 }
 
+void CommandRegistry::SetAlias(const std::string& name, const std::string& expansion) {
+    aliases_[name] = expansion;
+}
+
+void CommandRegistry::RemoveAlias(const std::string& name) {
+    aliases_.erase(name);
+}
+
+std::string CommandRegistry::ResolveAlias(const std::string& name) const {
+    auto it = aliases_.find(name);
+    return it != aliases_.end() ? it->second : name;
+}
+
 } // namespace koilo

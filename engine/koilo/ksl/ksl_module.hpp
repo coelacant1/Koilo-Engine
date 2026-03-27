@@ -41,6 +41,19 @@ public:
     /// Retained GLSL vertex shader source (available on all platforms).
     const std::string& GetGLSLVertexSource() const { return glslVertSource_; }
 
+    /// Retain GLSL source strings without compiling a GL program.
+    /// Used when the uber-shader handles legacy GL rendering but
+    /// per-module source is still needed for RHI shader creation.
+    bool RetainGLSLSource(const std::string& path, const std::string& vertexSrc) {
+        std::ifstream file(path);
+        if (!file.is_open()) return false;
+        std::stringstream ss;
+        ss << file.rdbuf();
+        glslFragSource_ = ss.str();
+        glslVertSource_ = vertexSrc;
+        return !glslFragSource_.empty();
+    }
+
     // Load .kso (ELF) for CPU shading - unified across all platforms
     bool LoadKSO(const std::string& path, const KSLSymbolTable& symbols) {
         // Read file into memory

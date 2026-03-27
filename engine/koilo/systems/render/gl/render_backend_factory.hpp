@@ -19,6 +19,8 @@
 
 namespace koilo {
 
+class OpenGLBackend;
+
 /**
  * @brief Create the best available render backend.
  *
@@ -30,20 +32,24 @@ namespace koilo {
 std::unique_ptr<IRenderBackend> CreateBestRenderBackend();
 
 /**
- * @brief Try to create the GPU render backend.
- *
- * @return OpenGLRenderBackend if GL context available and init succeeds,
- *         nullptr otherwise.
+ * @brief Try to create the GPU render backend (legacy path, no display pointer).
  */
 std::unique_ptr<IRenderBackend> TryCreateGPURenderBackend();
 
 /**
+ * @brief Try to create an OpenGL render backend.
+ *
+ * Uses unified RHI pipeline (OpenGLRHIDevice + RenderPipeline) by default.
+ * Falls back to legacy OpenGLRenderBackend if r.legacy_backend is set or
+ * if the unified pipeline fails.
+ *
+ * @param display Pointer to an initialized OpenGLBackend display.
+ * @return Initialized render backend, or nullptr on failure.
+ */
+std::unique_ptr<IRenderBackend> TryCreateOpenGLRenderBackend(OpenGLBackend* display);
+
+/**
  * @brief Create a software render backend with KSL CPU shading.
- *
- * Initializes the KSL registry for CPU-only rendering and sets it
- * on KSLMaterial for deferred resolution.
- *
- * @return Initialized software render backend (never null).
  */
 std::unique_ptr<IRenderBackend> CreateBestSoftwareBackend();
 

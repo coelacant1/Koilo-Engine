@@ -106,6 +106,10 @@ public:
                     mod->SetUberProgram(uberProgram_, it->second);
                     hasGPU = true;
                 }
+                // Also retain per-module GLSL source for RHI pipeline
+                if (!mod->HasGLSLSource() && fs::exists(glslPath) && !vertexShaderSrc.empty()) {
+                    mod->RetainGLSLSource(glslPath, vertexShaderSrc);
+                }
             } else if (fs::exists(glslPath) && !vertexShaderSrc.empty()) {
                 hasGPU = mod->LoadGLSL(glslPath, vertexShaderSrc);
             }
