@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.3.9] - 2026-3-27
+OpenGL RHI rendering fixes -- depth buffer, material uniform bridging, and vertex attribute state.
+
+### Fixed
+- OpenGL RHI depth buffer never clearing between frames
+  - Blit and overlay pipelines set `glDepthMask(GL_FALSE)`, which persisted into the next frame's `BeginRenderPass`. OpenGL's `glClear(GL_DEPTH_BUFFER_BIT)` respects the depth mask, so the clear was silently a no-op.
+  - Symptoms: objects invisible when camera was still, partially visible only during motion, progressively disappearing over time
+  - Fix: force `glDepthMask(GL_TRUE)` and `glColorMask(GL_TRUE,...)` before `glClear` in `BeginRenderPass`
+- OpenGL RHI material uniforms receiving wrong values (black textures, wrong material colors)
+  - `BridgeMaterialUniforms` enumerated uniforms via `glGetActiveUniform` and assumed they matched the std140 buffer's declaration-order packing. Mesa returns uniforms in alphabetical order, causing values like `u_frameW` to receive `u_hueAngle`'s data.
+  - Fix: pipeline now carries KSL parameter metadata (name + type in declaration order). Bridge looks up each uniform by name (`"u_" + paramName`) and reads from the correct std140 offset. Fallback sort-by-location path retained for pipelines without metadata.
+- OpenGL RHI vertex attribute state leaking between pipeline switches
+  - `SetupVertexAttributes` enabled locations for the current pipeline but never disabled locations from the previous one. Stale attributes from a 3-attribute scene pipeline could bleed into a 2-attribute blit pipeline.
+  - Fix: disable all attribute slots (0-7) before enabling the current pipeline's attributes
+
+### Changed
+- `RHIPipelineDesc` gains optional `materialParams[]` array for passing KSL parameter names and types to the RHI backend
+- `GetOrCreateScenePipeline` populates material param metadata from the KSL registry when available
+- OpenGL `PipelineSlot` stores material parameter names for name-based uniform bridging
+
 ## [0.3.8] - 2026-3-21
 Vulkan shutdown crash fix, software display path fix, console improvements, and OpenGL performance.
 

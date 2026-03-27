@@ -3,21 +3,27 @@
  * @file render_backend_factory.cpp
  * @brief Factory for creating the best available render backend.
  *
- * Supports three paths:
+ * Supports five paths:
  *  1. Vulkan unified pipeline (VulkanRHIDevice + RenderPipeline)
  *  2. Legacy Vulkan backend (VulkanRenderBackend, opt-in via r.legacy_backend)
- *  3. OpenGL GPU backend -> Software fallback
+ *  3. OpenGL unified pipeline (OpenGLRHIDevice + RenderPipeline)
+ *  4. Legacy OpenGL backend (OpenGLRenderBackend, opt-in via r.legacy_backend)
+ *  5. Software fallback
  */
 
 #include <koilo/systems/render/gl/render_backend_factory.hpp>
 #ifdef KL_HAVE_OPENGL_BACKEND
 #include <koilo/systems/render/gl/opengl_render_backend.hpp>
+#include <koilo/systems/render/rhi/opengl/opengl_rhi_device.hpp>
+#include <koilo/systems/render/pipeline/render_pipeline.hpp>
+#include <koilo/systems/display/backends/gpu/openglbackend.hpp>
 #endif
 #include <koilo/systems/render/gl/software_render_backend.hpp>
 #include <koilo/systems/render/material/implementations/kslmaterial.hpp>
 #include <koilo/systems/render/render_cvars.hpp>
 #include <koilo/ksl/ksl_symbols.hpp>
 #include <koilo/ksl/ksl_registry.hpp>
+#include <koilo/ksl/ksl_module.hpp>
 #include <koilo/kernel/logging/log.hpp>
 #include <iostream>
 #include <fstream>
@@ -33,8 +39,246 @@ namespace koilo {
 // KSL registry for CPU-only (software) rendering
 static ksl::KSLRegistry s_cpuOnlyRegistry;
 
+#ifdef KL_HAVE_OPENGL_BACKEND
+
+// -- Built-in GLSL sources for the unified OpenGL pipeline ---------------
+
+static const char* s_glSceneVertSrc = R"(
+#version 330 core
+layout(location = 0) in vec3 a_position;
+layout(location = 1) in vec3 a_normal;
+layout(location = 2) in vec2 a_uv;
+
+uniform mat4 u_model;
+uniform mat4 u_view;
+uniform mat4 u_projection;
+uniform vec3 u_cameraPos;
+
+out vec3 v_position;
+out vec3 v_normal;
+out vec2 v_uv;
+out vec3 v_viewDir;
+
+void main() {
+    vec4 worldPos = u_model * vec4(a_position, 1.0);
+    v_position = worldPos.xyz;
+    v_normal = normalize(mat3(u_model) * a_normal);
+    v_uv = a_uv;
+    v_viewDir = normalize(worldPos.xyz - u_cameraPos);
+    gl_Position = u_projection * u_view * worldPos;
+}
+)";
+
+static const char* s_glPinkErrorFragSrc = R"(
+#version 330 core
+out vec4 fragColor;
+void main() {
+    fragColor = vec4(1.0, 0.0, 0.78, 1.0);
+}
+)";
+
+static const char* s_glLineVertSrc = R"(
+#version 330 core
+layout(location = 0) in vec3 a_position;
+layout(location = 1) in vec4 a_color;
+uniform mat4 u_view;
+uniform mat4 u_projection;
+out vec4 v_color;
+void main() {
+    v_color = a_color;
+    gl_Position = u_projection * u_view * vec4(a_position, 1.0);
+}
+)";
+
+static const char* s_glLineFragSrc = R"(
+#version 330 core
+in vec4 v_color;
+out vec4 FragColor;
+void main() {
+    FragColor = v_color;
+}
+)";
+
+static const char* s_glOverlayVertSrc = R"(
+#version 330 core
+layout(location = 0) in vec2 a_position;
+layout(location = 1) in vec2 a_uv;
+out vec2 v_uv;
+void main() {
+    v_uv = a_uv;
+    gl_Position = vec4(a_position, 0.0, 1.0);
+}
+)";
+
+static const char* s_glOverlayFragSrc = R"(
+#version 330 core
+in vec2 v_uv;
+uniform sampler2D u_texture;
+out vec4 FragColor;
+void main() {
+    FragColor = texture(u_texture, vec2(v_uv.x, 1.0 - v_uv.y));
+}
+)";
+
+static const char* s_glBlitFragSrc = R"(
+#version 330 core
+in vec2 v_uv;
+uniform sampler2D u_texture;
+out vec4 FragColor;
+void main() {
+    FragColor = texture(u_texture, v_uv);
+}
+)";
+
+/// @brief Create a unified RenderPipeline backed by an OpenGLRHIDevice.
+static std::unique_ptr<IRenderBackend> TryCreateOpenGLRHIPipeline(OpenGLBackend* display) {
+    // 1. Create and initialize the RHI device
+    auto rhiDevice = std::make_unique<rhi::OpenGLRHIDevice>(display);
+    if (!rhiDevice->Initialize()) {
+        KL_ERR("RenderBackendFactory", "Failed to initialize OpenGL RHI device");
+        return nullptr;
+    }
+
+    // 2. Create a KSL registry and scan for GLSL shaders
+    auto registry = std::make_unique<ksl::KSLRegistry>();
+    ksl::KSLSymbolTable symbols;
+    symbols.RegisterAll();
+
+    std::string vertSrc(s_glSceneVertSrc);
+    std::vector<std::string> searchPaths = {"shaders", "../shaders", "build/shaders"};
+    int kslCount = 0;
+    for (const auto& path : searchPaths) {
+        kslCount = registry->ScanDirectory(path, vertSrc, &symbols);
+        if (kslCount > 0) {
+            KL_LOG("RenderBackendFactory", "Loaded %d KSL GLSL shaders from %s/",
+                   kslCount, path.c_str());
+            break;
+        }
+    }
+
+    if (kslCount == 0)
+        KL_WARN("RenderBackendFactory", "No KSL shaders found for OpenGL RHI pipeline");
+
+    KSLMaterial::SetRegistry(registry.get());
+
+    // 3. Build the shader resolver: resolves GLSL source by shader name
+    std::string sceneVert(s_glSceneVertSrc);
+    std::string pinkFrag(s_glPinkErrorFragSrc);
+    std::string lineVert(s_glLineVertSrc);
+    std::string lineFrag(s_glLineFragSrc);
+    std::string overlayVert(s_glOverlayVertSrc);
+    std::string overlayFrag(s_glOverlayFragSrc);
+    std::string blitFrag(s_glBlitFragSrc);
+
+    ksl::KSLRegistry* regPtr = registry.get();
+    rhi::ShaderResolver resolver = [regPtr,
+                                    sceneVert, pinkFrag,
+                                    lineVert, lineFrag,
+                                    overlayVert, overlayFrag, blitFrag](
+                                       const std::string& name) -> rhi::ShaderData {
+        rhi::ShaderData sd;
+
+        if (name == "__blit__") {
+            sd.vertexCode     = overlayVert.data();
+            sd.vertexCodeSize = overlayVert.size();
+            sd.fragCode       = blitFrag.data();
+            sd.fragCodeSize   = blitFrag.size();
+        } else if (name == "__overlay__") {
+            sd.vertexCode     = overlayVert.data();
+            sd.vertexCodeSize = overlayVert.size();
+            sd.fragCode       = overlayFrag.data();
+            sd.fragCodeSize   = overlayFrag.size();
+        } else if (name == "__debug_line__") {
+            sd.vertexCode     = lineVert.data();
+            sd.vertexCodeSize = lineVert.size();
+            sd.fragCode       = lineFrag.data();
+            sd.fragCodeSize   = lineFrag.size();
+        } else if (name == "__pink_error__") {
+            sd.vertexCode     = sceneVert.data();
+            sd.vertexCodeSize = sceneVert.size();
+            sd.fragCode       = pinkFrag.data();
+            sd.fragCodeSize   = pinkFrag.size();
+        } else {
+            // Scene shader: use KSL registry GLSL sources
+            ksl::KSLModule* mod = regPtr->GetModule(name);
+            if (mod && mod->HasGLSLSource()) {
+                const auto& vs = mod->GetGLSLVertexSource();
+                const auto& fs = mod->GetGLSLFragmentSource();
+                sd.vertexCode     = vs.data();
+                sd.vertexCodeSize = vs.size();
+                sd.fragCode       = fs.data();
+                sd.fragCodeSize   = fs.size();
+            } else {
+                // Fallback to generic scene vertex + pink error
+                sd.vertexCode     = sceneVert.data();
+                sd.vertexCodeSize = sceneVert.size();
+                sd.fragCode       = pinkFrag.data();
+                sd.fragCodeSize   = pinkFrag.size();
+            }
+        }
+        return sd;
+    };
+
+    // 4. Configure and initialize the unified pipeline
+    auto pipeline = std::make_unique<rhi::RenderPipeline>();
+
+    rhi::RenderPipelineConfig cfg;
+    cfg.device           = rhiDevice.get();
+    cfg.shaderRegistry   = registry.get();
+    cfg.shaderResolver   = std::move(resolver);
+    cfg.vulkanDepthRemap = false;     // OpenGL uses [-1,1] depth range
+    cfg.initialWidth     = 1920;
+    cfg.initialHeight    = 1080;
+    pipeline->Configure(cfg);
+
+    pipeline->OwnDevice(std::move(rhiDevice));
+    pipeline->OwnRegistry(std::move(registry));
+
+    if (!pipeline->Initialize()) {
+        KL_ERR("RenderBackendFactory", "Failed to initialize OpenGL RHI RenderPipeline");
+        return nullptr;
+    }
+
+    KL_LOG("RenderBackendFactory", "OpenGL render backend active (RHI Pipeline)");
+    return pipeline;
+}
+
+#endif // KL_HAVE_OPENGL_BACKEND
+
+std::unique_ptr<IRenderBackend> TryCreateOpenGLRenderBackend(OpenGLBackend* display) {
+#ifdef KL_HAVE_OPENGL_BACKEND
+    if (!display) return nullptr;
+
+    // Allow opt-in to legacy backend via CVar
+    if (cvar_r_legacy_backend.Get()) {
+        auto gl = std::make_unique<OpenGLRenderBackend>();
+        if (gl->Initialize()) {
+            KL_LOG("RenderBackendFactory", "OpenGL render backend active (legacy)");
+            return gl;
+        }
+        return nullptr;
+    }
+
+    // Default: unified RHI pipeline
+    auto pipeline = TryCreateOpenGLRHIPipeline(display);
+    if (pipeline) return pipeline;
+
+    // Fallback to legacy backend if unified pipeline fails
+    KL_WARN("RenderBackendFactory", "OpenGL RHI pipeline failed, falling back to legacy backend");
+    auto gl = std::make_unique<OpenGLRenderBackend>();
+    if (gl->Initialize()) {
+        KL_LOG("RenderBackendFactory", "OpenGL render backend active (legacy fallback)");
+        return gl;
+    }
+#else
+    (void)display;
+#endif
+    return nullptr;
+}
+
 std::unique_ptr<IRenderBackend> TryCreateGPURenderBackend() {
 #ifdef KL_HAVE_OPENGL_BACKEND
+    // Legacy path for callers that don't pass the display pointer
     auto gpu = std::make_unique<OpenGLRenderBackend>();
     if (gpu->Initialize()) {
         KL_LOG("RenderBackendFactory", "GPU render backend active (%s)",

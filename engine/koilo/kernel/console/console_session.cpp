@@ -103,8 +103,10 @@ std::string ConsoleSession::FormatResult(const ConsoleResult& result) const {
 }
 
 std::string ConsoleSession::ResolveAlias(const std::string& command) const {
+    // Check session-local aliases first, then global registry aliases
     auto it = aliases_.find(command);
-    return it != aliases_.end() ? it->second : command;
+    if (it != aliases_.end()) return it->second;
+    return registry_.ResolveAlias(command);
 }
 
 std::vector<std::string> ConsoleSession::Tokenize(const std::string& input) {

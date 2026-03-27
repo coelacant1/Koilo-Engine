@@ -665,6 +665,21 @@ RHIPipeline RenderPipeline::GetOrCreateScenePipeline(const std::string& shaderNa
     desc.blend       = {};  // No blending for opaque scene geometry
     desc.debugName   = shaderName.c_str();
 
+    // Populate material parameter metadata for OpenGL name-based bridging.
+    if (config_.shaderRegistry) {
+        ksl::KSLModule* mod = config_.shaderRegistry->GetModule(shaderName);
+        if (mod) {
+            ksl::ParamList params = mod->GetParams();
+            uint32_t count = static_cast<uint32_t>(
+                std::min(params.count, static_cast<int>(RHIPipelineDesc::kMaxMaterialParams)));
+            for (uint32_t i = 0; i < count; ++i) {
+                desc.materialParams[i].name = params.decls[i].name;
+                desc.materialParams[i].type = static_cast<uint8_t>(params.decls[i].type);
+            }
+            desc.materialParamCount = count;
+        }
+    }
+
     RHIPipeline pipeline = device->CreatePipeline(desc);
 
     // Cache even if invalid (avoid repeated creation attempts)

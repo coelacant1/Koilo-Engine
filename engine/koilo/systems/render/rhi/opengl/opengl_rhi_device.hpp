@@ -21,6 +21,7 @@
 #endif
 
 #include <vector>
+#include <string>
 #include <cstdint>
 #include <array>
 
@@ -150,6 +151,7 @@ private:
         GLsizeiptr size     = 0;
         bool   hostVisible  = false;
         void*  mapped       = nullptr;
+        std::vector<uint8_t> shadow; // CPU shadow for uniform bridging
     };
 
     struct TextureSlot {
@@ -176,6 +178,13 @@ private:
         RHIVertexAttr       attrs[RHIPipelineDesc::kMaxVertexAttrs] = {};
         uint32_t            attrCount   = 0;
         uint32_t            vertexStride = 0;
+
+        // Material param names (declaration order) for name-based bridging.
+        struct MatParam {
+            std::string name;
+            uint8_t     type = 0; // ksl::ParamType
+        };
+        std::vector<MatParam> materialParams;
     };
 
     struct RenderPassSlot {
@@ -204,6 +213,14 @@ private:
     void ApplyDepthStencilState(const RHIDepthStencilState& ds);
     void ApplyBlendState(const RHIBlendState& bs);
     void SetupVertexAttributes();
+
+    /// Bridge UBO data to individual glUniform* calls for GLSL shaders
+    /// that use old-style `uniform mat4 u_model;` instead of UBO blocks.
+    void BridgeTransformUniforms(GLuint program, const uint8_t* data, size_t len);
+    void BridgeSceneUniforms(GLuint program, const uint8_t* data, size_t len);
+    void BridgeLightUniforms(GLuint program, const uint8_t* data, size_t len);
+    void BridgeAudioUniforms(GLuint program, const uint8_t* data, size_t len);
+    void BridgeMaterialUniforms(GLuint program, const uint8_t* data, size_t len);
 
     // -- State -------------------------------------------------------
 
@@ -234,6 +251,18 @@ private:
     bool     indexIs32Bit_     = true;
     uint64_t boundIBOffset_    = 0;
     bool     vertexStateDirty_ = true;
+
+    // Tracked UBO bindings for re-applying bridge uniforms on program switch.
+    // Key: (set << 16) | binding. Value: buffer handle id.
+    static constexpr int kMaxTrackedBindings = 8;
+    struct TrackedBinding {
+        uint32_t setBinding = 0;  // (set << 16) | binding
+        uint32_t bufferId   = 0;
+        size_t   offset     = 0;
+        size_t   range      = 0;
+        bool     active     = false;
+    };
+    TrackedBinding trackedBindings_[kMaxTrackedBindings];
 };
 
 } // namespace koilo::rhi

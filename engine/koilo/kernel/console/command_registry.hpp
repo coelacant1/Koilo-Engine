@@ -67,8 +67,15 @@ public:
     /// Get all command definitions (for help listing).
     const std::unordered_map<std::string, CommandDef>& All() const { return commands_; }
 
+    /// Global alias management (shared across all sessions).
+    void SetAlias(const std::string& name, const std::string& expansion);
+    void RemoveAlias(const std::string& name);
+    std::string ResolveAlias(const std::string& name) const;
+    const std::unordered_map<std::string, std::string>& Aliases() const { return aliases_; }
+
 private:
     std::unordered_map<std::string, CommandDef> commands_;
+    std::unordered_map<std::string, std::string> aliases_;
 
     KL_BEGIN_FIELDS(CommandRegistry)
         /* No reflected fields. */

@@ -179,9 +179,11 @@ private:
         }
 #endif
 #ifdef KL_HAVE_OPENGL_BACKEND
+        OpenGLBackend* glDisplay = nullptr;
         if (!displayOwner && !forceSoftware) {
             auto gl = std::make_unique<OpenGLBackend>(winW, winH, windowTitle, false, true);
             if (gl->Initialize()) {
+                glDisplay = gl.get();
                 gpuDisplayPtr = gl.get();
                 displayOwner = std::move(gl);
             } else {
@@ -233,6 +235,11 @@ private:
 #ifdef KL_HAVE_VULKAN_BACKEND
             if (vkDisplay)
                 engine.SetRenderBackend(TryCreateVulkanRenderBackend(vkDisplay));
+            else
+#endif
+#ifdef KL_HAVE_OPENGL_BACKEND
+            if (glDisplay)
+                engine.SetRenderBackend(TryCreateOpenGLRenderBackend(glDisplay));
             else
 #endif
                 engine.SetRenderBackend(CreateBestRenderBackend());

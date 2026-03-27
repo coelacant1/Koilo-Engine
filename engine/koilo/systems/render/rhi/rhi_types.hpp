@@ -288,6 +288,17 @@ struct RHIPipelineDesc {
     LayoutHint layoutHint = LayoutHint::Scene;
 
     const char* debugName = nullptr;
+
+    // Optional material parameter metadata (declaration-order names + types).
+    // Used by OpenGL RHI to bridge std140 UBO data to individual glUniform*
+    // calls by name, since glGetActiveUniform order is not guaranteed.
+    struct MaterialParam {
+        const char* name = nullptr;   // uniform name (e.g. "u_frameW")
+        uint8_t     type = 0;         // ksl::ParamType cast to uint8_t
+    };
+    static constexpr uint32_t kMaxMaterialParams = 16;
+    MaterialParam materialParams[kMaxMaterialParams] = {};
+    uint32_t      materialParamCount = 0;
 };
 
 /// Color attachment descriptor for render pass creation.
