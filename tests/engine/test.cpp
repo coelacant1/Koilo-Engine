@@ -213,6 +213,7 @@
 #include "systems/render/testsoftwarerenderbackend.hpp"
 #include "systems/render/rhi/testrhitypes.hpp"
 #include "systems/render/rhi/testrhipipeline.hpp"
+#include "systems/render/graph/testrendergraph.hpp"
 #include "systems/scene/animation/testanimationchannel.hpp"
 #include "systems/scene/animation/testanimationclip.hpp"
 #include "systems/scene/animation/testanimationlayer.hpp"
@@ -494,6 +495,7 @@ int main(int /*argc*/, char ** /*argv*/) {
     TestSoftwareRenderBackend::RunAllTests();
     TestRHITypes::RunAllTests();
     TestRHIPipeline::RunAllTests();
+    TestRenderGraph::RunAllTests();
     TestAnimationChannel::RunAllTests();
     TestAnimationClip::RunAllTests();
     TestAnimationLayer::RunAllTests();

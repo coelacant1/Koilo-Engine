@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.3.11] - 2026-3-29
+KSL decoupled from OpenGL, render graph infrastructure, and unified frame loop.
+
+### Added
+- Render graph (`engine/koilo/systems/render/graph/`) with pass DAG, stable topological sort, and resource lifetime tracking (issue #20)
+- Standard pass library: `scene_pass`, `sky_pass`, `debug_pass`, `blit_pass`, `overlay_pass`
+- Granular `RenderPipeline` methods: `BeginScenePass()`, `RenderSky()`, `RenderSceneMeshes()`, `RenderSceneDebugLines()`, `EndScenePass()`
+- 11 render graph unit tests (DAG ordering, cycle detection, lifetimes, execution)
+
+### Changed
+- KSL shader registry fully decoupled from OpenGL -- zero GL references remain in any KSL file (issue #18)
+  - `LoadGLSL()` retains source strings only; all GL compilation, uber-shader, and uniform APIs removed
+  - `ScanDirectory()` uses unified path (removed `#ifdef KL_HAVE_OPENGL_BACKEND` guards)
+- SDL3Host frame loop unified: simulation tick and UI animation shared above GPU/SW branch
+  - GPU path now driven by render graph (7-8 passes per frame)
+  - `RenderDirect()` refactored to delegate to granular methods (backward compatible)
+
+### Removed
+- Non-RHI GPU fallback path in SDL3Host (dead code since factory always returns `RenderPipeline`)
+- All OpenGL API calls and preprocessor guards from KSL public headers
+
 ## [0.3.10] - 2026-3-29
 Unified UI renderer interface, legacy renderer removal, SW/GPU consistency fixes, and RHI smoke tests.
 

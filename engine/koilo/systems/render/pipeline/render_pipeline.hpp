@@ -189,6 +189,24 @@ public:
     void PrepareFrame() override;
     void FinishFrame() override;
 
+    // -- Granular render methods (for render graph integration) --------
+
+    /// Begin the offscreen scene pass: setup viewport, upload matrices
+    /// and lights.  Returns false if the pass cannot start.
+    bool BeginScenePass(Scene* scene, CameraBase* camera);
+
+    /// Render the sky (requires an active scene pass).
+    void RenderSky();
+
+    /// Render all scene meshes (requires an active scene pass).
+    void RenderSceneMeshes();
+
+    /// Render debug lines (requires an active scene pass).
+    void RenderSceneDebugLines();
+
+    /// End the offscreen scene pass.
+    void EndScenePass();
+
     /// Access the underlying IRHIDevice (for UI rendering etc.).
     rhi::IRHIDevice* GetDevice() const { return config_.device; }
 
@@ -274,6 +292,14 @@ private:
 
     // Render pass for blit / overlay (renders to swapchain)
     RHIRenderPass   swapchainPass_  = {};
+
+    // Per-frame scene pass state (set by BeginScenePass, used by granular methods)
+    Scene*   currentScene_      = nullptr;
+    float    sceneView_[16]     = {};
+    float    sceneProj_[16]     = {};
+    float    sceneCameraPos_[4] = {};
+    float    sceneInvVP_[16]    = {};
+    bool     scenePassActive_   = false;
 
     KL_BEGIN_FIELDS(RenderPipeline)
         /* No reflected fields. */
