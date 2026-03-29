@@ -4,6 +4,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.3.10] - 2026-3-29
+Unified UI renderer interface, legacy renderer removal, SW/GPU consistency fixes, and RHI smoke tests.
+
+### Added
+- `IUIRenderer` abstract interface (`ui_renderer.hpp`) unifying GPU and software UI renderers behind a single polymorphic API (issue #21)
+  - `SetFont()` / `SetBoldFont()` / `SyncFontAtlases()` for backend-agnostic font atlas management
+  - `Render()` / `Pixels()` / `IsSoftware()` / `IsInitialized()` / `Shutdown()` virtual methods
+- `PrepareAndRender()` unified render path in `ui.cpp`, replacing separate GPU and SW render logic
+- RHI pipeline and renderer smoke tests
+  - Factory returns software backend, UIRHIRenderer default/shutdown safety, UISWRenderer full lifecycle through IUIRenderer interface, pixel output verification, polymorphism checks
+
+### Changed
+- `UI` class now holds a single `unique_ptr<IUIRenderer>` instead of separate `UIRHIRenderer` + `UISWRenderer` members
+- `UIRHIRenderer` and `UISWRenderer` both inherit from `IUIRenderer`
+- Font atlas texture handles (`fontHandle_`, `boldHandle_`) managed by `UI` class, not individual renderers
+- `RenderBackendFactory` reduced from 5 paths to 3 (Vulkan RHI, OpenGL RHI, Software) - all legacy non-RHI paths removed
+- Removed `cvar_r_legacy_backend` CVar (no longer needed since RHI is the only GPU path)
+- Reflection registry regenerated
+
+### Fixed
+- SW renderer scissor rectangles not intersecting with parent (GPU already did this), causing child widgets to draw outside parent bounds
+- SW renderer coordinate truncation instead of rounding, causing 1px misalignment vs GPU
+- SW renderer border widths collapsing to 0px at sub-pixel sizes (now `max(1, round(...))`)
+- SW renderer glyph scaling using integer division, producing blocky text at non-native sizes
+- SW renderer rounded rects, filled circles, and circle outlines using linear alpha falloff instead of smoothstep, causing harsh edges compared to GPU
+- SW renderer circle outlines having no anti-aliasing at all (now has smoothstep on inner and outer edges)
+
+### Removed
+- Legacy (pre-RHI) UI renderers: `ui_gl_renderer.{cpp,hpp}`, `ui_vk_renderer.{cpp,hpp}` (deleted)
+- Legacy (pre-RHI) render backends moved to `docs/.wip/legacy_render_backends/`: `opengl_render_backend.{cpp,hpp}`, `vulkan_render_backend.{cpp,hpp}`, `testopenglrenderbackend.{cpp,hpp}`
+- `TryCreateGPURenderBackend()` factory function and all legacy CVar opt-in/fallback code
+
 ## [0.3.9] - 2026-3-27
 OpenGL RHI rendering fixes -- depth buffer, material uniform bridging, and vertex attribute state.
 

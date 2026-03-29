@@ -375,7 +375,7 @@ void TestSWRendererSolidRect() {
 
     UIDrawList dl;
     dl.AddSolidRect(10.0f, 10.0f, 20.0f, 20.0f, Color4(255, 0, 0, 255));
-    sw.Render(dl);
+    sw.RenderDirect(dl);
 
     // Center of rect should be red
     const uint8_t* p = sw.Pixels();
@@ -400,7 +400,7 @@ void TestSWRendererScissor() {
     dl.PushScissor(10, 10, 20, 20);
     dl.AddSolidRect(0.0f, 0.0f, 100.0f, 100.0f, Color4(0, 255, 0, 255));
     dl.PopScissor();
-    sw.Render(dl);
+    sw.RenderDirect(dl);
 
     // Inside scissor should be green
     const uint8_t* p = sw.Pixels();

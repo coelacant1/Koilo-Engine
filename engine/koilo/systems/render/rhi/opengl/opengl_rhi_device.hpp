@@ -178,6 +178,7 @@ private:
         RHIVertexAttr       attrs[RHIPipelineDesc::kMaxVertexAttrs] = {};
         uint32_t            attrCount   = 0;
         uint32_t            vertexStride = 0;
+        bool                hasPushConstantBlock = false;
 
         // Material param names (declaration order) for name-based bridging.
         struct MatParam {

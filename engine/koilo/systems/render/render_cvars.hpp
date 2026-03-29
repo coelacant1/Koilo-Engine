@@ -23,6 +23,5 @@ extern AutoCVar_Bool  cvar_r_vsync;
 extern AutoCVar_Bool  cvar_r_shadows;
 extern AutoCVar_Bool  cvar_r_drawcalls;
 extern AutoCVar_Bool  cvar_r_depthtest;
-extern AutoCVar_Bool  cvar_r_legacy_backend;
 
 } // namespace koilo

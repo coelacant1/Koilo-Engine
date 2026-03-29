@@ -338,21 +338,40 @@ RHITexture OpenGLRHIDevice::CreateTexture(const RHITextureDesc& desc) {
     slot.pixelFormat    = ToGLPixelFormat(desc.format);
     slot.pixelType      = ToGLPixelType(desc.format);
 
+    // For single-channel formats, set alignment to 1
+    GLint prevAlignment = 4;
+    if (slot.pixelFormat == GL_RED) {
+        glGetIntegerv(GL_UNPACK_ALIGNMENT, &prevAlignment);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    }
+
     glGenTextures(1, &slot.texture);
     glBindTexture(GL_TEXTURE_2D, slot.texture);
 
-    if (RHIFormatIsDepth(desc.format)) {
-        glTexImage2D(GL_TEXTURE_2D, 0, slot.internalFormat,
-                     desc.width, desc.height, 0,
-                     slot.pixelFormat, slot.pixelType, nullptr);
-    } else {
-        glTexImage2D(GL_TEXTURE_2D, 0, slot.internalFormat,
-                     desc.width, desc.height, 0,
-                     slot.pixelFormat, slot.pixelType, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, slot.internalFormat,
+                 desc.width, desc.height, 0,
+                 slot.pixelFormat, slot.pixelType, nullptr);
+
+    // Set filtering on both the texture object AND a separate sampler.
+    // The sampler overrides texture params when bound, but setting them
+    // on the texture too avoids blurry sampling if the sampler is ever
+    // unbound (e.g., GL_TEXTURE_MIN_FILTER defaults to MIPMAP_LINEAR).
+    GLint glFilter = (desc.filter == RHISamplerFilter::Nearest) ? GL_NEAREST : GL_LINEAR;
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, glFilter);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, glFilter);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    // For single-channel (R8) textures, apply swizzle so the red channel
+    // is read as alpha (matching the legacy UIGLRenderer behavior).
+    // This makes the texture appear as (1,1,1,R) when sampled.
+    if (slot.pixelFormat == GL_RED) {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_ONE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_ONE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_ONE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_RED);
     }
 
-    // Default sampler
-    GLint glFilter = (desc.filter == RHISamplerFilter::Nearest) ? GL_NEAREST : GL_LINEAR;
     glGenSamplers(1, &slot.sampler);
     glSamplerParameteri(slot.sampler, GL_TEXTURE_MIN_FILTER, glFilter);
     glSamplerParameteri(slot.sampler, GL_TEXTURE_MAG_FILTER, glFilter);
@@ -360,6 +379,10 @@ RHITexture OpenGLRHIDevice::CreateTexture(const RHITextureDesc& desc) {
     glSamplerParameteri(slot.sampler, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
     glBindTexture(GL_TEXTURE_2D, 0);
+
+    if (slot.pixelFormat == GL_RED)
+        glPixelStorei(GL_UNPACK_ALIGNMENT, prevAlignment);
+
     return {textures_.Alloc(slot)};
 }
 
@@ -433,7 +456,8 @@ RHIPipeline OpenGLRHIDevice::CreatePipeline(const RHIPipelineDesc& desc) {
 
     // Bind the push-constant UBO block if present
     GLuint blockIdx = glGetUniformBlockIndex(program, "PushConstants");
-    if (blockIdx != GL_INVALID_INDEX)
+    bool hasPCBlock = (blockIdx != GL_INVALID_INDEX);
+    if (hasPCBlock)
         glUniformBlockBinding(program, blockIdx, kPushConstantBinding);
 
     PipelineSlot slot{};
@@ -444,6 +468,7 @@ RHIPipeline OpenGLRHIDevice::CreatePipeline(const RHIPipelineDesc& desc) {
     slot.blend        = desc.blend;
     slot.attrCount    = desc.vertexAttrCount;
     slot.vertexStride = desc.vertexStride;
+    slot.hasPushConstantBlock = hasPCBlock;
     std::memcpy(slot.attrs, desc.vertexAttrs,
                 desc.vertexAttrCount * sizeof(RHIVertexAttr));
 
@@ -553,12 +578,24 @@ void OpenGLRHIDevice::UpdateTexture(RHITexture handle, const void* data,
                                      uint32_t width, uint32_t height) {
     if (!textures_.Valid(handle.id)) return;
     auto& s = textures_.Get(handle.id);
+
+    // For single-channel formats (R8), set alignment to 1 so rows
+    // aren't padded to a 4-byte boundary.
+    GLint prevAlignment = 4;
+    if (s.pixelFormat == GL_RED) {
+        glGetIntegerv(GL_UNPACK_ALIGNMENT, &prevAlignment);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    }
+
     glBindTexture(GL_TEXTURE_2D, s.texture);
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0,
                     static_cast<GLsizei>(width),
                     static_cast<GLsizei>(height),
                     s.pixelFormat, s.pixelType, data);
     glBindTexture(GL_TEXTURE_2D, 0);
+
+    if (s.pixelFormat == GL_RED)
+        glPixelStorei(GL_UNPACK_ALIGNMENT, prevAlignment);
 }
 
 void* OpenGLRHIDevice::MapBuffer(RHIBuffer handle) {
@@ -852,12 +889,43 @@ void OpenGLRHIDevice::SetScissor(const RHIScissor& sc) {
 void OpenGLRHIDevice::PushConstants(RHIShaderStage /*stages*/,
                                      const void* data,
                                      uint32_t size, uint32_t offset) {
+    // Always update the UBO for programs that use a PushConstants block
     glBindBuffer(GL_UNIFORM_BUFFER, pushConstantUBO_);
     glBufferSubData(GL_UNIFORM_BUFFER,
                     static_cast<GLintptr>(offset),
                     static_cast<GLsizeiptr>(size), data);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
     glBindBufferBase(GL_UNIFORM_BUFFER, kPushConstantBinding, pushConstantUBO_);
+
+    // Fallback: if the bound program uses plain uniforms instead of a UBO
+    // block, set matching uniforms directly.  This handles shaders written
+    // with 'uniform vec2 u_viewport' rather than 'layout(std140) uniform
+    // PushConstants { ... }'.
+    if (!pipelines_.Valid(boundPipeline_)) return;
+    auto& pipe = pipelines_.Get(boundPipeline_);
+    if (pipe.hasPushConstantBlock) return;
+
+    GLuint prog = pipe.program;
+    const auto* raw = static_cast<const uint8_t*>(data);
+
+    // UI push constants: { vec2 viewport (0), int useTexture (8) }
+    if (offset == 0 && size >= 8) {
+        GLint loc = glGetUniformLocation(prog, "u_viewport");
+        if (loc >= 0) {
+            float vw, vh;
+            std::memcpy(&vw, raw + 0, sizeof(float));
+            std::memcpy(&vh, raw + 4, sizeof(float));
+            glUniform2f(loc, vw, vh);
+        }
+    }
+    if (offset == 0 && size >= 12) {
+        GLint loc = glGetUniformLocation(prog, "u_useTexture");
+        if (loc >= 0) {
+            int32_t val;
+            std::memcpy(&val, raw + 8, sizeof(int32_t));
+            glUniform1i(loc, val);
+        }
+    }
 }
 
 void OpenGLRHIDevice::Draw(uint32_t vertexCount, uint32_t instanceCount,

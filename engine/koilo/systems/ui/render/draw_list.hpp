@@ -141,7 +141,9 @@ public:
 
     /** @brief Build draw commands for the entire UI tree. */
     void BuildFromContext(UIContext& ctx, font::Font* font,
-                          uint32_t fontAtlasTexture);
+                          uint32_t fontAtlasTexture,
+                          font::Font* boldFont = nullptr,
+                          uint32_t boldFontAtlasTexture = 0);
 
 private:
     std::vector<DrawCmd> commands_; ///< queued draw commands
@@ -168,7 +170,9 @@ private:
     std::vector<ScissorRect> scissorStack_; ///< nested scissor state stack
 
     font::Font* font_ = nullptr; ///< font used for text rendering
+    font::Font* boldFont_ = nullptr; ///< bold font for weight >= 700
     uint32_t fontAtlasTexture_ = 0; ///< GL texture handle for the font atlas
+    uint32_t boldFontAtlasTexture_ = 0; ///< GL texture handle for bold font atlas
 
     void EmitWidget(const Widget& widget, int widgetIdx, const WidgetPool& pool,
                     const StringTable& strings, const Theme& theme);

@@ -171,12 +171,8 @@ public:
     void RenderFrame(Color888* buffer, int width, int height);
 
     /** @brief GPU-only render: draws to the backend FBO without ReadPixels.
-     *  Use with OpenGLRenderBackend::BlitToScreen() for zero-copy present. */
+     *  Use with IGPURenderBackend::BlitToScreen() for zero-copy present. */
     void RenderFrameGPU();
-
-    /** @brief Render UI overlay via GPU. Call after scene render, before swap.
-     *  Backend-agnostic: auto-initializes GPU renderer on first call. */
-    void RenderUIOverlay(int viewportW, int viewportH, float dt);
 
     /** @brief Update UI animations (software path, called separately). */
     void UpdateUIAnimations(float dt);

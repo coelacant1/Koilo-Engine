@@ -210,11 +210,15 @@ void UIDrawList::PopScissor() {
 
 // Build draw commands for the entire UI tree
 void UIDrawList::BuildFromContext(UIContext& ctx, font::Font* font,
-                                  uint32_t fontAtlasTexture) {
+                                  uint32_t fontAtlasTexture,
+                                  font::Font* boldFont,
+                                  uint32_t boldFontAtlasTexture) {
     Clear();
     deferredDropdowns_.clear();
     font_ = font;
     fontAtlasTexture_ = fontAtlasTexture;
+    boldFont_ = boldFont;
+    boldFontAtlasTexture_ = boldFontAtlasTexture;
 
     int rootIdx = ctx.Root();
     if (rootIdx < 0) return;
@@ -1506,8 +1510,13 @@ void UIDrawList::EmitNumberSpinner(const Widget& widget, const Rect& r,
 void UIDrawList::EmitTextGlyphs(const char* text, float x, float y,
                                 float fontSize, Color4 color, uint16_t fontWeight) {
     if (!font_) return;
-    // Rasterize glyphs at exact display size for pixel-perfect rendering
-    float targetSize = fontSize > 0.0f ? fontSize : font_->PixelSize();
+
+    // Use real bold font if available and weight >= 700
+    bool useBold = (fontWeight >= 700 && boldFont_ && boldFont_->IsLoaded());
+    font::Font* activeFont = useBold ? boldFont_ : font_;
+    uint32_t activeAtlas = useBold ? boldFontAtlasTexture_ : fontAtlasTexture_;
+
+    float targetSize = fontSize > 0.0f ? fontSize : activeFont->PixelSize();
 
     // Snap baseline to integer pixel for consistent vertical alignment
     y = std::floor(y + 0.5f);
@@ -1517,14 +1526,14 @@ void UIDrawList::EmitTextGlyphs(const char* text, float x, float y,
     size_t i = 0;
 
     // Line height at target size
-    float fontScale = targetSize / font_->PixelSize();
-    float lineAdv = std::floor(font_->LineHeight() * fontScale + 0.5f);
+    float fontScale = targetSize / activeFont->PixelSize();
+    float lineAdv = std::floor(activeFont->LineHeight() * fontScale + 0.5f);
 
-    // Synthetic bold: extra pixel offsets for weights above normal (400)
+    // Synthetic bold fallback: only if no real bold font and weight > 400
     float boldOffset = 0.0f;
-    if (fontWeight > 400) {
-        boldOffset = std::max(0.5f, (fontWeight - 400) / 600.0f * (targetSize / 14.0f));
-        boldOffset = std::min(boldOffset, targetSize * 0.15f);
+    if (!useBold && fontWeight > 400) {
+        boldOffset = std::max(1.0f, std::floor((fontWeight - 400) / 600.0f * (targetSize / 14.0f) + 0.5f));
+        boldOffset = std::min(boldOffset, std::floor(targetSize * 0.15f + 0.5f));
     }
 
     uint32_t prevCp = 0;
@@ -1537,7 +1546,7 @@ void UIDrawList::EmitTextGlyphs(const char* text, float x, float y,
             continue;
         }
 
-        const font::GlyphRegion* glyph = font_->GetGlyphAtSize(cp, targetSize);
+        const font::GlyphRegion* glyph = activeFont->GetGlyphAtSize(cp, targetSize);
         if (!glyph) {
             penX += targetSize * 0.5f;
             prevCp = cp;
@@ -1546,7 +1555,7 @@ void UIDrawList::EmitTextGlyphs(const char* text, float x, float y,
 
         // Apply kerning between previous and current glyph
         if (prevCp != 0) {
-            float kern = font_->GetKerning(prevCp, cp) * fontScale;
+            float kern = activeFont->GetKerning(prevCp, cp) * fontScale;
             penX += kern;
         }
 
@@ -1560,19 +1569,21 @@ void UIDrawList::EmitTextGlyphs(const char* text, float x, float y,
             AddTexturedRect(gx, gy, gw, gh,
                             glyph->u0, glyph->v0,
                             glyph->u1, glyph->v1,
-                            color, fontAtlasTexture_);
+                            color, activeAtlas);
 
-            // Synthetic bold: re-draw glyph at slight X offsets
+            // Synthetic bold fallback: re-draw at integer pixel offsets
             if (boldOffset > 0.0f) {
-                AddTexturedRect(gx + boldOffset, gy, gw, gh,
+                float bgx = std::floor(gx + boldOffset + 0.5f);
+                AddTexturedRect(bgx, gy, gw, gh,
                                 glyph->u0, glyph->v0,
                                 glyph->u1, glyph->v1,
-                                color, fontAtlasTexture_);
+                                color, activeAtlas);
                 if (fontWeight >= 700) {
-                    AddTexturedRect(gx - boldOffset * 0.5f, gy, gw, gh,
+                    float bgx2 = std::floor(gx - boldOffset * 0.5f + 0.5f);
+                    AddTexturedRect(bgx2, gy, gw, gh,
                                     glyph->u0, glyph->v0,
                                     glyph->u1, glyph->v1,
-                                    color, fontAtlasTexture_);
+                                    color, activeAtlas);
                 }
             }
         }

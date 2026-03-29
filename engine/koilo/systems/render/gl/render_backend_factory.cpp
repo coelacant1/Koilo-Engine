@@ -3,17 +3,14 @@
  * @file render_backend_factory.cpp
  * @brief Factory for creating the best available render backend.
  *
- * Supports five paths:
+ * Supports three paths:
  *  1. Vulkan unified pipeline (VulkanRHIDevice + RenderPipeline)
- *  2. Legacy Vulkan backend (VulkanRenderBackend, opt-in via r.legacy_backend)
- *  3. OpenGL unified pipeline (OpenGLRHIDevice + RenderPipeline)
- *  4. Legacy OpenGL backend (OpenGLRenderBackend, opt-in via r.legacy_backend)
- *  5. Software fallback
+ *  2. OpenGL unified pipeline (OpenGLRHIDevice + RenderPipeline)
+ *  3. Software fallback
  */
 
 #include <koilo/systems/render/gl/render_backend_factory.hpp>
 #ifdef KL_HAVE_OPENGL_BACKEND
-#include <koilo/systems/render/gl/opengl_render_backend.hpp>
 #include <koilo/systems/render/rhi/opengl/opengl_rhi_device.hpp>
 #include <koilo/systems/render/pipeline/render_pipeline.hpp>
 #include <koilo/systems/display/backends/gpu/openglbackend.hpp>
@@ -29,7 +26,6 @@
 #include <fstream>
 
 #ifdef KL_HAVE_VULKAN_BACKEND
-#include <koilo/systems/render/vk/vulkan_render_backend.hpp>
 #include <koilo/systems/render/rhi/vulkan/vulkan_rhi_device.hpp>
 #include <koilo/systems/render/pipeline/render_pipeline.hpp>
 #endif
@@ -249,52 +245,18 @@ std::unique_ptr<IRenderBackend> TryCreateOpenGLRenderBackend(OpenGLBackend* disp
 #ifdef KL_HAVE_OPENGL_BACKEND
     if (!display) return nullptr;
 
-    // Allow opt-in to legacy backend via CVar
-    if (cvar_r_legacy_backend.Get()) {
-        auto gl = std::make_unique<OpenGLRenderBackend>();
-        if (gl->Initialize()) {
-            KL_LOG("RenderBackendFactory", "OpenGL render backend active (legacy)");
-            return gl;
-        }
-        return nullptr;
-    }
-
-    // Default: unified RHI pipeline
     auto pipeline = TryCreateOpenGLRHIPipeline(display);
     if (pipeline) return pipeline;
 
-    // Fallback to legacy backend if unified pipeline fails
-    KL_WARN("RenderBackendFactory", "OpenGL RHI pipeline failed, falling back to legacy backend");
-    auto gl = std::make_unique<OpenGLRenderBackend>();
-    if (gl->Initialize()) {
-        KL_LOG("RenderBackendFactory", "OpenGL render backend active (legacy fallback)");
-        return gl;
-    }
+    KL_ERR("RenderBackendFactory", "OpenGL RHI pipeline failed");
 #else
     (void)display;
 #endif
     return nullptr;
 }
 
-std::unique_ptr<IRenderBackend> TryCreateGPURenderBackend() {
-#ifdef KL_HAVE_OPENGL_BACKEND
-    // Legacy path for callers that don't pass the display pointer
-    auto gpu = std::make_unique<OpenGLRenderBackend>();
-    if (gpu->Initialize()) {
-        KL_LOG("RenderBackendFactory", "GPU render backend active (%s)",
-               gpu->GetName());
-        return gpu;
-    }
-#endif
-    return nullptr;
-}
-
 std::unique_ptr<IRenderBackend> CreateBestRenderBackend() {
-    // Try GPU first (GL backend initializes KSL registry internally)
-    auto gpu = TryCreateGPURenderBackend();
-    if (gpu) return gpu;
-
-    // Fall back to software
+    // No display pointer available - fall back to software
     return CreateBestSoftwareBackend();
 }
 
@@ -474,27 +436,10 @@ static std::unique_ptr<IRenderBackend> TryCreateVulkanRHIPipeline(VulkanBackend*
 std::unique_ptr<IRenderBackend> TryCreateVulkanRenderBackend(VulkanBackend* display) {
     if (!display) return nullptr;
 
-    // Allow opt-in to legacy backend via CVar
-    if (cvar_r_legacy_backend.Get()) {
-        auto vk = std::make_unique<VulkanRenderBackend>(display);
-        if (vk->Initialize()) {
-            KL_LOG("RenderBackendFactory", "Vulkan render backend active (legacy)");
-            return vk;
-        }
-        return nullptr;
-    }
-
-    // Default: unified RHI pipeline
     auto pipeline = TryCreateVulkanRHIPipeline(display);
     if (pipeline) return pipeline;
 
-    // Fallback to legacy backend if unified pipeline fails
-    KL_WARN("RenderBackendFactory", "RHI pipeline failed, falling back to legacy Vulkan backend");
-    auto vk = std::make_unique<VulkanRenderBackend>(display);
-    if (vk->Initialize()) {
-        KL_LOG("RenderBackendFactory", "Vulkan render backend active (legacy fallback)");
-        return vk;
-    }
+    KL_ERR("RenderBackendFactory", "Vulkan RHI pipeline failed");
     return nullptr;
 }
 #endif

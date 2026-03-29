@@ -210,11 +210,9 @@
 #include "systems/render/shader/testsurfaceproperties.hpp"
 #include "systems/render/sky/testsky.hpp"
 #include "systems/render/testcanvas2d.hpp"
-#ifdef KL_HAVE_OPENGL_BACKEND
-#include "systems/render/testopenglrenderbackend.hpp"
-#endif
 #include "systems/render/testsoftwarerenderbackend.hpp"
 #include "systems/render/rhi/testrhitypes.hpp"
+#include "systems/render/rhi/testrhipipeline.hpp"
 #include "systems/scene/animation/testanimationchannel.hpp"
 #include "systems/scene/animation/testanimationclip.hpp"
 #include "systems/scene/animation/testanimationlayer.hpp"
@@ -493,11 +491,9 @@ int main(int /*argc*/, char ** /*argv*/) {
     TestSurfaceProperties::RunAllTests();
     TestSky::RunAllTests();
     TestCanvas2D::RunAllTests();
-#ifdef KL_HAVE_OPENGL_BACKEND
-    TestOpenGLRenderBackend::RunAllTests();
-#endif
     TestSoftwareRenderBackend::RunAllTests();
     TestRHITypes::RunAllTests();
+    TestRHIPipeline::RunAllTests();
     TestAnimationChannel::RunAllTests();
     TestAnimationClip::RunAllTests();
     TestAnimationLayer::RunAllTests();

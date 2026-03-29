@@ -32,9 +32,6 @@ public:
 
     UI* GetUI() { return ui_.get(); }
 
-    /// Render UI overlay via GPU (OpenGL/Vulkan path).
-    void RenderGPUOverlay(int viewportW, int viewportH, float dt);
-
     /// Update animations only (software path, called separately).
     void UpdateAnimations(float dt);
 

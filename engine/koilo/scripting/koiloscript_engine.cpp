@@ -1000,11 +1000,6 @@ void KoiloScriptEngine::RenderFrameGPU() {
     if (dd.IsEnabled()) dd.Update();
 }
 
-void KoiloScriptEngine::RenderUIOverlay(int viewportW, int viewportH, float dt) {
-    auto* mod = dynamic_cast<UIModule*>(moduleLoader_.GetModule("ui"));
-    if (mod) mod->RenderGPUOverlay(viewportW, viewportH, dt);
-}
-
 void KoiloScriptEngine::UpdateUIAnimations(float dt) {
     auto* mod = dynamic_cast<UIModule*>(moduleLoader_.GetModule("ui"));
     if (mod) mod->UpdateAnimations(dt);

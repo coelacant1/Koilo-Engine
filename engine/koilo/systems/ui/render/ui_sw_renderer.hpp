@@ -14,6 +14,7 @@
 #pragma once
 
 #include <koilo/systems/ui/render/draw_list.hpp>
+#include <koilo/systems/ui/render/ui_renderer.hpp>
 #include <koilo/systems/font/font.hpp>
 #include <cstdint>
 #include <vector>
@@ -25,11 +26,31 @@ namespace ui {
 // --- Software UI Renderer -------------------------------------------
 
 /** @class UISWRenderer @brief CPU software UI renderer fallback. */
-class UISWRenderer {
+class UISWRenderer : public IUIRenderer {
 public:
     UISWRenderer() = default;
+    ~UISWRenderer() override = default;
 
-    /// Resize the pixel buffer. Must be called before Render().
+    // -- IUIRenderer interface ------------------------------------------
+
+    void Shutdown() override;
+    bool IsInitialized() const override { return true; }
+    bool IsSoftware() const override { return true; }
+
+    uint32_t SetFont(font::Font* font) override;
+    uint32_t SetBoldFont(font::Font* font) override;
+    void SyncFontAtlases(font::Font* font, uint32_t& fontHandle,
+                         font::Font* boldFont, uint32_t& boldHandle) override;
+
+    /// Render via IUIRenderer interface.  Resizes and clears internally.
+    void Render(const UIDrawList& drawList,
+                int viewportW, int viewportH) override;
+
+    const uint8_t* Pixels() const override { return pixels_.data(); }
+
+    // -- SW-specific methods --------------------------------------------
+
+    /// Resize the pixel buffer. Must be called before RenderDirect().
     void Resize(int width, int height);
 
     /// Clear the pixel buffer to transparent.
@@ -38,23 +59,25 @@ public:
     /// Clear with a specific color.
     void Clear(Color4 color);
 
-    /// Render a draw list to the pixel buffer.
-    void Render(const UIDrawList& drawList,
-                const font::GlyphAtlas* atlas = nullptr);
+    /// Direct render with explicit atlas pointers (low-level).
+    void RenderDirect(const UIDrawList& drawList,
+                      const font::GlyphAtlas* atlas = nullptr,
+                      const font::GlyphAtlas* boldAtlas = nullptr);
 
     /** @brief Return the buffer width in pixels. */
     int Width()  const { return width_; }
     /** @brief Return the buffer height in pixels. */
     int Height() const { return height_; }
-    /** @brief Return a read-only pointer to the RGBA pixel data. */
-    const uint8_t* Pixels() const { return pixels_.data(); }
     /** @brief Return a mutable pointer to the RGBA pixel data. */
-    uint8_t* Pixels() { return pixels_.data(); }
+    uint8_t* MutablePixels() { return pixels_.data(); }
 
 private:
     int width_  = 0; ///< buffer width in pixels
     int height_ = 0; ///< buffer height in pixels
     std::vector<uint8_t> pixels_; ///< RGBA8888 pixel buffer
+
+    font::Font* font_     = nullptr; ///< regular font (stored by SetFont)
+    font::Font* boldFont_ = nullptr; ///< bold font (stored by SetBoldFont)
 
     int scissorX_ = 0, scissorY_ = 0; ///< current scissor origin
     int scissorW_ = 0, scissorH_ = 0; ///< current scissor size
@@ -84,12 +107,21 @@ private:
     void FillRect(int x, int y, int w, int h, Color4 color);
     void DrawBorder(int x, int y, int w, int h, int bw, Color4 color);
     void BlitAtlasRect(const DrawCmd& cmd, const font::GlyphAtlas& atlas);
-    static bool IsInsideRoundedRect(int px, int py, int rx, int ry,
-                                    int rw, int rh, float radius);
+    static float RoundedRectCoverage(int px, int py, int rx, int ry,
+                                     int rw, int rh,
+                                     float rTL, float rTR,
+                                     float rBR, float rBL);
     void FillRoundedRect(int x, int y, int w, int h,
-                         float radius, Color4 color);
+                         const float radii[4], Color4 color);
     void DrawRoundedBorder(int x, int y, int w, int h,
-                           float radius, int bw, Color4 color);
+                           const float radii[4], int bw, Color4 color);
+    void DrawLine(float x0, float y0, float x1, float y1,
+                  float width, Color4 color);
+    void DrawFilledCircle(float cx, float cy, float radius, Color4 color);
+    void DrawCircleOutline(float cx, float cy, float radius,
+                           float lineWidth, Color4 color);
+    void DrawTriangle(float x0, float y0, float x1, float y1,
+                      float x2, float y2, Color4 color);
 
     KL_BEGIN_FIELDS(UISWRenderer)
         /* No reflected fields. */
