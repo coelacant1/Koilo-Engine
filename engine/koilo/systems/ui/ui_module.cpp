@@ -33,7 +33,7 @@ bool UIModule::Initialize(KoiloKernel& kernel) {
 }
 
 void UIModule::Update(float /*dt*/) {
-    // UI animations are updated explicitly via UpdateAnimations/RenderGPUOverlay
+    // UI animations are updated explicitly via UpdateAnimations
 }
 
 void UIModule::Render(Color888* buffer, int width, int height) {
@@ -52,23 +52,8 @@ void UIModule::Shutdown() {
 void UIModule::EnsureFont() {
     if (ui_ && !ui_->HasFont()) {
         ui_->LoadFont("assets/fonts/NotoSansMono-VariableFont_wdth,wght.ttf", 14.0f);
+        ui_->LoadBoldFont("assets/fonts/NotoSansMono-Bold.ttf", 14.0f);
     }
-}
-
-void UIModule::RenderGPUOverlay(int viewportW, int viewportH, float dt) {
-#ifdef KL_HAVE_OPENGL_BACKEND
-    if (!ui_) return;
-    int root = ui_->Context().Root();
-    if (root < 0) return;
-    auto* rootWidget = ui_->Context().GetWidget(root);
-    if (!rootWidget || rootWidget->childCount == 0) return;
-    EnsureFont();
-    ui_->UpdateAnimations(dt);
-    if (!ui_->InitializeGPU()) return;
-    ui_->RenderGPU(viewportW, viewportH);
-#else
-    (void)viewportW; (void)viewportH; (void)dt;
-#endif
 }
 
 void UIModule::UpdateAnimations(float dt) {

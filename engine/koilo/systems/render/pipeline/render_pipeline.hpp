@@ -189,6 +189,12 @@ public:
     void PrepareFrame() override;
     void FinishFrame() override;
 
+    /// Access the underlying IRHIDevice (for UI rendering etc.).
+    rhi::IRHIDevice* GetDevice() const { return config_.device; }
+
+    /// Whether the device is Vulkan-based.
+    bool IsVulkanDevice() const;
+
 private:
     // -- Off-screen render target management ---------------------------
 

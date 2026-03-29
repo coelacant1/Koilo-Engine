@@ -3,10 +3,10 @@
  * @file render_backend_factory.hpp
  * @brief Factory for creating the best available render backend.
  *
- * Lives in the display library (links OpenGL). Applications that link
- * koiloengine_display can call CreateBestRenderBackend() to get a GPU
- * render backend when an OpenGL context is available, falling back to
- * the software rasterizer otherwise.
+ * Applications that link koiloengine_display can call
+ * TryCreateOpenGLRenderBackend() or TryCreateVulkanRenderBackend()
+ * to get a GPU render backend using the RHI pipeline, falling back
+ * to the software rasterizer via CreateBestSoftwareBackend().
  *
  * @date 04/03/2026
  * @author Coela
@@ -22,26 +22,16 @@ namespace koilo {
 class OpenGLBackend;
 
 /**
- * @brief Create the best available render backend.
+ * @brief Create a software render backend (no GPU required).
  *
- * If an OpenGL 3.3+ context is current, creates an OpenGLRenderBackend.
- * Otherwise, falls back to SoftwareRenderBackend.
- *
- * @return Initialized render backend (never null).
+ * @return Initialized software render backend (never null).
  */
 std::unique_ptr<IRenderBackend> CreateBestRenderBackend();
 
 /**
- * @brief Try to create the GPU render backend (legacy path, no display pointer).
- */
-std::unique_ptr<IRenderBackend> TryCreateGPURenderBackend();
-
-/**
- * @brief Try to create an OpenGL render backend.
+ * @brief Try to create an OpenGL render backend via the RHI pipeline.
  *
- * Uses unified RHI pipeline (OpenGLRHIDevice + RenderPipeline) by default.
- * Falls back to legacy OpenGLRenderBackend if r.legacy_backend is set or
- * if the unified pipeline fails.
+ * Uses OpenGLRHIDevice + RenderPipeline for unified rendering.
  *
  * @param display Pointer to an initialized OpenGLBackend display.
  * @return Initialized render backend, or nullptr on failure.
@@ -57,10 +47,12 @@ std::unique_ptr<IRenderBackend> CreateBestSoftwareBackend();
 class VulkanBackend;
 
 /**
- * @brief Create a Vulkan GPU render backend.
+ * @brief Create a Vulkan GPU render backend via the RHI pipeline.
+ *
+ * Uses VulkanRHIDevice + RenderPipeline for unified rendering.
  *
  * @param display Pointer to an initialized VulkanBackend display.
- * @return VulkanRenderBackend if init succeeds, nullptr otherwise.
+ * @return Initialized render backend, or nullptr on failure.
  */
 std::unique_ptr<IRenderBackend> TryCreateVulkanRenderBackend(VulkanBackend* display);
 #endif

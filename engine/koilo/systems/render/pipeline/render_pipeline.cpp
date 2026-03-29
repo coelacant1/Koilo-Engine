@@ -40,6 +40,7 @@
 #include <cmath>
 #include <cstring>
 #include <algorithm>
+#include <string>
 #include <vector>
 
 namespace koilo::rhi {
@@ -260,6 +261,12 @@ void RenderPipeline::Shutdown() {
 
 bool RenderPipeline::IsInitialized() const { return initialized_; }
 const char* RenderPipeline::GetName() const { return "RHI RenderPipeline"; }
+
+bool RenderPipeline::IsVulkanDevice() const {
+    if (!config_.device) return false;
+    const char* name = config_.device->GetName();
+    return name && std::string(name).find("Vulkan") != std::string::npos;
+}
 
 // -- IGPURenderBackend: PrepareFrame / FinishFrame ----------------------
 

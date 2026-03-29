@@ -47,10 +47,12 @@
 #endif
 #ifdef KL_HAVE_VULKAN_BACKEND
 #include <koilo/systems/display/backends/gpu/vulkanbackend.hpp>
+#include <vulkan/vulkan.h>
 #endif
 #include <koilo/systems/display/backends/gpu/sdl3backend.hpp>
 #include <koilo/systems/display/framebuffer.hpp>
 #include <koilo/systems/render/gl/render_backend_factory.hpp>
+#include <koilo/systems/render/pipeline/render_pipeline.hpp>
 #include <koilo/systems/profiling/performanceprofiler.hpp>
 #include <SDL3/SDL.h>
 #include <cstdio>
@@ -249,6 +251,9 @@ private:
 
         auto* gpuBackend = dynamic_cast<IGPURenderBackend*>(engine.GetRenderBackend());
 
+        // Try to get the RHI pipeline for unified UI rendering
+        auto* rhiPipeline = dynamic_cast<rhi::RenderPipeline*>(engine.GetRenderBackend());
+
         // Profiler
         auto& profiler = PerformanceProfiler::GetInstance();
         profiler.SetEnabled(enableProfiler);
@@ -365,22 +370,19 @@ private:
                 engine.RenderFrameGPU();
                 gpuBackend->BlitToScreen(winW, winH);
                 gpuBackend->CompositeCanvasOverlays(winW, winH);
-#ifdef KL_HAVE_VULKAN_BACKEND
-                if (vkDisplay) {
-                    // Vulkan UI: render into the active swapchain render pass
-                    if (uiPtr) {
-                        engine.UpdateUIAnimations(dt);
-                        if (!uiPtr->InitializeVulkanGPU(vkDisplay)) {
-                            // Vulkan UI init failed - skip UI rendering
-                        } else {
-                            VkCommandBuffer cmd = vkDisplay->BeginFrame();
-                            if (cmd) uiPtr->RenderVulkanGPU(winW, winH, cmd);
-                        }
+
+                // UI rendering: prefer unified RHI path, fall back to
+                // backend-specific paths if the RHI pipeline isn't available.
+                if (rhiPipeline && uiPtr) {
+                    engine.UpdateUIAnimations(dt);
+                    if (!uiPtr->IsRHIInitialized()) {
+                        auto* dev = rhiPipeline->GetDevice();
+                        bool isVk = rhiPipeline->IsVulkanDevice();
+                        uiPtr->InitializeRHI(dev, isVk);
                     }
-                } else
-#endif
-                {
-                    engine.RenderUIOverlay(winW, winH, dt);
+                    if (uiPtr->IsRHIInitialized()) {
+                        uiPtr->RenderRHI(winW, winH);
+                    }
                 }
 
                 // End GPU frame (submits cmd buffer + presents)
@@ -479,10 +481,8 @@ private:
 
         // Shut down render backend and UI GPU resources before display backend
         // so Vulkan resources are destroyed while the VkDevice is still alive.
+        if (UI* ui = engine.GetUI()) ui->ShutdownRHI();
         engine.SetRenderBackend(nullptr);
-#ifdef KL_HAVE_VULKAN_BACKEND
-        if (UI* ui = engine.GetUI()) ui->ShutdownVulkanGPU();
-#endif
 
         displayOwner->Shutdown();
         return 0;

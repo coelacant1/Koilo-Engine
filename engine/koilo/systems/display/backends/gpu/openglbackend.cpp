@@ -440,6 +440,14 @@ bool koilo::OpenGLBackend::InitOpenGL() {
         std::cerr << "Failed to load OpenGL functions via glad" << std::endl;
         return false;
     }
+
+    // Log GL driver info so we can spot llvmpipe/software fallback
+    const char* glRenderer = reinterpret_cast<const char*>(glGetString(GL_RENDERER));
+    const char* glVendor   = reinterpret_cast<const char*>(glGetString(GL_VENDOR));
+    const char* glVersion  = reinterpret_cast<const char*>(glGetString(GL_VERSION));
+    std::cerr << "[OpenGLBackend] GL Renderer: " << (glRenderer ? glRenderer : "?") << "\n";
+    std::cerr << "[OpenGLBackend] GL Vendor:   " << (glVendor ? glVendor : "?") << "\n";
+    std::cerr << "[OpenGLBackend] GL Version:  " << (glVersion ? glVersion : "?") << "\n";
     
     // Create texture
     glGenTextures(1, &texture_);

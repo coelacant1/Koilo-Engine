@@ -8,7 +8,10 @@
 
 #include <koilo/systems/ui/ui.hpp>
 #include <koilo/systems/ui/auto_inspector.hpp>
+#include <koilo/systems/ui/render/ui_rhi_renderer.hpp>
+#include <koilo/systems/ui/render/ui_sw_renderer.hpp>
 #include <koilo/systems/input/keycodes.hpp>
+#include <koilo/systems/render/rhi/rhi_device.hpp>
 #include <koilo/registry/global_registry.hpp>
 #include <koilo/scripting/reflection_bridge.hpp>
 #include <koilo/kernel/logging/log.hpp>
@@ -400,25 +403,20 @@ void UI::RenderToBuffer(Color888* buffer, int width, int height) {
     bool hasOverlay = g_debugOverlay && g_debugOverlay->HasWatches();
     if (!hasWidgets && !hasOverlay) return;
 
-    ctx_.SetViewport(static_cast<float>(width), static_cast<float>(height));
-    AutoSizeTextWidgets();
-    ctx_.UpdateLayout();
+    // Lazily create software renderer
+    if (!renderer_ || !renderer_->IsSoftware()) {
+        renderer_ = std::make_unique<ui::UISWRenderer>();
+        fontHandle_ = 0;
+        boldHandle_ = 0;
+    }
+
+    PrepareAndRender(width, height);
 
     if (!buffer) return;
 
-    // Build draw commands from widget tree
-    drawList_.Clear();
-    font::Font* f = font_.IsLoaded() ? &font_ : nullptr;
-    drawList_.BuildFromContext(ctx_, f, 0);
-    AppendDebugOverlay(width, height);
-
-    // Render via software path
-    swRenderer_.Resize(width, height);
-    swRenderer_.Clear(ui::Color4{30, 30, 30, 255});
-    swRenderer_.Render(drawList_, f ? &f->Atlas() : nullptr);
-
     // Composite UI pixels on top of existing buffer (alpha blend)
-    const uint8_t* uiPixels = swRenderer_.Pixels();
+    const uint8_t* uiPixels = renderer_->Pixels();
+    if (!uiPixels) return;
     for (int i = 0; i < width * height; ++i) {
         int si = i * 4;
         uint8_t ua = uiPixels[si + 3];
@@ -441,96 +439,47 @@ bool UI::LoadFont(const char* path, float pixelSize) {
     return font_.LoadFromFile(path, pixelSize);
 }
 
+bool UI::LoadBoldFont(const char* path, float pixelSize) {
+    return boldFont_.LoadFromFile(path, pixelSize);
+}
+
 /// Check if a font is loaded.
 bool UI::HasFont() const { return font_.IsLoaded(); }
 
-#ifdef KL_HAVE_OPENGL_BACKEND
-/// Initialize GPU UI rendering (OpenGL).
-bool UI::InitializeGPU() {
-    if (gpuInitialized_) return true;
-    if (!glRenderer_.Initialize()) return false;
-    if (font_.IsLoaded()) {
-        fontAtlasTexture_ = glRenderer_.UploadFontAtlas(font_.Atlas());
-    }
-    gpuInitialized_ = true;
-    return true;
-}
+// -- Unified RHI UI rendering ----------------------------------------
 
-/// Render UI overlay via OpenGL.
-void UI::RenderGPU(int viewportW, int viewportH) {
-    ctx_.SetViewport(static_cast<float>(viewportW), static_cast<float>(viewportH));
+bool UI::InitializeRHI(rhi::IRHIDevice* device, bool isVulkan) {
+    if (renderer_ && renderer_->IsInitialized() && !renderer_->IsSoftware())
+        return true;
+    if (!device) return false;
 
-    // Update theme transitions (hover/press/focus style interpolation)
-    auto now = std::chrono::steady_clock::now();
-    float dt = std::chrono::duration<float>(now - lastFrameTime_).count();
-    lastFrameTime_ = now;
-    if (dt > 0.1f) dt = 0.1f;
-    ctx_.UpdateTransitions(dt);
-
-    // Skip draw list rebuild when nothing changed; re-render cached list
-    // (force rebuild if debug overlay is active since values change each frame)
-    if (!ctx_.IsRenderDirty() && (!g_debugOverlay || !g_debugOverlay->HasWatches())) {
-        if (drawList_.Size() > 0)
-            glRenderer_.Render(drawList_, viewportW, viewportH);
-        return;
-    }
-
-    AutoSizeTextWidgets();
-    ctx_.UpdateLayout();
-
-    // Upload font atlas if font loaded after GPU init
-    if (font_.IsLoaded() && fontAtlasTexture_ == 0 && gpuInitialized_) {
-        fontAtlasTexture_ = glRenderer_.UploadFontAtlas(font_.Atlas());
-    }
-
-    font::Font* f = font_.IsLoaded() ? &font_ : nullptr;
-
-    // Build draw commands - may rasterize new glyphs into the atlas.
-    // If the atlas grows mid-build, UV coords in already-emitted commands
-    // become stale, so we detect growth and rebuild.
-    int gen = f ? f->Atlas().Generation() : 0;
-    drawList_.Clear();
-    drawList_.BuildFromContext(ctx_, f, fontAtlasTexture_);
-    if (f && f->Atlas().Generation() != gen) {
-        // Atlas grew - all glyphs are now cached, rebuild with correct UVs
-        drawList_.Clear();
-        drawList_.BuildFromContext(ctx_, f, fontAtlasTexture_);
-    }
-
-    ctx_.ClearRenderDirty();
-
-    // Re-upload atlas if new glyphs were rasterized during BuildFromContext
-    if (font_.IsLoaded() && fontAtlasTexture_ != 0 && font_.Atlas().IsDirty()) {
-        glRenderer_.UploadFontAtlas(font_.Atlas());
-    }
-
-    AppendDebugOverlay(viewportW, viewportH);
-    glRenderer_.Render(drawList_, viewportW, viewportH);
-}
-#endif
-
-#ifdef KL_HAVE_VULKAN_BACKEND
-bool UI::InitializeVulkanGPU(VulkanBackend* backend) {
-    if (vkGpuInitialized_) return true;
-    if (vkGpuInitFailed_) return false;
-    if (!backend) return false;
-    vkRenderer_ = std::make_unique<ui::UIVkRenderer>();
-    if (!vkRenderer_->Initialize(backend)) {
-        vkRenderer_.reset();
-        vkGpuInitFailed_ = true;
+    auto rhi = std::make_unique<ui::UIRHIRenderer>();
+    if (!rhi->Initialize(device, isVulkan)) {
         return false;
     }
+    renderer_ = std::move(rhi);
+    fontHandle_ = 0;
+    boldHandle_ = 0;
     if (font_.IsLoaded()) {
-        fontAtlasTexture_ = vkRenderer_->UploadFontAtlas(font_.Atlas());
+        fontHandle_ = renderer_->SetFont(&font_);
     }
-    vkGpuInitialized_ = true;
+    if (boldFont_.IsLoaded()) {
+        boldHandle_ = renderer_->SetBoldFont(&boldFont_);
+    }
     return true;
 }
 
-void UI::RenderVulkanGPU(int viewportW, int viewportH, VkCommandBuffer cmd) {
-    if (!vkRenderer_ || !cmd) return;
+void UI::RenderRHI(int viewportW, int viewportH) {
+    PrepareAndRender(viewportW, viewportH);
+}
 
-    ctx_.SetViewport(static_cast<float>(viewportW), static_cast<float>(viewportH));
+// -- Common render logic ---------------------------------------------
+
+void UI::PrepareAndRender(int viewportW, int viewportH) {
+    if (!renderer_ || !renderer_->IsInitialized()) return;
+
+    ctx_.SetViewport(static_cast<float>(viewportW),
+                     static_cast<float>(viewportH));
 
     auto now = std::chrono::steady_clock::now();
     float dt = std::chrono::duration<float>(now - lastFrameTime_).count();
@@ -540,47 +489,55 @@ void UI::RenderVulkanGPU(int viewportW, int viewportH, VkCommandBuffer cmd) {
 
     if (!ctx_.IsRenderDirty() && (!g_debugOverlay || !g_debugOverlay->HasWatches())) {
         if (drawList_.Size() > 0)
-            vkRenderer_->Render(drawList_, viewportW, viewportH, cmd);
+            renderer_->Render(drawList_, viewportW, viewportH);
         return;
     }
 
     AutoSizeTextWidgets();
     ctx_.UpdateLayout();
 
-    if (font_.IsLoaded() && fontAtlasTexture_ == 0 && vkGpuInitialized_) {
-        fontAtlasTexture_ = vkRenderer_->UploadFontAtlas(font_.Atlas());
+    // Ensure font atlases are set up
+    if (font_.IsLoaded() && fontHandle_ == 0) {
+        fontHandle_ = renderer_->SetFont(&font_);
+    }
+    if (boldFont_.IsLoaded() && boldHandle_ == 0) {
+        boldHandle_ = renderer_->SetBoldFont(&boldFont_);
     }
 
     font::Font* f = font_.IsLoaded() ? &font_ : nullptr;
+    font::Font* bf = boldFont_.IsLoaded() ? &boldFont_ : nullptr;
 
     int gen = f ? f->Atlas().Generation() : 0;
+    int boldGen = bf ? bf->Atlas().Generation() : 0;
     drawList_.Clear();
-    drawList_.BuildFromContext(ctx_, f, fontAtlasTexture_);
-    if (f && f->Atlas().Generation() != gen) {
+    drawList_.BuildFromContext(ctx_, f, fontHandle_, bf, boldHandle_);
+    if ((f && f->Atlas().Generation() != gen) ||
+        (bf && bf->Atlas().Generation() != boldGen)) {
         drawList_.Clear();
-        drawList_.BuildFromContext(ctx_, f, fontAtlasTexture_);
+        drawList_.BuildFromContext(ctx_, f, fontHandle_, bf, boldHandle_);
     }
 
     ctx_.ClearRenderDirty();
 
-    if (font_.IsLoaded() && fontAtlasTexture_ != 0 && font_.Atlas().IsDirty()) {
-        vkRenderer_->UploadFontAtlas(font_.Atlas());
-    }
+    // Sync dirty font atlases (GPU re-uploads, SW no-ops)
+    renderer_->SyncFontAtlases(f, fontHandle_, bf, boldHandle_);
 
     AppendDebugOverlay(viewportW, viewportH);
-    vkRenderer_->Render(drawList_, viewportW, viewportH, cmd);
+    renderer_->Render(drawList_, viewportW, viewportH);
 }
 
-void UI::ShutdownVulkanGPU() {
-    if (vkRenderer_) {
-        vkRenderer_->Shutdown();
-        vkRenderer_.reset();
+void UI::ShutdownRHI() {
+    if (renderer_) {
+        renderer_->Shutdown();
+        renderer_.reset();
     }
-    vkGpuInitialized_ = false;
-    vkGpuInitFailed_ = false;
-    fontAtlasTexture_ = 0;
+    fontHandle_ = 0;
+    boldHandle_ = 0;
 }
-#endif
+
+bool UI::IsRHIInitialized() const {
+    return renderer_ && renderer_->IsInitialized() && !renderer_->IsSoftware();
+}
 
 /// Remove all widgets and reset state.
 void UI::Clear() {

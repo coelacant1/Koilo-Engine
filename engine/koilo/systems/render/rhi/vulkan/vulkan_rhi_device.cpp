@@ -273,15 +273,21 @@ bool VulkanRHIDevice::Initialize() {
             return false;
         }
     }
-    // Blit pipeline layout: 2 sets
+    // Blit pipeline layout: 2 sets + push constants (used by UI shaders)
     {
         VkDescriptorSetLayout layouts[] = {blitSamplerLayout_, blitUBOLayout_};
+
+        VkPushConstantRange pushRange{};
+        pushRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+        pushRange.offset = 0;
+        pushRange.size = 128;
 
         VkPipelineLayoutCreateInfo layoutInfo{};
         layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         layoutInfo.setLayoutCount = 2;
         layoutInfo.pSetLayouts = layouts;
-        layoutInfo.pushConstantRangeCount = 0;
+        layoutInfo.pushConstantRangeCount = 1;
+        layoutInfo.pPushConstantRanges = &pushRange;
 
         if (vkCreatePipelineLayout(device_, &layoutInfo, nullptr,
                                     &blitPipelineLayout_) != VK_SUCCESS) {

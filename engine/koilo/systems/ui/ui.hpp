@@ -16,10 +16,7 @@
 #include "ui_animation.hpp"
 #include "localization.hpp"
 #include "render/draw_list.hpp"
-#ifdef KL_HAVE_OPENGL_BACKEND
-#include "render/ui_gl_renderer.hpp"
-#endif
-#include "render/ui_sw_renderer.hpp"
+#include "render/ui_renderer.hpp"
 #include "markup/kml_loader.hpp"
 #include <koilo/systems/font/font.hpp>
 #include <koilo/core/color/color888.hpp>
@@ -27,11 +24,8 @@
 #include <chrono>
 #include <memory>
 
-#ifdef KL_HAVE_VULKAN_BACKEND
-#include "render/ui_vk_renderer.hpp"
-#endif
-
 namespace koilo {
+namespace rhi { class IRHIDevice; }
 
 /**
  * @class UI
@@ -156,27 +150,23 @@ public:
     /// Render UI to a Color888 buffer (software path).
     void RenderToBuffer(Color888* buffer, int width, int height);
 
-    /// Initialize GPU UI rendering (OpenGL). Call once after GL context is ready.
-#ifdef KL_HAVE_OPENGL_BACKEND
-    bool InitializeGPU();
+    /// Initialize unified RHI UI rendering (OpenGL or Vulkan via IRHIDevice).
+    bool InitializeRHI(rhi::IRHIDevice* device, bool isVulkan);
 
-    /// Render UI overlay via OpenGL. Call after scene rendering, before swap.
-    void RenderGPU(int viewportW, int viewportH);
-#endif
+    /// Render UI overlay via RHI. Swapchain render pass must already be active.
+    void RenderRHI(int viewportW, int viewportH);
 
-#ifdef KL_HAVE_VULKAN_BACKEND
-    /// Initialize Vulkan UI rendering. Call once after Vulkan device is ready.
-    bool InitializeVulkanGPU(VulkanBackend* backend);
+    /// Shut down RHI UI resources.
+    void ShutdownRHI();
 
-    /// Render UI overlay via Vulkan into the active command buffer.
-    void RenderVulkanGPU(int viewportW, int viewportH, VkCommandBuffer cmd);
-
-    /// Shut down Vulkan UI resources. Must be called before VkDevice is destroyed.
-    void ShutdownVulkanGPU();
-#endif
+    /// Check if the RHI renderer is active.
+    bool IsRHIInitialized() const;
 
     /// Load a TTF font for UI text rendering.
     bool LoadFont(const char* path, float pixelSize);
+
+    /// Load a bold TTF font for bold text rendering.
+    bool LoadBoldFont(const char* path, float pixelSize);
 
     /// Check if a font is loaded.
     bool HasFont() const;
@@ -251,18 +241,11 @@ private:
     ui::TweenPool tweenPool_{256};   ///< Pool for active UI tweens.
     Localization localization_;      ///< Localization string table.
     ui::UIDrawList drawList_;        ///< Intermediate draw command list.
-#ifdef KL_HAVE_OPENGL_BACKEND
-    ui::UIGLRenderer glRenderer_;    ///< OpenGL UI renderer.
-#endif
-    ui::UISWRenderer swRenderer_;    ///< Software UI renderer.
-#ifdef KL_HAVE_VULKAN_BACKEND
-    std::unique_ptr<ui::UIVkRenderer> vkRenderer_;  ///< Vulkan UI renderer.
-    bool vkGpuInitialized_ = false;
-    bool vkGpuInitFailed_ = false;
-#endif
+    std::unique_ptr<ui::IUIRenderer> renderer_;  ///< Active UI renderer (GPU or SW).
     font::Font font_;                ///< Loaded TTF font for text rendering.
-    uint32_t fontAtlasTexture_ = 0;  ///< GPU texture handle for font atlas.
-    bool gpuInitialized_ = false;    ///< Whether GPU renderer has been initialized.
+    font::Font boldFont_;            ///< Bold TTF font for bold text rendering.
+    uint32_t fontHandle_ = 0;        ///< Font atlas handle (GPU texture or SW sentinel).
+    uint32_t boldHandle_ = 0;        ///< Bold font atlas handle.
     std::chrono::steady_clock::time_point lastFrameTime_ = std::chrono::steady_clock::now(); ///< Last frame timestamp for dt calculation.
 
     /// Apply tween value to the target widget property.
@@ -271,6 +254,9 @@ private:
 
     /// Pre-layout pass: auto-size text widgets that haven't been given explicit sizes.
     void AutoSizeTextWidgets();
+
+    /// Common render logic shared by RenderRHI and RenderToBuffer.
+    void PrepareAndRender(int viewportW, int viewportH);
 
     /// Append debug overlay text (watched CVars) to the draw list.
     void AppendDebugOverlay(int viewportW, int viewportH);
