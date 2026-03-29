@@ -17,15 +17,17 @@
 
 namespace ksl {
 
-// Registry: scans a directory for .kso + .glsl shader pairs, loads them
+/// Registry: scans a directory for .kso + .glsl shader pairs, loads them.
+///
+/// GLSL source is retained for backend-agnostic RHI shader creation.
+/// No OpenGL (or any other GPU API) headers or calls are present.
 class KSLRegistry {
 public:
     KSLRegistry() = default;
 
-    // Scan a directory for shader modules
-    // Looks for matching pairs: name.kso + name.glsl
-    // Also loads standalone .glsl (GPU-only) or .kso (CPU-only)
-    // If uber.glsl + uber_ids.txt exist, loads uber-shader for shared GPU program
+    /// Scan a directory for shader modules.
+    /// Looks for matching pairs: name.kso + name.glsl
+    /// Also loads standalone .glsl (GPU-only) or .kso (CPU-only).
     int ScanDirectory(const std::string& dir,
                       const std::string& vertexShaderSrc = "",
                       const KSLSymbolTable* symbols = nullptr) {
@@ -35,7 +37,7 @@ public:
 
         if (!fs::exists(dir) || !fs::is_directory(dir)) return 0;
 
-        // Retain vertex shader source for RHI shader creation (Phase 17f)
+        // Retain vertex shader source for RHI shader creation
         if (!vertexShaderSrc.empty()) {
             vertexShaderSource_ = vertexShaderSrc;
         }
@@ -45,32 +47,7 @@ public:
                    s.compare(s.size() - suffix.size(), suffix.size(), suffix) == 0;
         };
 
-        // Try loading uber-shader first (GL only)
-#ifdef KL_HAVE_OPENGL_BACKEND
-        bool hasUber = false;
-        std::string uberGlsl = dir + "/uber.glsl";
-        std::string uberIds  = dir + "/uber_ids.txt";
-        if (!vertexShaderSrc.empty() && fs::exists(uberGlsl) && fs::exists(uberIds)) {
-            KSLModule uberMod;
-            if (uberMod.LoadGLSL(uberGlsl, vertexShaderSrc)) {
-                uberProgram_ = uberMod.GetGLProgram();
-                uberMod.DetachGLProgram();  // prevent cleanup
-
-                // Parse shader ID mapping
-                std::ifstream idFile(uberIds);
-                std::string line;
-                while (std::getline(idFile, line)) {
-                    int id; char name[64];
-                    if (sscanf(line.c_str(), "%d %63s", &id, name) == 2) {
-                        uberShaderIDs_[std::string(name)] = id;
-                    }
-                }
-                hasUber = true;
-            }
-        }
-#endif
-
-        // Collect all shader names (exclude uber files)
+        // Collect all shader names (skip uber files -- no longer used)
         std::vector<std::string> names;
         for (const auto& entry : fs::directory_iterator(dir)) {
             if (!entry.is_regular_file()) continue;
@@ -98,27 +75,9 @@ public:
                 hasCPU = mod->LoadKSO(ksoPath, *symbols);
             }
 
-            // If uber-shader loaded, assign shared program + shader ID
-#ifdef KL_HAVE_OPENGL_BACKEND
-            if (hasUber) {
-                auto it = uberShaderIDs_.find(name);
-                if (it != uberShaderIDs_.end()) {
-                    mod->SetUberProgram(uberProgram_, it->second);
-                    hasGPU = true;
-                }
-                // Also retain per-module GLSL source for RHI pipeline
-                if (!mod->HasGLSLSource() && fs::exists(glslPath) && !vertexShaderSrc.empty()) {
-                    mod->RetainGLSLSource(glslPath, vertexShaderSrc);
-                }
-            } else if (fs::exists(glslPath) && !vertexShaderSrc.empty()) {
-                hasGPU = mod->LoadGLSL(glslPath, vertexShaderSrc);
-            }
-#else
-            // No GL context - load GLSL for source retention (RHI shader creation)
             if (fs::exists(glslPath) && !vertexShaderSrc.empty()) {
                 hasGPU = mod->LoadGLSL(glslPath, vertexShaderSrc);
             }
-#endif
 
             if (hasCPU || hasGPU) {
                 modules_[name] = std::move(mod);
@@ -236,20 +195,7 @@ public:
 
     size_t Count() const { return modules_.size(); }
 
-    bool HasUberShader() const { return uberProgram_ != 0; }
-
-#ifdef KL_HAVE_OPENGL_BACKEND
-    unsigned int GetUberProgram() const { return uberProgram_; }
-#endif
-
     void Clear() {
-#ifdef KL_HAVE_OPENGL_BACKEND
-        if (uberProgram_) {
-            glDeleteProgram(uberProgram_);
-        }
-#endif
-        uberProgram_ = 0;
-        uberShaderIDs_.clear();
         modules_.clear();
         vertexSPIRV_.clear();
         spirvData_.clear();
@@ -258,15 +204,12 @@ public:
 
 private:
     std::unordered_map<std::string, std::unique_ptr<KSLModule>> modules_;
-    // Always present so every TU sees the same layout (ODR compliance).
-    unsigned int uberProgram_ = 0;
-    std::unordered_map<std::string, int> uberShaderIDs_;
 
     // SPIR-V bytecode storage (loaded but not consumed until Vulkan backend creates pipelines)
     std::vector<uint32_t> vertexSPIRV_;
     std::unordered_map<std::string, std::vector<uint32_t>> spirvData_;
 
-    // GLSL source retention for RHI shader creation (Phase 17f)
+    // GLSL source retention for RHI shader creation
     std::string vertexShaderSource_;
 
     /** Read a binary file as uint32_t words (SPIR-V format). */

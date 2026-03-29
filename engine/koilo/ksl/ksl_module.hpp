@@ -10,13 +10,13 @@
 #include <cstring>
 #include <vector>
 
-#ifdef KL_HAVE_OPENGL_BACKEND
-#include <glad/glad.h>
-#endif
-
 namespace ksl {
 
-// Represents one loaded KSL shader: .kso (CPU via ELF) + .glsl (GPU)
+/// Represents one loaded KSL shader: .kso (CPU via ELF) + .glsl source (GPU).
+///
+/// The module stores raw GLSL source strings for backend-agnostic shader
+/// creation via the RHI device.  No OpenGL (or any other GPU API) headers
+/// or calls are present -- all GPU compilation is deferred to the RHI driver.
 class KSLModule {
 public:
     KSLModule() = default;
@@ -27,32 +27,18 @@ public:
 
     const std::string& Name() const { return name_; }
     bool HasCPU() const { return shadeFn_ != nullptr; }
-    bool HasGPU() const { return glProgram_ != 0; }
 
     /// True if GLSL source is available for RHI shader creation.
     bool HasGLSLSource() const { return !glslFragSource_.empty(); }
 
-    /// True if the module can provide GPU shading (GL program or GLSL source).
-    bool HasShaderData() const { return HasGPU() || HasGLSLSource(); }
+    /// True if the module can provide GPU shading (GLSL or SPIR-V source).
+    bool HasShaderData() const { return HasGLSLSource(); }
 
     /// Retained GLSL fragment shader source (available on all platforms).
     const std::string& GetGLSLFragmentSource() const { return glslFragSource_; }
 
     /// Retained GLSL vertex shader source (available on all platforms).
     const std::string& GetGLSLVertexSource() const { return glslVertSource_; }
-
-    /// Retain GLSL source strings without compiling a GL program.
-    /// Used when the uber-shader handles legacy GL rendering but
-    /// per-module source is still needed for RHI shader creation.
-    bool RetainGLSLSource(const std::string& path, const std::string& vertexSrc) {
-        std::ifstream file(path);
-        if (!file.is_open()) return false;
-        std::stringstream ss;
-        ss << file.rdbuf();
-        glslFragSource_ = ss.str();
-        glslVertSource_ = vertexSrc;
-        return !glslFragSource_.empty();
-    }
 
     // Load .kso (ELF) for CPU shading - unified across all platforms
     bool LoadKSO(const std::string& path, const KSLSymbolTable& symbols) {
@@ -104,62 +90,20 @@ public:
         return shadeFn_ != nullptr;
     }
 
-    // Load .glsl file and compile to GL program.
-    // Also retains GLSL source strings for RHI shader creation (Phase 17f).
+    /// Load a .glsl file and retain its source for RHI shader creation.
+    ///
+    /// No GPU API calls are made here -- the RHI device compiles the
+    /// source when creating pipeline objects.
     bool LoadGLSL(const std::string& path, const std::string& vertexSrc) {
         std::ifstream file(path);
         if (!file.is_open()) return false;
 
         std::stringstream ss;
         ss << file.rdbuf();
-        std::string fragSrc = ss.str();
-
-        // Retain GLSL source for backend-agnostic shader creation via RHI
-        glslFragSource_ = fragSrc;
+        glslFragSource_ = ss.str();
         glslVertSource_ = vertexSrc;
 
-#ifdef KL_HAVE_OPENGL_BACKEND
-
-        GLuint vs = CompileShader(GL_VERTEX_SHADER, vertexSrc.c_str());
-        GLuint fs = CompileShader(GL_FRAGMENT_SHADER, fragSrc.c_str());
-        if (!vs || !fs) {
-            if (vs) glDeleteShader(vs);
-            if (fs) glDeleteShader(fs);
-            return false;
-        }
-
-        glProgram_ = glCreateProgram();
-        glAttachShader(glProgram_, vs);
-        glAttachShader(glProgram_, fs);
-        glLinkProgram(glProgram_);
-
-        GLint linked;
-        glGetProgramiv(glProgram_, GL_LINK_STATUS, &linked);
-        glDeleteShader(vs);
-        glDeleteShader(fs);
-
-        if (!linked) {
-            char log[1024];
-            glGetProgramInfoLog(glProgram_, sizeof(log), nullptr, log);
-            KL_ERR("KSL", "Shader link error: %s", log);
-            glDeleteProgram(glProgram_);
-            glProgram_ = 0;
-            return false;
-        }
-
-        // Cache standard uniform locations
-        uView_       = glGetUniformLocation(glProgram_, "u_view");
-        uProjection_ = glGetUniformLocation(glProgram_, "u_projection");
-        uModel_      = glGetUniformLocation(glProgram_, "u_model");
-        uCameraPos_  = glGetUniformLocation(glProgram_, "u_cameraPos");
-        uTime_       = glGetUniformLocation(glProgram_, "u_time");
-
-        return true;
-#else
-        // No GL context available - GLSL source is retained for RHI
-        // shader creation but no GL program is compiled.
         return !glslFragSource_.empty();
-#endif
     }
 
     // CPU shade call
@@ -207,39 +151,7 @@ public:
         return {nullptr, 0};
     }
 
-#ifdef KL_HAVE_OPENGL_BACKEND
-    GLuint GetGLProgram() const { return static_cast<GLuint>(glProgram_); }
-    GLint GetUniformView() const { return static_cast<GLint>(uView_); }
-    GLint GetUniformProjection() const { return static_cast<GLint>(uProjection_); }
-    GLint GetUniformModel() const { return static_cast<GLint>(uModel_); }
-    GLint GetUniformCameraPos() const { return static_cast<GLint>(uCameraPos_); }
-    GLint GetUniformTime() const { return static_cast<GLint>(uTime_); }
-
-    // Uber-shader: share a single GL program across all modules
-    void SetUberProgram(GLuint prog, int shaderID) {
-        glProgram_ = static_cast<unsigned int>(prog);
-        uberShaderID_ = shaderID;
-        isUber_ = true;
-        // Cache standard uniform locations from uber program
-        uView_       = glGetUniformLocation(prog, "u_view");
-        uProjection_ = glGetUniformLocation(prog, "u_projection");
-        uModel_      = glGetUniformLocation(prog, "u_model");
-        uCameraPos_  = glGetUniformLocation(prog, "u_cameraPos");
-        uTime_       = glGetUniformLocation(prog, "u_time");
-    }
-
-    void DetachGLProgram() { glProgram_ = 0; }
-#endif
-    bool IsUber() const { return isUber_; }
-    int GetUberShaderID() const { return uberShaderID_; }
-
     void Unload() {
-#ifdef KL_HAVE_OPENGL_BACKEND
-        if (glProgram_ && !isUber_) { glDeleteProgram(glProgram_); }
-#endif
-        glProgram_ = 0;
-        isUber_ = false;
-        uberShaderID_ = -1;
         elfLoader_.Unload();
         shadeFn_ = nullptr;
         infoFn_ = nullptr;
@@ -254,24 +166,6 @@ public:
     }
 
 private:
-#ifdef KL_HAVE_OPENGL_BACKEND
-    static GLuint CompileShader(GLenum type, const char* src) {
-        GLuint s = glCreateShader(type);
-        glShaderSource(s, 1, &src, nullptr);
-        glCompileShader(s);
-        GLint ok;
-        glGetShaderiv(s, GL_COMPILE_STATUS, &ok);
-        if (!ok) {
-            char log[512];
-            glGetShaderInfoLog(s, 512, nullptr, log);
-            KL_ERR("KSL", "Shader compile error: %s", log);
-            glDeleteShader(s);
-            return 0;
-        }
-        return s;
-    }
-#endif
-
     std::string name_;
 
     // CPU shader: ELF loader (replaces dlopen/LoadLibrary)
@@ -288,19 +182,9 @@ private:
     // Shader metadata (render hints, etc.) loaded from .kso
     std::vector<MetaEntry> metadata_;
 
-    // GLSL source retention for backend-agnostic RHI shader creation (Phase 17f)
+    // GLSL source retention for backend-agnostic RHI shader creation
     std::string glslFragSource_;
     std::string glslVertSource_;
-
-    // GPU (GL program) - always present for consistent layout across TUs (ODR).
-    unsigned int glProgram_ = 0;
-    int uView_ = -1;
-    int uProjection_ = -1;
-    int uModel_ = -1;
-    int uCameraPos_ = -1;
-    int uTime_ = -1;
-    bool isUber_ = false;
-    int uberShaderID_ = -1;
 };
 
 } // namespace ksl

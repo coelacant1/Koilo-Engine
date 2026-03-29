@@ -53,6 +53,12 @@
 #include <koilo/systems/display/framebuffer.hpp>
 #include <koilo/systems/render/gl/render_backend_factory.hpp>
 #include <koilo/systems/render/pipeline/render_pipeline.hpp>
+#include <koilo/systems/render/graph/render_graph.hpp>
+#include <koilo/systems/render/graph/scene_pass.hpp>
+#include <koilo/systems/render/graph/sky_pass.hpp>
+#include <koilo/systems/render/graph/debug_pass.hpp>
+#include <koilo/systems/render/graph/blit_pass.hpp>
+#include <koilo/systems/render/graph/overlay_pass.hpp>
 #include <koilo/systems/profiling/performanceprofiler.hpp>
 #include <SDL3/SDL.h>
 #include <cstdio>
@@ -351,65 +357,68 @@ private:
             uint64_t workStart = SDL_GetPerformanceCounter();
             kernel.BeginFrame();
 
-            if (gpuBackend) {
-                // Begin GPU frame (acquires swapchain, starts cmd buffer)
+            // -- Simulation tick (shared by all render paths) --------
+            bool simPaused = cvar_sim_pause.Get();
+            if (!simPaused || g_simStepFrames.load() > 0) {
+                if (simPaused) g_simStepFrames.fetch_sub(1);
+                kernel.Tick(dt);
+                engine.ExecuteUpdate();
+                if (engine.HasError()) {
+                    KL_ERR("koilo", "Script error: %s", engine.GetError());
+                    running = false; break;
+                }
+            }
+
+            engine.UpdateUIAnimations(dt);
+
+            // -- Render + present ------------------------------------
+            if (rhiPipeline) {
+                // GPU path: render graph drives the frame
                 gpuBackend->PrepareFrame();
 
-                // Simulation pause: skip tick unless stepping
-                bool simPaused = cvar_sim_pause.Get();
-                if (!simPaused || g_simStepFrames.load() > 0) {
-                    if (simPaused) g_simStepFrames.fetch_sub(1);
-                    kernel.Tick(dt);
-                    engine.ExecuteUpdate();
-                    if (engine.HasError()) {
-                        KL_ERR("koilo", "Script error: %s", engine.GetError());
-                        running = false; break;
-                    }
+                Scene*  scene  = engine.GetScene();
+                Camera* camera = engine.GetCamera();
+
+                rhi::RenderGraph frameGraph;
+
+                // Scene pass (offscreen): setup + sky + meshes + debug + end
+                rhi::AddSceneBeginPass(frameGraph, rhiPipeline, scene, camera);
+                rhi::AddSkyPass(frameGraph, rhiPipeline);
+                rhi::AddSceneMeshesPass(frameGraph, rhiPipeline);
+                rhi::AddDebugLinesPass(frameGraph, rhiPipeline);
+                rhi::AddSceneEndPass(frameGraph, rhiPipeline);
+
+                // Swapchain pass: blit offscreen + overlay canvases
+                rhi::AddBlitPass(frameGraph, rhiPipeline, winW, winH);
+                rhi::AddOverlayPass(frameGraph, rhiPipeline, winW, winH);
+
+                // UI pass (renders into the open swapchain render pass)
+                if (uiPtr) {
+                    frameGraph.AddPass("ui", {}, {"swapchain"},
+                        [&]() {
+                            if (!uiPtr->IsRHIInitialized()) {
+                                auto* dev = rhiPipeline->GetDevice();
+                                bool isVk = rhiPipeline->IsVulkanDevice();
+                                uiPtr->InitializeRHI(dev, isVk);
+                            }
+                            if (uiPtr->IsRHIInitialized()) {
+                                uiPtr->RenderRHI(winW, winH);
+                            }
+                        });
                 }
 
-                engine.RenderFrameGPU();
-                gpuBackend->BlitToScreen(winW, winH);
-                gpuBackend->CompositeCanvasOverlays(winW, winH);
+                frameGraph.Compile();
+                frameGraph.Execute();
 
-                // UI rendering: prefer unified RHI path, fall back to
-                // backend-specific paths if the RHI pipeline isn't available.
-                if (rhiPipeline && uiPtr) {
-                    engine.UpdateUIAnimations(dt);
-                    if (!uiPtr->IsRHIInitialized()) {
-                        auto* dev = rhiPipeline->GetDevice();
-                        bool isVk = rhiPipeline->IsVulkanDevice();
-                        uiPtr->InitializeRHI(dev, isVk);
-                    }
-                    if (uiPtr->IsRHIInitialized()) {
-                        uiPtr->RenderRHI(winW, winH);
-                    }
-                }
-
-                // End GPU frame (submits cmd buffer + presents)
                 gpuBackend->FinishFrame();
 
-                // OpenGL GPU backends render to the default framebuffer but
-                // don't own the window swap.  Vulkan manages its own present
-                // inside FinishFrame, so only swap for non-Vulkan displays.
 #ifdef KL_HAVE_VULKAN_BACKEND
                 if (!vkDisplay)
 #endif
                     gpuDisplayRaw->SwapOnly();
             } else {
-                // Software render path
-                bool simPaused = cvar_sim_pause.Get();
-                if (!simPaused || g_simStepFrames.load() > 0) {
-                    if (simPaused) g_simStepFrames.fetch_sub(1);
-                    kernel.Tick(dt);
-                    engine.ExecuteUpdate();
-                    if (engine.HasError()) {
-                        KL_ERR("koilo", "Script error: %s", engine.GetError());
-                        running = false; break;
-                    }
-                }
-
+                // Software path: CPU rasterize + present
                 engine.RenderFrame(fb.data(), pixW, pixH);
-                engine.UpdateUIAnimations(dt);
                 Framebuffer framebuffer(
                     reinterpret_cast<uint8_t*>(fb.data()),
                     pixW, pixH, PixelFormat::RGB888);

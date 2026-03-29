@@ -294,10 +294,21 @@ void RenderPipeline::ReadPixels(Color888* /*buffer*/, int /*width*/, int /*heigh
 // -- IGPURenderBackend: RenderDirect ------------------------------------
 
 void RenderPipeline::RenderDirect(Scene* scene, CameraBase* camera) {
-    if (!initialized_ || !scene || !camera || camera->Is2D())
+    if (!BeginScenePass(scene, camera))
         return;
+    RenderSky();
+    RenderSceneMeshes();
+    RenderSceneDebugLines();
+    EndScenePass();
+}
 
-    KL_PERF_SCOPE("RenderPipeline.RenderDirect");
+// -- Granular render methods (for render graph) -------------------------
+
+bool RenderPipeline::BeginScenePass(Scene* scene, CameraBase* camera) {
+    if (!initialized_ || !scene || !camera || camera->Is2D())
+        return false;
+
+    KL_PERF_SCOPE("RenderPipeline.BeginScenePass");
 
     auto* device = config_.device;
 
@@ -307,7 +318,7 @@ void RenderPipeline::RenderDirect(Scene* scene, CameraBase* camera) {
     uint32_t vpW  = static_cast<uint32_t>(maxC.X - minC.X + 1);
     uint32_t vpH  = static_cast<uint32_t>(maxC.Y - minC.Y + 1);
 
-    if (vpW == 0 || vpH == 0) return;
+    if (vpW == 0 || vpH == 0) return false;
 
     // -- Ensure off-screen render target matches ---------------------
     EnsureOffscreenTarget(vpW, vpH);
@@ -346,29 +357,27 @@ void RenderPipeline::RenderDirect(Scene* scene, CameraBase* camera) {
     device->SetScissor(sc);
 
     // -- Build view/projection matrices ------------------------------
-    float viewData[16], projData[16], cameraPosData[4];
-    BuildViewProjection(camera, viewData, projData, cameraPosData);
+    BuildViewProjection(camera, sceneView_, sceneProj_, sceneCameraPos_);
 
     // Compute inverseViewProj for shaders that reconstruct view direction
     Matrix4x4 viewMat, projMat;
-    std::memcpy(&viewMat.M[0][0], viewData, 64);
-    std::memcpy(&projMat.M[0][0], projData, 64);
+    std::memcpy(&viewMat.M[0][0], sceneView_, 64);
+    std::memcpy(&projMat.M[0][0], sceneProj_, 64);
     Matrix4x4 vpMat = projMat * viewMat;
     Matrix4x4 invVP = vpMat.Inverse();
-    float invVPData[16];
     {
         Matrix4x4 invVPT = invVP.Transpose();
-        std::memcpy(invVPData, &invVPT.M[0][0], 64);
+        std::memcpy(sceneInvVP_, &invVPT.M[0][0], 64);
     }
 
     // -- Upload transform UBO ----------------------------------------
     {
         TransformUBO ubo{};
         for (int i = 0; i < 4; ++i) ubo.model[i * 4 + i] = 1.0f;
-        std::memcpy(ubo.view, viewData, sizeof(ubo.view));
-        std::memcpy(ubo.projection, projData, sizeof(ubo.projection));
-        std::memcpy(ubo.cameraPos, cameraPosData, sizeof(ubo.cameraPos));
-        std::memcpy(ubo.inverseViewProj, invVPData, sizeof(ubo.inverseViewProj));
+        std::memcpy(ubo.view, sceneView_, sizeof(ubo.view));
+        std::memcpy(ubo.projection, sceneProj_, sizeof(ubo.projection));
+        std::memcpy(ubo.cameraPos, sceneCameraPos_, sizeof(ubo.cameraPos));
+        std::memcpy(ubo.inverseViewProj, sceneInvVP_, sizeof(ubo.inverseViewProj));
         device->UpdateBuffer(transformUBO_, &ubo, sizeof(ubo));
     }
 
@@ -379,71 +388,81 @@ void RenderPipeline::RenderDirect(Scene* scene, CameraBase* camera) {
     //    are populated before the first descriptor set flush) --------
     UploadLights(scene);
 
-    // -- Render sky (through standard material path) -----------------
-    {
-        Sky& sky = Sky::GetInstance();
-        if (sky.IsEnabled()) {
-            KSLMaterial* kmat = sky.GetMaterial();
-            if (kmat && kmat->IsBound() && kmat->GetModule()) {
-                // MaterialBinder reads metadata (depthTest=0, depthWrite=0,
-                // cullMode=0) and creates the appropriate pipeline variant
-                const MaterialBinding* binding = materialBinder_->Bind(kmat);
-                if (binding && binding->valid) {
-                    materialBinder_->UpdateUniforms(kmat);
+    currentScene_    = scene;
+    scenePassActive_ = true;
+    return true;
+}
 
-                    // Identity transform for sky (screen-space quad)
-                    TransformUBO skyUbo{};
-                    for (int i = 0; i < 4; ++i) {
-                        skyUbo.model[i * 4 + i]      = 1.0f;
-                        skyUbo.view[i * 4 + i]       = 1.0f;
-                        skyUbo.projection[i * 4 + i] = 1.0f;
-                    }
-                    std::memcpy(skyUbo.inverseViewProj, invVPData,
-                                sizeof(skyUbo.inverseViewProj));
-                    device->UpdateBuffer(transformUBO_, &skyUbo, sizeof(skyUbo));
-                    device->BindUniformBuffer(transformUBO_, 0, 0);
+void RenderPipeline::RenderSky() {
+    if (!scenePassActive_) return;
 
-                    device->BindPipeline(binding->pipeline);
-                    device->BindUniformBuffer(binding->uniformBuffer, 1, 0,
-                                              0, binding->uniformSize);
+    auto* device = config_.device;
+    Sky& sky = Sky::GetInstance();
+    if (!sky.IsEnabled()) return;
 
-                    // Bind texture if available (panoramic / cubemap sky)
-                    if (kmat->TextureCount() > 0) {
-                        Texture* tex = kmat->GetTexture(0);
-                        if (tex) {
-                            RHITexture gpuTex = textureCache_->GetOrUpload(tex);
-                            if (gpuTex.IsValid())
-                                device->BindTexture(gpuTex, 2, 0);
-                        }
-                    }
+    KSLMaterial* kmat = sky.GetMaterial();
+    if (!kmat || !kmat->IsBound() || !kmat->GetModule()) return;
 
-                    // Draw sky quad (scene-format VBO through material pipeline)
-                    device->BindVertexBuffer(sceneQuadVBO_);
-                    device->Draw(6);
+    const MaterialBinding* binding = materialBinder_->Bind(kmat);
+    if (!binding || !binding->valid) return;
 
-                    // Restore camera transform for subsequent draws
-                    TransformUBO camUbo{};
-                    for (int i = 0; i < 4; ++i) camUbo.model[i * 4 + i] = 1.0f;
-                    std::memcpy(camUbo.view, viewData, sizeof(camUbo.view));
-                    std::memcpy(camUbo.projection, projData, sizeof(camUbo.projection));
-                    std::memcpy(camUbo.cameraPos, cameraPosData, sizeof(camUbo.cameraPos));
-                    std::memcpy(camUbo.inverseViewProj, invVPData,
-                                sizeof(camUbo.inverseViewProj));
-                    device->UpdateBuffer(transformUBO_, &camUbo, sizeof(camUbo));
-                    device->BindUniformBuffer(transformUBO_, 0, 0);
-                }
-            }
+    materialBinder_->UpdateUniforms(kmat);
+
+    // Identity transform for sky (screen-space quad)
+    TransformUBO skyUbo{};
+    for (int i = 0; i < 4; ++i) {
+        skyUbo.model[i * 4 + i]      = 1.0f;
+        skyUbo.view[i * 4 + i]       = 1.0f;
+        skyUbo.projection[i * 4 + i] = 1.0f;
+    }
+    std::memcpy(skyUbo.inverseViewProj, sceneInvVP_,
+                sizeof(skyUbo.inverseViewProj));
+    device->UpdateBuffer(transformUBO_, &skyUbo, sizeof(skyUbo));
+    device->BindUniformBuffer(transformUBO_, 0, 0);
+
+    device->BindPipeline(binding->pipeline);
+    device->BindUniformBuffer(binding->uniformBuffer, 1, 0,
+                              0, binding->uniformSize);
+
+    if (kmat->TextureCount() > 0) {
+        Texture* tex = kmat->GetTexture(0);
+        if (tex) {
+            RHITexture gpuTex = textureCache_->GetOrUpload(tex);
+            if (gpuTex.IsValid())
+                device->BindTexture(gpuTex, 2, 0);
         }
     }
 
-    // -- Render scene meshes -----------------------------------------
-    RenderMeshes(scene, viewData, projData, cameraPosData);
+    device->BindVertexBuffer(sceneQuadVBO_);
+    device->Draw(6);
 
-    // -- Render debug lines ------------------------------------------
-    RenderDebugLines(viewData, projData);
+    // Restore camera transform for subsequent draws
+    TransformUBO camUbo{};
+    for (int i = 0; i < 4; ++i) camUbo.model[i * 4 + i] = 1.0f;
+    std::memcpy(camUbo.view, sceneView_, sizeof(camUbo.view));
+    std::memcpy(camUbo.projection, sceneProj_, sizeof(camUbo.projection));
+    std::memcpy(camUbo.cameraPos, sceneCameraPos_, sizeof(camUbo.cameraPos));
+    std::memcpy(camUbo.inverseViewProj, sceneInvVP_,
+                sizeof(camUbo.inverseViewProj));
+    device->UpdateBuffer(transformUBO_, &camUbo, sizeof(camUbo));
+    device->BindUniformBuffer(transformUBO_, 0, 0);
+}
 
-    // -- End off-screen render pass ----------------------------------
-    device->EndRenderPass();
+void RenderPipeline::RenderSceneMeshes() {
+    if (!scenePassActive_) return;
+    RenderMeshes(currentScene_, sceneView_, sceneProj_, sceneCameraPos_);
+}
+
+void RenderPipeline::RenderSceneDebugLines() {
+    if (!scenePassActive_) return;
+    RenderDebugLines(sceneView_, sceneProj_);
+}
+
+void RenderPipeline::EndScenePass() {
+    if (!scenePassActive_) return;
+    config_.device->EndRenderPass();
+    scenePassActive_ = false;
+    currentScene_    = nullptr;
 }
 
 // -- IGPURenderBackend: BlitToScreen ------------------------------------
