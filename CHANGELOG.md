@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.3.14] - 2026-3-30
+Module ABI v3, contracts, error taxonomy, and structured concurrency.
+
+### Added
+- C ABI v3: 5 descriptor structs (`KoiloCommandDesc`, `KoiloInputListenerDesc`, `KoiloComponentDesc`, `KoiloWidgetTypeDesc`, `KoiloRenderPassDesc`) with size-checked backward compatibility (#31)
+- C-C++ adapters in `module_abi_adapters` wire ABI v3 functions into kernel registries
+- Contract macros: `KL_REQUIRE`, `KL_ENSURE`, `KL_INVARIANT` - structured log + `MSG_CONTRACT_VIOLATION` in debug, `__builtin_unreachable()` in release (#32)
+- Structured error taxonomy: `ErrorSeverity` (4 levels), `ErrorSystem` (12 subsystems), `EngineError` struct, ring-buffer `ErrorHistory` (#33)
+- `KoiloKernel::ReportError()` dispatches `MSG_ENGINE_ERROR` and stores in history
+- `errors` console command with `--severity`/`--system` filtering and `clear` subcommand
+- Cooperative cancellation: `CancellationToken` with parent-child linking and atomic propagation (#34)
+- `TaskGroup` with RAII wait-for-all, promise-based completion signals, and failure cancellation
+- `TaskHandle<T>` typed future wrapper; `KoiloKernel::TaskScope()` for lexical scoping
+- `task list` console command showing thread pool status
+
+### Changed
+- `KL_MODULE_ABI_VER` bumped from 2 to 3; `EngineServices` unified `engine` pointer to `KoiloKernel*`
+- `EngineServices::reserved[4]` replaced with 5 typed function pointers + `reserved_v3[4]`
+
+### Removed
+- 14 orphaned stale test headers
+
 ## [0.3.13] - 2026-3-30
 Typed services, input events, ECS runtime components, and custom UI widgets.
 

@@ -9,7 +9,6 @@
  */
 #pragma once
 #include <koilo/kernel/message_bus.hpp>
-#include <koilo/kernel/message_types.hpp>
 #include <cstring>
 #include <mutex>
 #include <set>

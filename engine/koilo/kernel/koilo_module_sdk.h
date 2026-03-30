@@ -45,7 +45,7 @@ extern "C" {
 /* ---- ABI Constants ---- */
 
 #define KL_MODULE_MAGIC   0x4D494F4B  /* "KOIM" */
-#define KL_MODULE_ABI_VER 2
+#define KL_MODULE_ABI_VER 3
 
 /* Module phases - controls initialization and rendering order. */
 #define KOILO_PHASE_CORE     0
@@ -109,6 +109,53 @@ typedef struct {
     uint32_t flags;
 } KoiloGlobalExport;
 
+/* ---- ABI v3 Descriptor Structs ---- */
+
+typedef struct {
+    const char* name;
+    const char* help;
+    int (*handler)(const char** args, int argc);
+    uint32_t reserved;
+} KoiloCommandDesc;
+
+typedef struct {
+    const char* name;
+    int priority;
+    int (*on_key)(int key, int action, int mods);
+    int (*on_mouse_button)(int button, int action, float x, float y);
+    int (*on_mouse_move)(float x, float y, float dx, float dy);
+    int (*on_scroll)(float dx, float dy);
+    uint32_t reserved;
+} KoiloInputListenerDesc;
+
+typedef struct {
+    const char* name;
+    uint32_t size;
+    uint32_t alignment;
+    void (*construct)(void* dest);
+    void (*destruct)(void* ptr);
+    void (*copy)(void* dest, const void* src);
+    uint32_t reserved;
+} KoiloComponentDesc;
+
+typedef struct {
+    const char* name;
+    void* (*create)(void);
+    void  (*destroy)(void* state);
+    void  (*render)(void* state, void* draw_ctx);
+    void  (*on_click)(void* state);
+    uint32_t reserved;
+} KoiloWidgetTypeDesc;
+
+typedef struct {
+    const char* name;
+    uint32_t order;
+    void (*execute)(void* context);
+    uint32_t reserved;
+} KoiloRenderPassDesc;
+
+/* ---- Engine Services ---- */
+
 typedef struct {
     uint32_t api_size;
 
@@ -137,7 +184,14 @@ typedef struct {
     int   (*register_class)(void* engine, const KoiloClassDescExport* desc);
     int   (*register_exports)(void* engine, const KoiloGlobalExport* exports, uint32_t count);
 
-    void* reserved[4];
+    /* Extension points (ABI v3) */
+    int   (*register_command)(void* engine, const KoiloCommandDesc* desc);
+    int   (*register_input_listener)(void* engine, const KoiloInputListenerDesc* desc);
+    int   (*register_component)(void* engine, const KoiloComponentDesc* desc);
+    int   (*register_widget_type)(void* engine, const KoiloWidgetTypeDesc* desc);
+    int   (*register_render_pass)(void* engine, const KoiloRenderPassDesc* desc);
+
+    void* reserved_v3[4];
 } KoiloEngineServices;
 
 /* ---- Convenience Macros ---- */

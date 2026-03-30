@@ -1,5 +1,6 @@
 #include <koilo/kernel/kernel.hpp>
 #include <koilo/kernel/logging/log.hpp>
+#include <koilo/kernel/message_bus.hpp>
 #include <koilo/systems/render/sky/sky.hpp>
 
 namespace koilo {
@@ -21,6 +22,7 @@ KoiloKernel::KoiloKernel(const Config& config)
     DebugDraw::SetInstance(&debugDraw_);
     Profiler::SetInstance(&profiler_);
     Sky::SetInstance(sky_.get());
+    SetMessageBus(&bus_);
 
     // Register config as a kernel service
     services_.Register("config", &config_);
@@ -36,6 +38,7 @@ KoiloKernel::~KoiloKernel() {
     DebugDraw::ClearInstance();
     Profiler::ClearInstance();
     Sky::ClearInstance();
+    SetMessageBus(nullptr);
 }
 
 ModuleId KoiloKernel::RegisterModule(const ModuleDesc& desc, Cap caps) {
@@ -83,6 +86,24 @@ void KoiloKernel::Shutdown() {
 
     KL_LOG("Kernel", "Shutdown complete. Messages dispatched: %zu, dropped: %zu",
            bus_.TotalDispatched(), bus_.TotalDropped());
+}
+
+void KoiloKernel::ReportError(const EngineError& err) {
+    // 1. Store in ring buffer
+    errors_.Push(err);
+
+    // 2. Structured log (severity maps to log level)
+    const char* sys = ErrorSystemName(err.system);
+    if (err.severity == ErrorSeverity::Fatal || err.severity == ErrorSeverity::Degraded) {
+        KL_ERR(sys, "[%s] %s: %s", ErrorSeverityName(err.severity), err.code, err.message);
+    } else if (err.severity == ErrorSeverity::Recoverable) {
+        KL_WARN(sys, "[%s] %s: %s", ErrorSeverityName(err.severity), err.code, err.message);
+    } else {
+        KL_DBG(sys, "[%s] %s: %s", ErrorSeverityName(err.severity), err.code, err.message);
+    }
+
+    // 3. Dispatch to MessageBus
+    bus_.SendImmediate(MakeMessage(MSG_ENGINE_ERROR, MODULE_KERNEL, err));
 }
 
 bool KoiloKernel::RequireCap(ModuleId caller, Cap required, const char* operation) {

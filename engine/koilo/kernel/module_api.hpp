@@ -15,7 +15,7 @@ namespace koilo {
 // --- C ABI for dynamically loaded modules (dlopen / MCU binary) ---
 
 #define KL_MODULE_MAGIC   0x4D494F4B  // "KOIM"
-#define KL_MODULE_ABI_VER 2
+#define KL_MODULE_ABI_VER 3
 
 // ---- Portable reflection descriptors (C ABI) ----
 
@@ -74,6 +74,56 @@ struct KoiloModuleHeader {
     uint32_t reserved[4];
 };
 
+// ---- ABI v3 descriptor structs (C-compatible) ----
+
+/// Describes a console command registered by a module.
+struct KoiloCommandDesc {
+    const char* name;                               ///< Command name (e.g., "spawn")
+    const char* help;                               ///< One-line help text (nullable)
+    int (*handler)(const char** args, int argc);    ///< Handler function
+    uint32_t reserved;
+};
+
+/// Describes an input listener registered by a module.
+struct KoiloInputListenerDesc {
+    const char* name;                               ///< Listener name
+    int priority;                                   ///< Higher = receives events first
+    int (*on_key)(int key, int action, int mods);   ///< Return 1 to consume
+    int (*on_mouse_button)(int button, int action, float x, float y);
+    int (*on_mouse_move)(float x, float y, float dx, float dy);
+    int (*on_scroll)(float dx, float dy);
+    uint32_t reserved;
+};
+
+/// Describes a component type registered by a module.
+struct KoiloComponentDesc {
+    const char* name;                               ///< Component type name
+    uint32_t size;                                  ///< sizeof(T)
+    uint32_t alignment;                             ///< alignof(T)
+    void (*construct)(void* dest);                  ///< Placement constructor
+    void (*destruct)(void* ptr);                    ///< Destructor
+    void (*copy)(void* dest, const void* src);      ///< Copy assignment
+    uint32_t reserved;
+};
+
+/// Describes a custom widget type registered by a module.
+struct KoiloWidgetTypeDesc {
+    const char* name;                               ///< Widget type name
+    void* (*create)(void);                          ///< Returns opaque widget state
+    void  (*destroy)(void* state);                  ///< Destroy widget state
+    void  (*render)(void* state, void* draw_ctx);   ///< Render via CanvasDrawContext
+    void  (*on_click)(void* state);                 ///< Click handler (nullable)
+    uint32_t reserved;
+};
+
+/// Describes a render pass registered by a module.
+struct KoiloRenderPassDesc {
+    const char* name;                               ///< Pass name (e.g., "fog")
+    uint32_t order;                                 ///< Execution order hint
+    void (*execute)(void* context);                 ///< Execute the pass
+    uint32_t reserved;
+};
+
 // C function pointer table  engine services exposed to dynamic modules.
 // Layout is append-only: new functions are added at the end, never reordered.
 // Modules check api_size >= offsetof(EngineServices, needed_field) before use.
@@ -105,7 +155,14 @@ struct EngineServices {
     int   (*register_class)(void* engine, const ClassDescExport* desc);
     int   (*register_exports)(void* engine, const GlobalExport* exports, uint32_t count);
 
-    void* reserved[4];
+    // --- Extension points (ABI v3) ---
+    int   (*register_command)(void* engine, const KoiloCommandDesc* desc);
+    int   (*register_input_listener)(void* engine, const KoiloInputListenerDesc* desc);
+    int   (*register_component)(void* engine, const KoiloComponentDesc* desc);
+    int   (*register_widget_type)(void* engine, const KoiloWidgetTypeDesc* desc);
+    int   (*register_render_pass)(void* engine, const KoiloRenderPassDesc* desc);
+
+    void* reserved_v3[4];
 };
 
 // C entry points that a dynamic module exports.

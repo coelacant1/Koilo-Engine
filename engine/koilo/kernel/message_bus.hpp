@@ -110,3 +110,9 @@ private:
 };
 
 } // namespace koilo
+
+namespace koilo {
+/// Global accessor for MessageBus (set by kernel on init, cleared on shutdown).
+MessageBus* GetMessageBus();
+void SetMessageBus(MessageBus* bus);
+} // namespace koilo
