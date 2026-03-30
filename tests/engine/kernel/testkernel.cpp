@@ -6,6 +6,7 @@
 #include <koilo/kernel/message_types.hpp>
 #include <koilo/kernel/capabilities.hpp>
 #include <koilo/kernel/service_registry.hpp>
+#include <koilo/kernel/console/command_provider.hpp>
 #include <koilo/kernel/module_manager.hpp>
 #include <koilo/kernel/kernel.hpp>
 #include <cstring>
@@ -305,6 +306,51 @@ void TestKernel::TestServiceList() {
     TEST_ASSERT_EQUAL(2, list.size());
 }
 
+void TestKernel::TestServiceTypedRegisterAndGet() {
+    ServiceRegistry reg;
+
+    struct MockProvider : ICommandProvider {
+        std::vector<CommandDef> GetCommands() const override { return {}; }
+    };
+    MockProvider provider;
+
+    reg.RegisterTyped<ICommandProvider>("commands.test", &provider);
+    TEST_ASSERT_TRUE(reg.Has("commands.test"));
+
+    auto* result = reg.Get<ICommandProvider>("commands.test");
+    TEST_ASSERT_NOT_NULL(result);
+    TEST_ASSERT_EQUAL_PTR(&provider, result);
+}
+
+void TestKernel::TestServiceListByPrefix() {
+    ServiceRegistry reg;
+    int a = 1, b = 2, c = 3;
+    reg.Register("commands.audio", &a);
+    reg.Register("commands.physics", &b);
+    reg.Register("render.backend", &c);
+
+    auto cmdList = reg.ListByPrefix("commands.");
+    TEST_ASSERT_EQUAL(2, cmdList.size());
+
+    auto renderList = reg.ListByPrefix("render.");
+    TEST_ASSERT_EQUAL(1, renderList.size());
+
+    auto emptyList = reg.ListByPrefix("nonexistent.");
+    TEST_ASSERT_EQUAL(0, emptyList.size());
+}
+
+void TestKernel::TestServiceUnregisterCleansType() {
+    ServiceRegistry reg;
+    int val = 42;
+    reg.RegisterTyped<int>("typed.svc", &val);
+    TEST_ASSERT_TRUE(reg.Has("typed.svc"));
+    TEST_ASSERT_EQUAL(42, *reg.Get<int>("typed.svc"));
+
+    reg.Unregister("typed.svc");
+    TEST_ASSERT_FALSE(reg.Has("typed.svc"));
+    TEST_ASSERT_NULL(reg.Get<int>("typed.svc"));
+}
+
 // --- Module Manager ---
 
 static bool g_moduleAInit = false;
@@ -518,6 +564,9 @@ void TestKernel::RunAllTests() {
     RUN_TEST(TestKernel::TestServiceOverwrite);
     RUN_TEST(TestKernel::TestServiceUnregister);
     RUN_TEST(TestKernel::TestServiceList);
+    RUN_TEST(TestKernel::TestServiceTypedRegisterAndGet);
+    RUN_TEST(TestKernel::TestServiceListByPrefix);
+    RUN_TEST(TestKernel::TestServiceUnregisterCleansType);
 
     // Module manager
     RUN_TEST(TestKernel::TestModuleRegistration);

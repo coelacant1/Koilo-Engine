@@ -7,7 +7,9 @@
  * @author Coela
  */
 #pragma once
+#include <cassert>
 #include <string>
+#include <typeindex>
 #include <vector>
 #include <unordered_map>
 
@@ -28,17 +30,35 @@ public:
     /// Attach a message bus for service lifecycle events.
     void SetBus(MessageBus* bus) { bus_ = bus; }
 
-    /// Register a service. Overwrites if name already registered.
+    /// Register a service (untyped). Overwrites if name already registered.
     void Register(const std::string& name, void* service);
+
+    /// Register a service with type information. Debug builds validate
+    /// type consistency on retrieval; release builds have zero overhead.
+    template<typename T>
+    void RegisterTyped(const std::string& name, T* service) {
+        Register(name, static_cast<void*>(service));
+#ifndef NDEBUG
+        typeMap_.insert_or_assign(name, std::type_index(typeid(T)));
+#endif
+    }
 
     /// Remove a service registration.
     void Unregister(const std::string& name);
 
-    /// Get a service by name. Returns nullptr if not found.
+    /// Get a service by name (untyped cast). Returns nullptr if not found.
     template<typename T>
     T* Get(const std::string& name) const {
         auto it = services_.find(name);
-        return it != services_.end() ? static_cast<T*>(it->second) : nullptr;
+        if (it == services_.end()) return nullptr;
+#ifndef NDEBUG
+        auto ti = typeMap_.find(name);
+        if (ti != typeMap_.end()) {
+            assert(ti->second == std::type_index(typeid(T)) &&
+                   "ServiceRegistry type mismatch: requested type differs from registered type");
+        }
+#endif
+        return static_cast<T*>(it->second);
     }
 
     /// Non-typed get (returns void*). Returns nullptr if not found.
@@ -50,12 +70,18 @@ public:
     /// List all registered service names.
     std::vector<std::string> List() const;
 
+    /// List all service names matching a prefix (e.g. "commands.").
+    std::vector<std::string> ListByPrefix(const std::string& prefix) const;
+
     /// Number of registered services.
     size_t Count() const { return services_.size(); }
 
 private:
     std::unordered_map<std::string, void*> services_;
     MessageBus* bus_ = nullptr;
+#ifndef NDEBUG
+    std::unordered_map<std::string, std::type_index> typeMap_;
+#endif
 };
 
 } // namespace koilo

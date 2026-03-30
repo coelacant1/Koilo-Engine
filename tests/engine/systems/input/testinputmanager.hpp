@@ -39,6 +39,11 @@ public:
     // Edge case & integration tests
     static void TestEdgeCases();
 
+    // Input listener tests (#28)
+    static void TestListenerRegistryDispatch();
+    static void TestListenerPriorityOrder();
+    static void TestListenerConsumption();
+
     /**
      * @brief Runs all test methods.
      */

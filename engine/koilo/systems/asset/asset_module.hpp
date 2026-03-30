@@ -18,6 +18,7 @@
 
 #include <koilo/kernel/unified_module.hpp>
 #include <koilo/kernel/module.hpp>
+#include <koilo/kernel/console/command_provider.hpp>
 #include <koilo/kernel/asset/asset_registry.hpp>
 #include <koilo/kernel/asset/asset_converter.hpp>
 #include <koilo/kernel/asset/asset_manifest.hpp>
@@ -35,7 +36,7 @@ class KoiloKernel;
  * @class AssetModule
  * @brief Unified asset pipeline - kernel-level registry with script integration.
  */
-class AssetModule : public IModule {
+class AssetModule : public IModule, public ICommandProvider {
 public:
     AssetModule();
     ~AssetModule() override;
@@ -47,6 +48,9 @@ public:
     void Update(float dt) override;
     void Render(Color888* buffer, int width, int height) override;
     void Shutdown() override;
+
+    // ICommandProvider
+    std::vector<CommandDef> GetCommands() const override;
 
     // -- Kernel module descriptor (static lifecycle) ---------------
 
@@ -104,7 +108,6 @@ private:
     float               hotReloadTimer_ = 0.0f;
     static constexpr float kHotReloadInterval = 1.0f;
 
-    void RegisterConsoleCommands();
     void SetupFileWatcher();
 
     KL_BEGIN_FIELDS(AssetModule)

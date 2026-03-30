@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.3.13] - 2026-3-30
+Typed services, input events, ECS runtime components, and custom UI widgets.
+
+### Added
+- Typed service registry: `RegisterTyped<T>()`, `Get<T>()` with debug type-safety assertions, `ListByPrefix()` for service discovery (#27)
+- `ICommandProvider` interface - modules declare console commands without coupling to ConsoleModule; discovered via `"commands.*"` prefix scan (#26)
+- Input event system: `KeyEvent`, `MouseButtonEvent`, `MouseMoveEvent`, `ScrollEvent` structs with `IInputListener` priority-based dispatch and consumption (#28)
+- `InputListenerRegistry` registered as `"input.listeners"` kernel service
+- ECS component registry: `IComponentType` / `ComponentType<T>` descriptors, `ComponentRegistry` with runtime ID assignment after compile-time IDs (#29)
+- Widget factory: `IWidgetFactory` / `CustomWidget` / `WidgetTypeRegistry` for module-defined UI widgets rendered via `CanvasDrawContext` (#30)
+- `WidgetTag::Custom` enum value with `customWidget` field on Widget struct
+
+### Changed
+- `ComponentMask` expanded from `bitset<64>` to `bitset<128>`
+- Audio, AI, Physics, and Asset modules migrated from direct `ConsoleModule::Instance()` to `ICommandProvider` pattern
+- `InputManager::Update()` now generates events by diffing current vs previous frame state (polling API unchanged)
+
 ## [0.3.12] - 2026-3-30
 Software RHI rendering fixes: text, scissor clipping, and draw ordering.
 

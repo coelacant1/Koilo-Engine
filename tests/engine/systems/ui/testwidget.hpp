@@ -143,5 +143,10 @@ public:
     // Preferences panel tests
     static void TestPreferencesBuild();
 
+    // Widget factory (#30)
+    static void TestWidgetFactoryRegisterAndCreate();
+    static void TestWidgetFactoryListTypes();
+    static void TestWidgetFactoryUnknownType();
+
     static void RunAllTests();
 };

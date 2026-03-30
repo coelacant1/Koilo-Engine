@@ -10,6 +10,7 @@
 #pragma once
 
 #include <koilo/kernel/unified_module.hpp>
+#include <koilo/kernel/console/command_provider.hpp>
 #include <memory>
 #include "../../registry/reflect_macros.hpp"
 
@@ -17,7 +18,7 @@ namespace koilo {
 
 class PhysicsWorld;
 
-class PhysicsModule : public IModule {
+class PhysicsModule : public IModule, public ICommandProvider {
 public:
     PhysicsModule();
     ~PhysicsModule() override;
@@ -27,6 +28,9 @@ public:
     void Update(float dt) override;
     void Render(Color888* buffer, int width, int height) override;
     void Shutdown() override;
+
+    // ICommandProvider
+    std::vector<CommandDef> GetCommands() const override;
 
     PhysicsWorld* GetWorld() { return world_.get(); }
 

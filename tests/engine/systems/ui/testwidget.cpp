@@ -15,6 +15,7 @@
 #include <koilo/systems/ui/content_browser.hpp>
 #include <koilo/systems/ui/node_graph.hpp>
 #include <koilo/systems/ui/preferences_panel.hpp>
+#include <koilo/systems/ui/widget_factory.hpp>
 #include <cstring>
 
 using namespace koilo::ui;
@@ -1743,6 +1744,53 @@ void TestWidget::TestPreferencesBuild() {
     TEST_ASSERT_TRUE(!prefs.IsVisible());
 }
 
+// ========== Widget Factory (#30) ==========
+
+namespace {
+
+struct TestCustomWidget : CustomWidget {
+    int renderCalls = 0;
+    void Render(void* /*ctx*/) override { ++renderCalls; }
+    const char* GetTypeName() const override { return "TestGauge"; }
+};
+
+struct TestGaugeFactory : IWidgetFactory {
+    const char* GetTypeName() const override { return "TestGauge"; }
+    std::unique_ptr<CustomWidget> Create() override {
+        return std::make_unique<TestCustomWidget>();
+    }
+};
+
+} // namespace
+
+void TestWidget::TestWidgetFactoryRegisterAndCreate() {
+    WidgetTypeRegistry reg;
+    reg.Register(std::make_unique<TestGaugeFactory>());
+
+    TEST_ASSERT_TRUE(reg.Has("TestGauge"));
+    TEST_ASSERT_EQUAL(1, (int)reg.Count());
+
+    auto widget = reg.CreateByName("TestGauge");
+    TEST_ASSERT_NOT_NULL(widget.get());
+    TEST_ASSERT_EQUAL_STRING("TestGauge", widget->GetTypeName());
+}
+
+void TestWidget::TestWidgetFactoryListTypes() {
+    WidgetTypeRegistry reg;
+    reg.Register(std::make_unique<TestGaugeFactory>());
+
+    auto types = reg.ListTypes();
+    TEST_ASSERT_EQUAL(1, (int)types.size());
+    TEST_ASSERT_EQUAL_STRING("TestGauge", types[0].c_str());
+}
+
+void TestWidget::TestWidgetFactoryUnknownType() {
+    WidgetTypeRegistry reg;
+    auto widget = reg.CreateByName("NonExistent");
+    TEST_ASSERT_NULL(widget.get());
+    TEST_ASSERT_FALSE(reg.Has("NonExistent"));
+}
+
 // ========== Test Runner ==========
 
 void TestWidget::RunAllTests() {
@@ -1872,4 +1920,9 @@ void TestWidget::RunAllTests() {
 
     // Preferences panel
     RUN_TEST(TestWidget::TestPreferencesBuild);
+
+    // Widget factory (#30)
+    RUN_TEST(TestWidget::TestWidgetFactoryRegisterAndCreate);
+    RUN_TEST(TestWidget::TestWidgetFactoryListTypes);
+    RUN_TEST(TestWidget::TestWidgetFactoryUnknownType);
 }

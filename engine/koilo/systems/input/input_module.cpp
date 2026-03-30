@@ -20,6 +20,8 @@ bool InputModule::Initialize(KoiloKernel& kernel) {
         engine->RegisterGlobal("input", "InputManager", &manager_);
     }
     kernel.Services().Register("input", &manager_);
+    kernel.Services().RegisterTyped<InputListenerRegistry>(
+        "input.listeners", &manager_.GetListenerRegistry());
     return true;
 }
 
@@ -30,6 +32,7 @@ void InputModule::Update(float dt) {
 
 void InputModule::Shutdown() {
     if (kernel_) {
+        kernel_->Services().Unregister("input.listeners");
         kernel_->Services().Unregister("input");
     }
 }
