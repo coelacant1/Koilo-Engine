@@ -6,7 +6,7 @@
  * Supports three paths:
  *  1. Vulkan unified pipeline (VulkanRHIDevice + RenderPipeline)
  *  2. OpenGL unified pipeline (OpenGLRHIDevice + RenderPipeline)
- *  3. Software fallback
+ *  3. Software unified pipeline (SoftwareRHIDevice + RenderPipeline)
  */
 
 #include <koilo/systems/render/gl/render_backend_factory.hpp>
@@ -15,7 +15,8 @@
 #include <koilo/systems/render/pipeline/render_pipeline.hpp>
 #include <koilo/systems/display/backends/gpu/openglbackend.hpp>
 #endif
-#include <koilo/systems/render/gl/software_render_backend.hpp>
+#include <koilo/systems/render/rhi/software/software_rhi_device.hpp>
+#include <koilo/systems/render/pipeline/render_pipeline.hpp>
 #include <koilo/systems/render/material/implementations/kslmaterial.hpp>
 #include <koilo/systems/render/render_cvars.hpp>
 #include <koilo/ksl/ksl_symbols.hpp>
@@ -31,9 +32,6 @@
 #endif
 
 namespace koilo {
-
-// KSL registry for CPU-only (software) rendering
-static ksl::KSLRegistry s_cpuOnlyRegistry;
 
 #ifdef KL_HAVE_OPENGL_BACKEND
 
@@ -260,27 +258,83 @@ std::unique_ptr<IRenderBackend> CreateBestRenderBackend() {
     return CreateBestSoftwareBackend();
 }
 
-std::unique_ptr<IRenderBackend> CreateBestSoftwareBackend() {
-    auto sw = std::make_unique<SoftwareRenderBackend>();
-    sw->Initialize();
+// -- Software RHI pipeline -----------------------------------------------
 
-    // Load .kso files for CPU shading
+/// @brief Create a unified RenderPipeline backed by a SoftwareRHIDevice.
+///
+/// The software device stores shader bytecode but doesn't execute it --
+/// rasterization is driven by vertex data and pipeline state. The dummy
+/// shader resolver provides placeholder bytecode so the pipeline can
+/// create shader handles for material binding.
+static std::unique_ptr<IRenderBackend> TryCreateSoftwareRHIPipeline() {
+    // 1. Create and initialize the RHI device
+    auto rhiDevice = std::make_unique<rhi::SoftwareRHIDevice>();
+    if (!rhiDevice->Initialize()) {
+        KL_ERR("RenderBackendFactory", "Failed to initialize Software RHI device");
+        return nullptr;
+    }
+
+    // 2. Create a KSL registry and load KSO CPU modules
+    auto registry = std::make_unique<ksl::KSLRegistry>();
     ksl::KSLSymbolTable symbols;
     symbols.RegisterAll();
+
     std::vector<std::string> searchPaths = {"shaders", "../shaders", "build/shaders"};
+    int ksoCount = 0;
     for (const auto& path : searchPaths) {
-        int loaded = s_cpuOnlyRegistry.ScanDirectory(path, "", &symbols);
-        if (loaded > 0) {
-            KL_LOG("RenderBackendFactory", "Loaded %d KSL CPU shaders from %s/",
-                   loaded, path.c_str());
+        ksoCount = registry->ScanDirectory(path, "", &symbols);
+        if (ksoCount > 0) {
+            KL_LOG("RenderBackendFactory", "Loaded %d KSO CPU modules from %s/",
+                   ksoCount, path.c_str());
             break;
         }
     }
-    KSLMaterial::SetRegistry(&s_cpuOnlyRegistry);
 
-    KL_LOG("RenderBackendFactory", "Software render backend active (%s)",
-           sw->GetName());
-    return sw;
+    KSLMaterial::SetRegistry(registry.get());
+
+    // 3. Build a stub shader resolver: returns 4-byte placeholder bytecode
+    //    so RenderPipeline can create valid shader handles.
+    static const uint8_t s_stubBytecode[4] = {0};
+
+    rhi::ShaderResolver resolver = [](const std::string& /*name*/) -> rhi::ShaderData {
+        rhi::ShaderData sd;
+        sd.vertexCode     = s_stubBytecode;
+        sd.vertexCodeSize = sizeof(s_stubBytecode);
+        sd.fragCode       = s_stubBytecode;
+        sd.fragCodeSize   = sizeof(s_stubBytecode);
+        return sd;
+    };
+
+    // 4. Configure and initialize the unified pipeline
+    auto pipeline = std::make_unique<rhi::RenderPipeline>();
+
+    rhi::RenderPipelineConfig cfg;
+    cfg.device          = rhiDevice.get();
+    cfg.shaderRegistry  = registry.get();
+    cfg.shaderResolver  = std::move(resolver);
+    cfg.vulkanDepthRemap = false;  // Software uses [-1,1] depth (like OpenGL)
+    cfg.initialWidth    = 1920;
+    cfg.initialHeight   = 1080;
+    pipeline->Configure(cfg);
+
+    pipeline->OwnDevice(std::move(rhiDevice));
+    pipeline->OwnRegistry(std::move(registry));
+
+    if (!pipeline->Initialize()) {
+        KL_ERR("RenderBackendFactory", "Failed to initialize Software RHI RenderPipeline");
+        return nullptr;
+    }
+
+    KL_LOG("RenderBackendFactory", "Software render backend active (RHI Pipeline)");
+    return pipeline;
+}
+
+std::unique_ptr<IRenderBackend> CreateBestSoftwareBackend() {
+    auto pipeline = TryCreateSoftwareRHIPipeline();
+    if (pipeline) return pipeline;
+
+    KL_ERR("RenderBackendFactory", "Failed to create software RHI pipeline");
+    return nullptr;
 }
 
 #ifdef KL_HAVE_VULKAN_BACKEND

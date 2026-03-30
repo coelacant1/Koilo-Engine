@@ -44,6 +44,18 @@ void RegisterConfigCommands(CommandRegistry& registry);
 /// Register entity/scene inspection commands (entity.list, entity.inspect, scene.hierarchy, etc.).
 void RegisterEntityCommands(CommandRegistry& registry);
 
+/// Register render graph commands (render.graph, render.passes, render.toggle).
+void RegisterRenderGraphCommands(CommandRegistry& registry);
+
+/// Register hot-reload commands (shader.list, shader.reload, exec.reload, hotreload.*).
+void RegisterHotReloadCommands(CommandRegistry& registry);
+
+/// Register GPU timing commands (stat.gpu, profile.capture).
+void RegisterGPUTimingCommands(CommandRegistry& registry);
+
+/// Tick the frame-capture system (call once per frame from host loop).
+void TickProfileCapture(KoiloKernel& kernel, int frameNumber);
+
 /// Try interpreting a command as a CVar name (get/set fallback).
 ConsoleResult TryCVarFallback(const std::string& name, const std::vector<std::string>& args);
 

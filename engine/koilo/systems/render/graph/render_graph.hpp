@@ -23,6 +23,8 @@
 #include <functional>
 #include <unordered_map>
 
+namespace koilo { class GPUTimingManager; }
+
 namespace koilo::rhi {
 
 /// A single pass in the render graph.
@@ -70,6 +72,11 @@ public:
 
     /// Run all passes in compiled order.  Requires a successful Compile().
     void Execute();
+
+    /// Run all passes with optional GPU timing instrumentation.
+    /// If @p gpuTiming is non-null and enabled, wraps each pass with
+    /// BeginPass/EndPass timestamp queries.
+    void Execute(GPUTimingManager* gpuTiming);
 
     /// Reset the graph for the next frame (clears passes and compiled state).
     void Clear();

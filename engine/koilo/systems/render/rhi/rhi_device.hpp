@@ -165,6 +165,43 @@ public:
 
     /// Notify the device that the window was resized.
     virtual void OnResize(uint32_t width, uint32_t height) = 0;
+
+    // -- Timestamp queries -------------------------------------------
+    // Optional GPU timing support.  Backends that support TimestampQueries
+    // override these; the defaults are safe no-ops.
+
+    /// Reset the internal timestamp query pool for a new frame.
+    /// @param maxQueries  maximum number of WriteTimestamp() calls this frame.
+    virtual void ResetTimestamps(uint32_t maxQueries) { (void)maxQueries; }
+
+    /// Record a GPU timestamp at the current point in the command stream.
+    /// @param index  slot index (0 .. maxQueries-1).
+    virtual void WriteTimestamp(uint32_t index) { (void)index; }
+
+    /// Read back timestamp results from the previous frame.
+    /// @param out    array of at least @p count uint64_t values.
+    /// @param count  number of timestamps to read.
+    /// @return true if results are available.
+    virtual bool ReadTimestamps(uint64_t* out, uint32_t count) {
+        (void)out; (void)count; return false;
+    }
+
+    /// Nanoseconds per timestamp tick.  Multiply raw deltas by this value.
+    virtual double GetTimestampPeriod() const { return 0.0; }
+
+    // -- Synchronization ------------------------------------------------
+
+    /// Block until all previously submitted GPU work has completed.
+    /// Use sparingly - causes a full GPU stall.  Intended for resource
+    /// teardown (e.g. hot-reload pipeline invalidation).
+    virtual void WaitIdle() {}
+
+    // -- Software pixel readback ----------------------------------------
+
+    /// Return a pointer to the CPU-side swapchain pixel buffer (RGBA8).
+    /// Non-null only for software RHI backends; GPU backends return nullptr.
+    /// Used by the host to upload the rendered frame to the display.
+    virtual const uint8_t* GetSwapchainPixels() const { return nullptr; }
 };
 
 } // namespace koilo::rhi

@@ -22,7 +22,7 @@ namespace ui {
 
 /// Abstract UI renderer interface.
 ///
-/// Both UIRHIRenderer (GPU) and UISWRenderer (CPU) implement this
+/// UIRHIRenderer implements this for all backends (GPU and software RHI)
 /// so the UI class can drive rendering through a single code path.
 class IUIRenderer {
 public:

@@ -7,7 +7,6 @@
 #include <koilo/registry/ensure_registration.hpp>
 #include <koilo/systems/render/irenderbackend.hpp>
 #include <koilo/systems/render/igpu_render_backend.hpp>
-#include <koilo/systems/render/gl/software_render_backend.hpp>
 #include <koilo/systems/render/core/pixelgroup.hpp>
 #include <koilo/systems/scene/camera/camera.hpp>
 #include <koilo/systems/scene/camera/cameralayout.hpp>
@@ -936,45 +935,34 @@ void KoiloScriptEngine::RenderFrame(Color888* buffer, int width, int height) {
     KL_PROFILE_SCOPE("RenderFrame");
     if (!buffer) return;
 
-    auto* renderMod = dynamic_cast<RenderModule*>(moduleLoader_.GetModule("render"));
-    auto* scene = GetScene();
+    // Clear to black - scene rendering now goes through FrameComposer +
+    // SoftwareRHIDevice, so this legacy path only handles overlays.
+    std::memset(buffer, 0, width * height * sizeof(Color888));
+
     auto* camera = GetCamera();
 
-    if (scene && camera) {
-        {
-            KL_PROFILE_SCOPE("Rasterize");
-            if (renderMod) {
-                renderMod->RenderFrame(scene, camera, buffer, width, height);
-            } else {
-                std::memset(buffer, 0, width * height * sizeof(Color888));
+    // Debug draw overlay (grid, axes, lines, etc.) into output buffer
+    {
+        KL_PROFILE_SCOPE("DebugRender");
+        auto& dd = DebugDraw::GetInstance();
+        if (dd.IsEnabled()) {
+            for (const auto& line : dd.GetLines()) {
+                const Color& c = line.color;
+                auto clamp255 = [](float v) -> uint8_t {
+                    return v < 0.f ? 0 : v > 255.f ? 255 : static_cast<uint8_t>(v);
+                };
+                Rasterizer::DrawLine3D(
+                    line.start, line.end,
+                    Color888(clamp255(c.r * 255.0f),
+                             clamp255(c.g * 255.0f),
+                             clamp255(c.b * 255.0f)),
+                    line.depthTest, buffer, width, height);
             }
+            DebugRenderer::Render(dd, camera, buffer, width, height,
+                                  nullptr, 0, 0,
+                                  /*renderLines=*/false);
+            dd.Update();
         }
-
-        // Debug draw overlay (grid, axes, lines, etc.) into output buffer
-        {
-            KL_PROFILE_SCOPE("DebugRender");
-            auto& dd = DebugDraw::GetInstance();
-            if (dd.IsEnabled()) {
-                for (const auto& line : dd.GetLines()) {
-                    const Color& c = line.color;
-                    auto clamp255 = [](float v) -> uint8_t {
-                        return v < 0.f ? 0 : v > 255.f ? 255 : static_cast<uint8_t>(v);
-                    };
-                    Rasterizer::DrawLine3D(
-                        line.start, line.end,
-                        Color888(clamp255(c.r * 255.0f),
-                                 clamp255(c.g * 255.0f),
-                                 clamp255(c.b * 255.0f)),
-                        line.depthTest, buffer, width, height);
-                }
-                DebugRenderer::Render(dd, camera, buffer, width, height,
-                                      nullptr, 0, 0,
-                                      /*renderLines=*/false);
-                dd.Update();
-            }
-        }
-    } else {
-        std::memset(buffer, 0, width * height * sizeof(Color888));
     }
 
     // Composite user-created canvases
@@ -984,20 +972,6 @@ void KoiloScriptEngine::RenderFrame(Color888* buffer, int width, int height) {
     { KL_PROFILE_SCOPE("Subsystems");
       moduleLoader_.RenderAll(buffer, width, height);
     }
-}
-
-void KoiloScriptEngine::RenderFrameGPU() {
-    KL_PROFILE_SCOPE("RenderFrame");
-    auto* scene = GetScene();
-    auto* camera = GetCamera();
-    if (!scene || !camera) return;
-    auto* renderMod = dynamic_cast<RenderModule*>(moduleLoader_.GetModule("render"));
-    if (renderMod) {
-        renderMod->RenderFrameGPU(scene, camera);
-    }
-    // Expire one-frame debug primitives (grid, axes, etc.)
-    auto& dd = DebugDraw::GetInstance();
-    if (dd.IsEnabled()) dd.Update();
 }
 
 void KoiloScriptEngine::UpdateUIAnimations(float dt) {

@@ -27,10 +27,6 @@ void TestDrawListScissor();
 void TestDrawListClear();
 void TestDrawListSkipsInvisible();
 
-void TestSWRendererResize();
-void TestSWRendererSolidRect();
-void TestSWRendererScissor();
-
 static inline void RunFontTests() {
     RUN_TEST(TestBezierQuadEvaluate);
     RUN_TEST(TestBezierQuadSplit);
@@ -57,8 +53,4 @@ static inline void RunFontTests() {
     RUN_TEST(TestDrawListScissor);
     RUN_TEST(TestDrawListClear);
     RUN_TEST(TestDrawListSkipsInvisible);
-
-    RUN_TEST(TestSWRendererResize);
-    RUN_TEST(TestSWRendererSolidRect);
-    RUN_TEST(TestSWRendererScissor);
 }

@@ -184,6 +184,7 @@
 #include "systems/physics/testrigidbody.hpp"
 #include "systems/physics/testspherecollider.hpp"
 #include "systems/physics/testvectorfield2d.hpp"
+#include "systems/profiling/testgputiming.hpp"
 #include "systems/profiling/testmemoryallocation.hpp"
 #include "systems/profiling/testmemoryprofiler.hpp"
 #include "systems/profiling/testmemoryscope.hpp"
@@ -210,10 +211,13 @@
 #include "systems/render/shader/testsurfaceproperties.hpp"
 #include "systems/render/sky/testsky.hpp"
 #include "systems/render/testcanvas2d.hpp"
-#include "systems/render/testsoftwarerenderbackend.hpp"
 #include "systems/render/rhi/testrhitypes.hpp"
 #include "systems/render/rhi/testrhipipeline.hpp"
+#include "systems/render/rhi/testsoftwarerhi.hpp"
 #include "systems/render/graph/testrendergraph.hpp"
+#include "systems/render/graph/testframecomposer.hpp"
+#include "systems/render/testhotreload.hpp"
+#include "debug/testdebugvisualization.hpp"
 #include "systems/scene/animation/testanimationchannel.hpp"
 #include "systems/scene/animation/testanimationclip.hpp"
 #include "systems/scene/animation/testanimationlayer.hpp"
@@ -466,6 +470,7 @@ int main(int /*argc*/, char ** /*argv*/) {
     TestRigidBody::RunAllTests();
     TestSphereCollider::RunAllTests();
     TestVectorField2D::RunAllTests();
+    TestGPUTiming::RunAllTests();
     TestMemoryAllocation::RunAllTests();
     TestMemoryProfiler::RunAllTests();
     TestMemoryScope::RunAllTests();
@@ -492,10 +497,13 @@ int main(int /*argc*/, char ** /*argv*/) {
     TestSurfaceProperties::RunAllTests();
     TestSky::RunAllTests();
     TestCanvas2D::RunAllTests();
-    TestSoftwareRenderBackend::RunAllTests();
     TestRHITypes::RunAllTests();
     TestRHIPipeline::RunAllTests();
+    TestSoftwareRHI::RunAllTests();
     TestRenderGraph::RunAllTests();
+    TestFrameComposer::RunAllTests();
+    TestHotReload::RunAllTests();
+    TestDebugVisualization::RunAllTests();
     TestAnimationChannel::RunAllTests();
     TestAnimationClip::RunAllTests();
     TestAnimationLayer::RunAllTests();

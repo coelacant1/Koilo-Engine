@@ -6,7 +6,6 @@
 #include <koilo/systems/font/glyph_atlas.hpp>
 #include <koilo/systems/font/font.hpp>
 #include <koilo/systems/ui/render/draw_list.hpp>
-#include <koilo/systems/ui/render/ui_sw_renderer.hpp>
 #include <cmath>
 #include <cstring>
 
@@ -358,57 +357,5 @@ void TestDrawListSkipsInvisible() {
     TEST_ASSERT_EQUAL(0, dl.Size());
 }
 
-// --- Software renderer tests ---------------------------------------
-
-void TestSWRendererResize() {
-    UISWRenderer sw;
-    sw.Resize(100, 100);
-    TEST_ASSERT_EQUAL(100, sw.Width());
-    TEST_ASSERT_EQUAL(100, sw.Height());
-    TEST_ASSERT_NOT_NULL(sw.Pixels());
-}
-
-void TestSWRendererSolidRect() {
-    UISWRenderer sw;
-    sw.Resize(100, 100);
-    sw.Clear();
-
-    UIDrawList dl;
-    dl.AddSolidRect(10.0f, 10.0f, 20.0f, 20.0f, Color4(255, 0, 0, 255));
-    sw.RenderDirect(dl);
-
-    // Center of rect should be red
-    const uint8_t* p = sw.Pixels();
-    int idx = (20 * 100 + 20) * 4;
-    TEST_ASSERT_EQUAL(255, p[idx + 0]);  // R
-    TEST_ASSERT_EQUAL(0,   p[idx + 1]);  // G
-    TEST_ASSERT_EQUAL(0,   p[idx + 2]);  // B
-    TEST_ASSERT_EQUAL(255, p[idx + 3]);  // A
-
-    // Outside rect should be transparent
-    int outIdx = (5 * 100 + 5) * 4;
-    TEST_ASSERT_EQUAL(0, p[outIdx + 3]);  // A = 0
-}
-
-void TestSWRendererScissor() {
-    UISWRenderer sw;
-    sw.Resize(100, 100);
-    sw.Clear();
-
-    UIDrawList dl;
-    // Scissor to only allow 20x20 region
-    dl.PushScissor(10, 10, 20, 20);
-    dl.AddSolidRect(0.0f, 0.0f, 100.0f, 100.0f, Color4(0, 255, 0, 255));
-    dl.PopScissor();
-    sw.RenderDirect(dl);
-
-    // Inside scissor should be green
-    const uint8_t* p = sw.Pixels();
-    int inIdx = (15 * 100 + 15) * 4;
-    TEST_ASSERT_EQUAL(0,   p[inIdx + 0]);
-    TEST_ASSERT_EQUAL(255, p[inIdx + 1]);
-
-    // Outside scissor should be transparent
-    int outIdx = (5 * 100 + 5) * 4;
-    TEST_ASSERT_EQUAL(0, p[outIdx + 3]);
-}
+// (Legacy UISWRenderer tests removed - software UI rendering now
+//  goes through SoftwareRHIDevice + UIRHIRenderer.)

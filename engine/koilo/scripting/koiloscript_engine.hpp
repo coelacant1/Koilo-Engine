@@ -168,11 +168,9 @@ public:
      * if not active (e.g., no particles configured = no particle render).
      * Individual system accessors remain available for custom pipelines.
      */
+    /// @deprecated Legacy software render path. Use FrameComposer + RenderPipeline
+    /// via SoftwareRHIDevice instead. Retained for test compatibility.
     void RenderFrame(Color888* buffer, int width, int height);
-
-    /** @brief GPU-only render: draws to the backend FBO without ReadPixels.
-     *  Use with IGPURenderBackend::BlitToScreen() for zero-copy present. */
-    void RenderFrameGPU();
 
     /** @brief Update UI animations (software path, called separately). */
     void UpdateUIAnimations(float dt);

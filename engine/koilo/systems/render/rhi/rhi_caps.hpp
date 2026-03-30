@@ -54,6 +54,7 @@ struct RHILimits {
     uint32_t maxDrawIndirectCount    = 1;
     float    maxAnisotropy           = 1.0f;
     uint64_t totalDeviceMemory       = 0;   ///< VRAM in bytes (0 = unknown)
+    double   timestampPeriod         = 0.0; ///< Nanoseconds per GPU timestamp tick
 };
 
 } // namespace koilo::rhi

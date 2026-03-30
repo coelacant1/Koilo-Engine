@@ -23,12 +23,11 @@ void TestUI::TestClear() {
     TEST_ASSERT_GREATER_OR_EQUAL(0, ui.Context().Root());
 }
 
-void TestUI::TestRenderToBuffer() {
+void TestUI::TestViewportAccess() {
     UI ui;
-    // RenderToBuffer should not crash with nullptr
-    ui.RenderToBuffer(nullptr, 800, 600);
-    // Should update viewport
+    ui.Context().SetViewport(800.0f, 600.0f);
     TEST_ASSERT_FLOAT_WITHIN(0.01f, 800.0f, ui.Context().ViewportWidth());
+    TEST_ASSERT_FLOAT_WITHIN(0.01f, 600.0f, ui.Context().ViewportHeight());
 }
 
 void TestUI::TestContextAccess() {
@@ -41,6 +40,6 @@ void TestUI::TestContextAccess() {
 void TestUI::RunAllTests() {
     RUN_TEST(TestUI::TestDefaultConstructor);
     RUN_TEST(TestUI::TestClear);
-    RUN_TEST(TestUI::TestRenderToBuffer);
+    RUN_TEST(TestUI::TestViewportAccess);
     RUN_TEST(TestUI::TestContextAccess);
 }

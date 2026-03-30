@@ -112,6 +112,13 @@ public:
                            uint32_t& outHeight) const override;
     void OnResize(uint32_t width, uint32_t height) override;
 
+    // -- Timestamp queries -------------------------------------------
+    void   ResetTimestamps(uint32_t maxQueries) override;
+    void   WriteTimestamp(uint32_t index) override;
+    bool   ReadTimestamps(uint64_t* out, uint32_t count) override;
+    double GetTimestampPeriod() const override;
+    void   WaitIdle() override;
+
 private:
     // -- Slot array for handle - GL object mapping -------------------
     template<typename T>
@@ -264,6 +271,13 @@ private:
         bool     active     = false;
     };
     TrackedBinding trackedBindings_[kMaxTrackedBindings];
+
+    // -- Timestamp query state ---------------------------------------
+    std::vector<GLuint> tsQueries_;        // GL query objects
+    std::vector<GLuint> tsQueriesPrev_;    // Previous frame's queries (for readback)
+    uint32_t            tsWriteCount_ = 0; // Timestamps written this frame
+    uint32_t            tsPrevCount_  = 0; // Timestamps available for readback
+    bool                tsSupported_  = false;
 };
 
 } // namespace koilo::rhi

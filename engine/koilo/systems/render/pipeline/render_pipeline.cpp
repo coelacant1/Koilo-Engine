@@ -262,10 +262,14 @@ void RenderPipeline::Shutdown() {
 bool RenderPipeline::IsInitialized() const { return initialized_; }
 const char* RenderPipeline::GetName() const { return "RHI RenderPipeline"; }
 
-bool RenderPipeline::IsVulkanDevice() const {
+bool RenderPipeline::UsesTopLeftOrigin() const {
     if (!config_.device) return false;
     const char* name = config_.device->GetName();
-    return name && std::string(name).find("Vulkan") != std::string::npos;
+    if (!name) return false;
+    std::string n(name);
+    // Vulkan and Software RHI both use top-left origin; OpenGL uses bottom-left.
+    return n.find("Vulkan") != std::string::npos ||
+           n.find("Software") != std::string::npos;
 }
 
 // -- IGPURenderBackend: PrepareFrame / FinishFrame ----------------------
@@ -284,22 +288,16 @@ void RenderPipeline::FinishFrame() {
 // -- IRenderBackend: Render (single-call convenience) -------------------
 
 void RenderPipeline::Render(Scene* scene, CameraBase* camera) {
-    RenderDirect(scene, camera);
-}
-
-void RenderPipeline::ReadPixels(Color888* /*buffer*/, int /*width*/, int /*height*/) {
-    // Readback not yet implemented via RHI -- requires staging buffer support.
-}
-
-// -- IGPURenderBackend: RenderDirect ------------------------------------
-
-void RenderPipeline::RenderDirect(Scene* scene, CameraBase* camera) {
     if (!BeginScenePass(scene, camera))
         return;
     RenderSky();
     RenderSceneMeshes();
     RenderSceneDebugLines();
     EndScenePass();
+}
+
+void RenderPipeline::ReadPixels(Color888* /*buffer*/, int /*width*/, int /*height*/) {
+    // Readback not yet implemented via RHI -- requires staging buffer support.
 }
 
 // -- Granular render methods (for render graph) -------------------------
@@ -868,6 +866,26 @@ void RenderPipeline::DestroyAllPipelines() {
     destroy(overlayPipeline_);
     destroy(debugLinePipeline_);
     destroy(pinkErrorPipeline_);
+}
+
+void RenderPipeline::InvalidatePipelineCache() {
+    auto* device = config_.device;
+    if (!device) return;
+
+    // Ensure all in-flight GPU work is finished before destroying pipelines.
+    // This prevents use-after-free when command buffers still reference them
+    // (e.g. during hot-reload).  Acceptable cost for a dev-only operation.
+    device->WaitIdle();
+
+    // Clear the MaterialBinder cache first - it holds pipeline handles that
+    // are about to be destroyed.  Bindings will be lazily recreated on the
+    // next draw via GetOrCreateScenePipeline().
+    if (materialBinder_) materialBinder_->Clear();
+
+    for (auto& [name, pipeline] : scenePipelineCache_) {
+        if (pipeline.IsValid()) device->DestroyPipeline(pipeline);
+    }
+    scenePipelineCache_.clear();
 }
 
 // -- Rendering helpers --------------------------------------------------

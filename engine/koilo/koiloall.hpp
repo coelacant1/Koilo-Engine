@@ -193,7 +193,6 @@
 #include <koilo/systems/render/core/pixel.hpp>
 #include <koilo/systems/render/core/pixelgroup.hpp>
 #include <koilo/systems/render/gl/render_backend_factory.hpp>
-#include <koilo/systems/render/gl/software_render_backend.hpp>
 #include <koilo/systems/render/material/imaterial.hpp>
 #include <koilo/systems/render/material/implementations/kslmaterial.hpp>
 #include <koilo/systems/render/pipeline/material_binder.hpp>

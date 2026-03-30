@@ -19,8 +19,6 @@ namespace koilo {
 
 class IRenderBackend;
 class IGPURenderBackend;
-class Scene;
-class Camera;
 
 class RenderModule : public IModule {
 public:
@@ -37,12 +35,6 @@ public:
 
     /// Get the current render backend (may be nullptr).
     IRenderBackend* GetBackend() const { return backend_.get(); }
-
-    /// Software render: rasterize scene -> read pixels into buffer.
-    void RenderFrame(Scene* scene, Camera* camera, Color888* buffer, int w, int h);
-
-    /// GPU render: rasterize scene to FBO (no readback).
-    void RenderFrameGPU(Scene* scene, Camera* camera);
 
 private:
     std::unique_ptr<IRenderBackend> backend_;

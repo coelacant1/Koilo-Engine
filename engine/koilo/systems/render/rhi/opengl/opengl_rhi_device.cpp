@@ -247,6 +247,12 @@ bool OpenGLRHIDevice::Initialize() {
     featureBits |= static_cast<uint16_t>(RHIFeature::StorageBuffers);
     featureBits |= static_cast<uint16_t>(RHIFeature::PushConstants);
     featureBits |= static_cast<uint16_t>(RHIFeature::DepthClamp);
+
+    // GL_ARB_timer_query is core since GL 3.3
+    tsSupported_ = true;
+    featureBits |= static_cast<uint16_t>(RHIFeature::TimestampQueries);
+    limits_.timestampPeriod = 1.0; // GL timestamps are in nanoseconds
+
     supportedFeatures_ = static_cast<RHIFeature>(featureBits);
 
     initialized_ = true;
@@ -282,6 +288,14 @@ void OpenGLRHIDevice::Shutdown() {
 
     if (pushConstantUBO_) { glDeleteBuffers(1, &pushConstantUBO_); pushConstantUBO_ = 0; }
     if (vao_) { glDeleteVertexArrays(1, &vao_); vao_ = 0; }
+
+    // Clean up timestamp query objects
+    if (!tsQueries_.empty())
+        glDeleteQueries(static_cast<GLsizei>(tsQueries_.size()), tsQueries_.data());
+    if (!tsQueriesPrev_.empty())
+        glDeleteQueries(static_cast<GLsizei>(tsQueriesPrev_.size()), tsQueriesPrev_.data());
+    tsQueries_.clear();
+    tsQueriesPrev_.clear();
 
     initialized_ = false;
     KL_LOG("RHI", "OpenGL RHI shut down");
@@ -1223,6 +1237,59 @@ void OpenGLRHIDevice::BridgeMaterialUniforms(GLuint prog,
 
         offset += sz;
     }
+}
+
+// ---------------------------------------------------------------------------
+// Timestamp queries (GL_ARB_timer_query / GL 3.3 core)
+// ---------------------------------------------------------------------------
+
+void OpenGLRHIDevice::ResetTimestamps(uint32_t maxQueries) {
+    if (!tsSupported_) return;
+
+    // Swap current - prev so ReadTimestamps can read last frame's results
+    std::swap(tsQueries_, tsQueriesPrev_);
+    tsPrevCount_  = tsWriteCount_;
+    tsWriteCount_ = 0;
+
+    // Ensure we have enough query objects for this frame
+    if (tsQueries_.size() < maxQueries) {
+        size_t oldSize = tsQueries_.size();
+        tsQueries_.resize(maxQueries, 0);
+        glGenQueries(static_cast<GLsizei>(maxQueries - oldSize),
+                     tsQueries_.data() + oldSize);
+    }
+}
+
+void OpenGLRHIDevice::WriteTimestamp(uint32_t index) {
+    if (!tsSupported_ || index >= tsQueries_.size()) return;
+    glQueryCounter(tsQueries_[index], GL_TIMESTAMP);
+    if (index >= tsWriteCount_) tsWriteCount_ = index + 1;
+}
+
+bool OpenGLRHIDevice::ReadTimestamps(uint64_t* out, uint32_t count) {
+    if (!tsSupported_ || tsPrevCount_ == 0) return false;
+    uint32_t toRead = (count < tsPrevCount_) ? count : tsPrevCount_;
+
+    for (uint32_t i = 0; i < toRead; ++i) {
+        GLint available = GL_FALSE;
+        glGetQueryObjectiv(tsQueriesPrev_[i],
+                           GL_QUERY_RESULT_AVAILABLE, &available);
+        if (!available) return false;
+    }
+    for (uint32_t i = 0; i < toRead; ++i) {
+        GLuint64 val = 0;
+        glGetQueryObjectui64v(tsQueriesPrev_[i], GL_QUERY_RESULT, &val);
+        out[i] = static_cast<uint64_t>(val);
+    }
+    return true;
+}
+
+double OpenGLRHIDevice::GetTimestampPeriod() const {
+    return tsSupported_ ? 1.0 : 0.0; // GL timestamps are already in nanoseconds
+}
+
+void OpenGLRHIDevice::WaitIdle() {
+    glFinish();
 }
 
 } // namespace koilo::rhi

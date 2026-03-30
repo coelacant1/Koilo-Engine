@@ -2,7 +2,6 @@
 #include "render_module.hpp"
 #include "irenderbackend.hpp"
 #include "igpu_render_backend.hpp"
-#include "gl/software_render_backend.hpp"
 #include <koilo/kernel/kernel.hpp>
 
 namespace koilo {
@@ -43,27 +42,6 @@ void RenderModule::SetBackend(std::unique_ptr<IRenderBackend> backend) {
     // Register new
     if (kernel_ && backend_) {
         kernel_->Services().Register("render_backend", backend_.get());
-    }
-}
-
-void RenderModule::RenderFrame(Scene* scene, Camera* camera,
-                               Color888* buffer, int w, int h) {
-    if (!scene || !camera) return;
-    if (!backend_) {
-        backend_ = std::make_unique<SoftwareRenderBackend>();
-        backend_->Initialize();
-    }
-    backend_->Render(scene, camera);
-    backend_->ReadPixels(buffer, w, h);
-}
-
-void RenderModule::RenderFrameGPU(Scene* scene, Camera* camera) {
-    if (!scene || !camera || !backend_) return;
-    auto* gpuBackend = dynamic_cast<IGPURenderBackend*>(backend_.get());
-    if (gpuBackend) {
-        gpuBackend->RenderDirect(scene, camera);
-    } else {
-        backend_->Render(scene, camera);
     }
 }
 
