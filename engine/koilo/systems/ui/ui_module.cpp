@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "ui_module.hpp"
 #include "ui.hpp"
+#include "widget_factory.hpp"
 #include <koilo/scripting/koiloscript_engine.hpp>
 #include <koilo/kernel/kernel.hpp>
 
@@ -29,6 +30,9 @@ bool UIModule::Initialize(KoiloKernel& kernel) {
         engine->RegisterGlobal("ui", "UI", ui_.get());
     }
     kernel.Services().Register("ui", ui_.get());
+    widgetRegistry_ = std::make_unique<ui::WidgetTypeRegistry>();
+    kernel.Services().RegisterTyped<ui::WidgetTypeRegistry>(
+        "ui.widgets", widgetRegistry_.get());
     return true;
 }
 
@@ -42,8 +46,10 @@ void UIModule::Render(Color888* /*buffer*/, int /*width*/, int /*height*/) {
 
 void UIModule::Shutdown() {
     if (kernel_) {
+        kernel_->Services().Unregister("ui.widgets");
         kernel_->Services().Unregister("ui");
     }
+    widgetRegistry_.reset();
     ui_.reset();
 }
 

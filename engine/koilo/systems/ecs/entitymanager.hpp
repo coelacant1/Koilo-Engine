@@ -33,9 +33,9 @@ namespace koilo {
 
 /**
  * @typedef ComponentMask
- * @brief Bitset representing which components an entity has (max 64 component types).
+ * @brief Bitset representing which components an entity has (max 128 component types).
  */
-using ComponentMask = std::bitset<64>;
+using ComponentMask = std::bitset<128>;
 
 /**
  * @class IComponentArray

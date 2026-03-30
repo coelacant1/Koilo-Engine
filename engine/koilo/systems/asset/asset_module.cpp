@@ -5,7 +5,6 @@
  */
 #include "asset_module.hpp"
 #include <koilo/kernel/kernel.hpp>
-#include <koilo/kernel/console/console_module.hpp>
 #include <koilo/kernel/logging/log.hpp>
 #include <koilo/scripting/koiloscript_engine.hpp>
 #include <sstream>
@@ -30,9 +29,9 @@ bool AssetModule::Initialize(KoiloKernel& kernel) {
     instance_ = this;
     jobQueue_.SetPool(&kernel.Pool());
     SetupFileWatcher();
-    RegisterConsoleCommands();
 
     kernel.Services().Register("assets", this);
+    kernel.Services().RegisterTyped<ICommandProvider>("commands.asset", this);
 
     // Register with script engine if available.
     auto* engine = kernel.Services().Get<scripting::KoiloScriptEngine>("script");
@@ -314,19 +313,17 @@ size_t AssetModule::GetTotalMemory() const {
     return registry_.TotalMemory();
 }
 
-// -- Console commands ----------------------------------------------
+// -- Console commands (via ICommandProvider) ---------------------------
 
-void AssetModule::RegisterConsoleCommands() {
-    auto* console = ConsoleModule::Instance();
-    if (!console) return;
+std::vector<CommandDef> AssetModule::GetCommands() const {
+    std::vector<CommandDef> result;
+    // Capture mutable this for non-const operations (gc, reload)
+    auto* self = const_cast<AssetModule*>(this);
 
-    auto& cmds = console->Commands();
-
-    cmds.Register({"assets", "assets [list|info|memory|gc|reload] [args...]",
+    result.push_back({"assets", "assets [list|info|memory|gc|reload] [args...]",
         "Asset pipeline management",
-        [this](KoiloKernel&, const std::vector<std::string>& args) -> ConsoleResult {
+        [self](KoiloKernel&, const std::vector<std::string>& args) -> ConsoleResult {
             if (args.empty() || args[0] == "list") {
-                // Optional type filter: assets list Mesh
                 AssetType filterType = AssetType::Generic;
                 bool hasFilter = false;
                 if (args.size() >= 2) {
@@ -343,7 +340,7 @@ void AssetModule::RegisterConsoleCommands() {
 
                 std::ostringstream ss;
                 size_t count = 0;
-                registry_.ForEach([&](AssetHandle handle, const AssetSlot& slot) {
+                self->registry_.ForEach([&](AssetHandle handle, const AssetSlot& slot) {
                     if (hasFilter && slot.type != filterType) return;
                     ss << "  [" << AssetTypeName(slot.type) << "] "
                        << slot.path << " - " << AssetStateName(slot.state);
@@ -362,12 +359,11 @@ void AssetModule::RegisterConsoleCommands() {
 
             if (args[0] == "info") {
                 if (args.size() < 2) return ConsoleResult::Error("Usage: assets info <path>");
-                AssetHandle h = registry_.FindByPath(args[1]);
+                AssetHandle h = self->registry_.FindByPath(args[1]);
                 if (h.IsNull()) return ConsoleResult::Error("Not found: " + args[1]);
 
-                const AssetSlot* slot = nullptr;
                 std::ostringstream ss;
-                registry_.ForEach([&](AssetHandle handle, const AssetSlot& s) {
+                self->registry_.ForEach([&](AssetHandle handle, const AssetSlot& s) {
                     if (handle == h) {
                         ss << "Path: " << s.path << "\n"
                            << "Type: " << AssetTypeName(s.type) << "\n"
@@ -375,12 +371,12 @@ void AssetModule::RegisterConsoleCommands() {
                            << "Memory: " << s.memoryBytes << " bytes\n"
                            << "Dependencies: " << s.dependencies.size() << "\n";
                         for (AssetHandle dep : s.dependencies) {
-                            ss << "  -> " << registry_.GetPath(dep) << "\n";
+                            ss << "  -> " << self->registry_.GetPath(dep) << "\n";
                         }
-                        auto dependents = registry_.GetDependents(h);
+                        auto dependents = self->registry_.GetDependents(h);
                         ss << "Dependents: " << dependents.size() << "\n";
                         for (AssetHandle dep : dependents) {
-                            ss << "  <- " << registry_.GetPath(dep) << "\n";
+                            ss << "  <- " << self->registry_.GetPath(dep) << "\n";
                         }
                     }
                 });
@@ -388,9 +384,9 @@ void AssetModule::RegisterConsoleCommands() {
             }
 
             if (args[0] == "memory") {
-                size_t total = registry_.TotalMemory();
-                size_t count = registry_.Count();
-                size_t loaded = registry_.CountByState(AssetState::Loaded);
+                size_t total = self->registry_.TotalMemory();
+                size_t count = self->registry_.Count();
+                size_t loaded = self->registry_.CountByState(AssetState::Loaded);
                 std::ostringstream ss;
                 ss << "Assets: " << count << " registered, " << loaded << " loaded\n"
                    << "Memory: " << total << " bytes ("
@@ -400,32 +396,32 @@ void AssetModule::RegisterConsoleCommands() {
             }
 
             if (args[0] == "gc") {
-                size_t freed = GarbageCollect();
+                size_t freed = self->GarbageCollect();
                 return ConsoleResult::Ok("Freed " + std::to_string(freed) + " bytes.");
             }
 
             if (args[0] == "reload") {
-                int changed = ReloadChanged();
+                int changed = self->ReloadChanged();
                 return ConsoleResult::Ok("Reloaded " + std::to_string(changed) + " asset(s).");
             }
 
             if (args[0] == "manifest") {
                 if (args.size() >= 2 && args[1] == "scan") {
                     std::string dir = (args.size() >= 3) ? args[2] : ".";
-                    manifest_.Scan(dir);
-                    return ConsoleResult::Ok("Scanned " + std::to_string(manifest_.Count()) + " files.");
+                    self->manifest_.Scan(dir);
+                    return ConsoleResult::Ok("Scanned " + std::to_string(self->manifest_.Count()) + " files.");
                 }
                 if (args.size() >= 2 && args[1] == "save") {
                     std::string path = (args.size() >= 3) ? args[2] : "assets.kasset";
-                    if (manifest_.Save(path)) {
+                    if (self->manifest_.Save(path)) {
                         return ConsoleResult::Ok("Manifest saved to " + path);
                     }
                     return ConsoleResult::Error("Failed to save manifest.");
                 }
                 if (args.size() >= 2 && args[1] == "load") {
                     std::string path = (args.size() >= 3) ? args[2] : "assets.kasset";
-                    if (manifest_.Load(path)) {
-                        return ConsoleResult::Ok("Loaded " + std::to_string(manifest_.Count()) + " entries.");
+                    if (self->manifest_.Load(path)) {
+                        return ConsoleResult::Ok("Loaded " + std::to_string(self->manifest_.Count()) + " entries.");
                     }
                     return ConsoleResult::Error("Failed to load manifest.");
                 }
@@ -436,6 +432,8 @@ void AssetModule::RegisterConsoleCommands() {
                 "\nUsage: assets [list|info|memory|gc|reload|manifest]");
         }, nullptr
     });
+
+    return result;
 }
 
 } // namespace koilo

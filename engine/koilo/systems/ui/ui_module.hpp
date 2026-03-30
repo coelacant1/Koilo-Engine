@@ -18,6 +18,7 @@
 namespace koilo {
 
 class UI;
+namespace ui { class WidgetTypeRegistry; }
 
 class UIModule : public IModule {
 public:
@@ -37,6 +38,7 @@ public:
 
 private:
     std::unique_ptr<UI> ui_;
+    std::unique_ptr<ui::WidgetTypeRegistry> widgetRegistry_;
 
     /// Ensure font is loaded (lazy init).
     void EnsureFont();

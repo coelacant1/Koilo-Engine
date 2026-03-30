@@ -1,8 +1,10 @@
 #include <koilo/kernel/console/console_module.hpp>
 #include <koilo/kernel/console/console_commands.hpp>
+#include <koilo/kernel/console/command_provider.hpp>
 #include <koilo/kernel/console/event_bridge.hpp>
 #include <koilo/systems/ui/console_widget.hpp>
 #include <koilo/kernel/kernel.hpp>
+#include <koilo/kernel/logging/log.hpp>
 #include <sstream>
 #include <algorithm>
 #include <iomanip>
@@ -41,6 +43,9 @@ bool ConsoleModule::Init(KoiloKernel& kernel) {
 }
 
 void ConsoleModule::Tick(float /*dt*/) {
+    if (instance_ && !instance_->providersDiscovered_) {
+        instance_->DiscoverProviders();
+    }
     // Update the console widget if it has been built
     if (instance_ && instance_->widget_ && instance_->widget_->IsBuilt()) {
         instance_->widget_->Update();
@@ -69,6 +74,22 @@ void ConsoleModule::Shutdown() {
 
 ConsoleResult ConsoleModule::Execute(const std::string& input) {
     return session_->Execute(input);
+}
+
+void ConsoleModule::DiscoverProviders() {
+    providersDiscovered_ = true;
+    if (!kernel_) return;
+
+    auto names = kernel_->Services().ListByPrefix("commands.");
+    for (const auto& name : names) {
+        auto* provider = kernel_->Services().Get<ICommandProvider>(name);
+        if (!provider) continue;
+        auto cmds = provider->GetCommands();
+        for (auto& def : cmds) {
+            commands_.Register(std::move(def));
+        }
+        KL_DBG("ConsoleModule", "Loaded commands from provider: %s", name.c_str());
+    }
 }
 
 IConsoleWidget* ConsoleModule::Widget() {

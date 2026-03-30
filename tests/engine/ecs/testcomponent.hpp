@@ -19,6 +19,13 @@ public:
     static void TestComponentTypeIDConsistency();
     static void TestComponentTypeIDCount();
     static void TestMultipleComponentTypes();
+
+    // Component registry tests (#29)
+    static void TestRegistryRegisterAndFind();
+    static void TestRegistryIDsAfterCompileTime();
+    static void TestRegistryDuplicateName();
+    static void TestRegistryList();
+
     static void RunAllTests();
 };
 

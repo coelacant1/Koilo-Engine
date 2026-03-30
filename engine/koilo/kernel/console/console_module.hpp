@@ -82,6 +82,10 @@ public:
      */
     bool HandleKey(bool isReturn, bool isToggle);
 
+    /// Discover ICommandProvider services registered as "commands.*"
+    /// and merge their commands into the registry.
+    void DiscoverProviders();
+
 private:
     static bool Init(KoiloKernel& kernel);
     static void Tick(float dt);
@@ -94,6 +98,7 @@ private:
     std::unique_ptr<EventBridge> eventBridge_;
     std::unique_ptr<ConsoleWidget> widget_;
     KoiloKernel* kernel_ = nullptr;
+    bool providersDiscovered_ = false;
 
     static std::unique_ptr<ConsoleModule> instance_;
 

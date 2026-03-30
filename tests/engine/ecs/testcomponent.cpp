@@ -9,6 +9,7 @@
 
 #include "testcomponent.hpp"
 #include <koilo/systems/ecs/component.hpp>
+#include <koilo/systems/ecs/component_registry.hpp>
 
 using namespace koilo;
 
@@ -72,4 +73,53 @@ void TestComponent::RunAllTests() {
     RUN_TEST(TestComponentTypeIDConsistency);
     RUN_TEST(TestComponentTypeIDCount);
     RUN_TEST(TestMultipleComponentTypes);
+    RUN_TEST(TestRegistryRegisterAndFind);
+    RUN_TEST(TestRegistryIDsAfterCompileTime);
+    RUN_TEST(TestRegistryDuplicateName);
+    RUN_TEST(TestRegistryList);
+}
+
+// ========== Component Registry Tests (#29) ==========
+
+struct RuntimeComp1 { float health; };
+struct RuntimeComp2 { int ammo; };
+
+void TestComponent::TestRegistryRegisterAndFind() {
+    ComponentRegistry reg;
+    ComponentTypeID id = reg.Register<RuntimeComp1>("Health");
+    TEST_ASSERT_TRUE(id != UINT32_MAX);
+
+    const IComponentType* type = reg.FindByName("Health");
+    TEST_ASSERT_NOT_NULL(type);
+    TEST_ASSERT_EQUAL_STRING("Health", type->GetName());
+    TEST_ASSERT_EQUAL(sizeof(RuntimeComp1), type->GetSize());
+}
+
+void TestComponent::TestRegistryIDsAfterCompileTime() {
+    ComponentRegistry reg;
+    ComponentTypeID compileCount = ComponentTypeIDGenerator::GetCount();
+    ComponentTypeID id1 = reg.Register<RuntimeComp1>("RT1");
+    ComponentTypeID id2 = reg.Register<RuntimeComp2>("RT2");
+
+    TEST_ASSERT_TRUE(id1 >= compileCount);
+    TEST_ASSERT_TRUE(id2 > id1);
+}
+
+void TestComponent::TestRegistryDuplicateName() {
+    ComponentRegistry reg;
+    ComponentTypeID id1 = reg.Register<RuntimeComp1>("Dup");
+    ComponentTypeID id2 = reg.Register<RuntimeComp2>("Dup");
+
+    // Same name returns the existing ID
+    TEST_ASSERT_EQUAL(id1, id2);
+    TEST_ASSERT_EQUAL(1, reg.Count());
+}
+
+void TestComponent::TestRegistryList() {
+    ComponentRegistry reg;
+    reg.Register<RuntimeComp1>("Alpha");
+    reg.Register<RuntimeComp2>("Beta");
+
+    auto names = reg.List();
+    TEST_ASSERT_EQUAL(2, names.size());
 }

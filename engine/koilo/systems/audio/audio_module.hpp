@@ -11,6 +11,7 @@
 #pragma once
 
 #include <koilo/kernel/unified_module.hpp>
+#include <koilo/kernel/console/command_provider.hpp>
 #include <memory>
 #include "../../registry/reflect_macros.hpp"
 
@@ -18,7 +19,7 @@ namespace koilo {
 
 class ScriptAudioManager;
 
-class AudioModule : public IModule {
+class AudioModule : public IModule, public ICommandProvider {
 public:
     AudioModule();
     ~AudioModule() override;
@@ -28,6 +29,9 @@ public:
     void Update(float dt) override;
     void Render(Color888* buffer, int width, int height) override;
     void Shutdown() override;
+
+    // ICommandProvider
+    std::vector<CommandDef> GetCommands() const override;
 
     ScriptAudioManager* GetManager() { return manager_.get(); }
 

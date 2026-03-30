@@ -14,6 +14,9 @@ void ServiceRegistry::Register(const std::string& name, void* service) {
 
 void ServiceRegistry::Unregister(const std::string& name) {
     services_.erase(name);
+#ifndef NDEBUG
+    typeMap_.erase(name);
+#endif
     KL_DBG("ServiceRegistry", "Unregistered service: %s", name.c_str());
     if (bus_) {
         bus_->Send(MakeSignal(MSG_SERVICE_UNREGISTERED));
@@ -34,6 +37,17 @@ std::vector<std::string> ServiceRegistry::List() const {
     names.reserve(services_.size());
     for (auto& [name, _] : services_) {
         names.push_back(name);
+    }
+    return names;
+}
+
+std::vector<std::string> ServiceRegistry::ListByPrefix(const std::string& prefix) const {
+    std::vector<std::string> names;
+    for (auto& [name, _] : services_) {
+        if (name.size() >= prefix.size() &&
+            name.compare(0, prefix.size(), prefix) == 0) {
+            names.push_back(name);
+        }
     }
     return names;
 }

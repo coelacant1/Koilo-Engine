@@ -17,6 +17,8 @@ void koilo::InputManager::Update() {
     for (auto& pair : gamepads) {
         pair.second.Update();
     }
+
+    GenerateAndDispatchEvents();
 }
 
 Gamepad& koilo::InputManager::GetGamepad(int id) {
@@ -141,6 +143,87 @@ float koilo::InputManager::GetAxis(const std::string& axis, int gamepadId) const
     if (it == axisMapping.end()) return 0.0f;
 
     return GetGamepadAxis(gamepadId, it->second);
+}
+
+void koilo::InputManager::GenerateAndDispatchEvents() {
+    if (listenerRegistry_.Count() == 0) return;
+
+    // Skip event generation on first frame (no previous state)
+    if (firstFrame_) {
+        firstFrame_ = false;
+        for (int k = 0; k < static_cast<int>(KeyCode::MaxKeyCode); ++k) {
+            prevKeys_[k] = keyboard.IsKeyHeld(static_cast<KeyCode>(k));
+        }
+        for (int b = 0; b < static_cast<int>(MouseButton::MaxButton); ++b) {
+            prevMouseButtons_[b] = mouse.IsButtonHeld(static_cast<MouseButton>(b));
+        }
+        prevMousePos_ = mouse.GetPosition();
+        return;
+    }
+
+    bool shift = keyboard.IsShiftPressed();
+    bool ctrl  = keyboard.IsCtrlPressed();
+    bool alt   = keyboard.IsAltPressed();
+
+    // Keyboard events
+    for (int k = 0; k < static_cast<int>(KeyCode::MaxKeyCode); ++k) {
+        bool cur  = keyboard.IsKeyHeld(static_cast<KeyCode>(k));
+        bool prev = prevKeys_[k];
+        if (cur && !prev) {
+            KeyEvent ev;
+            ev.key = static_cast<KeyCode>(k);
+            ev.action = KeyAction::Pressed;
+            ev.shift = shift; ev.ctrl = ctrl; ev.alt = alt;
+            listenerRegistry_.DispatchKey(ev);
+        } else if (!cur && prev) {
+            KeyEvent ev;
+            ev.key = static_cast<KeyCode>(k);
+            ev.action = KeyAction::Released;
+            ev.shift = shift; ev.ctrl = ctrl; ev.alt = alt;
+            listenerRegistry_.DispatchKey(ev);
+        }
+        prevKeys_[k] = cur;
+    }
+
+    // Mouse button events
+    Vector2D mousePos = mouse.GetPosition();
+    for (int b = 0; b < static_cast<int>(MouseButton::MaxButton); ++b) {
+        bool cur  = mouse.IsButtonHeld(static_cast<MouseButton>(b));
+        bool prev = prevMouseButtons_[b];
+        if (cur && !prev) {
+            MouseButtonEvent ev;
+            ev.button = static_cast<MouseButton>(b);
+            ev.action = MouseButtonAction::Pressed;
+            ev.position = mousePos;
+            listenerRegistry_.DispatchMouseButton(ev);
+        } else if (!cur && prev) {
+            MouseButtonEvent ev;
+            ev.button = static_cast<MouseButton>(b);
+            ev.action = MouseButtonAction::Released;
+            ev.position = mousePos;
+            listenerRegistry_.DispatchMouseButton(ev);
+        }
+        prevMouseButtons_[b] = cur;
+    }
+
+    // Mouse move event
+    Vector2D mouseDelta = mouse.GetDelta();
+    if (mouseDelta.X != 0.0f || mouseDelta.Y != 0.0f) {
+        MouseMoveEvent ev;
+        ev.position = mousePos;
+        ev.delta = mouseDelta;
+        listenerRegistry_.DispatchMouseMove(ev);
+    }
+
+    // Scroll event
+    Vector2D scroll = mouse.GetScrollDelta();
+    if (scroll.X != 0.0f || scroll.Y != 0.0f) {
+        ScrollEvent ev;
+        ev.delta = scroll;
+        listenerRegistry_.DispatchScroll(ev);
+    }
+
+    prevMousePos_ = mousePos;
 }
 
 } // namespace koilo

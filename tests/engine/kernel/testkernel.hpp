@@ -39,6 +39,9 @@ public:
     static void TestServiceOverwrite();
     static void TestServiceUnregister();
     static void TestServiceList();
+    static void TestServiceTypedRegisterAndGet();
+    static void TestServiceListByPrefix();
+    static void TestServiceUnregisterCleansType();
 
     // Module manager
     static void TestModuleRegistration();

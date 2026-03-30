@@ -8,6 +8,7 @@
  */
 
 #include <koilo/systems/ui/render/draw_list.hpp>
+#include <koilo/systems/ui/widget_factory.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -411,6 +412,12 @@ void UIDrawList::EmitWidget(const Widget& widget, int widgetIdx, const WidgetPoo
         if (widget.onPaint) {
             CanvasDrawContext cdc(*this, r.x, r.y, r.w, r.h, font_);
             widget.onPaint(&cdc);
+        }
+        break;
+    case WidgetTag::Custom:
+        if (widget.customWidget) {
+            CanvasDrawContext cdc(*this, r.x, r.y, r.w, r.h, font_);
+            static_cast<CustomWidget*>(widget.customWidget.get())->Render(&cdc);
         }
         break;
     default:

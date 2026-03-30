@@ -3,7 +3,6 @@
 #include "script_ai_manager.hpp"
 #include <koilo/scripting/koiloscript_engine.hpp>
 #include <koilo/kernel/kernel.hpp>
-#include <koilo/kernel/console/console_module.hpp>
 
 namespace koilo {
 
@@ -23,22 +22,24 @@ bool AIModule::Initialize(KoiloKernel& kernel) {
     manager_ = std::make_unique<ScriptAIManager>();
     engine->RegisterGlobal("ai", "ScriptAIManager", manager_.get());
 
-    // Register console commands if available
-    auto* console = ConsoleModule::Instance();
-    if (console) {
-        auto& cmds = console->Commands();
-        cmds.Register({"ai", "ai [status|machines|paths]", "AI system info",
-            [this](KoiloKernel&, const std::vector<std::string>& args) -> ConsoleResult {
-                if (!manager_) return ConsoleResult::Error("AI module not initialized");
-                if (args.empty() || args[0] == "status") {
-                    return ConsoleResult::Ok("AI module: active");
-                }
-                return ConsoleResult::Error("Unknown subcommand: " + args[0]);
-            }, nullptr
-        });
-    }
+    kernel.Services().RegisterTyped<ICommandProvider>("commands.ai", this);
 
     return true;
+}
+
+std::vector<CommandDef> AIModule::GetCommands() const {
+    std::vector<CommandDef> cmds;
+    auto* mgr = manager_.get();
+    cmds.push_back({"ai", "ai [status|machines|paths]", "AI system info",
+        [mgr](KoiloKernel&, const std::vector<std::string>& args) -> ConsoleResult {
+            if (!mgr) return ConsoleResult::Error("AI module not initialized");
+            if (args.empty() || args[0] == "status") {
+                return ConsoleResult::Ok("AI module: active");
+            }
+            return ConsoleResult::Error("Unknown subcommand: " + args[0]);
+        }, nullptr
+    });
+    return cmds;
 }
 
 void AIModule::Update(float dt) {

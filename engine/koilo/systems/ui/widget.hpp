@@ -18,6 +18,7 @@
 #include <string>
 #include <functional>
 #include <vector>
+#include <memory>
 #include <koilo/registry/reflect_macros.hpp>
 #include <koilo/systems/ui/icon_ids.hpp>
 #include "drag_drop.hpp"
@@ -151,6 +152,7 @@ enum class WidgetTag : uint8_t {
     FloatingPanel, ///< Detachable floating window.
     VirtualList,   ///< Virtualized scrolling list.
     Canvas2D,      ///< Custom 2D drawing surface.
+    Custom,        ///< Module-defined custom widget (rendered via CustomWidget).
     Count          ///< Total number of widget types.
 };
 
@@ -763,6 +765,12 @@ struct Widget {
     // -- Canvas2D -------------------------------------------------
     /// Paint callback (CanvasDrawContext* passed as void* to avoid circular include).
     std::function<void(void* /*CanvasDrawContext*/ )> onPaint;
+
+    // -- Custom widget (WidgetTag::Custom) ------------------------
+    /// Type name used to create this custom widget via WidgetTypeRegistry.
+    StringId customTypeName = NullStringId;
+    /// Owned custom widget instance (rendering + state).
+    std::shared_ptr<void> customWidget; // actually CustomWidget*, stored type-erased
 
     // -- Event callbacks (script function names) ------------------
     StringId onClickId    = NullStringId; ///< Script callback for click events.

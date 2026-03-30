@@ -14,6 +14,7 @@
 #include "keyboard.hpp"
 #include "mouse.hpp"
 #include "gamepad.hpp"
+#include "input_listener.hpp"
 #include <koilo/registry/reflect_macros.hpp>
 
 namespace koilo {
@@ -35,6 +36,17 @@ private:
 
     // Axis mapping: axis name -> gamepad axis
     std::unordered_map<std::string, GamepadAxis> axisMapping;
+
+    // Event-based input
+    InputListenerRegistry listenerRegistry_;
+
+    // Previous-frame snapshots for event generation
+    std::array<bool, static_cast<size_t>(KeyCode::MaxKeyCode)> prevKeys_{};
+    std::array<bool, static_cast<size_t>(MouseButton::MaxButton)> prevMouseButtons_{};
+    Vector2D prevMousePos_;
+    bool firstFrame_ = true;
+
+    void GenerateAndDispatchEvents();
 
     // Maximum gamepads to support
     static constexpr int MaxGamepads = 4;
@@ -203,6 +215,11 @@ public:
      * @return The axis value (-1.0 to 1.0).
      */
     float GetAxis(const std::string& axis, int gamepadId = 0) const;
+
+    /**
+     * @brief Gets the input listener registry for event-based input.
+     */
+    InputListenerRegistry& GetListenerRegistry() { return listenerRegistry_; }
 
     KL_BEGIN_FIELDS(InputManager)
         /* No reflected fields */
