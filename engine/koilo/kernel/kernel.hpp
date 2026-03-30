@@ -15,6 +15,8 @@
 #include <koilo/kernel/capabilities.hpp>
 #include <koilo/kernel/config/config_store.hpp>
 #include <koilo/kernel/thread_pool.hpp>
+#include <koilo/kernel/engine_error.hpp>
+#include <koilo/kernel/task_group.hpp>
 #include <koilo/core/time/timemanager.hpp>
 #include <koilo/debug/debugdraw.hpp>
 #include <koilo/debug/profiler.hpp>
@@ -64,6 +66,19 @@ public:
     ModuleManager&    Modules()     { return modules_; }
     ConfigStore&      GetConfig()   { return config_; }
     ThreadPool&       Pool()        { return pool_; }
+    ErrorHistory&     Errors()      { return errors_; }
+
+    /// Report a structured engine error. Logs, dispatches to MessageBus, stores in history.
+    void ReportError(const EngineError& err);
+
+    /// Execute a scoped task group. All tasks spawned within the lambda are
+    /// guaranteed to complete before TaskScope returns.
+    template<typename F>
+    void TaskScope(const std::string& name, F&& body) {
+        TaskGroup group(name, pool_);
+        body(group);
+        // ~TaskGroup waits for all children
+    }
 
     // --- Module convenience ---
 
@@ -101,6 +116,7 @@ private:
     ModuleManager   modules_;
     ConfigStore     config_;
     ThreadPool      pool_;
+    ErrorHistory    errors_;
     bool            running_ = false;
 
     // Kernel-owned singletons (installed via SetInstance on construction)

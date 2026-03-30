@@ -431,6 +431,8 @@ void ConsoleModule::RegisterBuiltinCommands() {
     RegisterRenderGraphCommands(commands_);
     RegisterHotReloadCommands(commands_);
     RegisterGPUTimingCommands(commands_);
+    RegisterErrorCommands(commands_);
+    RegisterTaskCommands(commands_);
 
     // -- listen --
     commands_.Register({"listen", "listen [port]", "Start TCP console server (default: 9090)",

@@ -37,6 +37,8 @@ constexpr MessageType MSG_ASSET_CHANGED     = 11;  // hot-reload
 constexpr MessageType MSG_SCENE_LOADED      = 12;
 constexpr MessageType MSG_ENTITY_CREATED    = 13;
 constexpr MessageType MSG_ENTITY_DESTROYED  = 14;
+constexpr MessageType MSG_CONTRACT_VIOLATION = 15;
+constexpr MessageType MSG_ENGINE_ERROR       = 16;
 
 /// User/module message types start here.
 constexpr MessageType MSG_USER_BASE = 0x1000;
@@ -59,6 +61,8 @@ inline const char* MessageTypeName(MessageType type) {
         case MSG_SCENE_LOADED:         return "SCENE_LOADED";
         case MSG_ENTITY_CREATED:       return "ENTITY_CREATED";
         case MSG_ENTITY_DESTROYED:     return "ENTITY_DESTROYED";
+        case MSG_CONTRACT_VIOLATION:   return "CONTRACT_VIOLATION";
+        case MSG_ENGINE_ERROR:         return "ENGINE_ERROR";
         default:                       return "USER";
     }
 }

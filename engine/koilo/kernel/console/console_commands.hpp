@@ -53,6 +53,12 @@ void RegisterHotReloadCommands(CommandRegistry& registry);
 /// Register GPU timing commands (stat.gpu, profile.capture).
 void RegisterGPUTimingCommands(CommandRegistry& registry);
 
+/// Register error reporting commands (errors, errors clear).
+void RegisterErrorCommands(CommandRegistry& registry);
+
+/// Register task inspection commands (task list).
+void RegisterTaskCommands(CommandRegistry& registry);
+
 /// Tick the frame-capture system (call once per frame from host loop).
 void TickProfileCapture(KoiloKernel& kernel, int frameNumber);
 

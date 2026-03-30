@@ -12,6 +12,8 @@
 
 #include <unity.h>
 #include <koilo/kernel/module_loader.hpp>
+#include <koilo/kernel/module_api.hpp>
+#include <koilo/kernel/module_abi_adapters.hpp>
 #include <utils/testhelpers.hpp>
 
 /**
@@ -45,6 +47,11 @@ public:
 
     // Edge case & integration tests
     static void TestEdgeCases();
+
+    // ABI v3 tests
+    static void TestAbiV3StructLayout();
+    static void TestAbiV3HasApiBackwardCompat();
+    static void TestAbiV3AdapterNullSafety();
 
     /**
      * @brief Runs all test methods.

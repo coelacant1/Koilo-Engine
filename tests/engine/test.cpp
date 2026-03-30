@@ -266,6 +266,9 @@
 #include "systems/world/testworldmanager.hpp"
 #include "kernel/testkernel.hpp"
 #include "kernel/testconsole.hpp"
+#include "kernel/testcontracts.hpp"
+#include "kernel/testerror.hpp"
+#include "kernel/testtaskgroup.hpp"
 
 void setUp() {}
 void tearDown() {}
@@ -542,6 +545,9 @@ int main(int /*argc*/, char ** /*argv*/) {
     TestWorldManager::RunAllTests();
     TestKernel::RunAllTests();
     TestKernelConsole::RunAllTests();
+    TestContracts::RunAllTests();
+    TestError::RunAllTests();
+    TestTaskGroup::RunAllTests();
 
     UNITY_END();
 }

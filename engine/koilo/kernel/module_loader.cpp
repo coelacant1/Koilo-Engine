@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include <koilo/kernel/module_loader.hpp>
 #include <koilo/kernel/kernel.hpp>
+#include <koilo/kernel/module_abi_adapters.hpp>
 #include <koilo/core/interfaces/iscript_bridge.hpp>
 
 #ifdef __linux__
@@ -12,6 +13,7 @@
 #endif
 
 #include <cstdlib>
+#include <cstring>
 #include <ctime>
 
 namespace koilo {
@@ -48,19 +50,24 @@ public:
         kernel_ = &kernel;
         if (!initFunc_) return false;
 
-        auto* bridge = kernel.Services().Get<IScriptBridge>("script_bridge");
-
         // Build EngineServices for C modules
+        // The engine pointer passed to all callbacks is KoiloKernel*
         services_.api_size = sizeof(EngineServices);
         services_.register_global = [](void* eng, const char* name, const char* cls, void* inst) {
-            static_cast<IScriptBridge*>(eng)->RegisterGlobal(name, cls, inst);
+            auto* k = static_cast<KoiloKernel*>(eng);
+            auto* bridge = k->Services().Get<IScriptBridge>("script_bridge");
+            if (bridge) bridge->RegisterGlobal(name, cls, inst);
         };
         services_.get_global   = nullptr;
         services_.set_variable = [](void* eng, const char* name, double value) {
-            static_cast<IScriptBridge*>(eng)->SetScriptVariable(name, value);
+            auto* k = static_cast<KoiloKernel*>(eng);
+            auto* bridge = k->Services().Get<IScriptBridge>("script_bridge");
+            if (bridge) bridge->SetScriptVariable(name, value);
         };
         services_.get_variable = [](void* eng, const char* name) -> double {
-            return static_cast<IScriptBridge*>(eng)->GetScriptVariableNum(name);
+            auto* k = static_cast<KoiloKernel*>(eng);
+            auto* bridge = k->Services().Get<IScriptBridge>("script_bridge");
+            return bridge ? bridge->GetScriptVariableNum(name) : 0.0;
         };
         services_.log_info  = [](const char*) {};
         services_.log_error = [](const char*) {};
@@ -73,7 +80,16 @@ public:
         services_.get_buffer_height = nullptr;
         services_.register_class   = nullptr;
         services_.register_exports = nullptr;
-        return initFunc_(&services_, bridge) != 0;
+
+        // ABI v3 extension point registration
+        services_.register_command        = &koilo::AbiRegisterCommand;
+        services_.register_input_listener = &koilo::AbiRegisterInputListener;
+        services_.register_component      = &koilo::AbiRegisterComponent;
+        services_.register_widget_type    = &koilo::AbiRegisterWidgetType;
+        services_.register_render_pass    = &koilo::AbiRegisterRenderPass;
+        std::memset(services_.reserved_v3, 0, sizeof(services_.reserved_v3));
+
+        return initFunc_(&services_, kernel_) != 0;
     }
 
     void Update(float dt) override {

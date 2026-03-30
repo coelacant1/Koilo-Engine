@@ -4,6 +4,11 @@
 
 namespace koilo {
 
+static MessageBus* g_messageBus = nullptr;
+
+MessageBus* GetMessageBus() { return g_messageBus; }
+void SetMessageBus(MessageBus* bus) { g_messageBus = bus; }
+
 MessageBus::MessageBus(size_t ringCapacity)
     : ringCapacity_(ringCapacity) {
     ringBuffer_.resize(ringCapacity);
