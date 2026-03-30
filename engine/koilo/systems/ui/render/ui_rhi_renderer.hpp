@@ -73,7 +73,8 @@ public:
 private:
     rhi::IRHIDevice* device_ = nullptr;
     bool initialized_ = false;
-    bool isVulkan_    = false;
+    bool topLeftOrigin_ = false;  // Vulkan/SW: top-left; OpenGL: bottom-left
+    bool deferredDraw_  = false;  // Vulkan: true (offset VBO batching); OpenGL/SW: false
 
     rhi::RHIShader   vertShader_  = {};
     rhi::RHIShader   fragShader_  = {};

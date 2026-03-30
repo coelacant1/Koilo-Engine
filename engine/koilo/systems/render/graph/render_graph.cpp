@@ -6,6 +6,7 @@
  */
 #include "render_graph.hpp"
 #include <koilo/kernel/logging/log.hpp>
+#include <koilo/systems/profiling/gpu_timing.hpp>
 #include <queue>
 #include <algorithm>
 
@@ -122,6 +123,27 @@ void RenderGraph::Execute() {
         if (passes_[idx].execute) {
             passes_[idx].execute();
         }
+    }
+}
+
+void RenderGraph::Execute(GPUTimingManager* gpuTiming) {
+    if (!gpuTiming || !gpuTiming->IsEnabled()) {
+        Execute();
+        return;
+    }
+
+    if (!compiled_) {
+        KL_WARN("RenderGraph", "Execute() called without a successful Compile()");
+        return;
+    }
+
+    for (size_t idx : order_) {
+        const auto& pass = passes_[idx];
+        gpuTiming->BeginPass(pass.name);
+        if (pass.execute) {
+            pass.execute();
+        }
+        gpuTiming->EndPass(pass.name);
     }
 }
 

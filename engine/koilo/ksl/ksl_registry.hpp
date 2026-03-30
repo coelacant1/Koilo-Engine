@@ -117,6 +117,8 @@ public:
 
         if (!fs::exists(spirvDir) || !fs::is_directory(spirvDir)) return 0;
 
+        spirvDir_ = spirvDir;
+
         // Load shared vertex shader
         std::string vertPath = spirvDir + "/scene.vert.spv";
         if (fs::exists(vertPath)) {
@@ -195,6 +197,76 @@ public:
 
     size_t Count() const { return modules_.size(); }
 
+    /// Reload a single shader's GLSL source from disk.
+    /// Returns true if the shader was found and reloaded successfully.
+    bool ReloadShader(const std::string& name) {
+        auto it = modules_.find(name);
+        if (it == modules_.end()) return false;
+        return it->second->ReloadGLSL();
+    }
+
+    /// Reload a single SPIR-V fragment shader from disk.
+    bool ReloadSPIRV(const std::string& name) {
+#ifdef KL_HAVE_FILESYSTEM
+        auto it = spirvData_.find(name);
+        if (it == spirvData_.end() || spirvDir_.empty()) return false;
+        std::string path = spirvDir_ + "/" + name + ".frag.spv";
+        auto data = ReadBinaryFile(path);
+        if (data.empty()) return false;
+        it->second = std::move(data);
+        return true;
+#else
+        (void)name;
+        return false;
+#endif
+    }
+
+    /// Reload all shaders (GLSL + SPIR-V) from their original files.
+    /// Returns the number of shaders successfully reloaded.
+    int ReloadAll() {
+        int count = 0;
+        for (auto& [name, mod] : modules_) {
+            if (mod->ReloadGLSL()) ++count;
+        }
+        for (auto& [name, _] : spirvData_) {
+            if (ReloadSPIRV(name)) ++count;
+        }
+        return count;
+    }
+
+    /// Get all watched file paths (for FileWatcher setup).
+    std::vector<std::string> GetShaderFilePaths() const {
+        std::vector<std::string> paths;
+        for (auto& [name, mod] : modules_) {
+            const auto& p = mod->GetGLSLFilePath();
+            if (!p.empty()) paths.push_back(p);
+        }
+#ifdef KL_HAVE_FILESYSTEM
+        if (!spirvDir_.empty()) {
+            for (auto& [name, _] : spirvData_) {
+                paths.push_back(spirvDir_ + "/" + name + ".frag.spv");
+            }
+        }
+#endif
+        return paths;
+    }
+
+    /// Find shader name by file path (for FileWatcher callback).
+    std::string FindShaderByPath(const std::string& path) const {
+        for (auto& [name, mod] : modules_) {
+            if (mod->GetGLSLFilePath() == path) return name;
+        }
+#ifdef KL_HAVE_FILESYSTEM
+        // Check SPIR-V paths
+        if (!spirvDir_.empty()) {
+            for (auto& [name, _] : spirvData_) {
+                if (path == spirvDir_ + "/" + name + ".frag.spv") return name;
+            }
+        }
+#endif
+        return {};
+    }
+
     void Clear() {
         modules_.clear();
         vertexSPIRV_.clear();
@@ -211,6 +283,9 @@ private:
 
     // GLSL source retention for RHI shader creation
     std::string vertexShaderSource_;
+
+    // Original scan directories for hot-reload
+    std::string spirvDir_;
 
     /** Read a binary file as uint32_t words (SPIR-V format). */
     static std::vector<uint32_t> ReadBinaryFile(const std::string& path) {

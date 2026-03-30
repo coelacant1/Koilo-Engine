@@ -21,7 +21,6 @@ namespace koilo {
  * @brief Extended interface for GPU-accelerated render backends.
  *
  * Adds capabilities beyond basic IRenderBackend:
- * - RenderDirect: render to GPU FBO without CPU readback
  * - BlitToScreen: blit render target to the default framebuffer
  * - CompositeCanvasOverlays: alpha-blend Canvas2D overlays
  * - PrepareFrame/FinishFrame: per-frame GPU resource management
@@ -31,20 +30,9 @@ public:
     ~IGPURenderBackend() override = default;
 
     /**
-     * @brief Render scene to GPU framebuffer without triggering CPU readback.
-     *
-     * Use this instead of Render() when the result stays on the GPU
-     * (i.e., will be composited via BlitToScreen rather than ReadPixels).
-     */
-    virtual void RenderDirect(Scene* scene, CameraBase* camera) = 0;
-
-    /**
      * @brief Blit the render target to the default framebuffer (screen).
      * @param screenW Screen/window width in pixels.
      * @param screenH Screen/window height in pixels.
-     *
-     * Call after RenderDirect(). The implementation handles clearing
-     * the default framebuffer before blitting.
      */
     virtual void BlitToScreen(int screenW, int screenH) = 0;
 

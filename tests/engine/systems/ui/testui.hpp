@@ -17,7 +17,7 @@ class TestUI {
 public:
     static void TestDefaultConstructor();
     static void TestClear();
-    static void TestRenderToBuffer();
+    static void TestViewportAccess();
     static void TestContextAccess();
 
     static void RunAllTests();

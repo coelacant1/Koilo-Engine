@@ -339,8 +339,12 @@ bool VulkanRHIDevice::Initialize() {
     vkGetPhysicalDeviceFeatures(physDevice_, &features);
 
     uint16_t featureBits = 0;
-    if (props.limits.timestampComputeAndGraphics)
+    if (props.limits.timestampComputeAndGraphics) {
         featureBits |= static_cast<uint16_t>(RHIFeature::TimestampQueries);
+        tsPeriodNs_  = static_cast<double>(props.limits.timestampPeriod);
+        tsSupported_ = true;
+        limits_.timestampPeriod = tsPeriodNs_;
+    }
     featureBits |= static_cast<uint16_t>(RHIFeature::PushConstants);
     featureBits |= static_cast<uint16_t>(RHIFeature::StorageBuffers);
     if (features.multiDrawIndirect)
@@ -460,6 +464,12 @@ void VulkanRHIDevice::Shutdown() {
         vkDestroyFence(device_, frameFence_, nullptr);
     if (cmdPool_ != VK_NULL_HANDLE)
         vkDestroyCommandPool(device_, cmdPool_, nullptr);
+
+    // Destroy timestamp query pools
+    for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+        if (tsQueryPool_[i] != VK_NULL_HANDLE)
+            vkDestroyQueryPool(device_, tsQueryPool_[i], nullptr);
+    }
 
     initialized_ = false;
     KL_LOG("RHI", "Vulkan RHI shut down");
@@ -1744,6 +1754,67 @@ RHIRenderPass VulkanRHIDevice::GetSwapchainRenderPass() const {
     slot.pass = nativePass;
     swapchainPassHandle_ = {const_cast<VulkanRHIDevice*>(this)->renderPasses_.Alloc(slot)};
     return swapchainPassHandle_;
+}
+
+// ---------------------------------------------------------------------------
+// Timestamp queries (VK_QUERY_TYPE_TIMESTAMP)
+// ---------------------------------------------------------------------------
+
+void VulkanRHIDevice::ResetTimestamps(uint32_t maxQueries) {
+    if (!tsSupported_ || !frameActive_) return;
+
+    // Save previous frame's read info
+    tsPrevPoolIndex_ = (currentPoolIndex_ == 0) ? 1 : 0;
+    tsPrevCount_     = tsWriteCount_;
+    tsWriteCount_    = 0;
+
+    // Grow query pools if needed
+    if (maxQueries > tsPoolCapacity_) {
+        vkDeviceWaitIdle(device_);
+        for (uint32_t i = 0; i < kMaxFramesInFlight; ++i) {
+            if (tsQueryPool_[i] != VK_NULL_HANDLE)
+                vkDestroyQueryPool(device_, tsQueryPool_[i], nullptr);
+            VkQueryPoolCreateInfo ci{};
+            ci.sType      = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+            ci.queryType   = VK_QUERY_TYPE_TIMESTAMP;
+            ci.queryCount  = maxQueries;
+            vkCreateQueryPool(device_, &ci, nullptr, &tsQueryPool_[i]);
+        }
+        tsPoolCapacity_ = maxQueries;
+    }
+
+    // Reset this frame's query pool range
+    vkCmdResetQueryPool(cmdBuffer_, tsQueryPool_[currentPoolIndex_],
+                        0, maxQueries);
+}
+
+void VulkanRHIDevice::WriteTimestamp(uint32_t index) {
+    if (!tsSupported_ || !frameActive_) return;
+    if (index >= tsPoolCapacity_) return;
+    vkCmdWriteTimestamp(cmdBuffer_, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                        tsQueryPool_[currentPoolIndex_], index);
+    if (index >= tsWriteCount_) tsWriteCount_ = index + 1;
+}
+
+bool VulkanRHIDevice::ReadTimestamps(uint64_t* out, uint32_t count) {
+    if (!tsSupported_ || tsPrevCount_ == 0) return false;
+    uint32_t toRead = (count < tsPrevCount_) ? count : tsPrevCount_;
+
+    VkResult r = vkGetQueryPoolResults(
+        device_, tsQueryPool_[tsPrevPoolIndex_],
+        0, toRead,
+        toRead * sizeof(uint64_t), out, sizeof(uint64_t),
+        VK_QUERY_RESULT_64_BIT);
+    return r == VK_SUCCESS;
+}
+
+double VulkanRHIDevice::GetTimestampPeriod() const {
+    return tsPeriodNs_;
+}
+
+void VulkanRHIDevice::WaitIdle() {
+    if (device_ != VK_NULL_HANDLE)
+        vkDeviceWaitIdle(device_);
 }
 
 } // namespace koilo::rhi

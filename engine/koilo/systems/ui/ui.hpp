@@ -147,9 +147,6 @@ public:
     /** @brief Get viewport height. */
     float GetViewportHeight();
 
-    /// Render UI to a Color888 buffer (software path).
-    void RenderToBuffer(Color888* buffer, int width, int height);
-
     /// Initialize unified RHI UI rendering (OpenGL or Vulkan via IRHIDevice).
     bool InitializeRHI(rhi::IRHIDevice* device, bool isVulkan);
 
@@ -255,7 +252,7 @@ private:
     /// Pre-layout pass: auto-size text widgets that haven't been given explicit sizes.
     void AutoSizeTextWidgets();
 
-    /// Common render logic shared by RenderRHI and RenderToBuffer.
+    /// Common render logic for RenderRHI.
     void PrepareAndRender(int viewportW, int viewportH);
 
     /// Append debug overlay text (watched CVars) to the draw list.

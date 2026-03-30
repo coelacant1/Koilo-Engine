@@ -36,10 +36,8 @@ void UIModule::Update(float /*dt*/) {
     // UI animations are updated explicitly via UpdateAnimations
 }
 
-void UIModule::Render(Color888* buffer, int width, int height) {
-    if (ui_) {
-        ui_->RenderToBuffer(buffer, width, height);
-    }
+void UIModule::Render(Color888* /*buffer*/, int /*width*/, int /*height*/) {
+    // No-op: UI rendering now goes through RHI pipeline (RenderRHI).
 }
 
 void UIModule::Shutdown() {

@@ -53,13 +53,15 @@
 #include <koilo/systems/display/framebuffer.hpp>
 #include <koilo/systems/render/gl/render_backend_factory.hpp>
 #include <koilo/systems/render/pipeline/render_pipeline.hpp>
-#include <koilo/systems/render/graph/render_graph.hpp>
-#include <koilo/systems/render/graph/scene_pass.hpp>
-#include <koilo/systems/render/graph/sky_pass.hpp>
-#include <koilo/systems/render/graph/debug_pass.hpp>
-#include <koilo/systems/render/graph/blit_pass.hpp>
-#include <koilo/systems/render/graph/overlay_pass.hpp>
+#include <koilo/systems/render/graph/frame_composer.hpp>
+#include <koilo/systems/render/hot_reload.hpp>
+#include <koilo/debug/debug_visualization.hpp>
+#include <koilo/systems/physics/physics_module.hpp>
 #include <koilo/systems/profiling/performanceprofiler.hpp>
+#include <koilo/systems/profiling/gpu_timing.hpp>
+#include <koilo/systems/render/rhi/rhi_device.hpp>
+#include <koilo/ksl/ksl_registry.hpp>
+#include <koilo/kernel/console/console_commands.hpp>
 #include <SDL3/SDL.h>
 #include <cstdio>
 #include <cstring>
@@ -159,8 +161,6 @@ private:
         auto info = engine.GetDisplayInfo();
         int winW = info.width      > 0 ? info.width      : 960;
         int winH = info.height     > 0 ? info.height     : 540;
-        int pixW = info.pixelWidth > 0 ? info.pixelWidth : 192;
-        int pixH = info.pixelHeight> 0 ? info.pixelHeight: 108;
 
         // Frame cap - seed r.maxfps CVar from script info
         if (info.capFPS && info.targetFPS > 0.0f)
@@ -260,13 +260,40 @@ private:
         // Try to get the RHI pipeline for unified UI rendering
         auto* rhiPipeline = dynamic_cast<rhi::RenderPipeline*>(engine.GetRenderBackend());
 
+        // Frame composer: owns the render graph, modules register pass providers
+        rhi::FrameComposer composer;
+        if (rhiPipeline) {
+            composer.RegisterStandardPasses();
+            kernel.Services().Register("frame_composer", &composer);
+            kernel.Services().Register("render_backend", rhiPipeline);
+        }
+
+        // Hot-reload: watch shader and script files for changes
+        HotReloadService hotReload;
+        if (rhiPipeline) hotReload.WatchShaders(rhiPipeline);
+        if (scriptPath)  hotReload.WatchScript(scriptPath, &engine);
+        kernel.Services().Register("hot_reload", &hotReload);
+
         // Profiler
         auto& profiler = PerformanceProfiler::GetInstance();
         profiler.SetEnabled(enableProfiler);
         if (enableProfiler) profiler.SetHistorySize(120);
 
+        // GPU timing - enabled when profiler is active and RHI supports timestamps
+        GPUTimingManager gpuTiming;
+        if (rhiPipeline && rhiPipeline->GetDevice()) {
+            auto* dev = rhiPipeline->GetDevice();
+            // Initial swapchain allocation (needed for software RHI)
+            dev->OnResize(static_cast<uint32_t>(winW),
+                          static_cast<uint32_t>(winH));
+            if (dev->SupportsFeature(rhi::RHIFeature::TimestampQueries)) {
+                gpuTiming.SetEnabled(true);
+                composer.SetGPUTiming(&gpuTiming);
+                kernel.Services().Register("gpu_timing", &gpuTiming);
+            }
+        }
+
         // Frame state
-        std::vector<Color888> fb(pixW * pixH);
         bool   running    = true;
         int    frameNum   = 0;
         uint64_t freq     = SDL_GetPerformanceFrequency();
@@ -299,6 +326,31 @@ private:
                 if (externalStop && !externalStop->load(std::memory_order_relaxed))
                     running = false;
             };
+
+            // Dev hotkeys: F5 = reload all shaders, Ctrl+F5 = reload all + scripts
+            auto handleDevHotkey = [&](const SDL_Event& ev) {
+                if (ev.type != SDL_EVENT_KEY_DOWN) return;
+                if (ev.key.scancode == SDL_SCANCODE_F5) {
+                    bool ctrl = (ev.key.mod & SDL_KMOD_CTRL) != 0;
+                    if (ctrl) {
+                        // Ctrl+F5: full hot-reload (shaders + scripts)
+                        int changed = hotReload.Poll();
+                        if (auto* reg = rhiPipeline ? rhiPipeline->GetRegistry() : nullptr) {
+                            int n = reg->ReloadAll();
+                            if (rhiPipeline) rhiPipeline->InvalidatePipelineCache();
+                            KL_LOG("HotReload", "Ctrl+F5: reloaded %d shader(s), %d file change(s)", n, changed);
+                        }
+                    } else {
+                        // F5: reload changed shaders only
+                        if (auto* reg = rhiPipeline ? rhiPipeline->GetRegistry() : nullptr) {
+                            int n = reg->ReloadAll();
+                            if (rhiPipeline) rhiPipeline->InvalidatePipelineCache();
+                            KL_LOG("HotReload", "F5: reloaded %d shader(s)", n);
+                        }
+                    }
+                }
+            };
+
             if (!sceneActive && uiIdle) {
                 // Block up to 16ms waiting for input events
                 if (SDL_WaitEventTimeout(&e, 16)) {
@@ -312,6 +364,7 @@ private:
                             winW = e.window.data1;
                             winH = e.window.data2;
                         }
+                        handleDevHotkey(e);
                         if (!HandleSDL3Event(engine, e))
                             running = false;
                     } while (running && SDL_PollEvent(&e));
@@ -332,7 +385,13 @@ private:
                             vkDisplay->NotifyResized();
                         }
 #endif
+                        if (rhiPipeline && rhiPipeline->GetDevice()) {
+                            rhiPipeline->GetDevice()->OnResize(
+                                static_cast<uint32_t>(winW),
+                                static_cast<uint32_t>(winH));
+                        }
                     }
+                    handleDevHotkey(e);
                     if (!HandleSDL3Event(engine, e))
                         running = false;
                 }
@@ -357,6 +416,9 @@ private:
             uint64_t workStart = SDL_GetPerformanceCounter();
             kernel.BeginFrame();
 
+            // Poll file watchers for shader/script hot-reload
+            hotReload.Poll();
+
             // -- Simulation tick (shared by all render paths) --------
             bool simPaused = cvar_sim_pause.Get();
             if (!simPaused || g_simStepFrames.load() > 0) {
@@ -371,62 +433,58 @@ private:
 
             engine.UpdateUIAnimations(dt);
 
+            // -- Debug visualization (CVar-driven) -------------------
+            {
+                PhysicsWorld* physWorld = nullptr;
+                auto* physMod = dynamic_cast<PhysicsModule*>(
+                    engine.GetModuleLoader().GetModule("physics"));
+                if (physMod) physWorld = physMod->GetWorld();
+
+                DebugVisualization::Submit(
+                    physWorld, engine.GetScene(), engine.GetCamera());
+            }
+
             // -- Render + present ------------------------------------
-            if (rhiPipeline) {
-                // GPU path: render graph drives the frame
+            {
                 gpuBackend->PrepareFrame();
+                gpuTiming.BeginFrame(rhiPipeline->GetDevice());
 
-                Scene*  scene  = engine.GetScene();
-                Camera* camera = engine.GetCamera();
+                rhi::FrameContext ctx;
+                ctx.pipeline = rhiPipeline;
+                ctx.scene    = engine.GetScene();
+                ctx.camera   = engine.GetCamera();
+                ctx.ui       = uiPtr;
+                ctx.screenW  = winW;
+                ctx.screenH  = winH;
 
-                rhi::RenderGraph frameGraph;
+                composer.BuildAndExecute(ctx);
 
-                // Scene pass (offscreen): setup + sky + meshes + debug + end
-                rhi::AddSceneBeginPass(frameGraph, rhiPipeline, scene, camera);
-                rhi::AddSkyPass(frameGraph, rhiPipeline);
-                rhi::AddSceneMeshesPass(frameGraph, rhiPipeline);
-                rhi::AddDebugLinesPass(frameGraph, rhiPipeline);
-                rhi::AddSceneEndPass(frameGraph, rhiPipeline);
-
-                // Swapchain pass: blit offscreen + overlay canvases
-                rhi::AddBlitPass(frameGraph, rhiPipeline, winW, winH);
-                rhi::AddOverlayPass(frameGraph, rhiPipeline, winW, winH);
-
-                // UI pass (renders into the open swapchain render pass)
-                if (uiPtr) {
-                    frameGraph.AddPass("ui", {}, {"swapchain"},
-                        [&]() {
-                            if (!uiPtr->IsRHIInitialized()) {
-                                auto* dev = rhiPipeline->GetDevice();
-                                bool isVk = rhiPipeline->IsVulkanDevice();
-                                uiPtr->InitializeRHI(dev, isVk);
-                            }
-                            if (uiPtr->IsRHIInitialized()) {
-                                uiPtr->RenderRHI(winW, winH);
-                            }
-                        });
-                }
-
-                frameGraph.Compile();
-                frameGraph.Execute();
-
+                gpuTiming.EndFrame();
                 gpuBackend->FinishFrame();
 
+                // Present to screen
+                auto* dev = rhiPipeline->GetDevice();
+                const uint8_t* swPixels = dev ? dev->GetSwapchainPixels() : nullptr;
+                if (swPixels) {
+                    // Software RHI: upload CPU-rasterized pixels to the display
+                    uint32_t swW = 0, swH = 0;
+                    dev->GetSwapchainSize(swW, swH);
+                    Framebuffer framebuffer(
+                        const_cast<uint8_t*>(swPixels),
+                        swW, swH,
+                        PixelFormat::RGBA8888);
+                    if (gpuDisplayRaw) {
+                        gpuDisplayRaw->PresentNoSwap(framebuffer);
+                        gpuDisplayRaw->SwapOnly();
+                    } else if (sdlSoftwareDisplay) {
+                        sdlSoftwareDisplay->Present(framebuffer);
+                    }
+                } else {
+                    // GPU RHI: swap is handled by the display backend
 #ifdef KL_HAVE_VULKAN_BACKEND
-                if (!vkDisplay)
+                    if (!vkDisplay)
 #endif
-                    gpuDisplayRaw->SwapOnly();
-            } else {
-                // Software path: CPU rasterize + present
-                engine.RenderFrame(fb.data(), pixW, pixH);
-                Framebuffer framebuffer(
-                    reinterpret_cast<uint8_t*>(fb.data()),
-                    pixW, pixH, PixelFormat::RGB888);
-                if (gpuDisplayRaw) {
-                    gpuDisplayRaw->PresentNoSwap(framebuffer);
-                    gpuDisplayRaw->SwapOnly();
-                } else if (sdlSoftwareDisplay) {
-                    sdlSoftwareDisplay->Present(framebuffer);
+                        gpuDisplayRaw->SwapOnly();
                 }
             }
 
@@ -448,6 +506,7 @@ private:
             engine.SetGlobal("mfps", scripting::Value(estMaxFPS));
 
             if (enableProfiler) profiler.EndFrame();
+            TickProfileCapture(kernel, frameNum);
             frameNum++;
 
             // Periodic report
@@ -492,6 +551,14 @@ private:
         // so Vulkan resources are destroyed while the VkDevice is still alive.
         if (UI* ui = engine.GetUI()) ui->ShutdownRHI();
         engine.SetRenderBackend(nullptr);
+
+        // Unregister stack-local services before they go out of scope
+        kernel.Services().Unregister("hot_reload");
+        if (rhiPipeline) {
+            kernel.Services().Unregister("frame_composer");
+            kernel.Services().Unregister("render_backend");
+            kernel.Services().Unregister("gpu_timing");
+        }
 
         displayOwner->Shutdown();
         return 0;

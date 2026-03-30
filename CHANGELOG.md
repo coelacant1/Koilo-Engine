@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.3.12] - 2026-3-30
+Software RHI rendering fixes: text, scissor clipping, and draw ordering.
+
+### Fixed
+- SW font atlas text rendering (atlas texture data was valid but scissor clipped it away)
+- Scissor Y-flip for SW backend - uses top-left origin like Vulkan, not bottom-left like OpenGL
+- Degenerate scissor fallback drew everything instead of nothing, breaking scroll clipping
+- VBO buffer overflow silently dropping late draw calls (floating panels not covering background)
+
+### Changed
+- `IsVulkanDevice()` - `UsesTopLeftOrigin()` on RenderPipeline (returns true for Vulkan and Software)
+- UIRHIRenderer splits `isVulkan_` into `topLeftOrigin_` (scissor) and `deferredDraw_` (VBO batching)
+
 ## [0.3.11] - 2026-3-29
 KSL decoupled from OpenGL, render graph infrastructure, and unified frame loop.
 

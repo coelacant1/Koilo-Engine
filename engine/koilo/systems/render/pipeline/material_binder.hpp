@@ -122,9 +122,9 @@ private:
     // -- Std140 layout helpers ------------------------------------------
 
     static size_t Std140Align(size_t offset, size_t alignment);
-    static size_t Std140ParamSize(ksl::ParamType type);
-    static size_t Std140ParamAlignment(ksl::ParamType type);
-    size_t CalculateUBOLayout(const ksl::ParamList& params) const;
+    static size_t Std140ParamSize(::ksl::ParamType type);
+    static size_t Std140ParamAlignment(::ksl::ParamType type);
+    size_t CalculateUBOLayout(const ::ksl::ParamList& params) const;
     void   MarshalUBOData(const KSLMaterial* material,
                           void* dst, size_t bufferSize) const;
 

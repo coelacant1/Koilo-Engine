@@ -131,15 +131,21 @@ static_assert(sizeof(UIPushConstants) == 16, "UIPushConstants must be 16 bytes")
 // Public API
 // ====================================================================
 
-bool UIRHIRenderer::Initialize(rhi::IRHIDevice* device, bool isVulkan) {
+bool UIRHIRenderer::Initialize(rhi::IRHIDevice* device, bool topLeftOrigin) {
     if (initialized_) return true;
     if (!device) return false;
 
-    device_    = device;
-    isVulkan_  = isVulkan;
+    device_         = device;
+    topLeftOrigin_  = topLeftOrigin;
+
+    // Vulkan defers draw commands - each Flush writes to a different VBO region.
+    // OpenGL and Software execute immediately and can reuse offset 0.
+    const char* devName = device->GetName();
+    bool isActualVulkan = devName && std::string(devName).find("Vulkan") != std::string::npos;
+    deferredDraw_ = isActualVulkan;
 
     // -- Shaders -----------------------------------------------------
-    if (isVulkan) {
+    if (isActualVulkan) {
         auto vertSPV = LoadSPIRVFile("build/shaders/spirv/ui.vert.spv");
         auto fragSPV = LoadSPIRVFile("build/shaders/spirv/ui.frag.spv");
         if (vertSPV.empty() || fragSPV.empty()) {
@@ -228,7 +234,7 @@ bool UIRHIRenderer::Initialize(rhi::IRHIDevice* device, bool isVulkan) {
 
     currentTexture_ = whiteTexture_;
     initialized_ = true;
-    KL_LOG("UIRHIRenderer", "Initialized (%s)", isVulkan ? "Vulkan" : "OpenGL");
+    KL_LOG("UIRHIRenderer", "Initialized (%s)", isActualVulkan ? "Vulkan" : "OpenGL");
     return true;
 }
 
@@ -397,7 +403,7 @@ void UIRHIRenderer::Render(const UIDrawList& drawList,
         case DrawCmdType::PushScissor: {
             Flush();
             int sx = cmd.scissorX;
-            int sy = isVulkan_ ? cmd.scissorY
+            int sy = topLeftOrigin_ ? cmd.scissorY
                                : (viewportH - cmd.scissorY - cmd.scissorH);
             int sw = cmd.scissorW;
             int sh = cmd.scissorH;
@@ -568,7 +574,7 @@ void UIRHIRenderer::Flush() {
     // we can safely reuse offset 0 every time.
     uint32_t drawFirst = 0;
     size_t uploadOffset = 0;
-    if (isVulkan_) {
+    if (deferredDraw_) {
         if (flushOffset_ + vertexCount_ > MAX_VERTICES) {
             vertexCount_ = 0;
             return;
@@ -595,7 +601,7 @@ void UIRHIRenderer::Flush() {
     // Draw
     device_->Draw(static_cast<uint32_t>(vertexCount_), 1, drawFirst);
 
-    if (isVulkan_) flushOffset_ += vertexCount_;
+    if (deferredDraw_) flushOffset_ += vertexCount_;
     vertexCount_ = 0;
 }
 

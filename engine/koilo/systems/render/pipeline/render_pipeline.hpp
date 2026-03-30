@@ -51,8 +51,8 @@ using ShaderResolver = std::function<ShaderData(const std::string& name)>;
 // -- Configuration ------------------------------------------------------
 
 struct RenderPipelineConfig {
-    IRHIDevice*       device        = nullptr;
-    ksl::KSLRegistry* shaderRegistry = nullptr;
+    IRHIDevice*         device        = nullptr;
+    ::ksl::KSLRegistry* shaderRegistry = nullptr;
     ShaderResolver    shaderResolver;
 
     /// Apply Vulkan depth range remap: [-1,1] -> [0,1] on projection matrix.
@@ -172,7 +172,7 @@ public:
 
     /// Transfer ownership of a KSLRegistry to this pipeline.
     /// The registry will be destroyed on Shutdown().
-    void OwnRegistry(std::unique_ptr<ksl::KSLRegistry> registry);
+    void OwnRegistry(std::unique_ptr<::ksl::KSLRegistry> registry);
 
     // -- IRenderBackend ------------------------------------------------
     bool        Initialize() override;
@@ -183,7 +183,6 @@ public:
     const char* GetName() const override;
 
     // -- IGPURenderBackend ---------------------------------------------
-    void RenderDirect(Scene* scene, CameraBase* camera) override;
     void BlitToScreen(int screenW, int screenH) override;
     void CompositeCanvasOverlays(int screenW, int screenH) override;
     void PrepareFrame() override;
@@ -210,8 +209,16 @@ public:
     /// Access the underlying IRHIDevice (for UI rendering etc.).
     rhi::IRHIDevice* GetDevice() const { return config_.device; }
 
-    /// Whether the device is Vulkan-based.
-    bool IsVulkanDevice() const;
+    /// Whether the device uses top-left screen origin (Vulkan, Software).
+    bool UsesTopLeftOrigin() const;
+
+    /// Access the owned KSL registry (for hot-reload).
+    ::ksl::KSLRegistry* GetRegistry() const { return ownedRegistry_.get(); }
+
+    /// Invalidate the scene pipeline cache.  Cached pipelines are destroyed
+    /// and will be lazily recreated on the next draw using the current
+    /// shader sources from the registry.
+    void InvalidatePipelineCache();
 
 private:
     // -- Off-screen render target management ---------------------------
@@ -250,7 +257,7 @@ private:
 
     // Optionally owned device + registry (factory transfers ownership)
     std::unique_ptr<IRHIDevice>      ownedDevice_;
-    std::unique_ptr<ksl::KSLRegistry> ownedRegistry_;
+    std::unique_ptr<::ksl::KSLRegistry> ownedRegistry_;
 
     // Off-screen render target
     RHITexture      offscreenColor_     = {};

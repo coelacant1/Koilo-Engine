@@ -20,17 +20,7 @@ namespace TestRHIPipeline {
     // UIRHIRenderer (no device)
     void TestUIRHIRendererDefaultState();
     void TestUIRHIRendererShutdownWithoutInit();
-
-    // UISWRenderer lifecycle via IUIRenderer interface
-    void TestUISWRendererIsInitialized();
-    void TestUISWRendererIsSoftware();
     void TestUIRHIRendererIsSoftwareFalse();
-    void TestUISWRendererSetFont();
-    void TestUISWRendererSetBoldFont();
-    void TestUISWRendererRenderEmptyDrawList();
-    void TestUISWRendererRenderProducesPixels();
-    void TestUISWRendererShutdownClearsState();
-    void TestUISWRendererSyncFontAtlases();
 
     void RunAllTests();
 }

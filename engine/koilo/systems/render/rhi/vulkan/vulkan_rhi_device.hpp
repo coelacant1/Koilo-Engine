@@ -107,6 +107,13 @@ public:
                            uint32_t& outHeight) const override;
     void OnResize(uint32_t width, uint32_t height) override;
 
+    // -- Timestamp queries -------------------------------------------
+    void   ResetTimestamps(uint32_t maxQueries) override;
+    void   WriteTimestamp(uint32_t index) override;
+    bool   ReadTimestamps(uint64_t* out, uint32_t count) override;
+    double GetTimestampPeriod() const override;
+    void   WaitIdle() override;
+
 private:
     // -- Slot array for handle - Vulkan object mapping ---------------
     template<typename T>
@@ -310,6 +317,15 @@ private:
     uint32_t       uniformRingOffset_  = 0;
     uint32_t       uniformRingSize_    = 0;  // total ring buffer size
     uint32_t       uniformMinAlign_    = 256; // minUniformBufferOffsetAlignment
+
+    // -- Timestamp query pool ------------------------------------------
+    VkQueryPool    tsQueryPool_[kMaxFramesInFlight] = {};
+    uint32_t       tsPoolCapacity_     = 0;   // queries per pool
+    uint32_t       tsWriteCount_       = 0;   // timestamps written this frame
+    uint32_t       tsPrevPoolIndex_    = 0;   // pool index that holds prev frame results
+    uint32_t       tsPrevCount_        = 0;   // timestamps available for readback
+    bool           tsSupported_        = false;
+    double         tsPeriodNs_         = 0.0; // nanoseconds per tick
 };
 
 } // namespace koilo::rhi

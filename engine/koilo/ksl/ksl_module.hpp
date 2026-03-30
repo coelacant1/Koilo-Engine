@@ -102,9 +102,27 @@ public:
         ss << file.rdbuf();
         glslFragSource_ = ss.str();
         glslVertSource_ = vertexSrc;
+        glslFilePath_   = path;
 
         return !glslFragSource_.empty();
     }
+
+    /// Re-read the GLSL file from disk (hot-reload).
+    /// Returns true if the source was updated successfully.
+    bool ReloadGLSL() {
+        if (glslFilePath_.empty()) return false;
+        std::ifstream file(glslFilePath_);
+        if (!file.is_open()) return false;
+        std::stringstream ss;
+        ss << file.rdbuf();
+        std::string newSrc = ss.str();
+        if (newSrc.empty()) return false;
+        glslFragSource_ = std::move(newSrc);
+        return true;
+    }
+
+    /// File path the GLSL fragment source was loaded from (empty if none).
+    const std::string& GetGLSLFilePath() const { return glslFilePath_; }
 
     // CPU shade call
     void* CreateInstance() const { return createFn_ ? createFn_() : nullptr; }
@@ -163,6 +181,7 @@ public:
         metadata_.clear();
         glslFragSource_.clear();
         glslVertSource_.clear();
+        glslFilePath_.clear();
     }
 
 private:
@@ -185,6 +204,7 @@ private:
     // GLSL source retention for backend-agnostic RHI shader creation
     std::string glslFragSource_;
     std::string glslVertSource_;
+    std::string glslFilePath_;   // Original file path for hot-reload
 };
 
 } // namespace ksl

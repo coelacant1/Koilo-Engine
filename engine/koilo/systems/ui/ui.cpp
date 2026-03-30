@@ -9,7 +9,6 @@
 #include <koilo/systems/ui/ui.hpp>
 #include <koilo/systems/ui/auto_inspector.hpp>
 #include <koilo/systems/ui/render/ui_rhi_renderer.hpp>
-#include <koilo/systems/ui/render/ui_sw_renderer.hpp>
 #include <koilo/systems/input/keycodes.hpp>
 #include <koilo/systems/render/rhi/rhi_device.hpp>
 #include <koilo/registry/global_registry.hpp>
@@ -391,45 +390,6 @@ void UI::AutoSizeTextWidgets() {
             w->heightMode == ui::SizeMode::MaxContent ||
             (w->heightMode == ui::SizeMode::Fixed && w->localH <= 0.0f)) {
             w->localH = metrics.height * scale + pad.top + pad.bottom;
-        }
-    }
-}
-
-/// Render UI to a Color888 buffer via software path.
-void UI::RenderToBuffer(Color888* buffer, int width, int height) {
-    // Skip if the root has no children AND no debug overlay
-    auto* root = ctx_.GetWidget(ctx_.Root());
-    bool hasWidgets = root && root->childCount > 0;
-    bool hasOverlay = g_debugOverlay && g_debugOverlay->HasWatches();
-    if (!hasWidgets && !hasOverlay) return;
-
-    // Lazily create software renderer
-    if (!renderer_ || !renderer_->IsSoftware()) {
-        renderer_ = std::make_unique<ui::UISWRenderer>();
-        fontHandle_ = 0;
-        boldHandle_ = 0;
-    }
-
-    PrepareAndRender(width, height);
-
-    if (!buffer) return;
-
-    // Composite UI pixels on top of existing buffer (alpha blend)
-    const uint8_t* uiPixels = renderer_->Pixels();
-    if (!uiPixels) return;
-    for (int i = 0; i < width * height; ++i) {
-        int si = i * 4;
-        uint8_t ua = uiPixels[si + 3];
-        if (ua == 0) continue;
-        if (ua == 255) {
-            buffer[i].r = uiPixels[si + 0];
-            buffer[i].g = uiPixels[si + 1];
-            buffer[i].b = uiPixels[si + 2];
-        } else {
-            uint8_t inv = 255 - ua;
-            buffer[i].r = static_cast<uint8_t>((uiPixels[si+0] * ua + buffer[i].r * inv) / 255);
-            buffer[i].g = static_cast<uint8_t>((uiPixels[si+1] * ua + buffer[i].g * inv) / 255);
-            buffer[i].b = static_cast<uint8_t>((uiPixels[si+2] * ua + buffer[i].b * inv) / 255);
         }
     }
 }
