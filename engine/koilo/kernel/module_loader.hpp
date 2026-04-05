@@ -9,10 +9,12 @@
 #pragma once
 
 #include <koilo/kernel/module_api.hpp>
+#include <koilo/kernel/module_fault.hpp>
 #include <memory>
 #include <vector>
 #include <string>
 #include <algorithm>
+#include <unordered_map>
 #include "../registry/reflect_macros.hpp"
 
 namespace koilo {
@@ -44,17 +46,42 @@ public:
         }
     }
 
-    // Update all initialized modules.
+    // Update all initialized modules (with fault isolation).
     void UpdateAll(float dt) {
-        for (auto* m : initialized_) {
-            m->Update(dt);
+        for (auto it = initialized_.begin(); it != initialized_.end(); ++it) {
+            auto* m = *it;
+            auto& fr = faults_[m];
+
+            if (fr.consecutiveFaults > 0 && fr.faultCooldown > 0.0f) {
+                fr.TickCooldown(dt);
+                continue;  // Skip faulted modules during cooldown
+            }
+
+            try {
+                m->Update(dt);
+                if (fr.consecutiveFaults > 0) fr.ClearFault();
+            } catch (const std::exception& e) {
+                HandleModuleFault(m, fr, e.what());
+            } catch (...) {
+                HandleModuleFault(m, fr, "unknown exception");
+            }
         }
+        ProcessPendingRestarts();
     }
 
-    // Render all initialized modules (effects, particles, UI overlay).
+    // Render all initialized modules (with fault isolation).
     void RenderAll(Color888* buffer, int width, int height) {
         for (auto* m : initialized_) {
-            m->Render(buffer, width, height);
+            auto& fr = faults_[m];
+            if (fr.consecutiveFaults > 0) continue;  // Skip faulted
+
+            try {
+                m->Render(buffer, width, height);
+            } catch (const std::exception& e) {
+                HandleModuleFault(m, fr, e.what());
+            } catch (...) {
+                HandleModuleFault(m, fr, "unknown exception");
+            }
         }
     }
 
@@ -138,6 +165,20 @@ public:
     // Shuts down the old instance, dlclose, dlopen, re-initialize.
     bool ReloadModule(const std::string& name);
 
+    // Attempt to restart a faulted module by name (shutdown + re-init).
+    bool RestartFaultedModule(const std::string& name);
+
+    // Get fault record for a module (nullptr if not tracked).
+    const ModuleFaultRecord* GetFaultRecord(const std::string& name) const {
+        for (auto* m : initialized_) {
+            if (m->GetInfo().name == name) {
+                auto it = faults_.find(m);
+                return (it != faults_.end()) ? &it->second : nullptr;
+            }
+        }
+        return nullptr;
+    }
+
     // Check all loaded dynamic modules for file changes.
     // Returns the number of modules reloaded.
     int CheckAndReload();
@@ -155,10 +196,15 @@ private:
 
     std::vector<std::unique_ptr<IModule>> modules_;
     std::vector<IModule*> initialized_;  // raw ptrs into modules_
+    std::unordered_map<IModule*, ModuleFaultRecord> faults_;
+    std::vector<IModule*> pendingRestarts_;
     bool sorted_ = false;
     KoiloKernel* kernel_ = nullptr;
     std::string searchPath_;
     LoadMode loadMode_ = LoadMode::Eager;
+
+    void HandleModuleFault(IModule* m, ModuleFaultRecord& fr, const char* error);
+    void ProcessPendingRestarts();
 
     KL_BEGIN_FIELDS(ModuleLoader)
         /* No reflected fields. */

@@ -55,50 +55,33 @@ static const char* NbTypeName(const NanBoxedValue& v) {
 // ============================================================================
 
 NanBoxedValue BytecodeVM::AllocString(const std::string& s) {
-    if (stringWriteIdx_ < ownedStrings_.size()) {
-        ownedStrings_[stringWriteIdx_] = s;
-    } else {
-        ownedStrings_.emplace_back(s);
-    }
-    return NanBoxedValue::String(&ownedStrings_[stringWriteIdx_++]);
+    std::string& slot = stringPool_.Acquire();
+    slot = s;
+    return NanBoxedValue::String(&slot);
 }
 
 NanBoxedValue BytecodeVM::AllocObjectRef(const std::string& name) {
-    if (stringWriteIdx_ < ownedStrings_.size()) {
-        ownedStrings_[stringWriteIdx_] = name;
-    } else {
-        ownedStrings_.emplace_back(name);
-    }
-    return NanBoxedValue::Object(&ownedStrings_[stringWriteIdx_++]);
+    std::string& slot = stringPool_.Acquire();
+    slot = name;
+    return NanBoxedValue::Object(&slot);
 }
 
 NanBoxedValue BytecodeVM::AllocFuncRef(const std::string& name) {
-    if (stringWriteIdx_ < ownedStrings_.size()) {
-        ownedStrings_[stringWriteIdx_] = name;
-    } else {
-        ownedStrings_.emplace_back(name);
-    }
-    return NanBoxedValue::Function(&ownedStrings_[stringWriteIdx_++]);
+    std::string& slot = stringPool_.Acquire();
+    slot = name;
+    return NanBoxedValue::Function(&slot);
 }
 
 HeapArray& BytecodeVM::AllocArray() {
-    if (arrayWriteIdx_ < ownedArrays_.size()) {
-        ownedArrays_[arrayWriteIdx_].elements.clear();
-        return ownedArrays_[arrayWriteIdx_++];
-    }
-    ownedArrays_.emplace_back();
-    arrayWriteIdx_++;
-    return ownedArrays_.back();
+    HeapArray& slot = arrayPool_.Acquire();
+    slot.elements.clear();
+    return slot;
 }
 
 std::unordered_map<std::string, Value>& BytecodeVM::AllocMap() {
-    if (mapWriteIdx_ < ownedMaps_.size()) {
-        ownedMaps_[mapWriteIdx_].clear();
-        return ownedMaps_[mapWriteIdx_++];
-    }
-    ownedMaps_.emplace_back();
-    mapWriteIdx_++;
-    return ownedMaps_.back();
+    auto& slot = mapPool_.Acquire();
+    slot.clear();
+    return slot;
 }
 
 // ============================================================================

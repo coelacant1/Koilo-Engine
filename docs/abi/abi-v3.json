@@ -1,0 +1,77 @@
+{
+  "abi_version": 3,
+  "generated": "2026-03-30",
+  "source": "engine/koilo/kernel/module_api.hpp",
+  "frozen_structs": {
+    "EngineServices": {
+      "stability": "frozen",
+      "fields": [
+        { "name": "api_size",           "type": "uint32_t",     "abi": 1 },
+        { "name": "register_global",    "type": "void(*)(void*,const char*,const char*,void*)", "abi": 1 },
+        { "name": "get_global",         "type": "void*(*)(void*,const char*)",                  "abi": 1 },
+        { "name": "set_variable",       "type": "void(*)(void*,const char*,double)",            "abi": 1 },
+        { "name": "get_variable",       "type": "double(*)(void*,const char*)",                 "abi": 1 },
+        { "name": "log_info",           "type": "void(*)(const char*)",                         "abi": 1 },
+        { "name": "log_error",          "type": "void(*)(const char*)",                         "abi": 1 },
+        { "name": "alloc",              "type": "void*(*)(uint32_t)",                           "abi": 2 },
+        { "name": "dealloc",            "type": "void(*)(void*)",                               "abi": 2 },
+        { "name": "get_time",           "type": "float(*)(void*)",                              "abi": 2 },
+        { "name": "get_delta_time",     "type": "float(*)(void*)",                              "abi": 2 },
+        { "name": "get_pixel_buffer",   "type": "void*(*)(void*)",                              "abi": 2 },
+        { "name": "get_buffer_width",   "type": "int(*)(void*)",                                "abi": 2 },
+        { "name": "get_buffer_height",  "type": "int(*)(void*)",                                "abi": 2 },
+        { "name": "register_class",     "type": "int(*)(void*,const ClassDescExport*)",         "abi": 2 },
+        { "name": "register_exports",   "type": "int(*)(void*,const GlobalExport*,uint32_t)",   "abi": 2 },
+        { "name": "register_command",          "type": "int(*)(void*,const KoiloCommandDesc*)",        "abi": 3 },
+        { "name": "register_input_listener",   "type": "int(*)(void*,const KoiloInputListenerDesc*)",  "abi": 3 },
+        { "name": "register_component",        "type": "int(*)(void*,const KoiloComponentDesc*)",      "abi": 3 },
+        { "name": "register_widget_type",      "type": "int(*)(void*,const KoiloWidgetTypeDesc*)",     "abi": 3 },
+        { "name": "register_render_pass",      "type": "int(*)(void*,const KoiloRenderPassDesc*)",     "abi": 3 },
+        { "name": "reserved_v3",               "type": "void*[4]",                                     "abi": 3 }
+      ]
+    },
+    "KoiloModuleHeader": {
+      "stability": "frozen",
+      "fields": [
+        { "name": "magic",       "type": "uint32_t",     "abi": 1 },
+        { "name": "abi_version", "type": "uint32_t",     "abi": 1 },
+        { "name": "name",        "type": "char[32]",     "abi": 1 },
+        { "name": "version",     "type": "char[16]",     "abi": 1 },
+        { "name": "phase",       "type": "uint32_t",     "abi": 1 },
+        { "name": "flags",       "type": "uint32_t",     "abi": 1 },
+        { "name": "reserved",    "type": "uint32_t[4]",  "abi": 1 }
+      ]
+    },
+    "KoiloMethodExport": {
+      "stability": "frozen",
+      "fields": [
+        { "name": "name",      "type": "const char*", "abi": 1 },
+        { "name": "doc",       "type": "const char*", "abi": 1 },
+        { "name": "invoker",   "type": "void*(*)(void*,void**)", "abi": 1 },
+        { "name": "argc",      "type": "uint8_t",     "abi": 1 },
+        { "name": "is_static", "type": "uint8_t",     "abi": 1 },
+        { "name": "ret_kind",  "type": "KoiloFieldKind", "abi": 1 },
+        { "name": "arg_kinds", "type": "KoiloFieldKind[8]", "abi": 1 }
+      ]
+    },
+    "KoiloFieldKind": {
+      "stability": "frozen",
+      "kind": "enum",
+      "values": {
+        "KL_KIND_NONE":   0,
+        "KL_KIND_FLOAT":  1,
+        "KL_KIND_INT":    2,
+        "KL_KIND_BOOL":   3,
+        "KL_KIND_STRING": 4,
+        "KL_KIND_VEC3":   5,
+        "KL_KIND_COLOR":  6,
+        "KL_KIND_OBJECT": 7,
+        "KL_KIND_VOID":   8
+      }
+    }
+  },
+  "constants": {
+    "KL_MODULE_MAGIC":   "0x4D494F4B",
+    "KL_MODULE_ABI_VER": 3
+  }
+}

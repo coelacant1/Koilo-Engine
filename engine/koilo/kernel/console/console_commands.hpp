@@ -59,6 +59,12 @@ void RegisterErrorCommands(CommandRegistry& registry);
 /// Register task inspection commands (task list).
 void RegisterTaskCommands(CommandRegistry& registry);
 
+/// Register module fault isolation commands (module status, module restart).
+void RegisterModuleFaultCommands(CommandRegistry& registry);
+
+/// Register schema versioning commands (schema list, schema check).
+void RegisterSchemaCommands(CommandRegistry& registry);
+
 /// Tick the frame-capture system (call once per frame from host loop).
 void TickProfileCapture(KoiloKernel& kernel, int frameNumber);
 

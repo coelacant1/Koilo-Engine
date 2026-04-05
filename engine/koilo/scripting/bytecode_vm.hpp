@@ -14,9 +14,9 @@
 #include <koilo/scripting/script_context.hpp>
 #include <koilo/scripting/script_class.hpp>
 #include <koilo/scripting/nanboxed_value.hpp>
+#include <koilo/kernel/memory/heap_pool.hpp>
 #include <string>
 #include <vector>
-#include <deque>
 
 namespace koilo {
 namespace scripting {
@@ -56,10 +56,17 @@ public:
     const std::string& GetError() const { return error_; }
 
     /** @brief Reclaim heap pools (strings, arrays, tables). Call between frames. */
-    void ResetHeap() { stringWriteIdx_ = 0; arrayWriteIdx_ = 0; mapWriteIdx_ = 0; }
+    void ResetHeap() { stringPool_.Reset(); arrayPool_.Reset(); mapPool_.Reset(); }
     void ClearError() { hasError_ = false; error_.clear(); }
-    size_t OwnedStringsCount() const { return stringWriteIdx_; }
+    size_t OwnedStringsCount() const { return stringPool_.Count(); }
     size_t OwnedInstancesCount() const { return ownedInstances_.size(); }
+
+    /// @brief Peak string pool usage since construction.
+    size_t StringPoolHighWater() const { return stringPool_.HighWaterMark(); }
+    /// @brief Peak array pool usage since construction.
+    size_t ArrayPoolHighWater() const { return arrayPool_.HighWaterMark(); }
+    /// @brief Peak map pool usage since construction.
+    size_t MapPoolHighWater() const { return mapPool_.HighWaterMark(); }
 
     void SetCompiledScript(const CompiledScript* script) { compiledScript_ = script; }
 
@@ -110,13 +117,10 @@ private:
     std::vector<Value> methodArgs_;
     std::vector<Value> constructArgs_;
 
-    // Heap pools for NaN-boxed composite values (pointer-stable)
-    std::deque<std::string> ownedStrings_;
-    std::deque<HeapArray> ownedArrays_;
-    std::deque<std::unordered_map<std::string, Value>> ownedMaps_;
-    size_t stringWriteIdx_ = 0;
-    size_t arrayWriteIdx_ = 0;
-    size_t mapWriteIdx_ = 0;
+    // Heap pools for NaN-boxed composite values (pointer-stable, bounded growth)
+    HeapPool<std::string> stringPool_{512};
+    HeapPool<HeapArray> arrayPool_{128};
+    HeapPool<std::unordered_map<std::string, Value>> mapPool_{64};
 
     // Core dispatch
     Value Run();

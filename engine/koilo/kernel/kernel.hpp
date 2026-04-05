@@ -17,6 +17,7 @@
 #include <koilo/kernel/thread_pool.hpp>
 #include <koilo/kernel/engine_error.hpp>
 #include <koilo/kernel/task_group.hpp>
+#include <koilo/kernel/schema_migrator.hpp>
 #include <koilo/core/time/timemanager.hpp>
 #include <koilo/debug/debugdraw.hpp>
 #include <koilo/debug/profiler.hpp>
@@ -67,9 +68,19 @@ public:
     ConfigStore&      GetConfig()   { return config_; }
     ThreadPool&       Pool()        { return pool_; }
     ErrorHistory&     Errors()      { return errors_; }
+    SchemaMigrator&   Migrator()    { return migrator_; }
 
     /// Report a structured engine error. Logs, dispatches to MessageBus, stores in history.
     void ReportError(const EngineError& err);
+
+    /// Convenience: build and report an error with printf-style message.
+    template<typename... Args>
+    void ReportError(ErrorSeverity sev, ErrorSystem sys,
+                     const char* fmt, Args&&... args) {
+        char buf[256];
+        std::snprintf(buf, sizeof(buf), fmt, std::forward<Args>(args)...);
+        ReportError(EngineError::Make(sev, sys, nullptr, buf));
+    }
 
     /// Execute a scoped task group. All tasks spawned within the lambda are
     /// guaranteed to complete before TaskScope returns.
@@ -117,6 +128,7 @@ private:
     ConfigStore     config_;
     ThreadPool      pool_;
     ErrorHistory    errors_;
+    SchemaMigrator  migrator_;
     bool            running_ = false;
 
     // Kernel-owned singletons (installed via SetInstance on construction)

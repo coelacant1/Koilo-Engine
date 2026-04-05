@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.3.15] - 2026-4-4
+Module fault isolation, schema versioning, ABI stability framework, and VM allocator optimization.
+
+### Added
+- Module fault isolation: `ModuleFault` captures crash context, `ModuleManager` auto-restarts faulted modules with `MSG_MODULE_FAULTED`/`MSG_MODULE_RESTARTED` events; `module fault` console command for inspection (#35)
+- Schema versioning: `SchemaVersion` header (magic + version tag), `SchemaMigrator` registry with ordered migration functions, auto-upgrade on load; `schema list`/`schema check` console commands (#36)
+- Stability tier annotations: `KL_FROZEN`, `KL_STABLE`, `KL_UNSTABLE`, `KL_INTERNAL` macros for public API compatibility promises (#37)
+- Deprecation macros: `KL_DEPRECATED` and `KL_DEPRECATED_SINCE` with compiler-backed warnings (#37)
+- ABI freeze baseline: `abi-v3.json` captures frozen struct layouts; `abi_check.py` validates current headers against baseline at build time (#37)
+- `version.hpp.in` generated header with `KL_VERSION_MAJOR`/`KL_VERSION_MINOR`/`KL_VERSION_PATCH` from CMake (#37)
+- `HeapPool<T>` chunk-based object pool with pointer stability for VM temporaries, replacing unbounded `std::deque` growth (#38)
+- `LinearAllocator::ScratchScope` RAII helper for nested per-call scratch memory (#38)
+
+### Changed
+- `BytecodeVM` heap pools migrated from `std::deque` with manual write indices to `HeapPool<T>` with high-water-mark diagnostics (#38)
+- `ComponentArray` entity-by-index lookup replaced from `std::unordered_map` to flat parallel `std::vector<Entity>` for cache-friendly O(1) access (#38)
+- `ComponentArray` gains `Reserve()` for pre-allocation and `GetEntities()` for direct entity iteration (#38)
+- `AssetManifest` and `ConfigStore` load paths upgraded to schema-versioned format with migration support (#36)
+
 ## [0.3.14] - 2026-3-30
 Module ABI v3, contracts, error taxonomy, and structured concurrency.
 

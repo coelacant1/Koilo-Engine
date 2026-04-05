@@ -39,6 +39,8 @@ constexpr MessageType MSG_ENTITY_CREATED    = 13;
 constexpr MessageType MSG_ENTITY_DESTROYED  = 14;
 constexpr MessageType MSG_CONTRACT_VIOLATION = 15;
 constexpr MessageType MSG_ENGINE_ERROR       = 16;
+constexpr MessageType MSG_MODULE_FAULTED     = 17;
+constexpr MessageType MSG_MODULE_RESTARTED   = 18;
 
 /// User/module message types start here.
 constexpr MessageType MSG_USER_BASE = 0x1000;
@@ -63,6 +65,8 @@ inline const char* MessageTypeName(MessageType type) {
         case MSG_ENTITY_DESTROYED:     return "ENTITY_DESTROYED";
         case MSG_CONTRACT_VIOLATION:   return "CONTRACT_VIOLATION";
         case MSG_ENGINE_ERROR:         return "ENGINE_ERROR";
+        case MSG_MODULE_FAULTED:       return "MODULE_FAULTED";
+        case MSG_MODULE_RESTARTED:     return "MODULE_RESTARTED";
         default:                       return "USER";
     }
 }

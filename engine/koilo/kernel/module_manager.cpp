@@ -1,7 +1,10 @@
 #include <koilo/kernel/module_manager.hpp>
+#include <koilo/kernel/kernel.hpp>
 #include <koilo/kernel/logging/log.hpp>
+#include <koilo/kernel/engine_error.hpp>
 #include <algorithm>
 #include <queue>
+#include <stdexcept>
 
 namespace koilo {
 
@@ -31,6 +34,7 @@ ModuleId ModuleManager::RegisterModule(const ModuleDesc& desc, Cap grantedCaps) 
 }
 
 bool ModuleManager::InitializeAll(KoiloKernel& kernel) {
+    kernel_ = &kernel;
     std::vector<size_t> order;
     if (!ResolveDependencies(order)) {
         return false;
@@ -81,10 +85,96 @@ bool ModuleManager::InitializeAll(KoiloKernel& kernel) {
 void ModuleManager::TickAll(float dt) {
     for (size_t idx : initOrder_) {
         auto& entry = entries_[idx];
-        if (entry.state == ModuleState::Running && entry.desc.Tick) {
+
+        // Tick cooldown timers for faulted modules
+        if (entry.state == ModuleState::Faulted) {
+            entry.fault.TickCooldown(dt);
+            if (entry.fault.CooldownExpired() && entry.fault.ShouldRestart()) {
+                RestartModule(entry.desc.name);
+            }
+            continue;
+        }
+
+        if (entry.state != ModuleState::Running || !entry.desc.Tick) continue;
+
+        try {
             entry.desc.Tick(dt);
+            // Successful tick clears consecutive fault counter
+            if (entry.fault.consecutiveFaults > 0) {
+                entry.fault.ClearFault();
+            }
+        } catch (const std::exception& e) {
+            entry.fault.RecordFault(e.what());
+            KL_ERR("Kernel", "Module '%s' faulted during Tick: %s",
+                   entry.desc.name, e.what());
+
+            if (kernel_) {
+                kernel_->ReportError(ErrorSeverity::Degraded,
+                                     ErrorSystem::Module,
+                                     "Module '%s' faulted: %s",
+                                     entry.desc.name, e.what());
+            }
+
+            if (entry.fault.IsPermanentlyFailed()) {
+                entry.state = ModuleState::Error;
+                KL_ERR("Kernel", "Module '%s' permanently disabled after %u faults",
+                       entry.desc.name, entry.fault.totalFaults);
+            } else {
+                entry.state = ModuleState::Faulted;
+                struct { const char* name; ModuleId id; } payload{entry.desc.name, entry.id};
+                bus_.Send(MakeMessage(MSG_MODULE_FAULTED, MODULE_KERNEL, payload));
+            }
+        } catch (...) {
+            entry.fault.RecordFault("unknown exception");
+            entry.state = ModuleState::Error;
+            KL_ERR("Kernel", "Module '%s' threw unknown exception; permanently disabled",
+                   entry.desc.name);
         }
     }
+}
+
+bool ModuleManager::RestartModule(const std::string& name) {
+    auto it = nameIndex_.find(name);
+    if (it == nameIndex_.end()) return false;
+
+    auto& entry = entries_[it->second];
+    if (entry.state != ModuleState::Faulted) return false;
+    if (!kernel_) return false;
+
+    KL_LOG("Kernel", "Attempting restart of module '%s' (fault %u/%u)",
+            entry.desc.name, entry.fault.consecutiveFaults,
+            ModuleFaultPolicy::kMaxConsecutiveFaults);
+
+    // Shutdown the faulted module
+    if (entry.busSubId != 0) {
+        bus_.Unsubscribe(entry.busSubId);
+        entry.busSubId = 0;
+    }
+    if (entry.desc.Shutdown) {
+        try { entry.desc.Shutdown(); } catch (...) {}
+    }
+
+    // Re-initialize
+    if (entry.desc.Init && entry.desc.Init(*kernel_)) {
+        entry.state = ModuleState::Running;
+
+        if (entry.desc.OnMessage) {
+            auto handler = entry.desc.OnMessage;
+            entry.busSubId = bus_.SubscribeAll([handler](const Message& msg) {
+                handler(msg);
+            });
+        }
+
+        struct { const char* name; ModuleId id; } payload{entry.desc.name, entry.id};
+        bus_.Send(MakeMessage(MSG_MODULE_RESTARTED, MODULE_KERNEL, payload));
+
+        KL_LOG("Kernel", "Module '%s' restarted successfully", entry.desc.name);
+        return true;
+    }
+
+    entry.state = ModuleState::Error;
+    KL_ERR("Kernel", "Module '%s' restart failed; permanently disabled", entry.desc.name);
+    return false;
 }
 
 void ModuleManager::ShutdownAll() {

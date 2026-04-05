@@ -9,6 +9,7 @@
 #include <koilo/core/math/quaternion.hpp>
 #include <koilo/core/math/transform.hpp>
 #include <koilo/scripting/reflection_bridge.hpp>
+#include <koilo/kernel/schema_version.hpp>
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -396,9 +397,9 @@ bool LevelSerializer::SerializeToBinary(const SerializedLevel& level, const std:
     std::ofstream file(filePath, std::ios::binary);
     if (!file.is_open()) return false;
 
-    // Header magic
-    const char magic[] = "KOIL";
-    file.write(magic, 4);
+    // Header: magic + version
+    static constexpr char kLevelMagic[4] = {'K','O','I','L'};
+    WriteSchemaHeader(file, kLevelMagic, 1);
 
     // Level name
     size_t nameLen = level.name.size();
@@ -436,10 +437,12 @@ SerializedLevel LevelSerializer::DeserializeFromBinary(const std::string& filePa
     std::ifstream file(filePath, std::ios::binary);
     if (!file.is_open()) return level;
 
-    // Verify magic
-    char magic[4];
-    file.read(magic, 4);
-    if (std::string(magic, 4) != "KOIL") return level;
+    // Verify header
+    static constexpr char kLevelMagic[4] = {'K','O','I','L'};
+    auto hdr = ReadSchemaHeader(file, kLevelMagic);
+    if (!hdr.valid) return level;
+    // Version 1 is current; future versions could migrate here
+    if (hdr.version > 1) return level;
 
     // Level name
     size_t nameLen;
