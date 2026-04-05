@@ -54,6 +54,32 @@ public:
     size_t Capacity() const { return capacity_; }
     size_t Remaining() const{ return capacity_ - offset_; }
 
+    /// RAII scope that saves the current marker on construction
+    /// and restores it on destruction. Useful for per-call scratch memory.
+    class ScratchScope {
+    public:
+        explicit ScratchScope(LinearAllocator& alloc)
+            : alloc_(alloc), marker_(alloc.GetMarker()) {}
+        ~ScratchScope() { alloc_.ResetToMarker(marker_); }
+        ScratchScope(const ScratchScope&) = delete;
+        ScratchScope& operator=(const ScratchScope&) = delete;
+
+        /// @brief Allocate from the scoped region.
+        void* Allocate(size_t size, size_t alignment = 8) {
+            return alloc_.Allocate(size, alignment);
+        }
+
+        /// @brief Typed allocation from the scoped region.
+        template<typename T>
+        T* Allocate(size_t count = 1) {
+            return alloc_.Allocate<T>(count);
+        }
+
+    private:
+        LinearAllocator& alloc_;
+        Marker marker_;
+    };
+
 private:
     uint8_t* buffer_;
     size_t   capacity_;

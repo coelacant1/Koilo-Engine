@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(KoiloEngine LANGUAGES C CXX)
+project(KoiloEngine VERSION 0.3.15 LANGUAGES C CXX)
 
 include(GNUInstallDirs)
 
@@ -124,6 +124,14 @@ endif()
 if(KOILO_ENABLE_PARTICLES)
   target_compile_definitions(koilo_headers INTERFACE KOILO_ENABLE_PARTICLES)
 endif()
+
+# -- Version header generation -------------------------------------
+file(MAKE_DIRECTORY ${KL_GEN_DIR}/koilo/kernel)
+configure_file(
+  ${CMAKE_SOURCE_DIR}/engine/koilo/kernel/version.hpp.in
+  ${KL_GEN_DIR}/koilo/kernel/version.hpp
+  @ONLY
+)
 
 # -- koilo_foundation ----------------------------------------------
 # Pure math, geometry, color, time, reflection, shader types, interfaces.

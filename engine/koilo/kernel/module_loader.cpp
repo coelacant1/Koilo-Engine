@@ -2,6 +2,8 @@
 #include <koilo/kernel/module_loader.hpp>
 #include <koilo/kernel/kernel.hpp>
 #include <koilo/kernel/module_abi_adapters.hpp>
+#include <koilo/kernel/engine_error.hpp>
+#include <koilo/kernel/logging/log.hpp>
 #include <koilo/core/interfaces/iscript_bridge.hpp>
 
 #ifdef __linux__
@@ -15,6 +17,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <stdexcept>
 
 namespace koilo {
 
@@ -269,6 +272,98 @@ int ModuleLoader::CheckAndReload() {
     }
 #endif
     return reloaded;
+}
+
+void ModuleLoader::HandleModuleFault(IModule* m, ModuleFaultRecord& fr,
+                                     const char* error) {
+    auto info = m->GetInfo();
+    fr.RecordFault(error);
+
+    KL_ERR("Kernel", "Module '%s' faulted during Update/Render: %s",
+           info.name, error);
+
+    if (kernel_) {
+        kernel_->ReportError(ErrorSeverity::Degraded,
+                             ErrorSystem::Module,
+                             "Module '%s' faulted: %s",
+                             info.name, error);
+
+        struct { const char* name; } payload{info.name};
+        kernel_->Messages().Send(MakeMessage(MSG_MODULE_FAULTED, MODULE_KERNEL, payload));
+    }
+
+    if (fr.IsPermanentlyFailed()) {
+        KL_ERR("Kernel", "Module '%s' permanently disabled after %u faults",
+               info.name, fr.totalFaults);
+    } else {
+        pendingRestarts_.push_back(m);
+    }
+}
+
+void ModuleLoader::ProcessPendingRestarts() {
+    if (pendingRestarts_.empty()) return;
+
+    for (auto* m : pendingRestarts_) {
+        auto& fr = faults_[m];
+        if (!fr.CooldownExpired() || !fr.ShouldRestart()) continue;
+
+        auto info = m->GetInfo();
+        KL_LOG("Kernel", "Attempting restart of module '%s' (fault %u/%u)",
+                info.name, fr.consecutiveFaults,
+                ModuleFaultPolicy::kMaxConsecutiveFaults);
+
+        try {
+            m->Shutdown();
+        } catch (...) {}
+
+        try {
+            if (kernel_ && m->Initialize(*kernel_)) {
+                fr.ClearFault();
+                KL_LOG("Kernel", "Module '%s' restarted successfully",
+                        info.name);
+
+                struct { const char* name; } payload{info.name};
+                kernel_->Messages().Send(
+                    MakeMessage(MSG_MODULE_RESTARTED, MODULE_KERNEL, payload));
+            } else {
+                fr.RecordFault("restart init failed");
+                KL_ERR("Kernel", "Module '%s' restart failed", info.name);
+            }
+        } catch (const std::exception& e) {
+            fr.RecordFault(e.what());
+            KL_ERR("Kernel", "Module '%s' restart threw: %s",
+                   info.name, e.what());
+        } catch (...) {
+            fr.RecordFault("unknown exception during restart");
+        }
+    }
+    pendingRestarts_.clear();
+}
+
+bool ModuleLoader::RestartFaultedModule(const std::string& name) {
+    for (auto* m : initialized_) {
+        if (m->GetInfo().name != name) continue;
+
+        auto& fr = faults_[m];
+        if (fr.consecutiveFaults == 0) return false;  // Not faulted
+
+        // Force immediate restart (bypass cooldown)
+        fr.faultCooldown = 0.0f;
+
+        try { m->Shutdown(); } catch (...) {}
+
+        try {
+            if (kernel_ && m->Initialize(*kernel_)) {
+                fr.ClearFault();
+                KL_LOG("Kernel", "Module '%s' manually restarted", name.c_str());
+                return true;
+            }
+        } catch (...) {}
+
+        fr.RecordFault("manual restart failed");
+        return false;
+    }
+    return false;
 }
 
 } // namespace koilo

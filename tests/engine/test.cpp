@@ -269,6 +269,12 @@
 #include "kernel/testcontracts.hpp"
 #include "kernel/testerror.hpp"
 #include "kernel/testtaskgroup.hpp"
+#include "kernel/testmodulefault.hpp"
+#include "kernel/testschemaversion.hpp"
+#include "kernel/testabistability.hpp"
+#include "kernel/testheappool.hpp"
+#include "kernel/testscratchscope.hpp"
+#include "ecs/testcomponentarray.hpp"
 
 void setUp() {}
 void tearDown() {}
@@ -548,6 +554,12 @@ int main(int /*argc*/, char ** /*argv*/) {
     TestContracts::RunAllTests();
     TestError::RunAllTests();
     TestTaskGroup::RunAllTests();
+    TestModuleFault::RunAllTests();
+    TestSchemaVersion::RunAllTests();
+    TestAbiStability::RunAllTests();
+    TestHeapPool::RunAllTests();
+    TestScratchScope::RunAllTests();
+    TestComponentArray::RunAllTests();
 
     UNITY_END();
 }

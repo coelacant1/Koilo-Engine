@@ -64,15 +64,29 @@ public:
 /**
  * @class ComponentArray
  * @brief Dense array storage for components of type T.
+ *
+ * Components are stored in a contiguous vector for cache-friendly iteration.
+ * A parallel entityByIndex vector maps dense indices back to entities
+ * without hash-table overhead.
  */
 template<typename T>
 class ComponentArray : public IComponentArray {
 private:
     std::vector<T> components;                           ///< Dense array of components
     std::unordered_map<Entity, size_t> entityToIndex;    ///< Entity -> index mapping
-    std::unordered_map<size_t, Entity> indexToEntity;    ///< Index -> entity mapping
+    std::vector<Entity> entityByIndex;                   ///< Index -> entity (flat, parallel to components)
 
 public:
+    /**
+     * @brief Pre-allocate storage for the expected number of components.
+     * @param capacity Number of elements to reserve.
+     */
+    void Reserve(size_t capacity) {
+        components.reserve(capacity);
+        entityByIndex.reserve(capacity);
+        entityToIndex.reserve(capacity);
+    }
+
     /**
      * @brief Adds a component to an entity.
      */
@@ -86,8 +100,8 @@ public:
 
         size_t newIndex = components.size();
         components.push_back(component);
+        entityByIndex.push_back(entity);
         entityToIndex[entity] = newIndex;
-        indexToEntity[newIndex] = entity;
 
         return components[newIndex];
     }
@@ -108,15 +122,15 @@ public:
             components[indexToRemove] = components[lastIndex];
 
             // Update mappings
-            Entity lastEntity = indexToEntity[lastIndex];
+            Entity lastEntity = entityByIndex[lastIndex];
+            entityByIndex[indexToRemove] = lastEntity;
             entityToIndex[lastEntity] = indexToRemove;
-            indexToEntity[indexToRemove] = lastEntity;
         }
 
         // Remove last element
         components.pop_back();
+        entityByIndex.pop_back();
         entityToIndex.erase(entity);
-        indexToEntity.erase(lastIndex);
     }
 
     /**
@@ -154,7 +168,7 @@ public:
     virtual void Clear() override {
         components.clear();
         entityToIndex.clear();
-        indexToEntity.clear();
+        entityByIndex.clear();
     }
 
     /**
@@ -179,12 +193,18 @@ public:
     }
 
     /**
-     * @brief Gets the entity for a component index.
+     * @brief Gets direct access to the entity-by-index vector (parallel to components).
+     */
+    const std::vector<Entity>& GetEntities() const {
+        return entityByIndex;
+    }
+
+    /**
+     * @brief Gets the entity for a component index (O(1) flat lookup).
      */
     Entity GetEntity(size_t index) const {
-        auto it = indexToEntity.find(index);
-        if (it != indexToEntity.end()) {
-            return it->second;
+        if (index < entityByIndex.size()) {
+            return entityByIndex[index];
         }
         return Entity();
     }

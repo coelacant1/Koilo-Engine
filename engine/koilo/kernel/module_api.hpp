@@ -9,6 +9,7 @@
 #pragma once
 
 #include <koilo/kernel/unified_module.hpp>
+#include <koilo/kernel/stability.hpp>
 
 namespace koilo {
 
@@ -20,7 +21,7 @@ namespace koilo {
 // ---- Portable reflection descriptors (C ABI) ----
 
 // Type tags for C ABI method arguments and return values.
-enum KoiloFieldKind : uint32_t {
+enum KL_FROZEN KoiloFieldKind : uint32_t {
     KL_KIND_NONE    = 0,
     KL_KIND_FLOAT   = 1,
     KL_KIND_INT     = 2,
@@ -33,7 +34,7 @@ enum KoiloFieldKind : uint32_t {
 };
 
 // C ABI method descriptor  one per exported method.
-struct KoiloMethodExport {
+struct KL_FROZEN KoiloMethodExport {
     const char* name;                           ///< Method name (e.g., "SetGravity")
     const char* doc;                            ///< Brief description (nullable)
     void* (*invoker)(void* self, void** args);  ///< Invocation function pointer
@@ -45,7 +46,7 @@ struct KoiloMethodExport {
 
 // C ABI class descriptor  describes one reflected type.
 // Modules fill these statically; engine registers them during init.
-struct ClassDescExport {
+struct KL_FROZEN ClassDescExport {
     const char* name;                           ///< Class name (e.g., "MySystem")
     uint32_t    size;                           ///< sizeof(T)
     void (*destroy)(void*);                     ///< Destructor (nullable if engine-owned)
@@ -56,7 +57,7 @@ struct ClassDescExport {
 
 // C ABI global export  a named object instance with its class descriptor.
 // Modules return an array of these from init; engine calls RegisterGlobal for each.
-struct GlobalExport {
+struct KL_FROZEN GlobalExport {
     const char* name;                           ///< Script global name (e.g., "sensor")
     const char* class_name;                     ///< Matching ClassDescExport::name
     void* instance;                             ///< Object pointer (module owns lifetime)
@@ -64,7 +65,7 @@ struct GlobalExport {
 };
 
 // C-compatible module header (embedded at start of .kmod binary).
-struct KoiloModuleHeader {
+struct KL_FROZEN KoiloModuleHeader {
     uint32_t magic;
     uint32_t abi_version;
     char     name[32];
@@ -77,7 +78,7 @@ struct KoiloModuleHeader {
 // ---- ABI v3 descriptor structs (C-compatible) ----
 
 /// Describes a console command registered by a module.
-struct KoiloCommandDesc {
+struct KL_UNSTABLE KoiloCommandDesc {
     const char* name;                               ///< Command name (e.g., "spawn")
     const char* help;                               ///< One-line help text (nullable)
     int (*handler)(const char** args, int argc);    ///< Handler function
@@ -85,7 +86,7 @@ struct KoiloCommandDesc {
 };
 
 /// Describes an input listener registered by a module.
-struct KoiloInputListenerDesc {
+struct KL_UNSTABLE KoiloInputListenerDesc {
     const char* name;                               ///< Listener name
     int priority;                                   ///< Higher = receives events first
     int (*on_key)(int key, int action, int mods);   ///< Return 1 to consume
@@ -96,7 +97,7 @@ struct KoiloInputListenerDesc {
 };
 
 /// Describes a component type registered by a module.
-struct KoiloComponentDesc {
+struct KL_UNSTABLE KoiloComponentDesc {
     const char* name;                               ///< Component type name
     uint32_t size;                                  ///< sizeof(T)
     uint32_t alignment;                             ///< alignof(T)
@@ -107,7 +108,7 @@ struct KoiloComponentDesc {
 };
 
 /// Describes a custom widget type registered by a module.
-struct KoiloWidgetTypeDesc {
+struct KL_UNSTABLE KoiloWidgetTypeDesc {
     const char* name;                               ///< Widget type name
     void* (*create)(void);                          ///< Returns opaque widget state
     void  (*destroy)(void* state);                  ///< Destroy widget state
@@ -117,7 +118,7 @@ struct KoiloWidgetTypeDesc {
 };
 
 /// Describes a render pass registered by a module.
-struct KoiloRenderPassDesc {
+struct KL_UNSTABLE KoiloRenderPassDesc {
     const char* name;                               ///< Pass name (e.g., "fog")
     uint32_t order;                                 ///< Execution order hint
     void (*execute)(void* context);                 ///< Execute the pass
@@ -127,7 +128,7 @@ struct KoiloRenderPassDesc {
 // C function pointer table  engine services exposed to dynamic modules.
 // Layout is append-only: new functions are added at the end, never reordered.
 // Modules check api_size >= offsetof(EngineServices, needed_field) before use.
-struct EngineServices {
+struct KL_FROZEN EngineServices {
     uint32_t api_size;     ///< sizeof(EngineServices)  for forward compatibility
 
     // --- Core (always available) ---

@@ -22,9 +22,10 @@ enum class ModuleState : uint8_t {
     Resolving,
     Initialized,
     Running,
+    Faulted,       ///< Caught an exception; may be restarted.
     ShuttingDown,
     Unloaded,
-    Error
+    Error          ///< Permanent failure (init failed, too many faults).
 };
 
 /// Static module descriptor. Modules fill this out and register it with the kernel.

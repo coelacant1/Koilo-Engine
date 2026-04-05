@@ -12,6 +12,7 @@
 #include <koilo/kernel/memory/arena_allocator.hpp>
 #include <koilo/kernel/message_bus.hpp>
 #include <koilo/kernel/service_registry.hpp>
+#include <koilo/kernel/module_fault.hpp>
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -37,6 +38,10 @@ public:
 
     /// Tick all initialized modules.
     void TickAll(float dt);
+
+    /// Attempt to restart a faulted module by name.
+    /// Returns true if the module was re-initialized successfully.
+    bool RestartModule(const std::string& name);
 
     /// Shut down all modules in reverse initialization order.
     void ShutdownAll();
@@ -93,10 +98,11 @@ public:
 
 private:
     struct ModuleEntry {
-        ModuleDesc  desc;
-        ModuleId    id;
-        ModuleState state;
-        Cap         grantedCaps;
+        ModuleDesc       desc;
+        ModuleId         id;
+        ModuleState      state;
+        Cap              grantedCaps;
+        ModuleFaultRecord fault;
         MessageBus::SubscriptionId busSubId = 0; // 0 = not subscribed
 
         KL_BEGIN_FIELDS(ModuleEntry)
@@ -125,6 +131,7 @@ private:
     ModuleId nextId_ = 1; // 0 = kernel
     MessageBus& bus_;
     ServiceRegistry& services_;
+    KoiloKernel* kernel_ = nullptr;
 
     KL_BEGIN_FIELDS(ModuleManager)
         /* Internal state - not reflectable. */

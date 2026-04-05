@@ -2,6 +2,7 @@
 #include <koilo/kernel/config/config_store.hpp>
 #include <koilo/kernel/cvar/cvar_system.hpp>
 #include <koilo/kernel/logging/log.hpp>
+#include <koilo/kernel/schema_version.hpp>
 #include <fstream>
 #include <sstream>
 #include <algorithm>
@@ -172,6 +173,7 @@ bool ConfigStore::SaveToFile(const char* path) const {
         KL_WARN("Config", "Failed to open %s for writing", path);
         return false;
     }
+    out << MakeTextSchemaHeader("config", 1) << '\n';
     out << "# Koilo Engine configuration\n";
 
     // Sort keys for deterministic output
@@ -203,10 +205,19 @@ bool ConfigStore::LoadFromFile(const char* path) {
     if (!in) return false;
 
     size_t loaded = 0;
+    uint32_t fileVersion = 0;
     std::string line;
     while (std::getline(in, line)) {
         line = Trim(line);
-        if (line.empty() || line[0] == '#') continue;
+        if (line.empty()) continue;
+
+        // Check for version header on comment lines
+        if (line[0] == '#') {
+            if (fileVersion == 0) {
+                fileVersion = ParseTextSchemaVersion(line, "config");
+            }
+            continue;
+        }
 
         auto eq = line.find('=');
         if (eq == std::string::npos) continue;
@@ -219,7 +230,11 @@ bool ConfigStore::LoadFromFile(const char* path) {
         ++loaded;
     }
 
-    KL_DBG("Config", "Loaded %zu entries from %s", loaded, path);
+    // Version 0 = legacy file without header (treated as v1)
+    if (fileVersion == 0) fileVersion = 1;
+
+    KL_DBG("Config", "Loaded %zu entries from %s (schema v%u)",
+           loaded, path, fileVersion);
     return true;
 }
 

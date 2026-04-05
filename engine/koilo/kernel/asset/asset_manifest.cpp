@@ -4,6 +4,7 @@
  * @brief AssetManifest implementation - scan, persist, query.
  */
 #include <koilo/kernel/asset/asset_manifest.hpp>
+#include <koilo/kernel/schema_version.hpp>
 #include <fstream>
 #include <filesystem>
 #include <algorithm>
@@ -41,13 +42,9 @@ bool AssetManifest::Load(const std::string& manifestPath) {
     std::ifstream f(manifestPath, std::ios::binary);
     if (!f.is_open()) return false;
 
-    char magic[4];
-    f.read(magic, 4);
-    if (std::memcmp(magic, kManifestMagic, 4) != 0) return false;
-
-    uint32_t version = 0;
-    f.read(reinterpret_cast<char*>(&version), 4);
-    if (version != kManifestVersion) return false;
+    auto hdr = ReadSchemaHeader(f, kManifestMagic);
+    if (!hdr.valid) return false;
+    if (hdr.version != kManifestVersion) return false;
 
     uint32_t count = 0;
     f.read(reinterpret_cast<char*>(&count), 4);
@@ -76,8 +73,7 @@ bool AssetManifest::Save(const std::string& manifestPath) const {
     std::ofstream f(manifestPath, std::ios::binary);
     if (!f.is_open()) return false;
 
-    f.write(kManifestMagic, 4);
-    f.write(reinterpret_cast<const char*>(&kManifestVersion), 4);
+    WriteSchemaHeader(f, kManifestMagic, kManifestVersion);
     uint32_t count = static_cast<uint32_t>(entries_.size());
     f.write(reinterpret_cast<const char*>(&count), 4);
 
