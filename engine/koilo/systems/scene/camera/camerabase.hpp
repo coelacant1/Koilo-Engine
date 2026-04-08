@@ -33,8 +33,8 @@ public:
     enum class ProjectionType { ORTHOGRAPHIC, PERSPECTIVE };
 
 protected:
-    Transform* transform; ///< Pointer to the camera's transformation data.
-    CameraLayout* cameraLayout; ///< Pointer to the camera's layout information.
+    Transform* transform = nullptr; ///< Pointer to the camera's transformation data.
+    CameraLayout* cameraLayout = nullptr; ///< Pointer to the camera's layout information.
     Quaternion lookOffset; ///< Look offset for the camera's orientation.
     bool is2D = false; ///< Flag indicating whether the camera operates in 2D mode.
     

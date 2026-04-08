@@ -221,6 +221,7 @@
 #include <koilo/systems/scene/camera/camera.hpp>
 #include <koilo/systems/scene/camera/cameralayout.hpp>
 #include <koilo/systems/scene/camera/cameramanager.hpp>
+#include <koilo/systems/scene/camera/volumecamera.hpp>
 #include <koilo/systems/scene/deform/blendshape.hpp>
 #include <koilo/systems/scene/deform/blendshapecontroller.hpp>
 #include <koilo/systems/scene/deform/blendshapetransformcontroller.hpp>

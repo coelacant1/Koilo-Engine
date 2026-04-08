@@ -5,6 +5,7 @@
  */
 
 #include "testmatrix4x4.hpp"
+#include <cmath>
 
 using namespace koilo;
 // ========== Constructor Tests ==========
@@ -122,7 +123,7 @@ void TestMatrix4x4::TestGetRotation() {
     Quaternion q(1.0, 0.0, 0.0, 0.0);
     Matrix4x4 m = Matrix4x4::Rotation(q);
     Quaternion extracted = m.GetRotation();
-    TEST_ASSERT_FALSE(isnan(extracted.W) && isnan(extracted.X) && isnan(extracted.Y) && isnan(extracted.Z));
+    TEST_ASSERT_FALSE(std::isnan(extracted.W) && std::isnan(extracted.X) && std::isnan(extracted.Y) && std::isnan(extracted.Z));
 }
 
 void TestMatrix4x4::TestIsEqual() {

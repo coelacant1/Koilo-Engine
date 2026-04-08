@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "testquaternion.hpp"
+#include <cmath>
 
 using namespace koilo;
 void TestQuaternion::TestRotateVector(Quaternion q, Vector3D v, Vector3D e){
@@ -59,7 +60,7 @@ void TestQuaternion::TestDeltaRotation() {
     Quaternion q1(1.0, 0.0, 0.0, 0.0);
     Vector3D angVel(0.1f, 0.0f, 0.0f);
     Quaternion delta = q1.DeltaRotation(angVel, 0.016f);
-    TEST_ASSERT_FALSE(isnan(delta.W) && isnan(delta.X) && isnan(delta.Y) && isnan(delta.Z));
+    TEST_ASSERT_FALSE(std::isnan(delta.W) && std::isnan(delta.X) && std::isnan(delta.Y) && std::isnan(delta.Z));
 }
 
 void TestQuaternion::TestDivide() {
@@ -115,7 +116,7 @@ void TestQuaternion::TestGetBiVector() {
 void TestQuaternion::TestGetNormal() {
     Quaternion q(2.0, 1.0, 1.0, 1.0);
     Vector3D normal = q.GetNormal();
-    TEST_ASSERT_FALSE(isnan(normal.X) && isnan(normal.Y) && isnan(normal.Z));
+    TEST_ASSERT_FALSE(std::isnan(normal.X) && std::isnan(normal.Y) && std::isnan(normal.Z));
 }
 
 void TestQuaternion::TestIsClose() {
@@ -191,7 +192,7 @@ void TestQuaternion::TestMultiply() {
     Quaternion q1(1.0, 0.0, 1.0, 0.0);
     Quaternion q2(1.0, 0.5, 0.5, 0.75);
     Quaternion result = q1.Multiply(q2);
-    TEST_ASSERT_FALSE(isnan(result.W) && isnan(result.X) && isnan(result.Y) && isnan(result.Z));
+    TEST_ASSERT_FALSE(std::isnan(result.W) && std::isnan(result.X) && std::isnan(result.Y) && std::isnan(result.Z));
     
     Quaternion q(2.0, 1.0, 1.0, 1.0);
     Quaternion scaled = q.Multiply(2.0f);
@@ -236,13 +237,13 @@ void TestQuaternion::TestPermutate() {
     Quaternion q(1.0, 2.0, 3.0, 4.0);
     Vector3D perm(1.0f, 2.0f, 0.0f);  // Permutation indices must be 0, 1, or 2
     Quaternion result = q.Permutate(perm);
-    TEST_ASSERT_FALSE(isnan(result.W) && isnan(result.X) && isnan(result.Y) && isnan(result.Z));
+    TEST_ASSERT_FALSE(std::isnan(result.W) && std::isnan(result.X) && std::isnan(result.Y) && std::isnan(result.Z));
 }
 
 void TestQuaternion::TestPower() {
     Quaternion q(2.0, 1.0, 1.0, 1.0);
     Quaternion power = q.Power(2.0f);
-    TEST_ASSERT_FALSE(isnan(power.W) && isnan(power.X) && isnan(power.Y) && isnan(power.Z));
+    TEST_ASSERT_FALSE(std::isnan(power.W) && std::isnan(power.X) && std::isnan(power.Y) && std::isnan(power.Z));
 }
 
 void TestQuaternion::TestRotateVectorUnit() {
@@ -250,7 +251,7 @@ void TestQuaternion::TestRotateVectorUnit() {
     Quaternion unit = q.UnitQuaternion();
     Vector2D v2d(1.0f, 0.0f);
     Vector2D rotated = q.RotateVectorUnit(v2d, unit);
-    TEST_ASSERT_FALSE(isnan(rotated.X) && isnan(rotated.Y));
+    TEST_ASSERT_FALSE(std::isnan(rotated.X) && std::isnan(rotated.Y));
 }
 
 void TestQuaternion::TestSubtract() {

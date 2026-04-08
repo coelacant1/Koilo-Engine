@@ -160,6 +160,8 @@
 #include "systems/display/testdisplaymanager.hpp"
 #include "systems/display/testframebuffer.hpp"
 #include "systems/display/testidisplaybackend.hpp"
+#include "systems/display/led/testledframeencoder.hpp"
+#include "systems/display/led/testklcamloader.hpp"
 #include "systems/input/testgamepad.hpp"
 #include "systems/input/testinputcodes.hpp"
 #include "systems/input/testinputmanager.hpp"
@@ -218,6 +220,12 @@
 #include "systems/render/graph/testframecomposer.hpp"
 #include "systems/render/testhotreload.hpp"
 #include "debug/testdebugvisualization.hpp"
+#include "systems/scene/camera/testvolumecamera.hpp"
+#include "platform/spi/testspitransport.hpp"
+#include "systems/display/led/testleddisplaybackend.hpp"
+#include "systems/display/led/testledvolumemodule.hpp"
+#include "systems/display/led/testledgathercompute.hpp"
+#include "systems/display/preview/testlivepreview.hpp"
 #include "systems/scene/animation/testanimationchannel.hpp"
 #include "systems/scene/animation/testanimationclip.hpp"
 #include "systems/scene/animation/testanimationlayer.hpp"
@@ -560,6 +568,14 @@ int main(int /*argc*/, char ** /*argv*/) {
     TestHeapPool::RunAllTests();
     TestScratchScope::RunAllTests();
     TestComponentArray::RunAllTests();
+    TestLEDFrameEncoder::RunAllTests();
+    TestVolumeCamera::RunAllTests();
+    RunTestKlcamLoader();
+    TestSPITransport::RunAllTests();
+    TestLEDDisplayBackend::RunAllTests();
+    TestLEDVolumeModule::RunAllTests();
+    TestLEDGatherCompute::RunAllTests();
+    RunTestLivePreview();
 
     UNITY_END();
 }

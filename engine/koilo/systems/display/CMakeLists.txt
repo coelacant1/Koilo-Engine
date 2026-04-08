@@ -11,6 +11,8 @@ set(GLAD_DIR ${CMAKE_SOURCE_DIR}/external/glad)
 set(DISPLAY_SOURCES
     displaymanager.cpp
     backends/nullbackend.cpp
+    led/led_frame_encoder.cpp
+    led/camera_layout.cpp
 )
 
 set(DISPLAY_HEADERS
@@ -20,6 +22,9 @@ set(DISPLAY_HEADERS
     ${CMAKE_SOURCE_DIR}/engine/koilo/systems/display/idisplaybackend.hpp
     ${CMAKE_SOURCE_DIR}/engine/koilo/systems/display/displaymanager.hpp
     ${CMAKE_SOURCE_DIR}/engine/koilo/systems/display/backends/nullbackend.hpp
+    ${CMAKE_SOURCE_DIR}/engine/koilo/systems/display/led/led_frame_encoder.hpp
+    ${CMAKE_SOURCE_DIR}/engine/koilo/systems/display/led/iled_transport.hpp
+    ${CMAKE_SOURCE_DIR}/engine/koilo/systems/display/led/camera_layout.hpp
 )
 
 # Add SDL3 software backend if available
@@ -77,6 +82,35 @@ else()
     if(KOILO_USE_VULKAN AND NOT SDL3_FOUND)
         message(STATUS "Vulkan backend disabled (SDL3 not found)")
     endif()
+endif()
+
+# Add LED volume backend and module if enabled
+if(KOILO_ENABLE_LED_VOLUME)
+    message(STATUS "LED volume output module enabled")
+    list(APPEND DISPLAY_SOURCES backends/led/led_display_backend.cpp)
+    list(APPEND DISPLAY_SOURCES led/module/led_volume_module.cpp)
+    list(APPEND DISPLAY_HEADERS
+        ${CMAKE_SOURCE_DIR}/engine/koilo/systems/display/backends/led/led_display_backend.hpp
+        ${CMAKE_SOURCE_DIR}/engine/koilo/systems/display/led/module/led_volume_module.hpp)
+
+    # GPU gather shader (only meaningful with OpenGL, but file self-guards)
+    if(HAVE_OPENGL_BACKEND)
+        list(APPEND DISPLAY_SOURCES led/led_gather_compute.cpp)
+        list(APPEND DISPLAY_HEADERS
+            ${CMAKE_SOURCE_DIR}/engine/koilo/systems/display/led/led_gather_compute.hpp)
+    endif()
+else()
+    message(STATUS "LED volume output module disabled (KOILO_ENABLE_LED_VOLUME=OFF)")
+endif()
+
+# Add live preview module if enabled
+if(KOILO_ENABLE_LIVE_PREVIEW)
+    message(STATUS "Live preview HTTP server module enabled")
+    list(APPEND DISPLAY_SOURCES preview/live_preview_module.cpp)
+    list(APPEND DISPLAY_HEADERS
+        ${CMAKE_SOURCE_DIR}/engine/koilo/systems/display/preview/live_preview_module.hpp)
+else()
+    message(STATUS "Live preview module disabled (KOILO_ENABLE_LIVE_PREVIEW=OFF)")
 endif()
 
 # Create library

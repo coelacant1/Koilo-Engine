@@ -105,7 +105,9 @@ void TestPhase35Profiler();
 
 // test_scripting_systems.cpp
 void TestParticleSystem();
+#ifdef KOILO_ENABLE_AUDIO
 void TestPhase19AudioSystem();
+#endif
 
 // test_scripting_ecs_world.cpp
 void TestPhase17ECSIntegration();
@@ -206,7 +208,9 @@ int main() {
 
     // --- Scripting bindings: particles & audio ---
     TestParticleSystem();
+#ifdef KOILO_ENABLE_AUDIO
     TestPhase19AudioSystem();
+#endif
 
     // --- Scripting bindings: ECS, AI, world ---
     TestPhase17ECSIntegration();

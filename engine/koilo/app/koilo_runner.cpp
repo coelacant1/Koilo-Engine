@@ -32,10 +32,19 @@ static volatile auto s_forceLink_simCvars = &koilo_sim_cvars_anchor;
 #include <koilo/platform/desktop_file_reader.hpp>
 #include <koilo/scripting/koiloscript_engine.hpp>
 #include <koilo/core/interfaces/iscript_bridge.hpp>
+#include <koilo/kernel/cvar/cvar_system.hpp>
+#ifdef KL_HAVE_LED_VOLUME
+#include <koilo/systems/display/led/module/led_volume_module.hpp>
+#endif
+#ifdef KL_HAVE_LIVE_PREVIEW
+#include <koilo/systems/display/preview/live_preview_module.hpp>
+#endif
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
 #include <string>
+#include <vector>
+#include <utility>
 #include <iostream>
 #include <csignal>
 #include <atomic>
@@ -73,13 +82,31 @@ struct KoiloInstance {
     koilo::scripting::KoiloScriptEngine engine{&reader};
     koilo::ConsoleModule*               console = nullptr;
 
-    bool Boot() {
+    bool Boot(const std::vector<std::pair<std::string, std::string>>& cvarOverrides = {}) {
         engine.SetKernel(&kernel);
         kernel.Services().Register("script", &engine);
         kernel.Services().Register("script_bridge",
             static_cast<koilo::IScriptBridge*>(&engine));
         kernel.RegisterModule(koilo::ConsoleModule::GetModuleDesc());
+#ifdef KL_HAVE_LED_VOLUME
+        kernel.RegisterModule(koilo::LEDVolumeModule::GetModuleDesc());
+#endif
+#ifdef KL_HAVE_LIVE_PREVIEW
+        kernel.RegisterModule(koilo::LivePreviewModule::GetModuleDesc());
+#endif
         koilo::RegisterCoreServices(kernel);
+
+        // Apply --set overrides before module initialization
+        for (const auto& [name, value] : cvarOverrides) {
+            auto* param = koilo::CVarSystem::Get().Find(name);
+            if (param) {
+                param->SetFromString(value);
+                KL_LOG("koilo", "CVar override: %s = %s",
+                       name.c_str(), value.c_str());
+            } else {
+                KL_WARN("koilo", "Unknown CVar: %s", name.c_str());
+            }
+        }
 
         if (!kernel.InitializeModules()) {
             KL_ERR("koilo", "Failed to initialize kernel modules");
@@ -235,6 +262,7 @@ static void PrintUsage(const char* prog) {
     printf("  --no-profiler          Disable performance profiler\n");
     printf("  --modules-dir <path>   Pre-load .so modules from directory\n");
     printf("  --console              Start TCP console alongside display\n");
+    printf("  --set <cvar> <value>   Set a CVar before module initialization\n");
     printf("  --help                 Show this help message\n");
     printf("\nGPU selection (hybrid laptops):\n");
     printf("  DRI_PRIME=1 %s ...                   Use discrete GPU (Mesa)\n", prog);
@@ -248,6 +276,7 @@ int main(int argc, char** argv) {
     const char* scriptPath    = nullptr;
     const char* consoleExec   = nullptr;
     bool        showHelp      = false;
+    std::vector<std::pair<std::string, std::string>> cvarOverrides;
 
     // Quick scan for mode-deciding flags
     for (int i = 1; i < argc; ++i) {
@@ -257,6 +286,10 @@ int main(int argc, char** argv) {
             scriptPath = argv[++i];
         else if (std::strcmp(argv[i], "--console-exec") == 0 && i + 1 < argc)
             consoleExec = argv[++i];
+        else if (std::strcmp(argv[i], "--set") == 0 && i + 2 < argc) {
+            cvarOverrides.emplace_back(argv[i + 1], argv[i + 2]);
+            i += 2;
+        }
     }
 
     if (showHelp) {
@@ -275,7 +308,7 @@ int main(int argc, char** argv) {
 
     // -- Always boot the kernel first --------------------------------
     KoiloInstance inst;
-    if (!inst.Boot()) return 1;
+    if (!inst.Boot(cvarOverrides)) return 1;
 
     KL_LOG("koilo", "TCP console server on localhost:9090");
 

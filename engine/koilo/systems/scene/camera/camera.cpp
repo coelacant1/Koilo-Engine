@@ -12,6 +12,9 @@ koilo::Camera::Camera(Transform* transform, IPixelGroup* pixelGroup) {
     this->transform = transform;
     this->pixelGroup = pixelGroup;
 
+    ownedLayout_ = std::make_unique<CameraLayout>(CameraLayout::YNForward, CameraLayout::ZUp);
+    this->cameraLayout = ownedLayout_.get();
+
     Set2D(true);
 }
 

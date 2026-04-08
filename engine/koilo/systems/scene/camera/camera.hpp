@@ -14,6 +14,7 @@
 
 #include "camerabase.hpp" // Include for base camera functionality.
 #include <koilo/registry/reflect_macros.hpp>
+#include <memory>
 
 
 namespace koilo {
@@ -35,6 +36,7 @@ private:
     Vector2D minC{1e30f, 1e30f}; ///< Cached minimum coordinate of the camera.
     bool calculatedMax = false; ///< Indicates if the maximum coordinate has been calculated.
     bool calculatedMin = false; ///< Indicates if the minimum coordinate has been calculated.
+    std::unique_ptr<CameraLayout> ownedLayout_; ///< Default layout when none is provided.
 
 public:
     /**

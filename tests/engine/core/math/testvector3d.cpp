@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "testvector3d.hpp"
+#include <cmath>
 
 using namespace koilo;
 void TestVector3D::TestAbsolute() {
@@ -120,7 +121,7 @@ void TestVector3D::TestEdgeCases() {
     TEST_ASSERT_FLOAT_WITHIN(0.01, 0.0, zero.Magnitude());
     
     Vector3D normalized_zero = zero.UnitSphere();
-    TEST_ASSERT_FALSE(isnan(normalized_zero.X) && isnan(normalized_zero.Y) && isnan(normalized_zero.Z));
+    TEST_ASSERT_FALSE(std::isnan(normalized_zero.X) && std::isnan(normalized_zero.Y) && std::isnan(normalized_zero.Z));
     
     Vector3D large(1e6, 1e6, 1e6);
     Vector3D large_add = large.Add(Vector3D(1.0, 1.0, 1.0));
@@ -179,7 +180,7 @@ void TestVector3D::TestPermutate() {
     Vector3D v(1.0, 2.0, 3.0);
     Vector3D perm(0.0, 2.0, 1.0);
     Vector3D result = v.Permutate(perm);
-    TEST_ASSERT_FALSE(isnan(result.X) && isnan(result.Y) && isnan(result.Z));
+    TEST_ASSERT_FALSE(std::isnan(result.X) && std::isnan(result.Y) && std::isnan(result.Z));
 }
 
 void TestVector3D::RunAllTests() {

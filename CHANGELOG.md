@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.3.16] - 2026-4-7
+LED volume pipeline with USB transport, Vulkan on Pi, and deploy tooling.
+
+### Added
+- USB LED transport (`USBLEDTransport`) using CDC ACM bulk endpoints
+- LED transport factory supporting `usb` and `spi` backends via `led.transport_type` CVar
+- Camera layout axis flipping: `led.flip_x` and `led.flip_y` CVars for panel orientation correction
+- Nearest-neighbor pixel sampling: `led.filter` CVar (`nearest`/`bilinear`) on VolumeCamera
+- Teensy 4.1 HUB75 firmware written for USB (`USB_DUAL_SERIAL` mode)
+- Vulkan rendering backend enabled for Raspberry Pi cross-builds
+
+### Changed
+- `pi_deploy.sh` updated: correct CMake flags (`KOILO_USE_VULKAN=ON`), USB transport defaults for `--led` preset, added `--uncapped` flag
+
 ## [0.3.15] - 2026-4-4
 Module fault isolation, schema versioning, ABI stability framework, and VM allocator optimization.
 

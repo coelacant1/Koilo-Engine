@@ -146,25 +146,6 @@ Per affected vertex (16 bytes each):
 
 ---
 
-## Loader API
-
-```cpp
-KoiloMeshLoader loader;
-loader.Load("face.kmesh");
-
-uint32_t verts  = loader.GetVertexCount();
-uint32_t tris   = loader.GetTriangleCount();
-uint32_t morphs = loader.GetMorphCount();
-const float*    v = loader.GetVertices();     // x,y,z interleaved
-const uint32_t* t = loader.GetTriangles();    // v0,v1,v2 triplets
-const float*    u = loader.GetUVs();          // u,v interleaved
-const uint32_t* ut = loader.GetUVTriangles(); // UV index triplets
-bool hasUV = loader.HasUVs();
-
-const MorphTarget* m = loader.GetMorph("Anger");
-// m->name, m->indices, m->deltaX, m->deltaY, m->deltaZ
-```
-
 `MorphableMesh` wraps the loader with blend weight control:
 
 ```cpp

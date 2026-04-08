@@ -180,7 +180,8 @@ void TestPhase17ECSIntegration() {
         reader.SetContent("fn Setup() { var e = entities.CreateNamed(\"hero\"); }\nfn Update(dt) { }");
         KoiloScriptEngine engine(&reader);
         engine.LoadScript("test.ks");
-        if (engine.BuildScene() && engine.GetEntities()->GetCount() == 1) PASS()
+        if (engine.BuildScene() && engine.GetEntities() && engine.GetEntities()->GetCount() == 1) PASS()
+        else if (!engine.GetEntities()) FAIL("GetEntities() returned null (no kernel)")
         else FAIL("Script entity creation failed, count=" + std::to_string(engine.GetEntities()->GetCount()))
     }
 
@@ -736,9 +737,12 @@ void TestPhase18AISystem() {
         engine.BuildScene();
         koilo::TimeManager::GetInstance().Tick(0.016f); engine.ExecuteUpdate();
         auto* mgr = engine.GetAI();
-        auto* sm = mgr->GetStateMachine("bot");
-        if (sm && sm->GetCurrentStateName() == "idle") PASS()
-        else FAIL("Script ai global didn't create state machine")
+        if (!mgr) { FAIL("GetAI() returned null (no kernel)") }
+        else {
+            auto* sm = mgr->GetStateMachine("bot");
+            if (sm && sm->GetCurrentStateName() == "idle") PASS()
+            else FAIL("Script ai global didn't create state machine")
+        }
     }
 
     TEST("Script: ai pathfinding from script")
@@ -755,9 +759,12 @@ void TestPhase18AISystem() {
         engine.LoadScript("test.ks");
         engine.BuildScene();
         auto* mgr = engine.GetAI();
-        bool found = mgr->FindPath("map", 0, 0, 4, 4);
-        if (found && mgr->GetPathLength() == 9) PASS()
-        else FAIL("Script-created grid pathfinding failed, len=" + std::to_string(mgr->GetPathLength()))
+        if (!mgr) { FAIL("GetAI() returned null (no kernel)") }
+        else {
+            bool found = mgr->FindPath("map", 0, 0, 4, 4);
+            if (found && mgr->GetPathLength() == 9) PASS()
+            else FAIL("Script-created grid pathfinding failed, len=" + std::to_string(mgr->GetPathLength()))
+        }
     }
 }
 
@@ -1048,7 +1055,9 @@ void TestPhase20WorldSerialization() {
         KoiloScriptEngine engine(&reader);
         reader.SetContent("fn Setup() {\n  world.CreateLevel(\"ScriptLevel\");\n}\n");
         bool ok = engine.LoadScript("test.ks") && engine.BuildScene();
-        if (ok && engine.GetWorld()->GetLevelCount() == 1) PASS()
+        auto* w = engine.GetWorld();
+        if (!w) { FAIL("GetWorld() returned null (no kernel)") }
+        else if (ok && w->GetLevelCount() == 1) PASS()
         else FAIL("Script CreateLevel failed")
     }
 }

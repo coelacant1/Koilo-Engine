@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "testvector2d.hpp"
+#include <cmath>
 
 using namespace koilo;
 void TestVector2D::TestAbsolute() {
@@ -136,7 +137,7 @@ void TestVector2D::TestEdgeCases() {
     TEST_ASSERT_FLOAT_WITHIN(0.01, 0.0, zero.Magnitude());
     
     Vector2D normalized_zero = zero.UnitCircle();
-    TEST_ASSERT_FALSE(isnan(normalized_zero.X) && isnan(normalized_zero.Y));
+    TEST_ASSERT_FALSE(std::isnan(normalized_zero.X) && std::isnan(normalized_zero.Y));
     
     Vector2D large(1e6, 1e6);
     Vector2D large_add = large.Add(Vector2D(1.0, 1.0));

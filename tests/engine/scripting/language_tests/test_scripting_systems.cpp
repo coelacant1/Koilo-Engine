@@ -162,7 +162,8 @@ fn Setup() {
         TEST("Particles global from script")
         if (engine.LoadScript("test.ks") && engine.BuildScene()) {
             auto* ps = engine.GetParticleSystem();
-            if (ps->GetEmitterCount() == 1)
+            if (!ps) { FAIL("GetParticleSystem() returned null (no kernel)"); }
+            else if (ps->GetEmitterCount() == 1)
                 PASS() else FAIL("emitter count: " + std::to_string(ps->GetEmitterCount()))
         } else { FAIL(engine.GetError()); }
     }
@@ -173,6 +174,7 @@ fn Setup() {
 // --- Engine Hardening Tests ---
 #include <koilo/systems/render/shader/ishader.hpp>
 
+#ifdef KOILO_ENABLE_AUDIO
 void TestPhase19AudioSystem() {
     std::cout << "--- Audio System ---" << std::endl;
 
@@ -382,10 +384,9 @@ void TestPhase19AudioSystem() {
         engine.LoadScript("test.ks");
         engine.BuildScene();
         auto* mgr = engine.GetAudio();
-        if (mgr->GetMasterVolume() == 0.5f) PASS()
+        if (!mgr) { FAIL("GetAudio() returned null (no kernel)") }
+        else if (mgr->GetMasterVolume() == 0.5f) PASS()
         else FAIL("Script audio global didn't set volume, got " + std::to_string(mgr->GetMasterVolume()))
     }
 }
-
-
-
+#endif // KOILO_ENABLE_AUDIO

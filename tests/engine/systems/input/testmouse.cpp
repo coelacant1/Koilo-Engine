@@ -5,6 +5,7 @@
  */
 
 #include "testmouse.hpp"
+#include <cmath>
 
 using namespace koilo;
 // ========== Constructor Tests ==========
@@ -21,7 +22,7 @@ void TestMouse::TestParameterizedConstructor() {
     // Mouse doesn't have parameterized constructor
     // Verify initial position
     Vector2D pos = mouse.GetPosition();
-    TEST_ASSERT_FALSE(isnan(pos.X));
+    TEST_ASSERT_FALSE(std::isnan(pos.X));
 }
 
 // ========== Method Tests ==========
@@ -36,7 +37,7 @@ void TestMouse::TestUpdate() {
 void TestMouse::TestGetPosition() {
     Mouse mouse;
     Vector2D pos = mouse.GetPosition();
-    TEST_ASSERT_FALSE(isnan(pos.X) || isnan(pos.Y));
+    TEST_ASSERT_FALSE(std::isnan(pos.X) || std::isnan(pos.Y));
 }
 
 void TestMouse::TestGetDelta() {

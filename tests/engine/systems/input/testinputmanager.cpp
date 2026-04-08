@@ -5,6 +5,7 @@
  */
 
 #include "testinputmanager.hpp"
+#include <cmath>
 
 using namespace koilo;
 // ========== Constructor Tests ==========
@@ -45,7 +46,7 @@ void TestInputManager::TestIsKeyHeld() {
 void TestInputManager::TestGetMousePosition() {
     InputManager manager;
     Vector2D pos = manager.GetMousePosition();
-    TEST_ASSERT_FALSE(isnan(pos.X) || isnan(pos.Y));
+    TEST_ASSERT_FALSE(std::isnan(pos.X) || std::isnan(pos.Y));
 }
 
 void TestInputManager::TestGetMouseDelta() {

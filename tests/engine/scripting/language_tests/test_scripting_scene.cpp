@@ -508,10 +508,15 @@ void TestPhase13BlenderParity() {
         KoiloScriptEngine engine(&reader);
         engine.LoadScript("test.ks");
         engine.BuildScene();
-        CameraLayout* layout = engine.GetCamera()->GetCameraLayout();
-        if (layout->GetUpAxis() == CameraLayout::ZUp &&
-            layout->GetForwardAxis() == CameraLayout::YNForward) PASS()
-        else FAIL("Default layout not Z-up/-Y forward")
+        Camera* cam = engine.GetCamera();
+        if (!cam) { FAIL("GetCamera() returned null (no kernel)") }
+        else {
+            CameraLayout* layout = cam->GetCameraLayout();
+            if (!layout) { FAIL("GetCameraLayout() returned null") }
+            else if (layout->GetUpAxis() == CameraLayout::ZUp &&
+                     layout->GetForwardAxis() == CameraLayout::YNForward) PASS()
+            else FAIL("Default layout not Z-up/-Y forward")
+        }
     }
 
     // 13.4a: Plane intersection
