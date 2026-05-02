@@ -313,11 +313,19 @@ bool koilo::DisplayManager::BuildFramebuffer(DisplayEntry& entry) {
 
     // Update geometry buffer (XY pairs) - used by geometry-aware backends
     entry.geometryBuffer.resize(static_cast<std::size_t>(pixelCount) * 2);
-    for (uint32_t i = 0; i < pixelCount; ++i) {
-        Vector2D coord = pixelGroup->GetCoordinate(static_cast<uint16_t>(i));
-        const std::size_t base = static_cast<std::size_t>(i) * 2;
-        entry.geometryBuffer[base + 0] = coord.X;
-        entry.geometryBuffer[base + 1] = coord.Y;
+    if (const Vector2D* coords = pixelGroup->GetCoordinatesArray()) {
+        for (uint32_t i = 0; i < pixelCount; ++i) {
+            const std::size_t base = static_cast<std::size_t>(i) * 2;
+            entry.geometryBuffer[base + 0] = coords[i].X;
+            entry.geometryBuffer[base + 1] = coords[i].Y;
+        }
+    } else {
+        for (uint32_t i = 0; i < pixelCount; ++i) {
+            Vector2D coord = pixelGroup->GetCoordinate(static_cast<uint16_t>(i));
+            const std::size_t base = static_cast<std::size_t>(i) * 2;
+            entry.geometryBuffer[base + 0] = coord.X;
+            entry.geometryBuffer[base + 1] = coord.Y;
+        }
     }
     
     if (auto* geomBackend = dynamic_cast<IGeometryDisplayBackend*>(entry.backend.get())) {

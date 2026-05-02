@@ -288,6 +288,7 @@ void OpenGLRHIDevice::Shutdown() {
 
     if (pushConstantUBO_) { glDeleteBuffers(1, &pushConstantUBO_); pushConstantUBO_ = 0; }
     if (vao_) { glDeleteVertexArrays(1, &vao_); vao_ = 0; }
+    lastAttrMask_ = 0;
 
     // Clean up timestamp query objects
     if (!tsQueries_.empty())
@@ -339,6 +340,8 @@ void OpenGLRHIDevice::DestroyBuffer(RHIBuffer handle) {
     if (!buffers_.Valid(handle.id)) return;
     auto& s = buffers_.Get(handle.id);
     if (s.buffer) glDeleteBuffers(1, &s.buffer);
+    if (boundVertexBuf_ == handle.id) { boundVertexBuf_ = 0; boundVertexBufPtr_ = nullptr; vertexStateDirty_ = true; }
+    if (boundIndexBuf_  == handle.id) { boundIndexBuf_  = 0; boundIndexBufPtr_  = nullptr; }
     buffers_.Free(handle.id);
 }
 
@@ -501,6 +504,7 @@ void OpenGLRHIDevice::DestroyPipeline(RHIPipeline handle) {
     if (!pipelines_.Valid(handle.id)) return;
     auto& s = pipelines_.Get(handle.id);
     if (s.program) glDeleteProgram(s.program);
+    if (boundPipeline_ == handle.id) { boundPipeline_ = 0; boundPipelinePtr_ = nullptr; }
     pipelines_.Free(handle.id);
 }
 
@@ -612,6 +616,30 @@ void OpenGLRHIDevice::UpdateTexture(RHITexture handle, const void* data,
         glPixelStorei(GL_UNPACK_ALIGNMENT, prevAlignment);
 }
 
+void OpenGLRHIDevice::UpdateTextureRegion(RHITexture handle, const void* data,
+                                           size_t /*dataSize*/,
+                                           uint32_t x, uint32_t y,
+                                           uint32_t w, uint32_t h) {
+    if (!textures_.Valid(handle.id) || w == 0 || h == 0) return;
+    auto& s = textures_.Get(handle.id);
+
+    GLint prevAlignment = 4;
+    if (s.pixelFormat == GL_RED) {
+        glGetIntegerv(GL_UNPACK_ALIGNMENT, &prevAlignment);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    }
+
+    glBindTexture(GL_TEXTURE_2D, s.texture);
+    glTexSubImage2D(GL_TEXTURE_2D, 0,
+                    static_cast<GLint>(x), static_cast<GLint>(y),
+                    static_cast<GLsizei>(w), static_cast<GLsizei>(h),
+                    s.pixelFormat, s.pixelType, data);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    if (s.pixelFormat == GL_RED)
+        glPixelStorei(GL_UNPACK_ALIGNMENT, prevAlignment);
+}
+
 void* OpenGLRHIDevice::MapBuffer(RHIBuffer handle) {
     if (!buffers_.Valid(handle.id)) return nullptr;
     auto& s = buffers_.Get(handle.id);
@@ -696,19 +724,32 @@ void OpenGLRHIDevice::ApplyBlendState(const RHIBlendState& bs) {
 }
 
 void OpenGLRHIDevice::SetupVertexAttributes() {
-    if (!pipelines_.Valid(boundPipeline_) || !buffers_.Valid(boundVertexBuf_))
-        return;
+    if (!boundPipelinePtr_ || !boundVertexBufPtr_) return;
 
-    auto& pipe = pipelines_.Get(boundPipeline_);
-    auto& vb   = buffers_.Get(boundVertexBuf_);
+    auto& pipe = *boundPipelinePtr_;
+    auto& vb   = *boundVertexBufPtr_;
 
     glBindVertexArray(vao_);
     glBindBuffer(GL_ARRAY_BUFFER, vb.buffer);
 
-    // Disable all attribute slots first to prevent stale attributes from a
-    // previous pipeline bleeding into the current draw.
-    for (uint32_t i = 0; i < 8; ++i)
-        glDisableVertexAttribArray(i);
+    // Build a bitmask of the attribute slots used by this pipeline.
+    // Disable only those slots that were enabled before but are no
+    // longer needed; enable + configure the rest. This avoids
+    // unconditionally issuing 8 glDisableVertexAttribArray calls per
+    // draw (most pipelines use 2-4 slots).
+    uint32_t newMask = 0;
+    for (uint32_t i = 0; i < pipe.attrCount; ++i) {
+        const uint32_t loc = pipe.attrs[i].location;
+        if (loc < 32u) newMask |= (1u << loc);
+    }
+
+    const uint32_t toDisable = lastAttrMask_ & ~newMask;
+    if (toDisable) {
+        for (uint32_t i = 0; i < 32u; ++i) {
+            if (toDisable & (1u << i))
+                glDisableVertexAttribArray(i);
+        }
+    }
 
     for (uint32_t i = 0; i < pipe.attrCount; ++i) {
         auto& attr = pipe.attrs[i];
@@ -716,6 +757,8 @@ void OpenGLRHIDevice::SetupVertexAttributes() {
         GLenum type  = VertexAttrGLType(attr.format);
         GLboolean normalize = (type == GL_UNSIGNED_BYTE) ? GL_TRUE : GL_FALSE;
 
+        // Always re-enable + re-configure: vertex stride, format, or
+        // base offset can vary even when the same slot was used before.
         glEnableVertexAttribArray(attr.location);
         glVertexAttribPointer(
             attr.location, comps, type, normalize,
@@ -724,6 +767,7 @@ void OpenGLRHIDevice::SetupVertexAttributes() {
                 static_cast<uintptr_t>(attr.offset + boundVBOffset_)));
     }
 
+    lastAttrMask_     = newMask;
     vertexStateDirty_ = false;
 }
 
@@ -796,46 +840,48 @@ void OpenGLRHIDevice::BindPipeline(RHIPipeline pipeline) {
     ApplyBlendState(p.blend);
 
     boundPipeline_    = pipeline.id;
+    boundPipelinePtr_ = &p;
     vertexStateDirty_ = true;
 
     // Re-apply bridge uniforms on the new program for all tracked UBO bindings.
     // glUniform* state is per-program, so switching programs loses them.
-    for (int i = 0; i < kMaxTrackedBindings; ++i) {
-        auto& tb = trackedBindings_[i];
-        if (!tb.active || !buffers_.Valid(tb.bufferId)) continue;
+    for (uint32_t set = 0; set < kMaxBindingSets; ++set) {
+        for (uint32_t binding = 0; binding < kMaxBindingsPerSet; ++binding) {
+            auto& tb = trackedBindings_[set * kMaxBindingsPerSet + binding];
+            if (!tb.active || !buffers_.Valid(tb.bufferId)) continue;
 
-        auto& s = buffers_.Get(tb.bufferId);
-        if (s.shadow.empty()) continue;
+            auto& s = buffers_.Get(tb.bufferId);
+            if (s.shadow.empty()) continue;
 
-        uint32_t set     = tb.setBinding >> 16;
-        uint32_t binding = tb.setBinding & 0xFFFF;
-        size_t len = std::min(tb.range, s.shadow.size() - tb.offset);
-        const uint8_t* data = s.shadow.data() + tb.offset;
+            size_t len = std::min(tb.range, s.shadow.size() - tb.offset);
+            const uint8_t* data = s.shadow.data() + tb.offset;
 
-        if (set == 0 && binding == 0)      BridgeTransformUniforms(p.program, data, len);
-        else if (set == 0 && binding == 1)  BridgeLightUniforms(p.program, data, len);
-        else if (set == 0 && binding == 2)  BridgeSceneUniforms(p.program, data, len);
-        else if (set == 0 && binding == 3)  BridgeAudioUniforms(p.program, data, len);
-        else if (set == 1 && binding == 0)  BridgeMaterialUniforms(p.program, data, len);
+            if (set == 0 && binding == 0)      BridgeTransformUniforms(p, data, len);
+            else if (set == 0 && binding == 1) BridgeLightUniforms(p, data, len);
+            else if (set == 0 && binding == 2) BridgeSceneUniforms(p, data, len);
+            else if (set == 0 && binding == 3) BridgeAudioUniforms(p, data, len);
+            else if (set == 1 && binding == 0) BridgeMaterialUniforms(p, data, len);
+        }
     }
 }
 
 void OpenGLRHIDevice::BindVertexBuffer(RHIBuffer buffer,
                                         uint32_t /*binding*/, uint64_t offset) {
-    boundVertexBuf_   = buffer.id;
-    boundVBOffset_    = offset;
-    vertexStateDirty_ = true;
+    boundVertexBuf_    = buffer.id;
+    boundVertexBufPtr_ = buffers_.GetPtr(buffer.id);
+    boundVBOffset_     = offset;
+    vertexStateDirty_  = true;
 }
 
 void OpenGLRHIDevice::BindIndexBuffer(RHIBuffer buffer,
                                        bool is32Bit, uint64_t offset) {
-    boundIndexBuf_  = buffer.id;
-    indexIs32Bit_   = is32Bit;
-    boundIBOffset_  = offset;
+    boundIndexBuf_    = buffer.id;
+    boundIndexBufPtr_ = buffers_.GetPtr(buffer.id);
+    indexIs32Bit_     = is32Bit;
+    boundIBOffset_    = offset;
 
-    if (buffers_.Valid(buffer.id)) {
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,
-                     buffers_.Get(buffer.id).buffer);
+    if (boundIndexBufPtr_) {
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, boundIndexBufPtr_->buffer);
     }
 }
 
@@ -849,33 +895,27 @@ void OpenGLRHIDevice::BindUniformBuffer(RHIBuffer buffer, uint32_t set,
                       static_cast<GLintptr>(offset),
                       static_cast<GLsizeiptr>(r));
 
-    // Track this binding for re-applying bridge uniforms on program switch
-    uint32_t key = (set << 16) | binding;
-    int slot = -1;
-    for (int i = 0; i < kMaxTrackedBindings; ++i) {
-        if (trackedBindings_[i].active && trackedBindings_[i].setBinding == key) {
-            slot = i;
-            break;
-        }
-        if (!trackedBindings_[i].active && slot < 0)
-            slot = i;
-    }
-    if (slot >= 0) {
-        trackedBindings_[slot] = {key, buffer.id, offset, r, true};
+    // Track this binding for re-applying bridge uniforms on program switch (C3: O(1) direct index)
+    if (set < kMaxBindingSets && binding < kMaxBindingsPerSet) {
+        auto& tb = trackedBindings_[set * kMaxBindingsPerSet + binding];
+        tb.bufferId = buffer.id;
+        tb.offset   = offset;
+        tb.range    = r;
+        tb.active   = true;
     }
 
     // Bridge: also set individual uniforms for shaders that don't use UBO blocks.
-    if (!pipelines_.Valid(boundPipeline_) || s.shadow.empty()) return;
-    GLuint prog = pipelines_.Get(boundPipeline_).program;
+    if (!boundPipelinePtr_ || s.shadow.empty()) return;
+    auto& pipe = *boundPipelinePtr_;
 
     const uint8_t* data = s.shadow.data() + offset;
     size_t len = std::min(r, s.shadow.size() - offset);
 
-    if (set == 0 && binding == 0)      BridgeTransformUniforms(prog, data, len);
-    else if (set == 0 && binding == 1)  BridgeLightUniforms(prog, data, len);
-    else if (set == 0 && binding == 2)  BridgeSceneUniforms(prog, data, len);
-    else if (set == 0 && binding == 3)  BridgeAudioUniforms(prog, data, len);
-    else if (set == 1 && binding == 0)  BridgeMaterialUniforms(prog, data, len);
+    if (set == 0 && binding == 0)      BridgeTransformUniforms(pipe, data, len);
+    else if (set == 0 && binding == 1)  BridgeLightUniforms(pipe, data, len);
+    else if (set == 0 && binding == 2)  BridgeSceneUniforms(pipe, data, len);
+    else if (set == 0 && binding == 3)  BridgeAudioUniforms(pipe, data, len);
+    else if (set == 1 && binding == 0)  BridgeMaterialUniforms(pipe, data, len);
 }
 
 void OpenGLRHIDevice::BindTexture(RHITexture texture,
@@ -915,8 +955,8 @@ void OpenGLRHIDevice::PushConstants(RHIShaderStage /*stages*/,
     // block, set matching uniforms directly.  This handles shaders written
     // with 'uniform vec2 u_viewport' rather than 'layout(std140) uniform
     // PushConstants { ... }'.
-    if (!pipelines_.Valid(boundPipeline_)) return;
-    auto& pipe = pipelines_.Get(boundPipeline_);
+    if (!boundPipelinePtr_) return;
+    auto& pipe = *boundPipelinePtr_;
     if (pipe.hasPushConstantBlock) return;
 
     GLuint prog = pipe.program;
@@ -945,9 +985,9 @@ void OpenGLRHIDevice::PushConstants(RHIShaderStage /*stages*/,
 void OpenGLRHIDevice::Draw(uint32_t vertexCount, uint32_t instanceCount,
                             uint32_t firstVertex, uint32_t firstInstance) {
     if (vertexStateDirty_) SetupVertexAttributes();
-    if (!pipelines_.Valid(boundPipeline_)) return;
+    if (!boundPipelinePtr_) return;
 
-    GLenum mode = ToGLTopology(pipelines_.Get(boundPipeline_).topology);
+    GLenum mode = ToGLTopology(boundPipelinePtr_->topology);
 
     if (instanceCount <= 1 && firstInstance == 0) {
         glDrawArrays(mode, static_cast<GLint>(firstVertex),
@@ -964,9 +1004,9 @@ void OpenGLRHIDevice::DrawIndexed(uint32_t indexCount, uint32_t instanceCount,
                                    uint32_t firstIndex, int32_t vertexOffset,
                                    uint32_t firstInstance) {
     if (vertexStateDirty_) SetupVertexAttributes();
-    if (!pipelines_.Valid(boundPipeline_)) return;
+    if (!boundPipelinePtr_) return;
 
-    GLenum mode  = ToGLTopology(pipelines_.Get(boundPipeline_).topology);
+    GLenum mode  = ToGLTopology(boundPipelinePtr_->topology);
     GLenum itype = indexIs32Bit_ ? GL_UNSIGNED_INT : GL_UNSIGNED_SHORT;
     size_t isize = indexIs32Bit_ ? sizeof(uint32_t) : sizeof(uint16_t);
     const void* offset = reinterpret_cast<const void*>(
@@ -1012,7 +1052,7 @@ void OpenGLRHIDevice::OnResize(uint32_t width, uint32_t height) {
 // program.  If the shader uses proper UBO blocks instead, the
 // glGetUniformLocation calls return -1 and the calls are harmless.
 
-void OpenGLRHIDevice::BridgeTransformUniforms(GLuint prog,
+void OpenGLRHIDevice::BridgeTransformUniforms(PipelineSlot& pipe,
                                                const uint8_t* data,
                                                size_t len) {
     // TransformUBO layout (std140):
@@ -1022,106 +1062,90 @@ void OpenGLRHIDevice::BridgeTransformUniforms(GLuint prog,
     //   offset 192: vec4 cameraPos      (16 bytes) -- xyz + padding
     //   offset 208: mat4 inverseViewProj(64 bytes)
     const auto* f = reinterpret_cast<const float*>(data);
+    GLuint prog = pipe.program;
+    auto& L = pipe.stdLocs;
 
-    if (len >= 64) {
-        GLint loc = glGetUniformLocation(prog, "u_model");
-        if (loc >= 0) glUniformMatrix4fv(loc, 1, GL_FALSE, f + 0);
-    }
-    if (len >= 128) {
-        GLint loc = glGetUniformLocation(prog, "u_view");
-        if (loc >= 0) glUniformMatrix4fv(loc, 1, GL_FALSE, f + 16);
-    }
-    if (len >= 192) {
-        GLint loc = glGetUniformLocation(prog, "u_projection");
-        if (loc >= 0) glUniformMatrix4fv(loc, 1, GL_FALSE, f + 32);
-    }
-    if (len >= 208) {
-        GLint loc = glGetUniformLocation(prog, "u_cameraPos");
-        if (loc >= 0) glUniform3fv(loc, 1, f + 48);
-    }
-    if (len >= 272) {
-        GLint loc = glGetUniformLocation(prog, "u_inverseViewProj");
-        if (loc >= 0) glUniformMatrix4fv(loc, 1, GL_FALSE, f + 52);
-    }
+    // B3: lazy-cache locations (-2 = unqueried, -1 = absent, >=0 = valid).
+    if (L.model == -2)            L.model           = glGetUniformLocation(prog, "u_model");
+    if (L.view == -2)             L.view            = glGetUniformLocation(prog, "u_view");
+    if (L.projection == -2)       L.projection      = glGetUniformLocation(prog, "u_projection");
+    if (L.cameraPos == -2)        L.cameraPos       = glGetUniformLocation(prog, "u_cameraPos");
+    if (L.inverseViewProj == -2)  L.inverseViewProj = glGetUniformLocation(prog, "u_inverseViewProj");
+
+    if (len >=  64 && L.model           >= 0) glUniformMatrix4fv(L.model,           1, GL_FALSE, f + 0);
+    if (len >= 128 && L.view            >= 0) glUniformMatrix4fv(L.view,            1, GL_FALSE, f + 16);
+    if (len >= 192 && L.projection      >= 0) glUniformMatrix4fv(L.projection,      1, GL_FALSE, f + 32);
+    if (len >= 208 && L.cameraPos       >= 0) glUniform3fv      (L.cameraPos,       1,           f + 48);
+    if (len >= 272 && L.inverseViewProj >= 0) glUniformMatrix4fv(L.inverseViewProj, 1, GL_FALSE, f + 52);
 }
 
-void OpenGLRHIDevice::BridgeSceneUniforms(GLuint prog,
+void OpenGLRHIDevice::BridgeSceneUniforms(PipelineSlot& pipe,
                                             const uint8_t* data,
                                             size_t len) {
-    // SceneUBO layout (std140):
-    //   offset 0: int lightCount (4 bytes) + 12 bytes padding
-    if (len >= 4) {
+    // SceneUBO layout (std140): int lightCount + 12 bytes padding
+    if (len < 4) return;
+    auto& L = pipe.stdLocs;
+    if (L.lightCount == -2) L.lightCount = glGetUniformLocation(pipe.program, "u_lightCount");
+    if (L.lightCount >= 0) {
         int lightCount;
         std::memcpy(&lightCount, data, sizeof(int));
-        GLint loc = glGetUniformLocation(prog, "u_lightCount");
-        if (loc >= 0) glUniform1i(loc, lightCount);
+        glUniform1i(L.lightCount, lightCount);
     }
 }
 
-void OpenGLRHIDevice::BridgeLightUniforms(GLuint prog,
+void OpenGLRHIDevice::BridgeLightUniforms(PipelineSlot& pipe,
                                             const uint8_t* data,
                                             size_t len) {
-    // GPULight layout (std140, 48 bytes each):
-    //   offset  0: float position[3] (12 bytes)
-    //   offset 12: float intensity   (4 bytes)
-    //   offset 16: float color[3]    (12 bytes)
-    //   offset 28: float falloff     (4 bytes)
-    //   offset 32: float curve       (4 bytes)
-    //   offset 36: float pad[3]      (12 bytes)
+    // GPULight layout (std140, 48 bytes each).
     static constexpr size_t kLightStride = 48;
     static constexpr int kMaxLights = 16;
 
     int count = static_cast<int>(len / kLightStride);
     if (count > kMaxLights) count = kMaxLights;
 
+    GLuint prog = pipe.program;
+    auto& L = pipe.stdLocs;
+
     for (int i = 0; i < count; ++i) {
         const auto* l = reinterpret_cast<const float*>(data + i * kLightStride);
-        char name[64];
 
-        std::snprintf(name, sizeof(name), "u_lights[%d].position", i);
-        GLint loc = glGetUniformLocation(prog, name);
-        if (loc >= 0) glUniform3fv(loc, 1, l + 0);
+        // B3: lazy-cache per-light array element locations.
+        if (L.lightPos[i] == -2) {
+            char name[64];
+            std::snprintf(name, sizeof(name), "u_lights[%d].position", i);
+            L.lightPos[i] = glGetUniformLocation(prog, name);
+            std::snprintf(name, sizeof(name), "u_lights[%d].color", i);
+            L.lightCol[i] = glGetUniformLocation(prog, name);
+            std::snprintf(name, sizeof(name), "u_lights[%d].intensity", i);
+            L.lightInt[i] = glGetUniformLocation(prog, name);
+            std::snprintf(name, sizeof(name), "u_lights[%d].falloff", i);
+            L.lightFalloff[i] = glGetUniformLocation(prog, name);
+            std::snprintf(name, sizeof(name), "u_lights[%d].curve", i);
+            L.lightCurve[i] = glGetUniformLocation(prog, name);
+        }
 
-        std::snprintf(name, sizeof(name), "u_lights[%d].color", i);
-        loc = glGetUniformLocation(prog, name);
-        if (loc >= 0) glUniform3fv(loc, 1, l + 4);
-
-        std::snprintf(name, sizeof(name), "u_lights[%d].intensity", i);
-        loc = glGetUniformLocation(prog, name);
-        if (loc >= 0) glUniform1f(loc, l[3]);
-
-        std::snprintf(name, sizeof(name), "u_lights[%d].falloff", i);
-        loc = glGetUniformLocation(prog, name);
-        if (loc >= 0) glUniform1f(loc, l[7]);
-
-        std::snprintf(name, sizeof(name), "u_lights[%d].curve", i);
-        loc = glGetUniformLocation(prog, name);
-        if (loc >= 0) glUniform1f(loc, l[8]);
+        if (L.lightPos[i]     >= 0) glUniform3fv(L.lightPos[i], 1, l + 0);
+        if (L.lightCol[i]     >= 0) glUniform3fv(L.lightCol[i], 1, l + 4);
+        if (L.lightInt[i]     >= 0) glUniform1f (L.lightInt[i],    l[3]);
+        if (L.lightFalloff[i] >= 0) glUniform1f (L.lightFalloff[i],l[7]);
+        if (L.lightCurve[i]   >= 0) glUniform1f (L.lightCurve[i],  l[8]);
     }
 }
 
-void OpenGLRHIDevice::BridgeAudioUniforms(GLuint prog,
+void OpenGLRHIDevice::BridgeAudioUniforms(PipelineSlot& /*pipe*/,
                                             const uint8_t* data,
                                             size_t len) {
-    // Audio SSBO: array of floats (samples) + sample count
-    // Layout depends on what the pipeline uploads. For now the audio
-    // SSBO is a 16-byte dummy, so this is a no-op placeholder.
-    (void)prog; (void)data; (void)len;
+    // Audio SSBO is currently a 16-byte dummy.
+    (void)data; (void)len;
 }
 
-void OpenGLRHIDevice::BridgeMaterialUniforms(GLuint prog,
+void OpenGLRHIDevice::BridgeMaterialUniforms(PipelineSlot& pipe,
                                               const uint8_t* data,
                                               size_t len) {
-    // Material UBO is std140-packed in KSL parameter declaration order.
-    // If the current pipeline carries material param metadata (name + type),
-    // we use name-based lookup to set each uniform at its correct std140
-    // offset.  This is robust regardless of glGetActiveUniform ordering.
     if (len == 0) return;
 
     // Use name-based path when param metadata is available.
-    if (pipelines_.Valid(boundPipeline_)) {
-        auto& pipe = pipelines_.Get(boundPipeline_);
-        if (!pipe.materialParams.empty()) {
+    if (!pipe.materialParams.empty()) {
             size_t offset = 0;
             for (auto& mp : pipe.materialParams) {
                 // Compute std140 alignment and data size from the KSL type.
@@ -1140,9 +1164,12 @@ void OpenGLRHIDevice::BridgeMaterialUniforms(GLuint prog,
                 offset = (offset + align - 1) & ~(align - 1);
                 if (offset + sz > len) break;
 
-                // KSL param names lack the u_ prefix used in GLSL uniforms.
-                std::string uniformName = "u_" + mp.name;
-                GLint loc = glGetUniformLocation(prog, uniformName.c_str());
+                // B3: lazy-cache the uniform location per material param.
+                if (mp.cachedLoc == -2) {
+                    std::string uniformName = "u_" + mp.name;
+                    mp.cachedLoc = glGetUniformLocation(pipe.program, uniformName.c_str());
+                }
+                GLint loc = mp.cachedLoc;
                 if (loc >= 0) {
                     const float* fptr = reinterpret_cast<const float*>(data + offset);
                     const int*   iptr = reinterpret_cast<const int*>(data + offset);
@@ -1159,10 +1186,10 @@ void OpenGLRHIDevice::BridgeMaterialUniforms(GLuint prog,
                 offset += sz;
             }
             return;
-        }
     }
 
     // Fallback: no metadata -- enumerate active uniforms and sort by location.
+    GLuint prog = pipe.program;
     GLint activeCount = 0;
     glGetProgramiv(prog, GL_ACTIVE_UNIFORMS, &activeCount);
 

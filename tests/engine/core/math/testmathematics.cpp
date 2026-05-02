@@ -4,7 +4,7 @@
 using namespace koilo;
 void TestMathematics::TestDefaultConstructor() {
     // TODO: Implement test for default constructor
-    Mathematics obj;
+    [[maybe_unused]] Mathematics obj;
     TEST_IGNORE_MESSAGE("Stub");
 }
 

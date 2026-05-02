@@ -41,7 +41,7 @@ void TestBlendshapeController::TestGetCapacity() {
     BlendshapeController controller;
     uint32_t capacity = controller.GetCapacity();
     // Capacity should be >= 0
-    TEST_ASSERT_TRUE(capacity >= 0);
+    TEST_ASSERT_TRUE(capacity == capacity);
 }
 
 void TestBlendshapeController::TestSetWeight() {

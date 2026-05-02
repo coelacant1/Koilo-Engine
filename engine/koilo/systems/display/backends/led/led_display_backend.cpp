@@ -187,14 +187,22 @@ void LEDDisplayBackend::SetGamma(float gamma) {
 
 void LEDDisplayBackend::BuildGammaTable() {
     const float g = (config_.gamma > 0.0f) ? config_.gamma : 1.0f;
-    const float b = config_.brightness / 255.0f;
+    const int   bRaw = static_cast<int>(config_.brightness);
 
+    // Gamma + brightness rarely change at runtime; skip the 256-iteration
+    // pow() loop when nothing has changed.
+    if (lastBuiltGamma_ == g && lastBuiltBrightness_ == bRaw) return;
+
+    const float b = bRaw / 255.0f;
     for (int i = 0; i < 256; ++i) {
         float normalized = static_cast<float>(i) / 255.0f;
         float corrected = std::pow(normalized, g) * b;
         int val = static_cast<int>(corrected * 255.0f + 0.5f);
         gammaTable_[i] = static_cast<uint8_t>(std::min(std::max(val, 0), 255));
     }
+
+    lastBuiltGamma_      = g;
+    lastBuiltBrightness_ = static_cast<int16_t>(bRaw);
 }
 
 } // namespace koilo

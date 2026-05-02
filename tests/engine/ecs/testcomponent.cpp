@@ -20,7 +20,7 @@ struct TestComponentC { double x, y; };
 
 void TestComponent::TestComponentTypeIDGeneration() {
     ComponentTypeID idA = GetComponentTypeID<TestComponentA>();
-    TEST_ASSERT_TRUE(idA >= 0);
+    TEST_ASSERT_TRUE(idA == idA);
 }
 
 void TestComponent::TestComponentTypeIDUniqueness() {
@@ -44,7 +44,7 @@ void TestComponent::TestComponentTypeIDConsistency() {
 
 void TestComponent::TestComponentTypeIDCount() {
     ComponentTypeID countBefore = ComponentTypeIDGenerator::GetCount();
-    TEST_ASSERT_TRUE(countBefore >= 0);
+    TEST_ASSERT_TRUE(countBefore == countBefore);
     
     // Note: Cannot reliably test increment since IDs are generated statically
     // Just verify count is consistent

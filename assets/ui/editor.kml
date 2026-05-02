@@ -53,31 +53,13 @@
       </panel>
       <textfield id="hierarchy-search" class="search-field" placeholder="Search nodes..."/>
       <scrollview id="hierarchy-scroll">
-        <treenode id="node-scene" text="Scene" depth="0" has-children="true" expanded="true"/>
-        <treenode id="node-camera" text="MainCamera" depth="1"/>
-        <treenode id="node-light" text="DirectionalLight" depth="1" has-children="true" expanded="true"/>
-        <treenode id="node-light-shadow" text="ShadowMap" depth="2"/>
-        <treenode id="node-light-flare" text="LensFlare" depth="2"/>
-        <treenode id="node-player" text="Player" depth="1" has-children="true" expanded="true"/>
-        <treenode id="node-mesh" text="PlayerMesh" depth="2" has-children="true" expanded="true"/>
-        <treenode id="node-mesh-lod0" text="LOD0_High" depth="3"/>
-        <treenode id="node-mesh-lod1" text="LOD1_Low" depth="3"/>
-        <treenode id="node-collider" text="Collider" depth="2"/>
-        <treenode id="node-player-script" text="PlayerController" depth="2"/>
-        <treenode id="node-ground" text="Ground" depth="1" has-children="true" expanded="true"/>
-        <treenode id="node-ground-mesh" text="TerrainMesh" depth="2"/>
-        <treenode id="node-ground-col" text="TerrainCollider" depth="2"/>
-        <treenode id="node-skybox" text="Skybox" depth="1"/>
-        <treenode id="node-env" text="Environment" depth="1" has-children="true" expanded="true"/>
-        <treenode id="node-fog" text="FogVolume" depth="2"/>
-        <treenode id="node-wind" text="WindZone" depth="2"/>
-        <treenode id="node-ambient" text="AmbientProbe" depth="2"/>
-        <treenode id="node-particles" text="ParticleSystem" depth="1"/>
-        <treenode id="node-audio" text="AudioSource" depth="1"/>
-        <treenode id="node-ui-canvas" text="UICanvas" depth="1"/>
+        <!-- Hierarchy contents are populated at runtime by EditorModule
+             from the live Scene's root nodes. The placeholder below is
+             replaced on the first Update tick once a scene is loaded. -->
+        <label id="hierarchy-empty" class="hint-label">No scene loaded.</label>
       </scrollview>
       <panel class="panel-footer">
-        <label class="item-count">22 nodes</label>
+        <label id="hierarchy-count" class="item-count">0 nodes</label>
       </panel>
     </panel>
 

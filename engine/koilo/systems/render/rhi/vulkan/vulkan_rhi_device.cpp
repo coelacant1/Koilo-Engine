@@ -366,6 +366,8 @@ void VulkanRHIDevice::Shutdown() {
     if (!initialized_) return;
     vkDeviceWaitIdle(device_);
 
+    DestroyAllStagingArenas();
+
     // Flush all deferred texture deletions across all frame slots
     for (uint32_t f = 0; f < kMaxFramesInFlight; ++f) {
         for (auto& s : pendingTextureDeletes_[f]) {
@@ -802,6 +804,21 @@ void VulkanRHIDevice::DestroyTexture(RHITexture handle) {
     s.view    = VK_NULL_HANDLE;
     s.image   = VK_NULL_HANDLE;
     s.memory  = VK_NULL_HANDLE;
+
+    // Invalidate any cached descriptor-set bindings for this texture id;
+    // the slot may be re-allocated to a different texture later this frame
+    // and the cached descriptor would silently bind the wrong image view.
+    const uint32_t deadId = handle.id;
+    for (auto& cache : textureBindCache_) {
+        for (auto it = cache.begin(); it != cache.end(); ) {
+            if (static_cast<uint32_t>(it->first >> 32) == deadId) {
+                it = cache.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+
     textures_.Free(handle.id);
 }
 
@@ -1212,16 +1229,51 @@ void VulkanRHIDevice::UpdateBuffer(RHIBuffer handle, const void* data,
             // frames where this buffer is NOT UpdateBuffer'd, the fallback
             // path (ringOffset == UINT32_MAX) reads valid data.
         }
-        void* mapped = nullptr;
-        VkResult mapResult = vkMapMemory(device_, s.memory, offset, size, 0, &mapped);
-        if (mapResult == VK_SUCCESS && mapped) {
-            std::memcpy(mapped, data, size);
-            vkUnmapMemory(device_, s.memory);
+        // Persistent map: keep host-visible (HOST_COHERENT) memory mapped
+        // for the lifetime of the buffer.  Per-call vkMapMemory/Unmap is
+        // surprisingly expensive on some drivers (hundreds of µs);
+        // amortising the map removes that hit from every UpdateBuffer.
+        if (!s.mapped) {
+            VkResult mr = vkMapMemory(device_, s.memory, 0, s.size, 0, &s.mapped);
+            if (mr != VK_SUCCESS) s.mapped = nullptr;
+        }
+        if (s.mapped) {
+            std::memcpy(static_cast<uint8_t*>(s.mapped) + offset, data, size);
+        } else {
+            // Fallback: one-shot map (should be rare).
+            void* mapped = nullptr;
+            VkResult mapResult = vkMapMemory(device_, s.memory, offset, size, 0, &mapped);
+            if (mapResult == VK_SUCCESS && mapped) {
+                std::memcpy(mapped, data, size);
+                vkUnmapMemory(device_, s.memory);
+            }
         }
         if (!s.isUniform || s.ringOffset == UINT32_MAX)
             s.ringOffset = UINT32_MAX; // not ring-backed
     } else {
-        // Staging upload
+        // Device-local upload.  Fast path: if the active frame command
+        // buffer is recording outside a render pass and the payload fits
+        // vkCmdUpdateBuffer's limits (<=65536 bytes, 4-byte aligned),
+        // inline the copy into the frame's command stream.  Avoids the
+        // staging buffer alloc + BeginOneShot/EndOneShot which does a
+        // vkQueueWaitIdle on every call.
+        //
+        // NOTE: vkCmdUpdateBuffer is NOT permitted inside a render pass,
+        // so this only fires for callers that update buffers between
+        // BeginFrame and the first BeginRenderPass (or after EndRenderPass).
+        // Mid-render-pass updates fall through to the staging path.
+        if (frameActive_ && cmdBuffer_ != VK_NULL_HANDLE
+            && !insideRenderPass_
+            && size > 0 && size <= 65536 && (size % 4) == 0
+            && (offset % 4) == 0) {
+            vkCmdUpdateBuffer(cmdBuffer_, s.buffer,
+                              static_cast<VkDeviceSize>(offset),
+                              static_cast<VkDeviceSize>(size),
+                              data);
+            return;
+        }
+
+        // Staging upload (slow path: blocking submit + queue idle).
         VkBuffer staging;
         VkDeviceMemory stagingMem;
         if (!CreateVkBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -1286,9 +1338,233 @@ void VulkanRHIDevice::UpdateTexture(RHITexture handle, const void* data,
                           VK_IMAGE_ASPECT_COLOR_BIT);
 
     EndOneShot(cmd);
+    s.currentLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     vkDestroyBuffer(device_, staging, nullptr);
     vkFreeMemory(device_, stagingMem, nullptr);
+}
+
+void VulkanRHIDevice::UpdateTextureRegion(RHITexture handle, const void* data,
+                                           size_t dataSize,
+                                           uint32_t x, uint32_t y,
+                                           uint32_t w, uint32_t h) {
+    if (!handle.IsValid() || !textures_.Valid(handle.id)) return;
+    if (w == 0 || h == 0 || dataSize == 0) return;
+    auto& s = textures_.Get(handle.id);
+    if (x + w > s.width || y + h > s.height) return;
+
+    // If the texture has never been initialised (layout still UNDEFINED)
+    // we cannot do a partial upload and preserve old contents - fall back
+    // to a full upload (caller should have done a full upload first).
+    if (s.currentLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
+        UpdateTexture(handle, data, dataSize, w, h);
+        return;
+    }
+
+    VkBuffer staging;
+    VkDeviceMemory stagingMem;
+    if (!CreateVkBuffer(dataSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                        VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                        staging, stagingMem))
+        return;
+
+    void* mapped = nullptr;
+    vkMapMemory(device_, stagingMem, 0, dataSize, 0, &mapped);
+    std::memcpy(mapped, data, dataSize);
+    vkUnmapMemory(device_, stagingMem);
+
+    auto cmd = BeginOneShot();
+
+    TransitionImageLayout(cmd, s.image, s.currentLayout,
+                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                          VK_IMAGE_ASPECT_COLOR_BIT);
+
+    VkBufferImageCopy region{};
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.layerCount = 1;
+    region.imageOffset = {static_cast<int32_t>(x), static_cast<int32_t>(y), 0};
+    region.imageExtent = {w, h, 1};
+    vkCmdCopyBufferToImage(cmd, staging, s.image,
+                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+    TransitionImageLayout(cmd, s.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                          VK_IMAGE_ASPECT_COLOR_BIT);
+
+    EndOneShot(cmd);
+    s.currentLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    vkDestroyBuffer(device_, staging, nullptr);
+    vkFreeMemory(device_, stagingMem, nullptr);
+}
+
+// -- Persistent staging-arena texture uploads ------------------------
+// Avoids the per-call vkAllocateMemory/vkQueueSubmit/vkQueueWaitIdle that
+// UpdateTexture/UpdateTextureRegion incur.  Per-slot host-coherent buffer,
+// recorded into the active frame command buffer (which is recording outside
+// any render pass - caller MUST guarantee this).
+
+bool VulkanRHIDevice::EnsureStagingCapacity(size_t bytes) {
+    auto& a = stagingArenas_[currentPoolIndex_];
+    if (a.capacity - a.offset >= bytes) return true;
+
+    // Need to grow.  New capacity = max(needed-from-zero, oldCapacity * 2,
+    // minimum 64 KiB).  Round up to power of two for amortized growth.
+    size_t need = a.offset + bytes;
+    size_t newCap = a.capacity ? a.capacity : (size_t)(64 * 1024);
+    while (newCap < need) newCap *= 2;
+
+    VkBuffer newBuf = VK_NULL_HANDLE;
+    VkDeviceMemory newMem = VK_NULL_HANDLE;
+    if (!CreateVkBuffer(newCap, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                        VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                        newBuf, newMem)) {
+        return false;
+    }
+    void* newMapped = nullptr;
+    if (vkMapMemory(device_, newMem, 0, newCap, 0, &newMapped) != VK_SUCCESS
+        || !newMapped) {
+        vkDestroyBuffer(device_, newBuf, nullptr);
+        vkFreeMemory(device_, newMem, nullptr);
+        return false;
+    }
+
+    // Copy any already-staged-but-not-yet-submitted data from this frame so
+    // that previously recorded vkCmdCopyBufferToImage commands (which still
+    // reference the old buffer) remain consistent - but those commands ALSO
+    // reference the OLD VkBuffer handle, not the new one, so we don't need
+    // to copy data: we just need to keep the old buffer alive until the
+    // GPU is done with it.  Retire it for free at the slot's next reset.
+    if (a.buffer != VK_NULL_HANDLE) {
+        if (a.mapped) vkUnmapMemory(device_, a.memory);
+        stagingPendingDestroy_[currentPoolIndex_].push_back({a.buffer, a.memory});
+    }
+
+    a.buffer   = newBuf;
+    a.memory   = newMem;
+    a.mapped   = newMapped;
+    a.capacity = newCap;
+    a.offset   = 0;
+    return true;
+}
+
+void VulkanRHIDevice::ResetActiveStagingSlot() {
+    // Free any buffers retired during this slot's previous frame use.
+    auto& pending = stagingPendingDestroy_[currentPoolIndex_];
+    for (auto& p : pending) {
+        if (p.b != VK_NULL_HANDLE) vkDestroyBuffer(device_, p.b, nullptr);
+        if (p.m != VK_NULL_HANDLE) vkFreeMemory(device_, p.m, nullptr);
+    }
+    pending.clear();
+    // Reset the live arena's offset (memory contents are now considered
+    // free - the slot's prior submission has finished per the fence wait).
+    stagingArenas_[currentPoolIndex_].offset = 0;
+}
+
+void VulkanRHIDevice::DestroyAllStagingArenas() {
+    for (uint32_t f = 0; f < kMaxFramesInFlight; ++f) {
+        for (auto& p : stagingPendingDestroy_[f]) {
+            if (p.b != VK_NULL_HANDLE) vkDestroyBuffer(device_, p.b, nullptr);
+            if (p.m != VK_NULL_HANDLE) vkFreeMemory(device_, p.m, nullptr);
+        }
+        stagingPendingDestroy_[f].clear();
+        auto& a = stagingArenas_[f];
+        if (a.mapped) { vkUnmapMemory(device_, a.memory); a.mapped = nullptr; }
+        if (a.buffer != VK_NULL_HANDLE) { vkDestroyBuffer(device_, a.buffer, nullptr); a.buffer = VK_NULL_HANDLE; }
+        if (a.memory != VK_NULL_HANDLE) { vkFreeMemory(device_, a.memory, nullptr);  a.memory = VK_NULL_HANDLE; }
+        a.capacity = 0;
+        a.offset   = 0;
+    }
+}
+
+bool VulkanRHIDevice::StageTextureFull(RHITexture handle, const void* data,
+                                        size_t dataSize,
+                                        uint32_t w, uint32_t h) {
+    // Fall back to the synchronous one-shot path if there's no active frame
+    // command buffer to record into (e.g. asset loading before BeginFrame).
+    if (!frameActive_ || cmdBuffer_ == VK_NULL_HANDLE) {
+        UpdateTexture(handle, data, dataSize, w, h);
+        return true;
+    }
+    if (!handle.IsValid() || !textures_.Valid(handle.id) || dataSize == 0) {
+        return false;
+    }
+    if (!EnsureStagingCapacity(dataSize)) return false;
+
+    auto& s = textures_.Get(handle.id);
+    auto& a = stagingArenas_[currentPoolIndex_];
+    const VkDeviceSize stagingOffset = a.offset;
+    std::memcpy(static_cast<uint8_t*>(a.mapped) + stagingOffset, data, dataSize);
+    a.offset += dataSize;
+
+    // Use UNDEFINED as the source layout for a full upload - its prior
+    // contents are irrelevant.
+    TransitionImageLayout(cmdBuffer_, s.image, VK_IMAGE_LAYOUT_UNDEFINED,
+                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                          VK_IMAGE_ASPECT_COLOR_BIT);
+
+    VkBufferImageCopy region{};
+    region.bufferOffset = stagingOffset;
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.layerCount = 1;
+    region.imageExtent = {w, h, 1};
+    vkCmdCopyBufferToImage(cmdBuffer_, a.buffer, s.image,
+                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+    TransitionImageLayout(cmdBuffer_, s.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                          VK_IMAGE_ASPECT_COLOR_BIT);
+    s.currentLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    return true;
+}
+
+bool VulkanRHIDevice::StageTextureRegion(RHITexture handle, const void* data,
+                                          size_t dataSize,
+                                          uint32_t x, uint32_t y,
+                                          uint32_t w, uint32_t h) {
+    if (!frameActive_ || cmdBuffer_ == VK_NULL_HANDLE) {
+        UpdateTextureRegion(handle, data, dataSize, x, y, w, h);
+        return true;
+    }
+    if (!handle.IsValid() || !textures_.Valid(handle.id)) return false;
+    if (w == 0 || h == 0 || dataSize == 0) return false;
+
+    auto& s = textures_.Get(handle.id);
+    if (x + w > s.width || y + h > s.height) return false;
+
+    // Cannot do a partial copy if the texture has never been initialised
+    // (current layout still UNDEFINED) - fall back to a full upload.
+    if (s.currentLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
+        return StageTextureFull(handle, data, dataSize, w, h);
+    }
+
+    if (!EnsureStagingCapacity(dataSize)) return false;
+
+    auto& a = stagingArenas_[currentPoolIndex_];
+    const VkDeviceSize stagingOffset = a.offset;
+    std::memcpy(static_cast<uint8_t*>(a.mapped) + stagingOffset, data, dataSize);
+    a.offset += dataSize;
+
+    TransitionImageLayout(cmdBuffer_, s.image, s.currentLayout,
+                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                          VK_IMAGE_ASPECT_COLOR_BIT);
+
+    VkBufferImageCopy region{};
+    region.bufferOffset = stagingOffset;
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.layerCount = 1;
+    region.imageOffset = {static_cast<int32_t>(x), static_cast<int32_t>(y), 0};
+    region.imageExtent = {w, h, 1};
+    vkCmdCopyBufferToImage(cmdBuffer_, a.buffer, s.image,
+                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+    TransitionImageLayout(cmdBuffer_, s.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                          VK_IMAGE_ASPECT_COLOR_BIT);
+    s.currentLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    return true;
 }
 
 void* VulkanRHIDevice::MapBuffer(RHIBuffer handle) {
@@ -1322,6 +1598,11 @@ void VulkanRHIDevice::BeginFrame() {
     // Advance to this frame's descriptor pool (matches display's double-buffering)
     currentPoolIndex_ = display_->GetCurrentFrame() % kMaxFramesInFlight;
 
+    // Reset this slot's staging arena (fence wait above guarantees the GPU
+    // is no longer reading from its memory) and free any buffers retired
+    // during the slot's previous use.
+    ResetActiveStagingSlot();
+
     // Flush deferred texture deletions queued during THIS frame slot's
     // previous use. The fence wait above guarantees completeness.
     auto& texDeletions = pendingTextureDeletes_[currentPoolIndex_];
@@ -1344,6 +1625,11 @@ void VulkanRHIDevice::BeginFrame() {
 
     // Reset this frame slot's descriptor pool (safe - fence waited above).
     vkResetDescriptorPool(device_, descriptorPools_[currentPoolIndex_], 0);
+
+    // The per-frame texture-bind cache holds VkDescriptorSet handles
+    // allocated from the pool we just reset; those handles are now
+    // invalid, so wipe the cache before any BindTexture call this frame.
+    textureBindCache_[currentPoolIndex_].clear();
 
     // Reset active pipeline layout so the first BindUniformBuffer of the
     // new frame defaults to scenePipelineLayout_ (not the previous frame's
@@ -1389,10 +1675,12 @@ void VulkanRHIDevice::BeginRenderPass(RHIRenderPass pass,
     rpInfo.pClearValues    = clearValues;
 
     vkCmdBeginRenderPass(cmdBuffer_, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
+    insideRenderPass_ = true;
 }
 
 void VulkanRHIDevice::EndRenderPass() {
     vkCmdEndRenderPass(cmdBuffer_);
+    insideRenderPass_ = false;
 }
 
 void VulkanRHIDevice::BindPipeline(RHIPipeline pipeline) {
@@ -1570,10 +1858,31 @@ void VulkanRHIDevice::BindTexture(RHITexture texture,
 
     // Select the correct descriptor set layout for texture binding
     VkDescriptorSetLayout dsLayout = VK_NULL_HANDLE;
-    if (pipeLayout == blitPipelineLayout_) {
+    bool isBlit = (pipeLayout == blitPipelineLayout_);
+    if (isBlit) {
         dsLayout = blitSamplerLayout_;
     } else {
         dsLayout = textureSetLayout_;
+    }
+
+    // Per-frame descriptor-set cache. The pool is reset every frame, so
+    // these handles only survive within a single frame; the cache map
+    // is cleared in BeginFrame() right after vkResetDescriptorPool.
+    // Without this cache, a UI flush that re-binds the white texture and
+    // the font atlas back-to-back across many panels triggers a fresh
+    // vkAllocateDescriptorSets+vkUpdateDescriptorSets every flush -
+    // measured at ~0.8% of total frame time in ui_demo.
+    const uint64_t cacheKey =
+        (static_cast<uint64_t>(texture.id) << 32) |
+        (static_cast<uint64_t>(set) << 16) |
+        (static_cast<uint64_t>(binding) << 8) |
+        (isBlit ? 1ull : 0ull);
+    auto& cache = textureBindCache_[currentPoolIndex_];
+    auto cacheIt = cache.find(cacheKey);
+    if (cacheIt != cache.end()) {
+        vkCmdBindDescriptorSets(cmdBuffer_, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                pipeLayout, set, 1, &cacheIt->second, 0, nullptr);
+        return;
     }
 
     VkDescriptorSetAllocateInfo allocInfo{};
@@ -1605,6 +1914,8 @@ void VulkanRHIDevice::BindTexture(RHITexture texture,
 
     vkCmdBindDescriptorSets(cmdBuffer_, VK_PIPELINE_BIND_POINT_GRAPHICS,
                             pipeLayout, set, 1, &descSet, 0, nullptr);
+
+    cache.emplace(cacheKey, descSet);
 }
 
 void VulkanRHIDevice::SetViewport(const RHIViewport& vp) {

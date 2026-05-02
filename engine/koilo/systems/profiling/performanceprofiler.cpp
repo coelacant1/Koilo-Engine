@@ -66,11 +66,13 @@ void koilo::PerformanceProfiler::EndSample(const std::string& name) {
 // === Frame Management ===
 
 void koilo::PerformanceProfiler::BeginFrame() {
+    // Frame timing is always tracked so `stat.fps` works without
+    // requiring the per-sample profiler to be enabled.
+    frameStartTime = std::chrono::high_resolution_clock::now();
+
     if (!enabled) {
         return;
     }
-
-    frameStartTime = std::chrono::high_resolution_clock::now();
 
     // Reset current frame data
     currentFrameData = ProfileFrame();
@@ -78,13 +80,13 @@ void koilo::PerformanceProfiler::BeginFrame() {
 }
 
 void koilo::PerformanceProfiler::EndFrame() {
-    if (!enabled) {
-        return;
-    }
-
     auto frameEndTime = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> duration = frameEndTime - frameStartTime;
     frameDuration = duration.count();
+
+    if (!enabled) {
+        return;
+    }
 
     currentFrameData.totalTime = frameDuration;
 

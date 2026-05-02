@@ -552,9 +552,9 @@ void KMLBuilder::ApplyLayoutProperty(int widgetIdx, const std::string& prop,
         w->flexShrink = shrink;
         w->flexBasis = basis;
         if (grow > 0.0f && w->widthMode != SizeMode::Percent && w->heightMode != SizeMode::Percent) {
-            bool isRow = (w->layout.direction == LayoutDirection::Row);
             // For flex items, auto-set to FillRemaining so they participate in flex distribution
             // (This is set on the parent's children, so check is deferred to layout)
+            (void)w->layout.direction;
         }
         return;
     }
@@ -673,10 +673,10 @@ void KMLBuilder::ApplyLayoutProperty(int widgetIdx, const std::string& prop,
         return;
     }
 
-    if (prop == "top")    { w->posTop    = std::strtof(value.c_str(), nullptr); return; }
-    if (prop == "right")  { w->posRight  = std::strtof(value.c_str(), nullptr); return; }
-    if (prop == "bottom") { w->posBottom = std::strtof(value.c_str(), nullptr); return; }
-    if (prop == "left")   { w->posLeft   = std::strtof(value.c_str(), nullptr); return; }
+    if (prop == "top")    { w->posTop    = std::strtof(value.c_str(), nullptr); w->posSet |= Widget::POS_TOP;    return; }
+    if (prop == "right")  { w->posRight  = std::strtof(value.c_str(), nullptr); w->posSet |= Widget::POS_RIGHT;  return; }
+    if (prop == "bottom") { w->posBottom = std::strtof(value.c_str(), nullptr); w->posSet |= Widget::POS_BOTTOM; return; }
+    if (prop == "left")   { w->posLeft   = std::strtof(value.c_str(), nullptr); w->posSet |= Widget::POS_LEFT;   return; }
 
     // --- Grid properties ---
     if (prop == "grid-template-columns" || prop == "grid-template-rows") {
@@ -876,6 +876,7 @@ void KMLBuilder::ApplyVisualProperty(int widgetIdx, const std::string& tagName,
     }
     else if (prop == "border-width") {
         style.border.width = std::strtof(value.c_str(), nullptr);
+        w->borderWidth = style.border.width;
         modified = true;
     }
     else if (prop == "border-color") {
@@ -932,6 +933,7 @@ void KMLBuilder::ApplyVisualProperty(int widgetIdx, const std::string& tagName,
             std::string widthPart = remaining.substr(0, space);
             if (ParseSizeValue(widthPart, sv)) {
                 style.border.width = sv.number;
+                w->borderWidth = sv.number;
             }
             // Skip "solid/dashed/etc" keyword
             remaining = remaining.substr(space + 1);
@@ -1439,7 +1441,6 @@ std::string KMLBuilder::ResolveVariable(const std::string& value) const {
             if (expr[ti] == '-' || expr[ti] == '+') ti++;
             while (ti < expr.size() && (std::isdigit(expr[ti]) || expr[ti] == '.')) ti++;
             // Parse unit suffix
-            size_t unitStart = ti;
             while (ti < expr.size() && std::isalpha(expr[ti]) && expr[ti] != ' ') ti++;
             // Also handle % sign
             if (ti < expr.size() && expr[ti] == '%') ti++;

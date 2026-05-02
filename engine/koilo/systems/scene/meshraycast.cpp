@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include <koilo/systems/scene/meshraycast.hpp>
+#include <koilo/systems/scene/mesh_bvh.hpp>
 #include <cmath>
 
 namespace koilo {
@@ -18,6 +19,23 @@ bool koilo::MeshRaycast::Raycast(const Ray& ray,
         return false;
     }
 
+    // Fast path: use the mesh's lazily-built BVH (O(log N)) when available.
+    MeshBVH* accel = mesh->GetOrBuildRaycastAccel();
+    if (accel && !accel->Empty()) {
+        float dist;
+        Vector3D point, normal;
+        if (accel->Intersect(ray, maxDistance, backfaceCulling,
+                              dist, point, normal)) {
+            hit.distance = dist;
+            hit.point    = point;
+            hit.normal   = normal;
+            hit.collider = nullptr;
+            return true;
+        }
+        return false;
+    }
+
+    // Fallback: linear scan (used if BVH build returned empty / unavailable).
     const Vector3D* vertices = triangles->GetVertices();
     const IndexGroup* indices = triangles->GetIndexGroup();
     int triangleCount = triangles->GetTriangleCount();

@@ -24,7 +24,7 @@ void TestMemoryProfiler::TestParameterizedConstructor() {
 void TestMemoryProfiler::TestGetStats() {
     MemoryProfiler profiler;
     MemoryStats stats = profiler.GetStats();
-    TEST_ASSERT_TRUE(stats.currentUsage >= 0);
+    TEST_ASSERT_TRUE(stats.currentUsage == stats.currentUsage);
 }
 
 void TestMemoryProfiler::TestIsEnabled() {

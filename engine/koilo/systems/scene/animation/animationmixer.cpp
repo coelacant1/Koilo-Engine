@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include <koilo/systems/scene/animation/animationmixer.hpp>
 #include <koilo/core/time/timemanager.hpp>
-#include <map>
-#include <string>
+#include <unordered_map>
 
 namespace koilo {
 
@@ -103,8 +102,10 @@ void AnimationMixer::Update(const Applicator& applicator) {
         }
     }
 
-    // Accumulate blended property values: map<"node:property", value>
-    std::map<std::string, float> blended;
+    // A4: blend accumulator keyed on packed channel id (no string concat / parse).
+    // Mark all entries as not-written-this-frame; we'll rewrite them as channels
+    // contribute. Entries with !written at apply-time are stale from a previous frame.
+    for (auto& kv : blended_) kv.second.written = false;
 
     for (auto& layer : layers_) {
         if (!layer.playing || !layer.clip || layer.weight <= 0.0f) continue;
@@ -123,29 +124,29 @@ void AnimationMixer::Update(const Applicator& applicator) {
         float w = layer.weight;
         AnimBlendMode mode = layer.blendMode;
 
-        layer.clip->Evaluate(layer.time, [&](const std::string& node, const std::string& prop, float value) {
-            std::string key = node + ":" + prop;
-            if (mode == AnimBlendMode::Additive) {
-                blended[key] += value * w;
-            } else {
-                // Override: weighted replacement
-                auto it = blended.find(key);
-                if (it == blended.end()) {
-                    blended[key] = value * w;
+        layer.clip->EvaluatePacked(layer.time,
+            [&](const AnimationChannel& ch, float value) {
+                std::uint32_t id = ch.GetChannelId();
+                auto& slot = blended_[id];
+                slot.channel = &ch;
+                if (!slot.written) {
+                    slot.value = value * w;
+                } else if (mode == AnimBlendMode::Additive) {
+                    slot.value += value * w;
                 } else {
-                    it->second = it->second * (1.0f - w) + value * w;
+                    // Override: weighted replacement
+                    slot.value = slot.value * (1.0f - w) + value * w;
                 }
-            }
-        });
+                slot.written = true;
+            });
     }
 
-    // Apply blended values
+    // Apply blended values (strings used by reference from the cached channel ptr)
     if (applicator) {
-        for (auto& kv : blended) {
-            auto sep = kv.first.find(':');
-            std::string node = kv.first.substr(0, sep);
-            std::string prop = (sep != std::string::npos) ? kv.first.substr(sep + 1) : "";
-            applicator(node, prop, kv.second);
+        for (auto& kv : blended_) {
+            if (!kv.second.written || !kv.second.channel) continue;
+            const AnimationChannel& ch = *kv.second.channel;
+            applicator(ch.targetNode, ch.targetProperty, kv.second.value);
         }
     }
 }

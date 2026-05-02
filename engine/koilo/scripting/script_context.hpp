@@ -17,6 +17,7 @@ namespace scripting {
 // Forward declaration for script-side class instances
 struct ScriptClass;
 struct ScriptInstance;
+class AtomTable;
 
 /**
  * @brief Runtime value type for KoiloScript execution
@@ -125,6 +126,14 @@ struct Value {
  * own context.
  */
 struct ScriptContext {
+    // Pre-reserve buckets so steady-state inserts of recycled `_ret_N` /
+    // `_ctor_*` temp names don't trigger rehashes (which would invalidate
+    // cached ReflectedObject* pointers used by the receiver inline cache).
+    ScriptContext() {
+        reflectedObjects.reserve(256);
+        variables.reserve(128);
+    }
+
     // --- identity ---
     std::string objectId;   ///< Logical name ("face", "tail", or "" for primary)
 
@@ -135,8 +144,53 @@ struct ScriptContext {
     std::unordered_map<std::string, Value> variables;
     std::vector<std::unordered_map<std::string, Value>> scopeStack;
 
+    /// Bumped on events that may invalidate `Value*` pointers cached from
+    /// `variables` lookups (erase, clear).  Combined with a `bucket_count()`
+    /// snapshot in the cache validator this catches rehashes too.
+    uint64_t variablesGen = 0;
+
+    // -- LOAD_GLOBAL atom cache --------------------------------
+    // Direct-mapped cache from StringAtom (per-CompiledScript AtomTable id)
+    // to a stable pointer into `variables`. The bytecode VM hits this on
+    // every LOAD_GLOBAL/STORE_GLOBAL to avoid re-hashing the variable name.
+    //
+    // Validation invariants:
+    //   - atomTable identity guards against the cache being reused after
+    //     the active CompiledScript switches (atom IDs are only meaningful
+    //     within their owning AtomTable).
+    //   - bucketCount snapshot detects rehashes of `variables`, which would
+    //     invalidate any iterator/pointer the slot is holding.
+    // `variables` is never erased from inside the script engine, so the
+    // bucket_count() check is sufficient to detect the only invalidation
+    // event we care about (insert-induced rehash).
+    struct GlobalCacheSlot {
+        Value* ptr = nullptr;
+        std::size_t bucketCount = 0;
+        const AtomTable* atomTable = nullptr;
+    };
+    std::vector<GlobalCacheSlot> globalCache;
+
+    // -- Built-in time/dt/fps slot cache -----------------------
+    // ExecuteUpdate writes "time", "deltaTime", "fps" every frame. These
+    // are rvalue-string operator[] hits - each does a fresh hash + lookup.
+    // Cache stable Value* pointers, validated by bucket_count() so rehashes
+    // (script inserts more globals) safely invalidate.
+    Value* builtinTimeSlot = nullptr;
+    Value* builtinDeltaTimeSlot = nullptr;
+    Value* builtinFpsSlot = nullptr;
+    std::size_t builtinSlotsBucketCount = 0;
+
     // --- reflected C++ objects visible to this context ---
     std::unordered_map<std::string, ReflectedObject> reflectedObjects;
+
+    /// Bumped on every event that may invalidate `ReflectedObject*` pointers
+    /// returned from `reflectedObjects` lookups (erase, clear, rehash).
+    /// Lookup-side caches (e.g. the BytecodeVM receiver inline cache) compare
+    /// this against a snapshot to validate cached pointers without re-hashing
+    /// the string key.  Steady-state hot loops insert into existing nodes
+    /// (temp names recycle via `tempCounter`), so this counter does not bump
+    /// per frame.
+    uint64_t reflectedObjectsGen = 0;
 
     // --- state machine ---
     std::map<std::string, StateNode*> states;

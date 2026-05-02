@@ -10,7 +10,7 @@ using namespace koilo;
 // ========== Constructor Tests ==========
 
 void TestViseme::TestDefaultConstructor() {
-    Viseme viseme;
+    [[maybe_unused]] Viseme viseme;
     // Viseme is a simple enum wrapper class - just verify it compiles
     TEST_ASSERT_TRUE(true);
 }

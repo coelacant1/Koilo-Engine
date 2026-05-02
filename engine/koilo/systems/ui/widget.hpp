@@ -26,6 +26,9 @@
 namespace koilo {
 namespace ui {
 
+struct Event;  // fwd-decl: event.hpp includes us, so callbacks below
+               // take a const Event& without forcing an include cycle.
+
 // --- String Interning ---
 
 /// Interned string handle. Zero is the null/empty string.
@@ -610,6 +613,21 @@ struct Widget {
     float posRight = 0.0f;  ///< Right offset for positioned elements.
     float posBottom = 0.0f; ///< Bottom offset for positioned elements.
     float posLeft = 0.0f;   ///< Left offset for positioned elements.
+    /// Bitmask tracking which position offsets are explicitly set.
+    /// Fixes sentinel bug where 0.0f was indistinguishable from "not set".
+    enum PosSetBits : uint8_t {
+        POS_TOP    = 1 << 0,
+        POS_RIGHT  = 1 << 1,
+        POS_BOTTOM = 1 << 2,
+        POS_LEFT   = 1 << 3,
+    };
+    uint8_t posSet = 0;
+
+    // -- Border layout participation ------------------------------
+    float borderWidth = 0.0f; ///< Border width for layout (content rect inset).
+
+    // -- Animated opacity -----------------------------------------
+    float opacity = 1.0f; ///< Widget opacity for animation (multiplied with style opacity).
 
     // -- Text properties ------------------------------------------
     TextDecoration textDecoration = TextDecoration::None; ///< Text decoration style.
@@ -780,6 +798,19 @@ struct Widget {
     // -- C++ callbacks --------------------------------------------
     std::function<void(Widget&)> onClickCpp;  ///< Native click callback.
     std::function<void(Widget&)> onChangeCpp; ///< Native value change callback.
+
+    // -- Raw pointer callbacks ------------------------------------
+    // Lower-level than onClickCpp; fired by UIContext directly from
+    // HandlePointerDown / Move / Up / Scroll for widgets that need
+    // drag-style input (e.g. the editor's viewport for orbit-camera).
+    // When the down callback is set, the widget receives "pointer
+    // capture" until pointer-up, so move/up are routed to it even when
+    // the cursor leaves its bounds. Set Event::consumed in onScrollCpp
+    // to suppress the default scroll-routing on scrollviews.
+    std::function<void(Widget&, const Event&)> onPointerDownCpp;
+    std::function<void(Widget&, const Event&)> onPointerMoveCpp;
+    std::function<void(Widget&, const Event&)> onPointerUpCpp;
+    std::function<void(Widget&, const Event&)> onScrollCpp;
 
     // -- Drag-and-drop callbacks ----------------------------------
     std::function<DragPayload(int /*widgetIdx*/)> onDragBegin;   ///< Return payload to start drag.

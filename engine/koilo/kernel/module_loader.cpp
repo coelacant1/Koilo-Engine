@@ -203,6 +203,7 @@ bool ModuleLoader::TryLoad(const std::string& name) {
                 auto& m = modules_.back();
                 if (m->Initialize(*kernel_)) {
                     initialized_.push_back(m.get());
+                    nameIndexDirty_ = true;
                     return true;
                 }
             }
@@ -240,9 +241,11 @@ bool ModuleLoader::ReloadModule(const std::string& name) {
                 auto& m = modules_.back();
                 if (m->Initialize(*kernel_)) {
                     initialized_.push_back(m.get());
+                    nameIndexDirty_ = true;
                     return true;
                 }
             }
+            nameIndexDirty_ = true;
             return false;
         }
     }

@@ -39,6 +39,9 @@ static volatile auto s_forceLink_simCvars = &koilo_sim_cvars_anchor;
 #ifdef KL_HAVE_LIVE_PREVIEW
 #include <koilo/systems/display/preview/live_preview_module.hpp>
 #endif
+#ifdef KL_BUILD_EDITOR
+#include <koilo/systems/editor/editor_module.hpp>
+#endif
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
@@ -121,6 +124,13 @@ struct KoiloInstance {
 
         console->StartSocket(9090);
         g_kernel = &kernel;
+
+#ifdef KL_BUILD_EDITOR
+        // Editor module is opt-in, but the console subcommand is always
+        // available when the build was configured with KL_BUILD_EDITOR
+        // so users can `editor load` from the REPL.
+        koilo::editor::RegisterEditorCommands(console->Commands());
+#endif
         return true;
     }
 
@@ -157,16 +167,18 @@ static RunArgs ParseRunArgs(const std::vector<std::string>& args) {
     return r;
 }
 
-static int LaunchDisplay(KoiloInstance& inst, int argc, char** argv) {
+static int LaunchDisplay(KoiloInstance& inst, int argc, char** argv,
+                         const char* overrideScript = nullptr) {
     koilo::SDL3Host host;
     host.externalStop = &g_running;
+    if (overrideScript) host.scriptPath = overrideScript;
     return host.RunWithKernel(argc, argv, inst.engine, inst.kernel);
 }
 
 // -- REPL ------------------------------------------------------------
 
 static void PrintBanner() {
-    printf("|-------------------------------------|\n");
+    printf("|--------------------------------------|\n");
     printf("|         Koilo Engine Console         |\n");
     printf("|   Type 'help' for available commands |\n");
     printf("|   Type 'quit' to exit                |\n");
@@ -206,6 +218,7 @@ static void RegisterREPLCommands(KoiloInstance& inst, int argc, char** argv) {
             }
             KL_LOG("koilo", "Launching display: %s", ra.script);
 
+            inst.engine.Reset();
             koilo::SDL3Host host;
             host.scriptPath    = ra.script;
             host.windowTitle   = ra.title ? ra.title : "KoiloEngine";
@@ -227,6 +240,7 @@ static void RegisterREPLCommands(KoiloInstance& inst, int argc, char** argv) {
             if (args.empty()) {
                 return koilo::ConsoleResult::Error("Usage: load <script.ks>");
             }
+            inst.engine.Reset();
             if (!inst.engine.LoadScript(args[0].c_str())) {
                 std::string err = "Failed to load: ";
                 err += inst.engine.GetError();
@@ -262,6 +276,8 @@ static void PrintUsage(const char* prog) {
     printf("  --no-profiler          Disable performance profiler\n");
     printf("  --modules-dir <path>   Pre-load .so modules from directory\n");
     printf("  --console              Start TCP console alongside display\n");
+    printf("  --editor               Load the Unity-style editor module on startup\n");
+    printf("                         (build with -DKL_BUILD_EDITOR=ON)\n");
     printf("  --set <cvar> <value>   Set a CVar before module initialization\n");
     printf("  --help                 Show this help message\n");
     printf("\nGPU selection (hybrid laptops):\n");
@@ -276,6 +292,7 @@ int main(int argc, char** argv) {
     const char* scriptPath    = nullptr;
     const char* consoleExec   = nullptr;
     bool        showHelp      = false;
+    bool        editorMode    = false;
     std::vector<std::pair<std::string, std::string>> cvarOverrides;
 
     // Quick scan for mode-deciding flags
@@ -286,6 +303,8 @@ int main(int argc, char** argv) {
             scriptPath = argv[++i];
         else if (std::strcmp(argv[i], "--console-exec") == 0 && i + 1 < argc)
             consoleExec = argv[++i];
+        else if (std::strcmp(argv[i], "--editor") == 0)
+            editorMode = true;
         else if (std::strcmp(argv[i], "--set") == 0 && i + 2 < argc) {
             cvarOverrides.emplace_back(argv[i + 1], argv[i + 2]);
             i += 2;
@@ -312,6 +331,26 @@ int main(int argc, char** argv) {
 
     KL_LOG("koilo", "TCP console server on localhost:9090");
 
+#ifdef KL_BUILD_EDITOR
+    if (editorMode) {
+        // Default the bootstrap scene if the user didn't specify one.
+        if (!scriptPath) {
+            scriptPath = "assets/editor/editor_host.ks";
+        }
+        // Pre-register the editor module on the script engine's module
+        // loader so InitializeAll() brings it up after the UI module
+        // during display boot.
+        if (!koilo::editor::PreRegisterEditorModule(inst.kernel)) {
+            KL_WARN("koilo", "Failed to pre-register editor module");
+        }
+    }
+#else
+    if (editorMode) {
+        KL_WARN("koilo", "--editor was specified, but this build was "
+                         "configured without KL_BUILD_EDITOR=ON");
+    }
+#endif
+
     // Mode 1: --console-exec "command" - run one command, exit
     if (consoleExec) {
         auto result = inst.console->Execute(consoleExec);
@@ -321,9 +360,17 @@ int main(int argc, char** argv) {
         return result.ok() ? 0 : 1;
     }
 
-    // Mode 2: --script - launch display then exit
+    // Mode 2: --script (or --editor) - launch display then exit
     if (scriptPath) {
-        int rc = LaunchDisplay(inst, argc, argv);
+        // If the user did not pass --script explicitly (i.e. we
+        // defaulted scriptPath because of --editor), forward our
+        // computed path to SDL3Host directly.
+        bool argHasScript = false;
+        for (int i = 1; i < argc; ++i) {
+            if (std::strcmp(argv[i], "--script") == 0) { argHasScript = true; break; }
+        }
+        int rc = LaunchDisplay(inst, argc, argv,
+                               argHasScript ? nullptr : scriptPath);
         inst.Shutdown();
         return rc;
     }

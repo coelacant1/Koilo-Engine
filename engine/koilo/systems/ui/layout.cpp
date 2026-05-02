@@ -28,8 +28,10 @@ void LayoutEngine::LayoutWidget(WidgetPool& pool, int index, const Rect& parentR
 
     // Apply relative offset after normal positioning
     if (w->positionMode == PositionMode::Relative) {
-        w->computedRect.x += w->posLeft - w->posRight;
-        w->computedRect.y += w->posTop - w->posBottom;
+        if (w->posSet & Widget::POS_LEFT)       w->computedRect.x += w->posLeft;
+        else if (w->posSet & Widget::POS_RIGHT)  w->computedRect.x -= w->posRight;
+        if (w->posSet & Widget::POS_TOP)         w->computedRect.y += w->posTop;
+        else if (w->posSet & Widget::POS_BOTTOM) w->computedRect.y -= w->posBottom;
     }
 
     if (w->childCount > 0) {
@@ -141,11 +143,12 @@ void LayoutEngine::LayoutChildren(WidgetPool& pool, Widget& parent) {
         return;
     }
 
+    float bw = parent.borderWidth;
     Rect contentRect = {
-        parent.computedRect.x + parent.padding.left,
-        parent.computedRect.y + parent.padding.top,
-        parent.computedRect.w - parent.padding.left - parent.padding.right,
-        parent.computedRect.h - parent.padding.top - parent.padding.bottom
+        parent.computedRect.x + parent.padding.left + bw,
+        parent.computedRect.y + parent.padding.top + bw,
+        parent.computedRect.w - parent.padding.left - parent.padding.right - bw * 2.0f,
+        parent.computedRect.h - parent.padding.top - parent.padding.bottom - bw * 2.0f
     };
 
     bool isRow = (parent.layout.direction == LayoutDirection::Row);
@@ -456,21 +459,26 @@ void LayoutEngine::LayoutChildren(WidgetPool& pool, Widget& parent) {
 
         ComputeRect(*child, contentRect);
 
-        if (child->posLeft != 0.0f && child->posRight != 0.0f) {
+        bool hasLeft   = (child->posSet & Widget::POS_LEFT);
+        bool hasRight  = (child->posSet & Widget::POS_RIGHT);
+        bool hasTop    = (child->posSet & Widget::POS_TOP);
+        bool hasBottom = (child->posSet & Widget::POS_BOTTOM);
+
+        if (hasLeft && hasRight) {
             child->computedRect.x = contentRect.x + child->posLeft;
             child->computedRect.w = contentRect.w - child->posLeft - child->posRight;
-        } else if (child->posRight != 0.0f) {
+        } else if (hasRight) {
             child->computedRect.x = contentRect.x + contentRect.w - child->computedRect.w - child->posRight;
-        } else {
+        } else if (hasLeft) {
             child->computedRect.x = contentRect.x + child->posLeft;
         }
 
-        if (child->posTop != 0.0f && child->posBottom != 0.0f) {
+        if (hasTop && hasBottom) {
             child->computedRect.y = contentRect.y + child->posTop;
             child->computedRect.h = contentRect.h - child->posTop - child->posBottom;
-        } else if (child->posBottom != 0.0f) {
+        } else if (hasBottom) {
             child->computedRect.y = contentRect.y + contentRect.h - child->computedRect.h - child->posBottom;
-        } else {
+        } else if (hasTop) {
             child->computedRect.y = contentRect.y + child->posTop;
         }
 
@@ -513,11 +521,12 @@ void LayoutEngine::LayoutChildren(WidgetPool& pool, Widget& parent) {
 
 // Lay out children using CSS Grid algorithm.
 void LayoutEngine::LayoutGrid(WidgetPool& pool, Widget& parent) {
+    float bw = parent.borderWidth;
     Rect contentRect = {
-        parent.computedRect.x + parent.padding.left,
-        parent.computedRect.y + parent.padding.top,
-        parent.computedRect.w - parent.padding.left - parent.padding.right,
-        parent.computedRect.h - parent.padding.top - parent.padding.bottom
+        parent.computedRect.x + parent.padding.left + bw,
+        parent.computedRect.y + parent.padding.top + bw,
+        parent.computedRect.w - parent.padding.left - parent.padding.right - bw * 2.0f,
+        parent.computedRect.h - parent.padding.top - parent.padding.bottom - bw * 2.0f
     };
 
     const auto& g = parent.grid;

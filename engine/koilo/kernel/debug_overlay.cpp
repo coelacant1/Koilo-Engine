@@ -50,13 +50,20 @@ size_t DebugOverlay::Count() const {
 
 std::string DebugOverlay::BuildText() const {
     std::lock_guard<std::mutex> lock(mutex_);
-    std::ostringstream os;
+    // F4: avoid the heavyweight std::ostringstream + per-call allocs.
+    // A thread-local scratch string is reused across frames; only a final
+    // copy on return is unavoidable (callers take std::string by value).
+    thread_local std::string scratch;
+    scratch.clear();
     for (auto& e : entries_) {
         std::string val;
         try { val = e.getter(); } catch (...) { val = "<error>"; }
-        os << e.name << " = " << val << "\n";
+        scratch.append(e.name);
+        scratch.append(" = ", 3);
+        scratch.append(val);
+        scratch.push_back('\n');
     }
-    return os.str();
+    return scratch;
 }
 
 std::vector<DebugOverlay::WatchEntry> DebugOverlay::Entries() const {

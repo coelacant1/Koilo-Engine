@@ -21,6 +21,7 @@
 #endif
 
 #include <vector>
+#include <deque>
 #include <string>
 #include <cstdint>
 #include <array>
@@ -77,6 +78,11 @@ public:
     void  UpdateTexture(RHITexture handle, const void* data,
                         size_t dataSize,
                         uint32_t width, uint32_t height) override;
+    bool  SupportsTextureSubUpdate() const override { return true; }
+    void  UpdateTextureRegion(RHITexture handle, const void* data,
+                              size_t dataSize,
+                              uint32_t x, uint32_t y,
+                              uint32_t w, uint32_t h) override;
     void* MapBuffer(RHIBuffer handle) override;
     void  UnmapBuffer(RHIBuffer handle) override;
 
@@ -121,9 +127,13 @@ public:
 
 private:
     // -- Slot array for handle - GL object mapping -------------------
+    // Storage is std::deque<T> so references to existing slots remain
+    // valid after Alloc() growth. This lets the device cache resolved
+    // slot pointers (boundPipelinePtr_, boundVertexBufPtr_, etc.) at
+    // Bind* time and reuse them on every Draw without re-indexing. (C2)
     template<typename T>
     struct SlotArray {
-        std::vector<T>        slots;
+        std::deque<T>         slots;
         std::vector<uint32_t> freeList;
 
         uint32_t Alloc(const T& item) {
@@ -147,6 +157,9 @@ private:
 
         T& Get(uint32_t id) { return slots[id]; }
         const T& Get(uint32_t id) const { return slots[id]; }
+        T* GetPtr(uint32_t id) {
+            return (id > 0 && id < slots.size()) ? &slots[id] : nullptr;
+        }
         bool Valid(uint32_t id) const { return id > 0 && id < slots.size(); }
     };
 
@@ -187,10 +200,32 @@ private:
         uint32_t            vertexStride = 0;
         bool                hasPushConstantBlock = false;
 
+        // -- B3: cached uniform locations -----------------------------
+        // Populated lazily on the first Bridge*Uniforms call for this
+        // pipeline.  -1 means "not present in this program"; -2 means
+        // "not yet queried".  Avoids per-frame glGetUniformLocation
+        // string lookups (expensive on Pi/embedded GL drivers).
+        struct StdUniformLocs {
+            GLint model            = -2;
+            GLint view             = -2;
+            GLint projection       = -2;
+            GLint cameraPos        = -2;
+            GLint inverseViewProj  = -2;
+            GLint lightCount       = -2;
+            // Per-light arrays: [i].position/.color/.intensity/.falloff/.curve
+            GLint lightPos[16]     = {-2,-2,-2,-2,-2,-2,-2,-2,-2,-2,-2,-2,-2,-2,-2,-2};
+            GLint lightCol[16]     = {-2,-2,-2,-2,-2,-2,-2,-2,-2,-2,-2,-2,-2,-2,-2,-2};
+            GLint lightInt[16]     = {-2,-2,-2,-2,-2,-2,-2,-2,-2,-2,-2,-2,-2,-2,-2,-2};
+            GLint lightFalloff[16] = {-2,-2,-2,-2,-2,-2,-2,-2,-2,-2,-2,-2,-2,-2,-2,-2};
+            GLint lightCurve[16]   = {-2,-2,-2,-2,-2,-2,-2,-2,-2,-2,-2,-2,-2,-2,-2,-2};
+        };
+        StdUniformLocs stdLocs;
+
         // Material param names (declaration order) for name-based bridging.
         struct MatParam {
             std::string name;
             uint8_t     type = 0; // ksl::ParamType
+            GLint       cachedLoc = -2;  // B3: cached uniform location
         };
         std::vector<MatParam> materialParams;
     };
@@ -224,11 +259,11 @@ private:
 
     /// Bridge UBO data to individual glUniform* calls for GLSL shaders
     /// that use old-style `uniform mat4 u_model;` instead of UBO blocks.
-    void BridgeTransformUniforms(GLuint program, const uint8_t* data, size_t len);
-    void BridgeSceneUniforms(GLuint program, const uint8_t* data, size_t len);
-    void BridgeLightUniforms(GLuint program, const uint8_t* data, size_t len);
-    void BridgeAudioUniforms(GLuint program, const uint8_t* data, size_t len);
-    void BridgeMaterialUniforms(GLuint program, const uint8_t* data, size_t len);
+    void BridgeTransformUniforms(PipelineSlot& pipe, const uint8_t* data, size_t len);
+    void BridgeSceneUniforms(PipelineSlot& pipe, const uint8_t* data, size_t len);
+    void BridgeLightUniforms(PipelineSlot& pipe, const uint8_t* data, size_t len);
+    void BridgeAudioUniforms(PipelineSlot& pipe, const uint8_t* data, size_t len);
+    void BridgeMaterialUniforms(PipelineSlot& pipe, const uint8_t* data, size_t len);
 
     // -- State -------------------------------------------------------
 
@@ -260,17 +295,33 @@ private:
     uint64_t boundIBOffset_    = 0;
     bool     vertexStateDirty_ = true;
 
-    // Tracked UBO bindings for re-applying bridge uniforms on program switch.
-    // Key: (set << 16) | binding. Value: buffer handle id.
-    static constexpr int kMaxTrackedBindings = 8;
+    // C2: cached resolved slot pointers for the hot draw path.
+    // Set by BindPipeline / BindVertexBuffer / BindIndexBuffer; cleared by
+    // the matching Destroy*. Storage is std::deque so these stay valid
+    // across subsequent Alloc()s.
+    PipelineSlot* boundPipelinePtr_  = nullptr;
+    BufferSlot*   boundVertexBufPtr_ = nullptr;
+    BufferSlot*   boundIndexBufPtr_  = nullptr;
+
+    // Tracked UBO bindings, indexed directly by (set * kMaxBindingsPerSet + binding)
+    // for O(1) lookup on every BindUniformBuffer + BindPipeline. (C3)
+    static constexpr int kMaxBindingSets        = 2;
+    static constexpr int kMaxBindingsPerSet     = 4;
+    static constexpr int kMaxTrackedBindings    = kMaxBindingSets * kMaxBindingsPerSet;
     struct TrackedBinding {
-        uint32_t setBinding = 0;  // (set << 16) | binding
         uint32_t bufferId   = 0;
         size_t   offset     = 0;
         size_t   range      = 0;
         bool     active     = false;
     };
     TrackedBinding trackedBindings_[kMaxTrackedBindings];
+
+    // Bitmask of vertex-attribute slots currently enabled in the VAO.
+    // Used by SetupVertexAttributes() to disable only those slots that
+    // were enabled by the previous pipeline but are not used by the
+    // current one - instead of unconditionally disabling all 8 slots
+    // every draw.
+    uint32_t lastAttrMask_ = 0;
 
     // -- Timestamp query state ---------------------------------------
     std::vector<GLuint> tsQueries_;        // GL query objects

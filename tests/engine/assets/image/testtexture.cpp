@@ -80,6 +80,12 @@ void TestTexture::TestEdgeCases() {
 
 // ========== Test Runner ==========
 
+void TestTexture::TestLoadFile() {
+    // TODO: Implement test for LoadFile()
+    Texture obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
 void TestTexture::RunAllTests() {
     RUN_TEST(TestDefaultConstructor);
     RUN_TEST(TestParameterizedConstructor);
@@ -92,4 +98,5 @@ void TestTexture::RunAllTests() {
     RUN_TEST(TestCreateRGB);
     RUN_TEST(TestGetPaletteSize);
     RUN_TEST(TestEdgeCases);
+    RUN_TEST(TestLoadFile);
 }

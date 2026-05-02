@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include <koilo/scripting/koiloscript_engine.hpp>
 #include <koilo/scripting/value_marshaller.hpp>
+#include <koilo/scripting/string_atom.hpp>
 #include <koilo/registry/type_registry.hpp>
 #include <cstring>
 #include <cstdio>
@@ -28,6 +29,35 @@ struct MethodCacheHash {
     }
 };
 static std::unordered_map<MethodCacheKey, const MethodDesc*, MethodCacheHash> s_methodCache;
+
+// Fast atom-keyed cache: per-call lookup is a single 64-bit integer hash
+// over POD components, avoiding the repeated _Hash_bytes over the method
+// name string that dominated reflection dispatch in profiling.
+// Keyed on AtomTable* + atom id so entries from different scripts/atom
+// tables don't collide.
+struct MethodAtomKey {
+    const ClassDesc* classDesc;
+    const AtomTable* atomTable;
+    uint32_t atom;
+    int argc;
+    bool operator==(const MethodAtomKey& o) const {
+        return classDesc == o.classDesc && atomTable == o.atomTable
+            && atom == o.atom && argc == o.argc;
+    }
+};
+struct MethodAtomKeyHash {
+    size_t operator()(const MethodAtomKey& k) const {
+        // Mix four POD inputs with splitmix64-style avalanche.  The ClassDesc
+        // pointer dominates entropy; atom + argc disambiguate overloads.
+        uint64_t h = reinterpret_cast<uint64_t>(k.classDesc) * 0x9E3779B97F4A7C15ULL;
+        h ^= reinterpret_cast<uint64_t>(k.atomTable) + 0x94D049BB133111EBULL + (h << 13) + (h >> 17);
+        h ^= (uint64_t)k.atom + 0xBF58476D1CE4E5B9ULL + (h << 7);
+        h ^= (uint64_t)k.argc * 0x94D049BB133111EBULL;
+        h ^= h >> 31;
+        return (size_t)h;
+    }
+};
+static std::unordered_map<MethodAtomKey, const MethodDesc*, MethodAtomKeyHash> s_methodAtomCache;
 } // anon
 
 Value KoiloScriptEngine::CallReflectedMethod(const std::string& path, const std::vector<Value>& args) {
@@ -426,6 +456,76 @@ Value KoiloScriptEngine::CallReflectedMethodDirect(
         return Value();
     }
 
+    return InvokeResolvedReflectedMethod(instance, classDesc, method, methodName, argc, args);
+}
+
+Value KoiloScriptEngine::CallReflectedMethodDirectAtom(
+    void* instance, const ClassDesc* classDesc,
+    const AtomTable* atomTable, uint32_t methodAtom,
+    const std::string& methodName, int argc,
+    const std::vector<Value>& args)
+{
+    if (!classDesc) {
+        SetError("CallReflectedMethodDirectAtom: null class");
+        return Value();
+    }
+
+    const MethodDesc* method = nullptr;
+    // Atom-keyed inline cache: pure-POD key, no string hashing on hot path.
+    // Falls back to the legacy string-keyed cache and FindMethodTyped on miss.
+    if (atomTable && methodAtom != INVALID_ATOM) {
+        MethodAtomKey akey{classDesc, atomTable, methodAtom, argc};
+        auto ait = s_methodAtomCache.find(akey);
+        if (ait != s_methodAtomCache.end()) {
+            method = ait->second;
+        } else {
+            // Cold path: resolve using the canonical (string-keyed) cache so
+            // both caches converge on the same MethodDesc, then memoize the
+            // atom-keyed entry for future hot calls.
+            MethodCacheKey skey{classDesc, methodName, argc};
+            auto sit = s_methodCache.find(skey);
+            if (sit != s_methodCache.end()) {
+                method = sit->second;
+            } else {
+                const ClassDesc* argDescsBuf[8] = {};
+                const ClassDesc** argDescs = argDescsBuf;
+                std::vector<const ClassDesc*> argDescsHeap;
+                if ((size_t)argc > 8) {
+                    argDescsHeap.resize(argc, nullptr);
+                    argDescs = argDescsHeap.data();
+                }
+                for (int i = 0; i < argc; ++i) {
+                    if (args[i].type == Value::Type::OBJECT) {
+                        auto it = activeCtx_->reflectedObjects.find(args[i].objectName);
+                        if (it != activeCtx_->reflectedObjects.end())
+                            argDescs[i] = it->second.classDesc;
+                    }
+                }
+                method = ReflectionBridge::FindMethodTyped(classDesc, methodName, argc, argDescs);
+                if (method) s_methodCache[skey] = method;
+            }
+            if (method) s_methodAtomCache[akey] = method;
+        }
+    } else {
+        // No atom available -> fall back to the slow string path entirely.
+        return CallReflectedMethodDirect(instance, classDesc, methodName, argc, args);
+    }
+
+    if (!method) {
+        SetError("Method not found: " + methodName + " in class " + std::string(classDesc->name));
+        return Value();
+    }
+
+    return InvokeResolvedReflectedMethod(instance, classDesc, method, methodName, argc, args);
+}
+
+Value KoiloScriptEngine::InvokeResolvedReflectedMethod(
+    void* instance, const ClassDesc* classDesc,
+    const MethodDesc* method,
+    const std::string& methodName, int argc,
+    const std::vector<Value>& args)
+{
+    (void)classDesc;
     void* invokeInstance = method->is_static ? nullptr : instance;
     if (!invokeInstance && !method->is_static) {
         SetError("Cannot call instance method " + methodName + " on class without instance");

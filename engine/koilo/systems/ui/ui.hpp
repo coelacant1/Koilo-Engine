@@ -99,6 +99,8 @@ public:
     void SetVisible(int idx, bool v);
     /** @brief Set widget enabled state. */
     void SetEnabled(int idx, bool e);
+    /** @brief Set widget opacity (0.0 = transparent, 1.0 = opaque). */
+    void SetOpacity(int idx, float opacity);
     /** @brief Set widget selected state. */
     void SetSelected(int idx, bool s);
     /** @brief Set a ColorField's color from a hex string (e.g. "#FF8800"). */

@@ -190,6 +190,8 @@ const char* UI::GetText(int idx) { return ctx_.GetText(idx); }
 void UI::SetVisible(int idx, bool v) { ctx_.SetVisible(idx, v); }
 /// Set widget enabled state.
 void UI::SetEnabled(int idx, bool e) { ctx_.SetEnabled(idx, e); }
+/// Set widget opacity (0.0 = transparent, 1.0 = opaque).
+void UI::SetOpacity(int idx, float opacity) { ctx_.SetOpacity(idx, opacity); }
 /// Set widget selected state.
 void UI::SetSelected(int idx, bool s) { ctx_.SetSelected(idx, s); }
 
@@ -747,7 +749,7 @@ void UI::ApplyTween(int widgetIdx, ui::TweenProperty prop, float value, void* us
         case ui::TweenProperty::PositionY:     w->localY = value; break;
         case ui::TweenProperty::Width:         w->localW = value; break;
         case ui::TweenProperty::Height:        w->localH = value; break;
-        case ui::TweenProperty::Opacity:       break; // TODO: add opacity to widget
+        case ui::TweenProperty::Opacity:       w->opacity = value; break;
         case ui::TweenProperty::SliderValue:   w->sliderValue = value; break;
         case ui::TweenProperty::PaddingTop:    w->padding.top = value; break;
         case ui::TweenProperty::PaddingRight:  w->padding.right = value; break;
@@ -895,6 +897,7 @@ KL_DEFINE_METHODS(UI)
     KL_METHOD_OVLD(UI, GetText, const char*, int),
     KL_METHOD_OVLD(UI, SetVisible, void, int, bool),
     KL_METHOD_OVLD(UI, SetEnabled, void, int, bool),
+    KL_METHOD_OVLD(UI, SetOpacity, void, int, float),
     KL_METHOD_OVLD(UI, SetSelected, void, int, bool),
     KL_METHOD_OVLD(UI, SetColorHex, void, int, const char*),
     KL_METHOD_OVLD(UI, SetSize, void, int, float, float),

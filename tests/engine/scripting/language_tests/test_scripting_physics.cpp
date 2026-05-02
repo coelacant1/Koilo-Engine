@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Physics & Geometry Scripting Bindings
 #include "helpers.hpp"
+#include <cstring>
 
 void TestRigidBody() {
     std::cout << "--- RigidBody ---" << std::endl;
@@ -124,7 +125,7 @@ void TestPhysicsWorld() {
         world.AddBody(&body);
         // Step for 1 second
         for (int i = 0; i < 60; ++i) {
-            koilo::TimeManager::GetInstance().Tick(1.0f / 60.0f); world.Step();
+            koilo::TimeManager::GetInstance().Tick(1.0f / 60.0f); world.Step(1.0f / 60.0f);
         }
         // After 1s of -10 gravity, y should be around 100 - 5 = 95 (s = 0.5*g*t^2)
         float y = collider.GetPosition().Y;
@@ -151,7 +152,7 @@ void TestPhysicsWorld() {
         world.AddBody(&bodyB);
 
         // Spheres overlap (distance=2, radii sum=3), should resolve immediately
-        koilo::TimeManager::GetInstance().Tick(1.0f / 60.0f); world.Step();
+        koilo::TimeManager::GetInstance().Tick(1.0f / 60.0f); world.Step(1.0f / 60.0f);
 
         // After elastic collision, velocities should reverse (or close)
         if (bodyA.GetVelocity().X < 0.0f)
@@ -174,7 +175,7 @@ void TestPhysicsWorld() {
 
         world.AddBody(&staticBody);
         world.AddBody(&dynamicBody);
-        koilo::TimeManager::GetInstance().Tick(1.0f / 60.0f); world.Step();
+        koilo::TimeManager::GetInstance().Tick(1.0f / 60.0f); world.Step(1.0f / 60.0f);
 
         if (staticCollider.GetPosition().X == 0.0f)
             PASS() else FAIL("Static body should not move")
@@ -191,7 +192,7 @@ void TestPhysicsWorld() {
         world.AddBody(&body);
 
         // Pass a huge dt - should clamp to 4 substeps max
-        koilo::TimeManager::GetInstance().Tick(10.0f); world.Step();
+        koilo::TimeManager::GetInstance().Tick(10.0f); world.Step(10.0f);
         // Should not crash, body should have moved a limited amount
         if (std::isfinite(collider.GetPosition().Y))
             PASS() else FAIL("Large dt should not produce non-finite values")
@@ -314,7 +315,7 @@ void TestCollisionCallbacks() {
             enterCount++;
         });
 
-        koilo::TimeManager::GetInstance().Tick(1.0f / 60.0f); world.Step();
+        koilo::TimeManager::GetInstance().Tick(1.0f / 60.0f); world.Step(1.0f / 60.0f);
         if (enterCount == 1)
             PASS() else FAIL("OnCollisionEnter should fire once on first collision")
     }
@@ -340,8 +341,8 @@ void TestCollisionCallbacks() {
             stayCount++;
         });
 
-        koilo::TimeManager::GetInstance().Tick(1.0f / 60.0f); world.Step();
-        koilo::TimeManager::GetInstance().Tick(1.0f / 60.0f); world.Step();
+        koilo::TimeManager::GetInstance().Tick(1.0f / 60.0f); world.Step(1.0f / 60.0f);
+        koilo::TimeManager::GetInstance().Tick(1.0f / 60.0f); world.Step(1.0f / 60.0f);
         if (stayCount >= 1)
             PASS() else FAIL("OnCollisionStay should fire on continued overlap")
     }
@@ -370,12 +371,12 @@ void TestCollisionCallbacks() {
         });
 
         // Step 1: collision occurs (enter)
-        koilo::TimeManager::GetInstance().Tick(1.0f / 60.0f); world.Step();
+        koilo::TimeManager::GetInstance().Tick(1.0f / 60.0f); world.Step(1.0f / 60.0f);
         // Force bodyA far away so next step has no collision
         colA.SetPosition(Vector3D(100, 0, 0));
         bodyA.SetVelocity(Vector3D(0, 0, 0));
         // Step 2: no collision -> exit fires
-        koilo::TimeManager::GetInstance().Tick(1.0f / 60.0f); world.Step();
+        koilo::TimeManager::GetInstance().Tick(1.0f / 60.0f); world.Step(1.0f / 60.0f);
         if (exitCount >= 1)
             PASS() else FAIL("OnCollisionExit should fire when bodies separate")
     }
@@ -398,7 +399,7 @@ void TestCollisionCallbacks() {
 
         world.AddBody(&bodyA);
         world.AddBody(&bodyB);
-        koilo::TimeManager::GetInstance().Tick(1.0f / 60.0f); world.Step();
+        koilo::TimeManager::GetInstance().Tick(1.0f / 60.0f); world.Step(1.0f / 60.0f);
 
         if (count == 0)
             PASS() else FAIL("ClearCollisionCallbacks should remove all callbacks")
@@ -427,7 +428,7 @@ void TestCollisionCallbacks() {
             }
         });
 
-        koilo::TimeManager::GetInstance().Tick(1.0f / 60.0f); world.Step();
+        koilo::TimeManager::GetInstance().Tick(1.0f / 60.0f); world.Step(1.0f / 60.0f);
         if (hasValidData)
             PASS() else FAIL("CollisionEvent should contain valid collider/body/penetration data")
     }
@@ -457,7 +458,7 @@ void TestPhysicsScriptGlobal() {
         bool found = false;
         if (desc) {
             for (size_t i = 0; i < desc->methods.count; i++) { auto& m = desc->methods.data[i];
-                if (m.name == "SetGravity") { found = true; break; }
+                if (std::strcmp(m.name, "SetGravity") == 0) { found = true; break; }
             }
         }
         if (found)
@@ -470,7 +471,7 @@ void TestPhysicsScriptGlobal() {
         bool found = false;
         if (desc) {
             for (size_t i = 0; i < desc->methods.count; i++) { auto& m = desc->methods.data[i];
-                if (m.name == "Step") { found = true; break; }
+                if (std::strcmp(m.name, "Step") == 0) { found = true; break; }
             }
         }
         if (found)
@@ -490,7 +491,7 @@ void TestPhysicsScriptGlobal() {
         bool found = false;
         if (desc) {
             for (size_t i = 0; i < desc->methods.count; i++) { auto& m = desc->methods.data[i];
-                if (m.name == "SetMass") { found = true; break; }
+                if (std::strcmp(m.name, "SetMass") == 0) { found = true; break; }
             }
         }
         if (found)

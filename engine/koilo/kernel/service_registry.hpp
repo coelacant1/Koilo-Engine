@@ -76,6 +76,29 @@ public:
     /// Number of registered services.
     size_t Count() const { return services_.size(); }
 
+    // -- D3: typed service handle --------------------------------------
+    // Pre-resolves the void* once so per-frame callers don't re-hash a
+    // std::string. The returned handle holds a cached T* and is invalidated
+    // (returns nullptr) only if Unregister was called between resolution
+    // and use; callers can re-resolve to refresh.
+    template<typename T>
+    class Handle {
+    public:
+        Handle() = default;
+        explicit Handle(T* p) : ptr_(p) {}
+        T* Get() const noexcept { return ptr_; }
+        T* operator->() const noexcept { return ptr_; }
+        T& operator*()  const noexcept { return *ptr_; }
+        explicit operator bool() const noexcept { return ptr_ != nullptr; }
+    private:
+        T* ptr_ = nullptr;
+    };
+
+    template<typename T>
+    Handle<T> GetHandle(const std::string& name) const {
+        return Handle<T>(Get<T>(name));
+    }
+
 private:
     std::unordered_map<std::string, void*> services_;
     MessageBus* bus_ = nullptr;

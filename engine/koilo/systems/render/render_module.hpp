@@ -18,7 +18,6 @@
 namespace koilo {
 
 class IRenderBackend;
-class IGPURenderBackend;
 
 class RenderModule : public IModule {
 public:

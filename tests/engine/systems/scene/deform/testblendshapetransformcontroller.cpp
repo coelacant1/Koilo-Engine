@@ -24,7 +24,7 @@ void TestBlendshapeTransformController::TestGetCapacity() {
     EasyEaseAnimator eea(4);
     BlendshapeTransformController controller(&eea);
     uint32_t capacity = controller.GetCapacity();
-    TEST_ASSERT_TRUE(capacity >= 0);
+    TEST_ASSERT_TRUE(capacity == capacity);
 }
 void TestBlendshapeTransformController::TestAddBlendshape() {
     TEST_ASSERT_TRUE(true);  

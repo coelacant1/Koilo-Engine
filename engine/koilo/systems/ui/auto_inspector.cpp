@@ -16,6 +16,23 @@
 namespace koilo {
 namespace ui {
 
+// -- Edit callback (thread-local current hook) --------------------------
+//
+// GenerateInspector takes an optional onEdit callback. Rather than
+// thread it through every Create*Field helper signature, we stash the
+// active callback in a thread-local pointer for the duration of the
+// public generator call. Per-widget change lambdas then capture the
+// callback by value (it is a std::function, so cheap to copy) at
+// construction time. Recursive GenerateInspector calls inherit the
+// active callback automatically.
+namespace {
+thread_local InspectorEditCallback g_currentOnEdit;
+
+inline void FireEdit() {
+    if (g_currentOnEdit) g_currentOnEdit();
+}
+}  // namespace
+
 // -- helpers ------------------------------------------------------------
 
 static constexpr size_t ID_BUF = 128;  ///< Maximum widget ID buffer length
@@ -111,6 +128,7 @@ static int CreateSliderField(UIContext& ctx, int row, const char* cls,
                 break;
             default: break;
         }
+        FireEdit();
     });
     return sld;
 }
@@ -132,6 +150,7 @@ static int CreateCheckboxField(UIContext& ctx, int row, const char* cls,
     FieldAccess acc = f.access;
     ctx.SetOnChange(chk, [acc, instance](Widget& w) {
         *static_cast<bool*>(acc.get_ptr(instance)) = w.checked;
+        FireEdit();
     });
     return chk;
 }
@@ -216,6 +235,7 @@ static int CreateColorField(UIContext& ctx, int parent, const char* cls,
         ctx.SetOnChange(sld, [acc, instance, channel](Widget& w) {
             uint8_t* dst = static_cast<uint8_t*>(acc.get_ptr(instance));
             dst[channel] = static_cast<uint8_t>(std::round(w.sliderValue));
+            FireEdit();
         });
     }
     return panel;
@@ -281,6 +301,7 @@ static int CreateVectorField(UIContext& ctx, int parent, const char* cls,
         FieldAccess acc = cf.access;
         ctx.SetOnChange(sp, [acc, subObj](Widget& w) {
             *static_cast<float*>(acc.get_ptr(subObj)) = w.sliderValue;
+            FireEdit();
         });
     }
     return row;
@@ -292,7 +313,25 @@ static int CreateVectorField(UIContext& ctx, int parent, const char* cls,
 
 // Build a full inspector widget tree for a reflected class.
 InspectorResult GenerateInspector(const ClassDesc* desc, void* instance,
-                                  UIContext& ctx, int parentIdx) {
+                                  UIContext& ctx, int parentIdx,
+                                  InspectorEditCallback onEdit) {
+    // Save/restore the thread-local edit hook so nested calls inherit
+    // the active callback and outer scopes are unaffected. Only the
+    // outermost (non-empty) onEdit replaces an existing hook; passing
+    // nullptr from a recursive call keeps the parent's hook live.
+    InspectorEditCallback prevHook;
+    bool restoreHook = false;
+    if (onEdit) {
+        prevHook = std::move(g_currentOnEdit);
+        g_currentOnEdit = std::move(onEdit);
+        restoreHook = true;
+    }
+    struct HookGuard {
+        InspectorEditCallback* prev;
+        bool                   restore;
+        ~HookGuard() { if (restore) g_currentOnEdit = std::move(*prev); }
+    } guard{ &prevHook, restoreHook };
+
     InspectorResult result;
     if (!desc || !instance) return result;
 

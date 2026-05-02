@@ -41,7 +41,7 @@ class KSLMaterial; // forward
  * Populates ShadeInput with light data and camera info from the owning
  * KSLMaterial, then calls the module's CPU shade function.
  */
-class KSLShaderBridge : public IShader {
+class KSLShaderBridge final : public IShader {
 public:
     void SetModule(ksl::KSLModule* mod) { module_ = mod; }
     void SetInstance(void* inst) { instance_ = inst; }
@@ -72,7 +72,8 @@ public:
 
     /** Get the bitmask of required ShadeInput attributes. */
     uint8_t GetRequiredAttribs() const {
-        return module_ ? module_->GetRequiredAttribs() : ksl::SHADE_ATTRIB_ALL;
+        return module_ ? module_->GetRequiredAttribs()
+                       : static_cast<uint8_t>(ksl::SHADE_ATTRIB_ALL);
     }
 
     /** Ensure module is loaded and lights are refreshed (call before extracting fn ptrs). */

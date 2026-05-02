@@ -25,18 +25,6 @@ public:
     static void TestParameterizedConstructor();
 
     // Method tests
-    static void TestPlay();
-    static void TestStop();
-    static void TestPause();
-    static void TestResume();
-    static void TestUpdate();
-    static void TestIsPlaying();
-    static void TestSetLooping();
-    static void TestIsLooping();
-    static void TestSetDuration();
-    static void TestGetDuration();
-    static void TestSetCurrentTime();
-    static void TestGetCurrentTime();
 
     // Edge case & integration tests
     static void TestEdgeCases();
@@ -44,5 +32,15 @@ public:
     /**
      * @brief Runs all test methods.
      */
+    static void TestAddKeyframe();
+    static void TestClearKeyframes();
+    static void TestGetCurrentFrame();
+    static void TestGetEndFrame();
+    static void TestGetFPS();
+    static void TestGetStartFrame();
+    static void TestHandleInput();
+    static void TestKeyframes();
+    static void TestSetCurrentFrame();
+    static void TestSetFPS();
     static void RunAllTests();
 };

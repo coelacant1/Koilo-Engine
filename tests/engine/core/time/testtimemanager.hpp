@@ -35,5 +35,6 @@ public:
     /**
      * @brief Runs all test methods.
      */
+    static void TestGetFPS();
     static void RunAllTests();
 };

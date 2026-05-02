@@ -45,5 +45,9 @@ public:
     static void TestFind();
     static void TestGetNodeCount();
     static void TestGetMesh();
+    static void TestSaveToKScene();
+    static void TestBumpHierarchyGeneration();
+    static void TestHierarchyGeneration();
+    static void TestPickNode();
     static void RunAllTests();
 };

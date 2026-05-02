@@ -81,6 +81,18 @@ public:
     /** @brief Clear all commands and reset state. */
     void Clear();
 
+    /** @brief Monotonic counter, bumped each time Clear() is called.
+     *
+     *  Renderer backends use this as a content-revision token: when it
+     *  matches the value seen last frame, the draw list is byte-identical
+     *  to the previously-rendered one and a cached vertex stream + draw
+     *  sequence may be replayed. Bumping in Clear() is sufficient because
+     *  every rebuild path in `UI::PrepareAndRender` calls Clear() before
+     *  any Add*, and the early-return / no-rebuild path performs no
+     *  mutations on the draw list.
+     */
+    uint64_t Generation() const { return generation_; }
+
     /** @brief Return the number of queued commands. */
     size_t Size() const { return commands_.size(); }
     /** @brief Access a command by index. */
@@ -147,6 +159,7 @@ public:
 
 private:
     std::vector<DrawCmd> commands_; ///< queued draw commands
+    uint64_t generation_ = 0;       ///< content revision; bumped on Clear()
 
     /** @struct ScissorRect @brief Saved scissor clip rectangle. */
     struct ScissorRect {
@@ -255,6 +268,21 @@ private:
 
     };
     std::vector<DeferredDropdown> deferredDropdowns_; ///< Open dropdowns to render on top.
+
+    /// Deferred floating panel entry. Floating panels logically escape
+    /// their parent's clipping; queueing here lets them render after all
+    /// parent scissors have been popped. The whole widget subtree is
+    /// re-emitted via EmitWidget at drain time so chrome draws first
+    /// and children render on top -- preserving in-tree z-order.
+    struct DeferredFloatingPanel {
+        const Widget* widget;
+        int widgetIdx;
+        const WidgetPool* pool;
+        const StringTable* strings;
+        const Theme* theme;
+    };
+    std::vector<DeferredFloatingPanel> deferredFloatingPanels_;
+    bool drainingFloatingPanels_ = false;
 
     KL_BEGIN_FIELDS(UIDrawList)
         /* No reflected fields. */

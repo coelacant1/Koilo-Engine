@@ -79,6 +79,9 @@ private:
 
     // --- Reflection ---
     KL_BEGIN_FIELDS(SceneNode)
+        KL_FIELD(SceneNode, name_,           "Name",       0, 0),
+        KL_FIELD(SceneNode, localTransform_, "Transform",  0, 0),
+        KL_FIELD(SceneNode, scriptPath_,     "Script",     0, 0)
     KL_END_FIELDS
 
     KL_BEGIN_METHODS(SceneNode)

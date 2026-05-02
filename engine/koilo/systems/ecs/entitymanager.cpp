@@ -54,8 +54,8 @@ void koilo::EntityManager::DestroyEntity(Entity entity) {
     uint32_t index = entity.GetIndex();
 
     // Remove all components
-    for (auto& pair : componentArrays) {
-        pair.second->Remove(entity);
+    for (auto& arr : componentArrays) {
+        if (arr) arr->Remove(entity);
     }
 
     // Clear component mask
@@ -102,8 +102,8 @@ const ComponentMask& koilo::EntityManager::GetComponentMask(Entity entity) const
 
 void koilo::EntityManager::Clear() {
     // Clear all component arrays
-    for (auto& pair : componentArrays) {
-        pair.second->Clear();
+    for (auto& arr : componentArrays) {
+        if (arr) arr->Clear();
     }
     componentArrays.clear();
 

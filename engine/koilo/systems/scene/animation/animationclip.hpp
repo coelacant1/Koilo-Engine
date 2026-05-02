@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <functional>
+#include <cstdint>
 #include "keyframe.hpp"
 #include <koilo/core/math/mathematics.hpp>
 #include <koilo/registry/reflect_macros.hpp>
@@ -21,11 +22,19 @@ struct AnimationChannel {
     std::vector<KeyFrame> keyframes;
     ChannelInterp interpolation = ChannelInterp::Cosine;
 
+    // A4: packed channel id, computed lazily as FNV-1a hash of "node:prop".
+    // Stable for the lifetime of the channel; used as a hashmap key in the
+    // mixer to avoid building/parsing concatenated string keys per frame.
+    mutable std::uint32_t cachedId_ = 0;
+
     // Add a keyframe at the given time with the given value.
     void AddKey(float time, float value);
 
     // Evaluate the channel at a given time, returning the interpolated value.
     float Evaluate(float time) const;
+
+    // Get (and lazily compute) the packed channel id.
+    std::uint32_t GetChannelId() const;
 
     KL_BEGIN_FIELDS(AnimationChannel)
     KL_END_FIELDS
@@ -67,6 +76,11 @@ public:
     // Evaluate all channels at a given time. Calls the applicator for each result.
     // applicator(targetNode, targetProperty, value)
     void Evaluate(float time, const std::function<void(const std::string&, const std::string&, float)>& applicator) const;
+
+    // A4: packed-id variant. Passes the channel reference through so callers
+    // can use the precomputed channelId / strings without re-parsing.
+    void EvaluatePacked(float time,
+        const std::function<void(const AnimationChannel&, float)>& cb) const;
 
 private:
     std::string name_;

@@ -11,7 +11,7 @@ Quaternion koilo::Rotation::AxisAngleToQuaternion(const AxisAngle& axisAngle) {
     float scale = sinf(halfRotation);
 
     return Quaternion(
-        cosf(halfRotation / 2.0f),
+        cosf(halfRotation),
         axisAngle.Axis.X * scale,
         axisAngle.Axis.Y * scale,
         axisAngle.Axis.Z * scale

@@ -12,7 +12,7 @@ using namespace koilo;
 
 void TestReflectionSerializer::TestDefaultConstructor() {
     // TODO: Implement test for default constructor
-    ReflectionSerializer obj;
+    [[maybe_unused]] ReflectionSerializer obj;
     TEST_IGNORE_MESSAGE("Stub");
 }
 

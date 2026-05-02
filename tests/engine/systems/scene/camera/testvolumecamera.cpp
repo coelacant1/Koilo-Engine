@@ -241,6 +241,112 @@ static void test_VolumeCameraIsNot2D() {
     TEST_ASSERT_FALSE(cam.Is2D());
 }
 
+void TestVolumeCamera::TestDefaultConstructor() {
+    // TODO: Implement test for default constructor
+    VolumeCamera obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestVolumeCamera::TestEdgeCases() {
+    // TODO: Test edge cases (null, boundaries, extreme values)
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestVolumeCamera::TestGetBrightness() {
+    // TODO: Implement test for GetBrightness()
+    VolumeCamera obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestVolumeCamera::TestGetCameraCenterCoordinate() {
+    // TODO: Implement test for GetCameraCenterCoordinate()
+    VolumeCamera obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestVolumeCamera::TestGetCameraMaxCoordinate() {
+    // TODO: Implement test for GetCameraMaxCoordinate()
+    VolumeCamera obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestVolumeCamera::TestGetCameraMinCoordinate() {
+    // TODO: Implement test for GetCameraMinCoordinate()
+    VolumeCamera obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestVolumeCamera::TestGetCameraTransformCenter() {
+    // TODO: Implement test for GetCameraTransformCenter()
+    VolumeCamera obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestVolumeCamera::TestGetCameraTransformMax() {
+    // TODO: Implement test for GetCameraTransformMax()
+    VolumeCamera obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestVolumeCamera::TestGetCameraTransformMin() {
+    // TODO: Implement test for GetCameraTransformMin()
+    VolumeCamera obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestVolumeCamera::TestGetFBOHeight() {
+    // TODO: Implement test for GetFBOHeight()
+    VolumeCamera obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestVolumeCamera::TestGetFBOWidth() {
+    // TODO: Implement test for GetFBOWidth()
+    VolumeCamera obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestVolumeCamera::TestGetGamma() {
+    // TODO: Implement test for GetGamma()
+    VolumeCamera obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestVolumeCamera::TestGetPixelCount() {
+    // TODO: Implement test for GetPixelCount()
+    VolumeCamera obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestVolumeCamera::TestGetPixelGroup() {
+    // TODO: Implement test for GetPixelGroup()
+    VolumeCamera obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestVolumeCamera::TestParameterizedConstructor() {
+    // TODO: Implement test for parameterized constructor
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestVolumeCamera::TestSetBrightness() {
+    // TODO: Implement test for SetBrightness()
+    VolumeCamera obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestVolumeCamera::TestSetGamma() {
+    // TODO: Implement test for SetGamma()
+    VolumeCamera obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestVolumeCamera::TestSetResolution() {
+    // TODO: Implement test for SetResolution()
+    VolumeCamera obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
 void TestVolumeCamera::RunAllTests() {
     RUN_TEST(test_ConstructWithPixelGroup);
     RUN_TEST(test_ConstructWithExternalTransform);
@@ -256,4 +362,22 @@ void TestVolumeCamera::RunAllTests() {
     RUN_TEST(test_CameraBoundsFromPixelGroup);
     RUN_TEST(test_SetPixelGroupResetsState);
     RUN_TEST(test_VolumeCameraIsNot2D);
+    RUN_TEST(TestDefaultConstructor);
+    RUN_TEST(TestEdgeCases);
+    RUN_TEST(TestGetBrightness);
+    RUN_TEST(TestGetCameraCenterCoordinate);
+    RUN_TEST(TestGetCameraMaxCoordinate);
+    RUN_TEST(TestGetCameraMinCoordinate);
+    RUN_TEST(TestGetCameraTransformCenter);
+    RUN_TEST(TestGetCameraTransformMax);
+    RUN_TEST(TestGetCameraTransformMin);
+    RUN_TEST(TestGetFBOHeight);
+    RUN_TEST(TestGetFBOWidth);
+    RUN_TEST(TestGetGamma);
+    RUN_TEST(TestGetPixelCount);
+    RUN_TEST(TestGetPixelGroup);
+    RUN_TEST(TestParameterizedConstructor);
+    RUN_TEST(TestSetBrightness);
+    RUN_TEST(TestSetGamma);
+    RUN_TEST(TestSetResolution);
 }

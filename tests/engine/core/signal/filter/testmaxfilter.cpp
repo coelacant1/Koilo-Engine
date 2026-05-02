@@ -35,11 +35,11 @@ void TestMaxFilter::TestFilter() {
     TEST_ASSERT_FLOAT_WITHIN(0.01f, 10.0f, result1);
 
     // Smaller value doesn't change max
-    float result2 = filter.Filter(5.0f);
+    [[maybe_unused]] float result2 = filter.Filter(5.0f);
     TEST_ASSERT_FLOAT_WITHIN(0.01f, 10.0f, result2);
 
     // Larger value updates max
-    float result3 = filter.Filter(20.0f);
+    [[maybe_unused]] float result3 = filter.Filter(20.0f);
     TEST_ASSERT_FLOAT_WITHIN(0.01f, 20.0f, result3);
 
     // Smaller value still returns current max
@@ -81,19 +81,19 @@ void TestMaxFilter::TestEdgeCases() {
     MaxFilter filter(5);
 
     // Test with zero
-    float result1 = filter.Filter(0.0f);
+    [[maybe_unused]] float result1 = filter.Filter(0.0f);
 
     // Test with same values
     filter.Filter(25.0f);
     filter.Filter(25.0f);
     filter.Filter(25.0f);
-    float result2 = filter.Filter(25.0f);
+    [[maybe_unused]] float result2 = filter.Filter(25.0f);
 
     // Test with very small differences
     filter.Reset();
     filter.Filter(10.0f);
     filter.Filter(10.001f);
-    float result3 = filter.Filter(10.0005f);
+    [[maybe_unused]] float result3 = filter.Filter(10.0005f);
 }
 
 // ========== Test Runner ==========

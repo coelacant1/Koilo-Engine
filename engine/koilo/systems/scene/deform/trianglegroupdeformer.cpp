@@ -36,7 +36,7 @@ bool koilo::TriangleGroupDeformer::CheckClipAxis(Vector3D base, bool positive, A
 
 void koilo::TriangleGroupDeformer::SinusoidalDeform(float magnitude, float timeRatio, float periodModifier, float frequencyModifier, Axis axis) {
     for (int i = 0; i < objectCount; i++) {
-        for (int j = 0; j < objects[i]->GetVertexCount(); j++) {
+        for (uint32_t j = 0; j < objects[i]->GetVertexCount(); j++) {
             Vector3D base = objects[i]->GetVertices()[j];
 
             switch (axis) {
@@ -58,7 +58,7 @@ void koilo::TriangleGroupDeformer::SinusoidalDeform(float magnitude, float timeR
 
 void koilo::TriangleGroupDeformer::DropwaveDeform(float magnitude, float timeRatio, float periodModifier, float frequencyModifier, Axis axis) {
     for (int i = 0; i < objectCount; i++) {
-        for (int j = 0; j < objects[i]->GetVertexCount(); j++) {
+        for (uint32_t j = 0; j < objects[i]->GetVertexCount(); j++) {
             Vector3D base = objects[i]->GetVertices()[j];
 
             switch (axis) {
@@ -80,7 +80,7 @@ void koilo::TriangleGroupDeformer::DropwaveDeform(float magnitude, float timeRat
 
 void koilo::TriangleGroupDeformer::SineWaveSurfaceDeform(Vector3D offset, float magnitude, float timeRatio, float periodModifier, float frequencyModifier, Axis axis) {
     for (int i = 0; i < objectCount; i++) {
-        for (int j = 0; j < objects[i]->GetVertexCount(); j++) {
+        for (uint32_t j = 0; j < objects[i]->GetVertexCount(); j++) {
             Vector3D base = objects[i]->GetVertices()[j] - offset;
 
             switch (axis) {
@@ -102,7 +102,7 @@ void koilo::TriangleGroupDeformer::SineWaveSurfaceDeform(Vector3D offset, float 
 
 void koilo::TriangleGroupDeformer::CosineInterpolationDeformer(float* pointMultiplier, int points, float scale, float minAxis, float maxAxis, Axis selectionAxis, Axis deformAxis) {
     for (int i = 0; i < objectCount; i++) {
-        for (int j = 0; j < objects[i]->GetVertexCount(); j++) {
+        for (uint32_t j = 0; j < objects[i]->GetVertexCount(); j++) {
             float value;
 
             switch (selectionAxis) {
@@ -158,7 +158,7 @@ void koilo::TriangleGroupDeformer::CosineInterpolationDeformer(float* pointMulti
 
 void koilo::TriangleGroupDeformer::AxisZeroClipping(bool positive, Axis clipAxis, Axis valueCheckAxis) {
     for (int i = 0; i < objectCount; i++) {
-        for (int j = 0; j < objects[i]->GetVertexCount(); j++) {
+        for (uint32_t j = 0; j < objects[i]->GetVertexCount(); j++) {
             Vector3D base = objects[i]->GetVertices()[j];
 
             switch (clipAxis) {

@@ -1,6 +1,7 @@
 #include <koilo/kernel/kernel.hpp>
 #include <koilo/kernel/logging/log.hpp>
 #include <koilo/kernel/message_bus.hpp>
+#include <koilo/debug/debugdraw.hpp>
 #include <koilo/systems/render/sky/sky.hpp>
 
 namespace koilo {
@@ -55,13 +56,25 @@ bool KoiloKernel::InitializeModules() {
 }
 
 void KoiloKernel::BeginFrame() {
-    bus_.Send(MakeSignal(MSG_FRAME_BEGIN));
-    bus_.Dispatch();
+    // F1: avoid constructing/queueing/dispatching a Message when no
+    // handler would observe it.  MSG_FRAME_BEGIN/END are emitted twice
+    // per frame and most builds have zero subscribers for them.
+    if (bus_.HasSubscribers(MSG_FRAME_BEGIN)) {
+        bus_.Send(MakeSignal(MSG_FRAME_BEGIN));
+        bus_.Dispatch();
+    }
 }
 
 void KoiloKernel::EndFrame() {
-    bus_.Send(MakeSignal(MSG_FRAME_END));
-    bus_.Dispatch();
+    if (bus_.HasSubscribers(MSG_FRAME_END)) {
+        bus_.Send(MakeSignal(MSG_FRAME_END));
+        bus_.Dispatch();
+    }
+    // Expire timed debug primitives once per frame, regardless of which
+    // render backend is active.  Previously this only ran from the legacy
+    // software RenderFrame path, so on Vulkan/GL builds debug lines
+    // accumulated forever and RenderDebugLines slowed down every frame.
+    DebugDraw::GetInstance().Update();
     frameArena_.Reset();
     scratch_.Reset();
 }

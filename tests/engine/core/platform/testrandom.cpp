@@ -40,7 +40,7 @@ void TestRandom::TestIntSameSeed() {
     int val1 = Random::Int(0, 100);
     
     Random::Seed(42);
-    int val2 = Random::Int(0, 100);
+    [[maybe_unused]] int val2 = Random::Int(0, 100);
     
     TEST_ASSERT_EQUAL(val1, val2);
 }
@@ -86,7 +86,7 @@ void TestRandom::TestMultipleValues() {
     Random::Seed(42);
     
     int val1 = Random::Int(0, 100);
-    int val2 = Random::Int(0, 100);
+    [[maybe_unused]] int val2 = Random::Int(0, 100);
     
     // Different calls should give different values (statistically)
     // This might occasionally fail, but very unlikely

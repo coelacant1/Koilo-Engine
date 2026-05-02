@@ -25,18 +25,6 @@ public:
     static void TestParameterizedConstructor();
 
     // Method tests
-    static void TestResize();
-    static void TestEnsureSize();
-    static void TestClear();
-    static void TestClearWithColor();
-    static void TestSetPixel();
-    static void TestFillRect();
-    static void TestDrawRect();
-    static void TestDrawLine();
-    static void TestDrawCircle();
-    static void TestFillCircle();
-    static void TestGetWidth();
-    static void TestGetHeight();
 
     // Edge case & integration tests
     static void TestEdgeCases();
@@ -44,9 +32,6 @@ public:
     /**
      * @brief Runs all test methods.
      */
-    static void TestAttach();
-    static void TestDetach();
-    static void TestDrawText();
-    static void TestIsAttached();
+
     static void RunAllTests();
 };

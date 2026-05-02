@@ -9,6 +9,7 @@
 #pragma once
 #include <koilo/kernel/message_types.hpp>
 #include <functional>
+#include <unordered_map>
 #include <vector>
 #include <cstddef>
 #include "../registry/reflect_macros.hpp"
@@ -55,6 +56,16 @@ public:
     size_t TotalDispatched() const { return totalDispatched_; }
     size_t TotalDropped() const    { return totalDropped_; }
 
+    /// Fast O(1) check for whether any handler would receive a message of
+    /// this type (counts both type-specific and wildcard subscribers).
+    /// Use this before constructing/sending broadcast messages on the hot
+    /// path, e.g. MSG_FRAME_BEGIN/END (F1).
+    bool HasSubscribers(MessageType type) const {
+        if (!wildcardSubs_.empty()) return true;
+        auto it = subsByType_.find(type);
+        return it != subsByType_.end() && !it->second.empty();
+    }
+
 private:
     struct Subscription {
         SubscriptionId id;
@@ -81,7 +92,13 @@ private:
 
     void DeliverToSubscribers(const Message& msg);
 
-    std::vector<Subscription> subscriptions_;
+    // D1: bucketed subscription storage. Dispatch looks up a single
+    // bucket per message type instead of scanning every subscription
+    // and type-comparing on each one. typeSubCounts_ is folded into
+    // bucket sizes; HasSubscribers becomes one map lookup + a vector
+    // size check.
+    std::unordered_map<MessageType, std::vector<Subscription>> subsByType_;
+    std::vector<Subscription> wildcardSubs_;
     std::vector<Message>      ringBuffer_;
     size_t                    ringHead_ = 0;
     size_t                    ringTail_ = 0;
@@ -90,6 +107,7 @@ private:
     SubscriptionId            nextSubId_ = 1;
     size_t                    totalDispatched_ = 0;
     size_t                    totalDropped_ = 0;
+    size_t                    totalSubscribers_ = 0;
 
     KL_BEGIN_FIELDS(MessageBus)
         KL_FIELD(MessageBus, nextSubId_, "Next subscription id", 0, 0)

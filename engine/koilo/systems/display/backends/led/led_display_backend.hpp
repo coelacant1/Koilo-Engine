@@ -151,6 +151,8 @@ private:
     uint64_t              frameCount_;
     uint64_t              droppedFrames_;
     uint8_t               gammaTable_[256];
+    float                 lastBuiltGamma_      = -1.0f;  // Skip gamma table rebuild if unchanged.
+    int16_t               lastBuiltBrightness_ = -1;
     std::vector<uint8_t>  correctedBuffer_;
 };
 

@@ -31,10 +31,13 @@
 #pragma once
 
 // Stability tier markers -- used by tooling (abi_check.py) and documentation.
-// Compilers that support [[gnu::annotate]] get machine-readable annotations;
-// all others get a no-op that still serves as human-readable documentation.
+// abi_check.py parses the macro tokens from source text directly, so these
+// only need to expand to a real attribute on toolchains that actually consume
+// the annotation through libclang. GCC ignores [[gnu::annotate]] on most
+// type-position uses (enums, structs) and emits a -Wattributes warning for
+// every occurrence, so we restrict the attribute form to Clang.
 
-#if defined(__GNUC__) || defined(__clang__)
+#if defined(__clang__)
   #define KL_FROZEN    __attribute__((annotate("koilo:frozen")))
   #define KL_STABLE    __attribute__((annotate("koilo:stable")))
   #define KL_UNSTABLE  __attribute__((annotate("koilo:unstable")))

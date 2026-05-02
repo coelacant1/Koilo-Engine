@@ -42,7 +42,7 @@ void TestSceneNode::TestSetRotation() {
     SceneNode node;
     node.SetRotation(Vector3D(45.0f, 90.0f, 0.0f));
     // Verify rotation was set via the local transform
-    Transform& t = node.GetLocalTransform();
+    [[maybe_unused]] Transform& t = node.GetLocalTransform();
     // Rotation is stored as quaternion, just verify no crash
     TEST_ASSERT_TRUE(true);
 }

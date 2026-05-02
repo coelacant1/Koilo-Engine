@@ -100,7 +100,7 @@ void TestCamera::TestGetCameraTransformMin() {
 
     Camera camera(&transform, &pixelGroup);
 
-    Vector3D transformMin = camera.GetCameraTransformMin();
+    [[maybe_unused]] Vector3D transformMin = camera.GetCameraTransformMin();
     // Transform should be applied to min coordinate
     TEST_ASSERT_TRUE(true);
 }
@@ -117,7 +117,7 @@ void TestCamera::TestGetCameraTransformMax() {
 
     Camera camera(&transform, &pixelGroup);
 
-    Vector3D transformMax = camera.GetCameraTransformMax();
+    [[maybe_unused]] Vector3D transformMax = camera.GetCameraTransformMax();
     // Transform should be applied to max coordinate
     TEST_ASSERT_TRUE(true);
 }

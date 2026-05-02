@@ -129,6 +129,12 @@ Vector3D koilo::BoxCollider::GetPosition() const {
 
 void koilo::BoxCollider::SetPosition(const Vector3D& pos) {
     position = pos;
+    // Keep the inherited Cube bounds (centerPosition / min / max) in sync
+    // with the live collider position so collision queries that read those
+    // cached fields (TestBoxBox, ClosestPoint, ContainsPoint, AABB raycast)
+    // see the current world-space box rather than its construction-time
+    // bounds.
+    SetCenter(pos);
 }
 
 } // namespace koilo

@@ -59,5 +59,6 @@ public:
     static void TestGetSkeleton();
     static void TestSetSkeleton();
     static void TestUpdateSkinning();
+    static void TestMarkTransformDirty();
     static void RunAllTests();
 };

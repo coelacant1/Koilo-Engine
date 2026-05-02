@@ -51,7 +51,7 @@ void TestAutoInspector::TestNullDesc() {
 void TestAutoInspector::TestGenerateEmpty() {
     // A ClassDesc with zero fields
     static const ClassDesc empty{"Empty", {nullptr, 0}, {nullptr, 0},
-                                  nullptr, 0, 0, nullptr, nullptr};
+                                  nullptr, 0, 0, nullptr, nullptr, nullptr};
     int dummy = 0;
     UIContext ctx;
     int root = ctx.CreatePanel("root");

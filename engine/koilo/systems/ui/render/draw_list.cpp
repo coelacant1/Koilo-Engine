@@ -37,6 +37,7 @@ void UIDrawList::Clear() {
     commands_.clear();
     commands_.reserve(4096);
     scissorStack_.clear();
+    ++generation_;
 }
 
 // -- Primitive commands ----------------------------------------------
@@ -194,6 +195,12 @@ void UIDrawList::PushScissor(float x, float y, float w, float h) {
     int iy = static_cast<int>(std::floor(y));
     int iw = static_cast<int>(std::ceil(x + w)) - ix;
     int ih = static_cast<int>(std::ceil(y + h)) - iy;
+    // Negative w/h (degenerate or animated-out widgets) would wrap to
+    // UINT32_MAX in the renderer's RHIScissor cast, leaking the scissor
+    // across the whole viewport. Clamp to zero here so PushScissor()
+    // always emits a valid (possibly fully-clipped) rect.
+    if (iw < 0) iw = 0;
+    if (ih < 0) ih = 0;
     PushScissor(ix, iy, iw, ih);
 }
 
@@ -216,6 +223,7 @@ void UIDrawList::BuildFromContext(UIContext& ctx, font::Font* font,
                                   uint32_t boldFontAtlasTexture) {
     Clear();
     deferredDropdowns_.clear();
+    deferredFloatingPanels_.clear();
     font_ = font;
     fontAtlasTexture_ = fontAtlasTexture;
     boldFont_ = boldFont;
@@ -231,6 +239,17 @@ void UIDrawList::BuildFromContext(UIContext& ctx, font::Font* font,
     if (!root) return;
 
     EmitWidget(*root, rootIdx, pool, strings, theme);
+
+    // Render deferred floating panels (escape parent clipChildren scissors).
+    // Drawn before dropdowns so dropdowns owned by a floating panel sit
+    // above its chrome. We re-enter EmitWidget with a drain flag so chrome
+    // draws first and children recurse normally on top.
+    drainingFloatingPanels_ = true;
+    for (size_t i = 0; i < deferredFloatingPanels_.size(); ++i) {
+        auto& fp = deferredFloatingPanels_[i];
+        EmitWidget(*fp.widget, fp.widgetIdx, *fp.pool, *fp.strings, *fp.theme);
+    }
+    drainingFloatingPanels_ = false;
 
     // Render deferred dropdown popups (on top of main tree, below floating panels)
     for (auto& dd : deferredDropdowns_) {
@@ -270,8 +289,20 @@ void UIDrawList::EmitWidget(const Widget& widget, int widgetIdx, const WidgetPoo
     if (!widget.flags.visible) return;
     if (widget.visibility == Visibility::Hidden) return; // hidden: skip render, keep layout
 
+    // Defer the entire FloatingPanel subtree (shadow + chrome + children)
+    // so it renders unclipped above any parent clipChildren scissor.
+    if (widget.tag == WidgetTag::FloatingPanel && !drainingFloatingPanels_) {
+        deferredFloatingPanels_.push_back(
+            {&widget, widgetIdx, &pool, &strings, &theme});
+        return;
+    }
+
     const Rect& r = widget.computedRect;
     Style style = theme.ResolveAnimated(widget, widgetIdx);
+
+    // Combine widget animated opacity with style opacity
+    if (widget.opacity < 1.0f)
+        style.opacity *= widget.opacity;
 
     // Apply opacity to all colors
     if (style.opacity < 1.0f && style.opacity >= 0.0f) {
@@ -385,6 +416,13 @@ void UIDrawList::EmitWidget(const Widget& widget, int widgetIdx, const WidgetPoo
         EmitDropdown(widget, r, style, strings, pool, widgetIdx);
         break;
     case WidgetTag::Image:
+        EmitImage(widget, r);
+        break;
+    case WidgetTag::Viewport:
+        // Editor 3D viewport: same draw path as Image -- whoever owns
+        // the widget is responsible for keeping textureId pointed at a
+        // valid sampled RHI texture (typically the render pipeline's
+        // offscreen color target).
         EmitImage(widget, r);
         break;
     case WidgetTag::ColorField:

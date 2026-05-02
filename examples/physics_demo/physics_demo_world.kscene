@@ -1,0 +1,21 @@
+// physics_demo_world.kscene
+// =====================================================================
+// Static-world data for examples/physics_demo/physics_demo.ks.
+// Currently only the ground plane is declarative; the obstacle blocks
+// are still authored in physics_demo.ks because they use a loop+array
+// pattern that the v1 .kscene format intentionally does not support.
+//
+// The ground is a thick (40m half-height) static box centered at
+// y = -40 so its top face sits at y = 0. The half-extents/full-size
+// pair is kept so DrawBox (half-extents) and BoxCollider (full size)
+// stay in lock-step.
+// =====================================================================
+
+var groundHalfExtents = Vector3D(40.0, 40.0, 40.0);
+var groundSize        = Vector3D(80.0, 80.0, 80.0);
+var groundCol  = BoxCollider(Vector3D(0.0, 0.0 - 40.0, 0.0), groundSize);
+var groundBody = RigidBody();
+groundBody.MakeStatic();
+groundBody.SetCollider(groundCol);
+groundBody.SetRestitution(0.4);
+groundBody.SetFriction(0.7);

@@ -15,24 +15,36 @@
 class TestKSLMaterial {
 public:
     // KSLMaterial lifecycle
-    static void TestDefaultConstruction();
-    static void TestBindUnbind();
-    static void TestBindNullModule();
-    static void TestDoubleBindRebinds();
 
     // Shading through IMaterial interface
-    static void TestShadeUniformColor();
-    static void TestShadeNormalShader();
-    static void TestShadeUnboundReturnsPink();
 
     // Parameter setting
     static void TestSetFloat();
     static void TestSetVec3();
 
     // KSLModule direct tests
-    static void TestModuleInfo();
-    static void TestModuleParams();
-    static void TestModuleCreateDestroy();
 
+    static void TestAddLight();
+    static void TestDefaultConstructor();
+    static void TestEdgeCases();
+    static void TestIsBound();
+    static void TestLightCount();
+    static void TestParameterizedConstructor();
+    static void TestSetCameraPosition();
+    static void TestSetColor();
+    static void TestSetColorAt();
+    static void TestSetDeltaTime();
+    static void TestSetInt();
+    static void TestSetLightColor();
+    static void TestSetLightCurve();
+    static void TestSetLightFalloff();
+    static void TestSetLightIntensity();
+    static void TestSetLightPosition();
+    static void TestSetRainbowPalette();
+    static void TestSetTexture();
+    static void TestSetTime();
+    static void TestSetVec2();
+    static void TestSetVec3Array();
+    static void TestUnbind();
     static void RunAllTests();
 };

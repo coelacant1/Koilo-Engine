@@ -42,8 +42,7 @@
 
 # Build
 build/
-build_pi/
-build_asan/
+build_*/
 external/unity/*
 .koilo_reflect_cache.json
 __pycache__/
@@ -63,3 +62,4 @@ assets/fbx/binary/commissions/
 assets/kmesh/commissions/
 
 docs/.wip/
+examples/techied/

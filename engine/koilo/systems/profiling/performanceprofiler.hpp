@@ -264,17 +264,36 @@ public:
  */
 class PerfProfileScope {
 private:
-    std::string name;
-    bool active;
+    // Hold raw pointer to literal name; only materialise std::string when
+    // the profiler is actually enabled (F2 fast path).
+    const char* literalName_ = nullptr;
+    std::string ownedName_;
+    bool active_ = false;
+
+    const std::string& Name() {
+        if (ownedName_.empty() && literalName_) {
+            ownedName_.assign(literalName_);
+        }
+        return ownedName_;
+    }
 
 public:
     /**
-     * @brief Constructor - starts timing.
+     * @brief Constructor - starts timing.  The fast path (profiler
+     * disabled) avoids the std::string construction entirely.
      */
+    PerfProfileScope(const char* name)
+        : literalName_(name) {
+        if (PerformanceProfiler::GetInstance().IsEnabled()) {
+            active_ = true;
+            PerformanceProfiler::GetInstance().BeginSample(Name());
+        }
+    }
+
     PerfProfileScope(const std::string& name)
-        : name(name), active(PerformanceProfiler::GetInstance().IsEnabled()) {
-        if (active) {
-            PerformanceProfiler::GetInstance().BeginSample(name);
+        : ownedName_(name), active_(PerformanceProfiler::GetInstance().IsEnabled()) {
+        if (active_) {
+            PerformanceProfiler::GetInstance().BeginSample(ownedName_);
         }
     }
 
@@ -282,8 +301,8 @@ public:
      * @brief Destructor - ends timing.
      */
     ~PerfProfileScope() {
-        if (active) {
-            PerformanceProfiler::GetInstance().EndSample(name);
+        if (active_) {
+            PerformanceProfiler::GetInstance().EndSample(Name());
         }
     }
 

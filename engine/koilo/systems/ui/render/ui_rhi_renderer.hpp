@@ -90,6 +90,8 @@ private:
     rhi::RHITexture currentTexture_ = {};
     bool currentUseTexture_     = false;
 
+    // -- Draw replay cache ---------------------------------------------
+    //
     struct ScissorState { int x, y, w, h; };
     std::vector<ScissorState> scissorStack_;
     int viewportW_ = 0, viewportH_ = 0;

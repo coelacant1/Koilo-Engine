@@ -232,6 +232,12 @@ public:
         if (w) w->flags.enabled = e ? 1 : 0;
     }
 
+    /** @brief Set the opacity of a widget (0.0 = transparent, 1.0 = opaque). */
+    void SetOpacity(int idx, float opacity) {
+        Widget* w = pool_.Get(idx);
+        if (w) w->opacity = opacity;
+    }
+
     /** @brief Set the selected state of a widget. */
     void SetSelected(int idx, bool s) {
         Widget* w = pool_.Get(idx);
@@ -287,6 +293,38 @@ public:
     void SetOnChange(int idx, std::function<void(Widget&)> fn) {
         Widget* w = pool_.Get(idx);
         if (w) w->onChangeCpp = std::move(fn);
+    }
+
+    /** @brief Set a raw pointer-down handler. Receiving widget gains
+     *  pointer capture until the matching pointer-up. */
+    void SetOnPointerDown(int idx,
+                          std::function<void(Widget&, const Event&)> fn) {
+        Widget* w = pool_.Get(idx);
+        if (w) w->onPointerDownCpp = std::move(fn);
+    }
+
+    /** @brief Set a raw pointer-move handler. Fires on the captured
+     *  widget (set by pointer-down) regardless of cursor location. */
+    void SetOnPointerMove(int idx,
+                          std::function<void(Widget&, const Event&)> fn) {
+        Widget* w = pool_.Get(idx);
+        if (w) w->onPointerMoveCpp = std::move(fn);
+    }
+
+    /** @brief Set a raw pointer-up handler. Fires on the captured
+     *  widget; capture is then cleared. */
+    void SetOnPointerUp(int idx,
+                        std::function<void(Widget&, const Event&)> fn) {
+        Widget* w = pool_.Get(idx);
+        if (w) w->onPointerUpCpp = std::move(fn);
+    }
+
+    /** @brief Set a raw scroll handler. Fires on the hit widget before
+     *  scrollview routing; consume the event to suppress the default. */
+    void SetOnScroll(int idx,
+                     std::function<void(Widget&, const Event&)> fn) {
+        Widget* w = pool_.Get(idx);
+        if (w) w->onScrollCpp = std::move(fn);
     }
 
     /** @brief Set a script function name for click dispatch. */
@@ -459,6 +497,7 @@ private:
     int rootIndex_ = -1;                        ///< Pool index of the root widget.
     int focusedWidget_ = -1;                    ///< Pool index of the focused widget.
     int hoveredWidget_ = -1;                    ///< Pool index of the hovered widget.
+    int pointerCaptureIdx_ = -1;                ///< Widget that owns pointer until next up.
 
     // ---- Selection state ----
     std::vector<int> selectedNodes_;            ///< Currently selected node indices.
@@ -643,6 +682,7 @@ private:
         KL_METHOD_AUTO(UIContext, GetText, "Get text"),
         KL_METHOD_AUTO(UIContext, SetVisible, "Set visible"),
         KL_METHOD_AUTO(UIContext, SetEnabled, "Set enabled"),
+        KL_METHOD_AUTO(UIContext, SetOpacity, "Set opacity"),
         KL_METHOD_AUTO(UIContext, SetSelected, "Set selected state"),
         KL_METHOD_AUTO(UIContext, SetSize, "Set size"),
         KL_METHOD_AUTO(UIContext, SetPosition, "Set position"),

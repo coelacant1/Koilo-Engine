@@ -134,6 +134,18 @@ void TestDisplayConfig::TestEdgeCases() {
 
 // ========== Test Runner ==========
 
+void TestDisplayConfig::TestGetCapFPS() {
+    // TODO: Implement test for GetCapFPS()
+    DisplayConfig obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestDisplayConfig::TestSetCapFPS() {
+    // TODO: Implement test for SetCapFPS()
+    DisplayConfig obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
 void TestDisplayConfig::RunAllTests() {
     RUN_TEST(TestDefaultConstructor);
     RUN_TEST(TestParameterizedConstructor);
@@ -152,4 +164,6 @@ void TestDisplayConfig::RunAllTests() {
     RUN_TEST(TestGetBrightness);
     RUN_TEST(TestGetTargetFPS);
     RUN_TEST(TestEdgeCases);
+    RUN_TEST(TestGetCapFPS);
+    RUN_TEST(TestSetCapFPS);
 }

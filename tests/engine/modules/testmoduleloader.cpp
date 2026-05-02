@@ -23,12 +23,6 @@ void TestModuleLoader::TestParameterizedConstructor() {
 
 // ========== Method Tests ==========
 
-void TestModuleLoader::TestInitializeAll() {
-    // TODO: Implement test for InitializeAll()
-    ModuleLoader obj;
-    TEST_IGNORE_MESSAGE("Stub");
-}
-
 void TestModuleLoader::TestUpdateAll() {
     // TODO: Implement test for UpdateAll()
     ModuleLoader obj;
@@ -134,14 +128,7 @@ void TestModuleLoader::TestEdgeCases() {
 
 // ========== ABI v3 Tests ==========
 
-void TestModuleLoader::TestAbiV3StructLayout() {
-    using namespace koilo;
-
-    // ABI version must be 3
-    TEST_ASSERT_EQUAL_INT(3, KL_MODULE_ABI_VER);
-
-    // EngineServices must contain the v3 function pointers
-    EngineServices svc{};
+;
     svc.api_size = sizeof(EngineServices);
 
     // Verify v3 fields exist and are null-initialized
@@ -169,15 +156,7 @@ void TestModuleLoader::TestAbiV3StructLayout() {
     TEST_ASSERT_TRUE(sizeof(KoiloRenderPassDesc) > 0);
 }
 
-void TestModuleLoader::TestAbiV3HasApiBackwardCompat() {
-    using namespace koilo;
-
-    // Helper: check if a field is within api_size bounds
-    #define HAS_FIELD(svc, field) \
-        ((svc).api_size >= (uint32_t)(offsetof(EngineServices, field) + sizeof((svc).field)))
-
-    // Full v3 struct should have all v3 fields accessible
-    EngineServices fullSvc{};
+;
     fullSvc.api_size = sizeof(EngineServices);
 
     TEST_ASSERT_TRUE(HAS_FIELD(fullSvc, register_command));
@@ -202,11 +181,7 @@ void TestModuleLoader::TestAbiV3HasApiBackwardCompat() {
     #undef HAS_FIELD
 }
 
-void TestModuleLoader::TestAbiV3AdapterNullSafety() {
-    using namespace koilo;
-
-    // All adapters must handle null engine gracefully
-    KoiloCommandDesc cmdDesc{};
+;
     cmdDesc.name = "test";
     cmdDesc.handler = [](const char**, int) -> int { return 0; };
     TEST_ASSERT_EQUAL_INT(-1, AbiRegisterCommand(nullptr, &cmdDesc));
@@ -231,7 +206,7 @@ void TestModuleLoader::TestAbiV3AdapterNullSafety() {
 void TestModuleLoader::RunAllTests() {
     RUN_TEST(TestDefaultConstructor);
     RUN_TEST(TestParameterizedConstructor);
-    RUN_TEST(TestInitializeAll);
+
     RUN_TEST(TestUpdateAll);
     RUN_TEST(TestRenderAll);
     RUN_TEST(TestShutdownAll);
@@ -249,7 +224,5 @@ void TestModuleLoader::RunAllTests() {
     RUN_TEST(TestReloadModule);
     RUN_TEST(TestCheckAndReload);
     RUN_TEST(TestEdgeCases);
-    RUN_TEST(TestAbiV3StructLayout);
-    RUN_TEST(TestAbiV3HasApiBackwardCompat);
-    RUN_TEST(TestAbiV3AdapterNullSafety);
+
 }

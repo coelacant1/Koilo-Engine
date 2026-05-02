@@ -38,21 +38,33 @@ void koilo::DebugDraw::Update() {
         l.duration -= deltaTime;
         return l.duration <= 0.0f;
     };
-    lines.erase(std::remove_if(lines.begin(), lines.end(), expireLine), lines.end());
+    {
+        const size_t prev = lines.size();
+        lines.erase(std::remove_if(lines.begin(), lines.end(), expireLine), lines.end());
+        if (lines.size() != prev) ++linesVersion_;
+    }
 
     auto expireSphere = [&](DebugSphere& s) -> bool {
         if (s.duration <= 0.0f) return true;
         s.duration -= deltaTime;
         return s.duration <= 0.0f;
     };
-    spheres.erase(std::remove_if(spheres.begin(), spheres.end(), expireSphere), spheres.end());
+    {
+        const size_t prev = spheres.size();
+        spheres.erase(std::remove_if(spheres.begin(), spheres.end(), expireSphere), spheres.end());
+        if (spheres.size() != prev) ++linesVersion_;
+    }
 
     auto expireBox = [&](DebugBox& b) -> bool {
         if (b.duration <= 0.0f) return true;
         b.duration -= deltaTime;
         return b.duration <= 0.0f;
     };
-    boxes.erase(std::remove_if(boxes.begin(), boxes.end(), expireBox), boxes.end());
+    {
+        const size_t prev = boxes.size();
+        boxes.erase(std::remove_if(boxes.begin(), boxes.end(), expireBox), boxes.end());
+        if (boxes.size() != prev) ++linesVersion_;
+    }
 
     auto expireText = [&](DebugText& t) -> bool {
         if (t.duration <= 0.0f) return true;
@@ -63,6 +75,7 @@ void koilo::DebugDraw::Update() {
 }
 
 void koilo::DebugDraw::Clear() {
+    if (!lines.empty() || !boxes.empty() || !spheres.empty()) ++linesVersion_;
     lines.clear();
     spheres.clear();
     boxes.clear();
@@ -83,6 +96,7 @@ void koilo::DebugDraw::DrawLine(const Vector3D& start, const Vector3D& end, cons
     line.depthTest = depthTest;
 
     lines.push_back(line);
+    ++linesVersion_;
 }
 
 void koilo::DebugDraw::DrawRay(const Vector3D& origin, const Vector3D& direction, float length,
@@ -118,6 +132,7 @@ void koilo::DebugDraw::DrawSphere(const Vector3D& center, float radius, const Co
     sphere.mode = mode;
 
     spheres.push_back(sphere);
+    ++linesVersion_;
 }
 
 void koilo::DebugDraw::DrawBox(const Vector3D& center, const Vector3D& extents, const Color& color,
@@ -134,6 +149,7 @@ void koilo::DebugDraw::DrawBox(const Vector3D& center, const Vector3D& extents, 
     box.mode = mode;
 
     boxes.push_back(box);
+    ++linesVersion_;
 }
 
 void koilo::DebugDraw::DrawOrientedBox(const Vector3D& center, const Vector3D& extents, const Matrix4x4& transform,
@@ -150,6 +166,7 @@ void koilo::DebugDraw::DrawOrientedBox(const Vector3D& center, const Vector3D& e
     box.mode = mode;
 
     boxes.push_back(box);
+    ++linesVersion_;
 }
 
 void koilo::DebugDraw::DrawCube(const Vector3D& center, float size, const Color& color,

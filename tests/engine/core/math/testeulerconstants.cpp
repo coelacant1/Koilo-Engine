@@ -85,7 +85,7 @@ void TestEulerConstants::TestRotatingFrameConstants() {
 
 void TestEulerConstants::TestEulerConstantsWrapper() {
     // Test wrapper getter methods
-    EulerConstantsWrapper wrapper;
+    [[maybe_unused]] EulerConstantsWrapper wrapper;
 
     // Static frame getters
     const EulerOrder& xyzs = EulerConstantsWrapper::GetXYZS();

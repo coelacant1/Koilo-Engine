@@ -26,10 +26,37 @@ void RenderGraph::AddPass(std::string              name,
 bool RenderGraph::Compile() {
     compiled_ = false;
     order_.clear();
-    lifetimes_.clear();
 
     const size_t n = passes_.size();
-    if (n == 0) { compiled_ = true; return true; }
+    if (n == 0) { lifetimes_.clear(); compiled_ = true; return true; }
+
+    // -- Structural fingerprint (FNV-1a over names + reads + writes) -----
+    // The frame composer rebuilds an identical pass topology every frame;
+    // skip the topological sort + lifetime computation when the structure
+    // matches the previously compiled version.
+    uint64_t fp = 0xcbf29ce484222325ULL;
+    auto mixStr = [&](const std::string& s) {
+        for (unsigned char c : s) { fp ^= c; fp *= 0x100000001b3ULL; }
+        fp ^= 0xff; fp *= 0x100000001b3ULL;  // string terminator marker
+    };
+    for (const auto& p : passes_) {
+        mixStr(p.name);
+        for (const auto& r : p.reads)  mixStr(r);
+        fp ^= 0xfe; fp *= 0x100000001b3ULL;  // reads/writes separator
+        for (const auto& w : p.writes) mixStr(w);
+        fp ^= 0xfd; fp *= 0x100000001b3ULL;  // pass separator
+    }
+
+    if (cacheValid_ && fp == cachedFingerprint_ && cachedOrder_.size() == n) {
+        // Topology unchanged - reuse the previously computed order and
+        // keep the existing lifetimes_ map intact (entries reference the
+        // same string keys).
+        order_ = cachedOrder_;
+        compiled_ = true;
+        return true;
+    }
+
+    lifetimes_.clear();
 
     // -- Build the last-writer map (resource -> most recent writer index) --
     // We scan passes in insertion order.  For each pass:
@@ -93,6 +120,7 @@ bool RenderGraph::Compile() {
         KL_ERR("RenderGraph", "Dependency cycle detected (%zu of %zu passes sorted)",
                order_.size(), n);
         order_.clear();
+        cacheValid_ = false;
         return false;
     }
 
@@ -108,6 +136,11 @@ bool RenderGraph::Compile() {
             lifetimes_[r].lastRead = execIdx;
         }
     }
+
+    // Cache the topology for next frame.
+    cachedFingerprint_ = fp;
+    cachedOrder_       = order_;
+    cacheValid_        = true;
 
     compiled_ = true;
     return true;

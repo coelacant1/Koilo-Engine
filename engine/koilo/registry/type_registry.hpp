@@ -7,6 +7,7 @@
 #include <typeindex>
 #include <unordered_map>
 #include <string>
+#include <cstdint>
 
 namespace koilo {
 
@@ -34,10 +35,31 @@ inline void RegisterTypeInfo(const ClassDesc* cd) {
 }
 
 // Look up type info by std::type_info. Returns nullptr if not registered.
+//
+// Hot-path fast cache: marshalling and reflection paths repeatedly look up
+// the same handful of types (Vector2D, Vector3D, Color, ...) per frame.
+// A tiny direct-mapped cache indexed by the low bits of the type_info pointer
+// short-circuits the std::unordered_map<type_index, ...> lookup almost always.
 inline const TypeInfo* LookupType(const std::type_info& ti) {
+    struct CacheEntry { const std::type_info* key; const TypeInfo* val; };
+    constexpr size_t CACHE_BITS = 4;            // 16-entry direct-mapped cache
+    constexpr size_t CACHE_SIZE = 1u << CACHE_BITS;
+    constexpr size_t CACHE_MASK = CACHE_SIZE - 1;
+    static thread_local CacheEntry cache[CACHE_SIZE] = {};
+
+    const std::type_info* tip = &ti;
+    // Mix the pointer's high+low bits so adjacent type_info statics don't collide.
+    size_t h = reinterpret_cast<uintptr_t>(tip);
+    size_t slot = ((h >> 4) ^ (h >> 12)) & CACHE_MASK;
+    CacheEntry& e = cache[slot];
+    if (e.key == tip) return e.val;
+
     auto& reg = TypeRegistry();
     auto it = reg.find(std::type_index(ti));
-    return (it != reg.end()) ? &it->second : nullptr;
+    const TypeInfo* result = (it != reg.end()) ? &it->second : nullptr;
+    e.key = tip;
+    e.val = result;
+    return result;
 }
 
 // Check if a type is a pointer (without parsing mangled names).
@@ -65,19 +87,28 @@ inline const ClassDesc* ClassForType(const std::type_info& ti) {
 }
 
 // Map a runtime type_info to FieldKind. Returns Complex for unrecognized types.
+//
+// Hot-path version: cache-friendly small linear scan over a static table
+// of (type_info*, FieldKind) pairs. The previous implementation used a
+// std::unordered_map<std::type_index, ...> which was a measurable hotspot
+// in the script->native marshalling path.
 inline FieldKind KindForType(const std::type_info& ti) {
-    static const auto& map = *new std::unordered_map<std::type_index, FieldKind>{
-        {std::type_index(typeid(float)),       FieldKind::Float},
-        {std::type_index(typeid(int)),         FieldKind::Int},
-        {std::type_index(typeid(double)),      FieldKind::Double},
-        {std::type_index(typeid(bool)),        FieldKind::Bool},
-        {std::type_index(typeid(uint8_t)),     FieldKind::UInt8},
-        {std::type_index(typeid(uint16_t)),    FieldKind::UInt16},
-        {std::type_index(typeid(uint32_t)),    FieldKind::UInt32},
-        {std::type_index(typeid(std::size_t)), FieldKind::SizeT},
+    struct Entry { const std::type_info* ti; FieldKind kind; };
+    static const Entry table[] = {
+        {&typeid(float),       FieldKind::Float},
+        {&typeid(int),         FieldKind::Int},
+        {&typeid(double),      FieldKind::Double},
+        {&typeid(bool),        FieldKind::Bool},
+        {&typeid(uint8_t),     FieldKind::UInt8},
+        {&typeid(uint16_t),    FieldKind::UInt16},
+        {&typeid(uint32_t),    FieldKind::UInt32},
+        {&typeid(std::size_t), FieldKind::SizeT},
     };
-    auto it = map.find(std::type_index(ti));
-    return (it != map.end()) ? it->second : FieldKind::Complex;
+    const std::type_info* p = &ti;
+    for (const auto& e : table) {
+        if (e.ti == p) return e.kind;
+    }
+    return FieldKind::Complex;
 }
 
 } // namespace koilo

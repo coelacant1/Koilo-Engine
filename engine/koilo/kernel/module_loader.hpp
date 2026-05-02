@@ -33,6 +33,7 @@ public:
     void Register(std::unique_ptr<IModule> module) {
         modules_.push_back(std::move(module));
         sorted_ = false;
+        nameIndexDirty_ = true;
     }
 
     // Initialize all registered modules via kernel in phase order.
@@ -44,6 +45,7 @@ public:
                 initialized_.push_back(m.get());
             }
         }
+        nameIndexDirty_ = true;
     }
 
     // Update all initialized modules (with fault isolation).
@@ -93,14 +95,14 @@ public:
         initialized_.clear();
         modules_.clear();
         kernel_ = nullptr;
+        nameIndexDirty_ = true;
+        nameIndex_.clear();
     }
 
     // Check if a module is loaded and initialized.
     bool HasModule(const std::string& name) const {
-        for (auto* m : initialized_) {
-            if (m->GetInfo().name == name) return true;
-        }
-        return false;
+        EnsureNameIndex();
+        return nameIndex_.find(name) != nameIndex_.end();
     }
 
     // List all initialized module names.
@@ -114,10 +116,9 @@ public:
 
     // Get a module by name (nullptr if not found).
     IModule* GetModule(const std::string& name) {
-        for (auto* m : initialized_) {
-            if (m->GetInfo().name == name) return m;
-        }
-        return nullptr;
+        EnsureNameIndex();
+        auto it = nameIndex_.find(name);
+        return it != nameIndex_.end() ? it->second : nullptr;
     }
 
     // Unload a single module by name. Calls Shutdown() and removes it.
@@ -136,9 +137,11 @@ public:
         for (auto it = modules_.begin(); it != modules_.end(); ++it) {
             if ((*it)->GetInfo().name == name) {
                 modules_.erase(it);
+                nameIndexDirty_ = true;
                 return true;
             }
         }
+        nameIndexDirty_ = true;
         return false;
     }
 
@@ -170,13 +173,11 @@ public:
 
     // Get fault record for a module (nullptr if not tracked).
     const ModuleFaultRecord* GetFaultRecord(const std::string& name) const {
-        for (auto* m : initialized_) {
-            if (m->GetInfo().name == name) {
-                auto it = faults_.find(m);
-                return (it != faults_.end()) ? &it->second : nullptr;
-            }
-        }
-        return nullptr;
+        EnsureNameIndex();
+        auto it = nameIndex_.find(name);
+        if (it == nameIndex_.end()) return nullptr;
+        auto fit = faults_.find(it->second);
+        return (fit != faults_.end()) ? &fit->second : nullptr;
     }
 
     // Check all loaded dynamic modules for file changes.
@@ -202,6 +203,22 @@ private:
     KoiloKernel* kernel_ = nullptr;
     std::string searchPath_;
     LoadMode loadMode_ = LoadMode::Eager;
+
+    // Lazy name->module index for O(1) HasModule/GetModule. Hot-path
+    // callers (e.g. BytecodeVM LOAD_GLOBAL fallback) used to do a linear
+    // scan + GetInfo() copy per probe; this index removes both costs.
+    mutable std::unordered_map<std::string, IModule*> nameIndex_;
+    mutable bool nameIndexDirty_ = true;
+
+    void EnsureNameIndex() const {
+        if (!nameIndexDirty_) return;
+        nameIndex_.clear();
+        nameIndex_.reserve(initialized_.size() * 2);
+        for (auto* m : initialized_) {
+            nameIndex_.emplace(m->GetInfo().name, m);
+        }
+        nameIndexDirty_ = false;
+    }
 
     void HandleModuleFault(IModule* m, ModuleFaultRecord& fr, const char* error);
     void ProcessPendingRestarts();

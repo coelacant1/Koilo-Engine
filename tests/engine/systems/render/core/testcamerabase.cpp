@@ -120,7 +120,7 @@ void TestCameraBase::TestVirtualInterfaceAccess() {
     // Test virtual interface methods
     Vector2D minCoord = camera.GetCameraMinCoordinate();
     Vector2D maxCoord = camera.GetCameraMaxCoordinate();
-    Vector2D centerCoord = camera.GetCameraCenterCoordinate();
+    [[maybe_unused]] Vector2D centerCoord = camera.GetCameraCenterCoordinate();
     
     // Min should be less than max
     TEST_ASSERT_TRUE(minCoord.X <= maxCoord.X);
@@ -129,7 +129,7 @@ void TestCameraBase::TestVirtualInterfaceAccess() {
     // Test 3D transforms
     Vector3D minTransform = camera.GetCameraTransformMin();
     Vector3D maxTransform = camera.GetCameraTransformMax();
-    Vector3D centerTransform = camera.GetCameraTransformCenter();
+    [[maybe_unused]] Vector3D centerTransform = camera.GetCameraTransformCenter();
     
     TEST_ASSERT_TRUE(minTransform.X <= maxTransform.X);
     TEST_ASSERT_TRUE(minTransform.Y <= maxTransform.Y);

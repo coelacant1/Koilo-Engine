@@ -173,6 +173,13 @@ if ${DO_DEPLOY}; then
     rsync -az -e "ssh ${SSH_OPTS}" \
         "${BUILD_DIR}/koilo" "${PI_USER}@${PI_HOST}:${PI_DIR}/koilo"
 
+    # Deploy compiled shaders (SPIR-V + KSO)
+    if [ -d "${BUILD_DIR}/shaders" ]; then
+        ${SSH_CMD} "mkdir -p ${PI_DIR}/build/shaders"
+        rsync -az --delete -e "ssh ${SSH_OPTS}" \
+            "${BUILD_DIR}/shaders/" "${PI_USER}@${PI_HOST}:${PI_DIR}/build/shaders/"
+    fi
+
     rsync -az --delete -e "ssh ${SSH_OPTS}" \
         "${ROOT_DIR}/assets/" "${PI_USER}@${PI_HOST}:${PI_DIR}/assets/"
     rsync -az --delete -e "ssh ${SSH_OPTS}" \

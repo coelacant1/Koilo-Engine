@@ -39,5 +39,7 @@ public:
     /**
      * @brief Runs all test methods.
      */
+    static void TestHasMaterial();
+    static void TestSetMaterial();
     static void RunAllTests();
 };

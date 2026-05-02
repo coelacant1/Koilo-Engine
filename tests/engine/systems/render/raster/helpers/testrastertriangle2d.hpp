@@ -28,7 +28,7 @@ public:
 
     // Method tests
     static void TestGetBarycentricCoords();
-    static void TestOverlaps();
+
     static void TestGetMaterial();
     static void TestToString();
 

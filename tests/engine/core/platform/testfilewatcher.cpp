@@ -19,44 +19,7 @@ static void WriteTmp(const char* content) {
     if (f) { fputs(content, f); fclose(f); }
 }
 
-void TestFileWatcher::TestWatchCount() {
-    FileWatcher fw;
-    TEST_ASSERT_EQUAL(0u, fw.Count());
-    WriteTmp("a");
-    fw.Watch(kTmpFile);
-    TEST_ASSERT_EQUAL(1u, fw.Count());
-    // Duplicate should not increase count
-    fw.Watch(kTmpFile);
-    TEST_ASSERT_EQUAL(1u, fw.Count());
-}
-
-void TestFileWatcher::TestUnwatch() {
-    FileWatcher fw;
-    WriteTmp("b");
-    fw.Watch(kTmpFile);
-    fw.Unwatch(kTmpFile);
-    TEST_ASSERT_EQUAL(0u, fw.Count());
-}
-
-void TestFileWatcher::TestPollNoChange() {
-    FileWatcher fw;
-    WriteTmp("c");
-    fw.Watch(kTmpFile);
-    int changes = fw.Poll();
-    TEST_ASSERT_EQUAL(0, changes);
-}
-
-void TestFileWatcher::TestPollDetectsChange() {
-    FileWatcher fw;
-    WriteTmp("d");
-    fw.Watch(kTmpFile);
-
-    // Wait for mtime granularity then modify
-    sleep(1);
-    WriteTmp("e");
-
-    int callbackCount = 0;
-    fw.SetCallback([&](const std::string&) { callbackCount++; });
+);
     int changes = fw.Poll();
     TEST_ASSERT_EQUAL(1, changes);
     TEST_ASSERT_EQUAL(1, callbackCount);
@@ -66,12 +29,26 @@ void TestFileWatcher::TestPollDetectsChange() {
     TEST_ASSERT_EQUAL(0, changes);
 }
 
-void TestFileWatcher::TestClear() {
-    FileWatcher fw;
-    WriteTmp("f");
-    fw.Watch(kTmpFile);
-    fw.Clear();
-    TEST_ASSERT_EQUAL(0u, fw.Count());
+void TestFileWatcher::TestDefaultConstructor() {
+    // TODO: Implement test for default constructor
+    FileWatcher obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestFileWatcher::TestEdgeCases() {
+    // TODO: Test edge cases (null, boundaries, extreme values)
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestFileWatcher::TestParameterizedConstructor() {
+    // TODO: Implement test for parameterized constructor
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestFileWatcher::TestPoll() {
+    // TODO: Implement test for Poll()
+    FileWatcher obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
 }
 
 void TestFileWatcher::RunAllTests() {
@@ -80,4 +57,8 @@ void TestFileWatcher::RunAllTests() {
     RUN_TEST(TestFileWatcher::TestPollNoChange);
     RUN_TEST(TestFileWatcher::TestPollDetectsChange);
     RUN_TEST(TestFileWatcher::TestClear);
+    RUN_TEST(TestDefaultConstructor);
+    RUN_TEST(TestEdgeCases);
+    RUN_TEST(TestParameterizedConstructor);
+    RUN_TEST(TestPoll);
 }

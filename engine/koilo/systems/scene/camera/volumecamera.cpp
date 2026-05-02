@@ -184,8 +184,17 @@ void VolumeCamera::SamplePixels(const uint8_t* fboData,
         BuildGammaLut();
     }
 
+    // Fetch the coordinate array once (single virtual call) instead of
+    // dispatching GetCoordinate() per pixel through the interface vtable.
+    const Vector2D* coords = pixelGroup_->GetCoordinatesArray();
+
     for (uint32_t i = 0; i < count; ++i) {
-        const Vector2D coord = pixelGroup_->GetCoordinate(i);
+        Vector2D coord;
+        if (coords) {
+            coord = coords[i];
+        } else {
+            coord = pixelGroup_->GetCoordinate(i);
+        }
         const float u = coord.X;
         const float v = coord.Y;
 

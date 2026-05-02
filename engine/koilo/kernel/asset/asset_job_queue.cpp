@@ -56,6 +56,13 @@ void AssetJobQueue::RequestLoad(AssetHandle handle, LoadFunction loader, LoadCal
 }
 
 int AssetJobQueue::ProcessCompleted(int maxPerFrame) {
+    // Fast path: avoid even constructing the local batch container in the
+    // common case where no jobs have completed since the last frame.
+    {
+        std::lock_guard<std::mutex> lock(completedMutex_);
+        if (completedJobs_.empty()) return 0;
+    }
+
     std::deque<CompletedJob> batch;
     {
         std::lock_guard<std::mutex> lock(completedMutex_);

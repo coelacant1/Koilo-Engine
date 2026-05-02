@@ -384,7 +384,7 @@ void koilo::Rasterizer::Rasterize(Scene* scene, CameraBase* camera) {
             }
         }
     } else {
-        std::memset(colorBuf, 0, totalPixels * sizeof(Color888));
+        std::memset(static_cast<void*>(colorBuf), 0, totalPixels * sizeof(Color888));
     }
     _perf.EndSample("SW.Sky");
 

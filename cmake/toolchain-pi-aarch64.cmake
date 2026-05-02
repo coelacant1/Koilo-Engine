@@ -49,8 +49,9 @@ set(CMAKE_CXX_FLAGS_INIT "-march=armv8-a+crc -mtune=cortex-a72 -isystem ${PI_USR
 set(CMAKE_EXE_LINKER_FLAGS_INIT    "-Wl,-rpath-link,${PI_LIB}:${PI_USR_LIB} -Wl,--allow-shlib-undefined")
 set(CMAKE_SHARED_LINKER_FLAGS_INIT "-Wl,-rpath-link,${PI_LIB}:${PI_USR_LIB} -Wl,--allow-shlib-undefined")
 
-# Help find_package() locate cmake configs in the Debian multiarch tree
+# Help find_package() locate cmake configs and libraries in Debian multiarch tree
 list(APPEND CMAKE_PREFIX_PATH "${PI_USR_LIB}/cmake")
+list(APPEND CMAKE_SYSTEM_LIBRARY_PATH "${PI_USR_LIB}" "${PI_LIB}")
 
 # Disable ccache for cross builds (host ccache may not match)
 set(CMAKE_C_COMPILER_LAUNCHER "")

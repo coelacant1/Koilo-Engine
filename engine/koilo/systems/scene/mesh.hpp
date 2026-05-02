@@ -25,6 +25,7 @@ namespace koilo {
 // Forward declaration
 class BlendshapeController;
 class Skeleton;
+class MeshBVH;
 struct SkinData;
 
 /**
@@ -47,6 +48,8 @@ private:
     bool enabled = true;                     ///< Indicates whether the object is currently enabled.
     bool transformDirty_ = true;             ///< True when transform needs reapplication to vertices.
     uint32_t gpuVersion_ = 0;                ///< Monotonic version counter for GPU upload caching.
+    mutable MeshBVH* raycastAccel_ = nullptr;        ///< Lazily-built ray acceleration structure (owned).
+    mutable uint32_t raycastAccelVersion_ = 0;       ///< gpuVersion_ at last BVH build.
 
 public:
     /**
@@ -151,6 +154,18 @@ public:
      * @brief Returns the GPU version counter (incremented on vertex changes).
      */
     uint32_t GetGPUVersion() const { return gpuVersion_; }
+
+    /**
+     * @brief Lazily-built ray acceleration structure (BVH) for raycasting.
+     * Owned by the mesh; rebuilt automatically when gpuVersion_ changes.
+     * Returns nullptr if there is no triangle data. Returned pointer is
+     * stable until the next vertex modification.
+     *
+     * The BVH is built and consumed inside the koilo namespace; users that
+     * don't include mesh_bvh.hpp can still call this method (returns void*
+     * which they don't have to dereference).
+     */
+    MeshBVH* GetOrBuildRaycastAccel();
 
     /**
      * @brief Retrieves the modifiable geometry of the object.

@@ -341,10 +341,44 @@ Value BytecodeVM::Run() {
 
             case OpCode::LOAD_GLOBAL: {
                 uint16_t idx = ReadU16();
+                // -- Atom-based slot cache ---------------------
+                // Most LOAD_GLOBAL ops in steady-state hit the same handful
+                // of names every frame. The bytecode constant index gives
+                // us a stable StringAtom per name; that atom indexes a
+                // per-context vector that holds a direct Value* into the
+                // globals map. With cache hit we skip name hashing entirely.
+                const Constant& kConst = frame.chunk->constants[idx];
+                ScriptContext& actx = engine_->ActiveCtx();
+                if (kConst.type == Constant::Type::STRING && kConst.stringAtom != INVALID_ATOM) {
+                    StringAtom atom = kConst.stringAtom;
+                    if (atom >= actx.globalCache.size()) {
+                        actx.globalCache.resize(atom + 1);
+                    }
+                    auto& slot = actx.globalCache[atom];
+                    if (slot.ptr
+                        && slot.atomTable == frame.chunk->atoms
+                        && slot.bucketCount == actx.variables.bucket_count()) {
+                        // FAST PATH: no string hash, no scope walk (the VM
+                        // never pushes scopeStack - locals live in the
+                        // per-frame stack), no Value copy.
+                        const Value* vp = slot.ptr;
+                        if (vp->type == Value::Type::FUNCTION && vp->stringValue.empty()) {
+                            if (compiledScript_ && compiledScript_->functions.count(ResolveString(frame.chunk, idx))) {
+                                Value val = *vp;
+                                val.stringValue = ResolveString(frame.chunk, idx);
+                                Push(FromValue(val));
+                                break;
+                            }
+                        }
+                        Push(FromValue(*vp));
+                        break;
+                    }
+                }
+                // -- Slow path: legacy lookup, populate cache on success --
                 const std::string& name = ResolveString(frame.chunk, idx);
-                Value val = engine_->GetVariable(name);
-                if (val.type == Value::Type::NONE) {
-                    if (engine_->ActiveCtx().reflectedObjects.count(name)) {
+                const Value* vp = engine_->GetVariablePtr(name);
+                if (!vp) {
+                    if (actx.reflectedObjects.count(name)) {
                         Push(AllocObjectRef(name));
                         break;
                     }
@@ -360,13 +394,31 @@ Value BytecodeVM::Run() {
                             break;
                         }
                     }
+                    Push(FromValue(Value()));
+                    break;
                 }
-                if (val.type == Value::Type::FUNCTION && val.stringValue.empty()) {
-                    if (compiledScript_ && compiledScript_->functions.count(name)) {
-                        val.stringValue = name;
+                // Populate the cache only when the resolved pointer lives in
+                // the active context's `variables` map (the common case).
+                // Pointers into scopeStack frames or into the primary ctx_
+                // fallback would have different lifetimes / bucket counts.
+                if (kConst.type == Constant::Type::STRING && kConst.stringAtom != INVALID_ATOM) {
+                    auto it = actx.variables.find(name);
+                    if (it != actx.variables.end() && &it->second == vp) {
+                        auto& slot = actx.globalCache[kConst.stringAtom];
+                        slot.ptr = &it->second;
+                        slot.bucketCount = actx.variables.bucket_count();
+                        slot.atomTable = frame.chunk->atoms;
                     }
                 }
-                Push(FromValue(val));
+                if (vp->type == Value::Type::FUNCTION && vp->stringValue.empty()) {
+                    if (compiledScript_ && compiledScript_->functions.count(name)) {
+                        Value val = *vp;
+                        val.stringValue = name;
+                        Push(FromValue(val));
+                        break;
+                    }
+                }
+                Push(FromValue(*vp));
                 break;
             }
 
@@ -388,9 +440,49 @@ Value BytecodeVM::Run() {
 
             case OpCode::STORE_GLOBAL: {
                 uint16_t idx = ReadU16();
-                const std::string& name = ResolveString(frame.chunk, idx);
-                NanBoxedValue val = Pop();
-                engine_->SetVariable(name, ToValue(val));
+                NanBoxedValue nb = Pop();
+                Value newVal = ToValue(nb);
+                // Fast path: if the cache slot is valid AND neither the old
+                // value nor the new value involves a persistent OBJECT (no
+                // promotion / cleanup bookkeeping needed) we can assign in
+                // place without re-hashing the variable name.
+                const Constant& kConst = frame.chunk->constants[idx];
+                ScriptContext& actx = engine_->ActiveCtx();
+                bool fastDone = false;
+                if (kConst.type == Constant::Type::STRING && kConst.stringAtom != INVALID_ATOM
+                    && newVal.type != Value::Type::OBJECT) {
+                    StringAtom atom = kConst.stringAtom;
+                    if (atom < actx.globalCache.size()) {
+                        auto& slot = actx.globalCache[atom];
+                        if (slot.ptr
+                            && slot.atomTable == frame.chunk->atoms
+                            && slot.bucketCount == actx.variables.bucket_count()
+                            && slot.ptr->type != Value::Type::OBJECT) {
+                            *slot.ptr = newVal;
+                            fastDone = true;
+                        }
+                    }
+                }
+                if (!fastDone) {
+                    const std::string& name = ResolveString(frame.chunk, idx);
+                    engine_->SetVariable(name, newVal);
+                    // SetVariable may have rehashed `variables`; re-find and
+                    // populate the cache so the next LOAD/STORE hits.
+                    if (kConst.type == Constant::Type::STRING && kConst.stringAtom != INVALID_ATOM
+                        && actx.scopeStack.empty()) {
+                        StringAtom atom = kConst.stringAtom;
+                        if (atom >= actx.globalCache.size()) {
+                            actx.globalCache.resize(atom + 1);
+                        }
+                        auto it = actx.variables.find(name);
+                        if (it != actx.variables.end()) {
+                            auto& slot = actx.globalCache[atom];
+                            slot.ptr = &it->second;
+                            slot.bucketCount = actx.variables.bucket_count();
+                            slot.atomTable = frame.chunk->atoms;
+                        }
+                    }
+                }
                 break;
             }
 
@@ -789,6 +881,8 @@ Value BytecodeVM::Run() {
             case OpCode::CALL_METHOD: {
                 uint16_t nameIdx = ReadU16();
                 uint8_t argc = ReadByte();
+                const StringAtom methodAtom = frame.chunk->constants[nameIdx].stringAtom;
+                const AtomTable* methodAtomTable = frame.chunk->atoms;
                 const std::string& methodName = ResolveString(frame.chunk, nameIdx);
 
                 // Collect args into reusable buffer
@@ -818,11 +912,34 @@ Value BytecodeVM::Run() {
                     const std::string* objName = obj.AsObjectName();
                     if (objName && !objName->empty()) {
                         auto& ctx = engine_->ActiveCtx();
-                        // Check reflectedObjects directly first
-                        auto it = ctx.reflectedObjects.find(*objName);
-                        if (it != ctx.reflectedObjects.end() && it->second.classDesc) {
-                            Value result = engine_->CallReflectedMethodDirect(
-                                it->second.instance, it->second.classDesc,
+
+                        // Receiver inline cache: most CALL_METHOD chains
+                        // target the same script object back-to-back, so we
+                        // skip the string-keyed find() when the previous
+                        // lookup is still valid.
+                        ReflectedObject* refObj = nullptr;
+                        if (recvCache_.refObj
+                            && recvCache_.gen == ctx.reflectedObjectsGen
+                            && recvCache_.bucketCount == ctx.reflectedObjects.bucket_count()
+                            && (recvCache_.nameSrcPtr == objName
+                                || recvCache_.nameSnapshot == *objName)) {
+                            refObj = recvCache_.refObj;
+                        } else {
+                            auto it = ctx.reflectedObjects.find(*objName);
+                            if (it != ctx.reflectedObjects.end() && it->second.classDesc) {
+                                refObj = &it->second;
+                                recvCache_.gen = ctx.reflectedObjectsGen;
+                                recvCache_.bucketCount = ctx.reflectedObjects.bucket_count();
+                                recvCache_.nameSrcPtr = objName;
+                                recvCache_.nameSnapshot = *objName;
+                                recvCache_.refObj = refObj;
+                            }
+                        }
+
+                        if (refObj && refObj->classDesc) {
+                            Value result = engine_->CallReflectedMethodDirectAtom(
+                                refObj->instance, refObj->classDesc,
+                                methodAtomTable, methodAtom,
                                 methodName, argc, methodArgs_);
                             Push(FromValue(result));
                             break;
@@ -832,8 +949,9 @@ Value BytecodeVM::Run() {
                         if (vit != ctx.variables.end() && vit->second.type == Value::Type::OBJECT) {
                             auto rit = ctx.reflectedObjects.find(vit->second.objectName);
                             if (rit != ctx.reflectedObjects.end() && rit->second.instance) {
-                                Value result = engine_->CallReflectedMethodDirect(
+                                Value result = engine_->CallReflectedMethodDirectAtom(
                                     rit->second.instance, rit->second.classDesc,
+                                    methodAtomTable, methodAtom,
                                     methodName, argc, methodArgs_);
                                 Push(FromValue(result));
                                 break;

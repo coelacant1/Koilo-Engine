@@ -13,11 +13,27 @@
 
 namespace koilo::rhi {
 
+/// Stage canvas overlay texture uploads into the active frame command
+/// buffer.  Must run BEFORE any render pass is opened (vkCmdCopyBufferToImage
+/// is forbidden inside a render pass).  Writes the virtual resource
+/// "canvas_textures" so that AddOverlayPass (which reads it) is scheduled
+/// after this pass.
+inline void AddCanvasStagePass(RenderGraph& graph,
+                               RenderPipeline* pipeline,
+                               int screenW, int screenH) {
+    graph.AddPass("canvas_stage",
+                  {},
+                  {"canvas_textures"},
+                  [pipeline, screenW, screenH]() {
+                      pipeline->StageCanvasOverlays(screenW, screenH);
+                  });
+}
+
 inline void AddOverlayPass(RenderGraph& graph,
                            RenderPipeline* pipeline,
                            int screenW, int screenH) {
     graph.AddPass("overlay",
-                  {},
+                  {"canvas_textures"},
                   {"swapchain"},
                   [pipeline, screenW, screenH]() {
                       pipeline->CompositeCanvasOverlays(screenW, screenH);

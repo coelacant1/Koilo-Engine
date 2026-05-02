@@ -188,6 +188,21 @@ size_t CVarSystem::Count() const {
     return GetImpl().params.size();
 }
 
+// -- D3: typed handle resolvers ---------------------------------------
+
+CVarSystem::Handle<int32_t> CVarSystem::GetIntHandle(const std::string& name) {
+    return Handle<int32_t>(Find(name));
+}
+CVarSystem::Handle<float> CVarSystem::GetFloatHandle(const std::string& name) {
+    return Handle<float>(Find(name));
+}
+CVarSystem::Handle<bool> CVarSystem::GetBoolHandle(const std::string& name) {
+    return Handle<bool>(Find(name));
+}
+CVarSystem::Handle<std::string> CVarSystem::GetStringHandle(const std::string& name) {
+    return Handle<std::string>(Find(name));
+}
+
 // -- AutoCVar_Int -----------------------------------------------------
 
 AutoCVar_Int::AutoCVar_Int(const char* name, const char* desc, int32_t defaultVal,

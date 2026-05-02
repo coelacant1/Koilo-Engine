@@ -150,7 +150,155 @@ void TestRigidBody::TestEdgeCases() {
     TEST_ASSERT_TRUE(obj.GetCollider() == nullptr);
 }
 
+// ========== split integration ==========
+
+// ========== bullet flag ==========
+
 // ========== Test Runner ==========
+
+void TestRigidBody::TestApplyAngularImpulse() {
+    // TODO: Implement test for ApplyAngularImpulse()
+    RigidBody obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestRigidBody::TestApplyForceAtPoint() {
+    // TODO: Implement test for ApplyForceAtPoint()
+    RigidBody obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestRigidBody::TestApplyTorque() {
+    // TODO: Implement test for ApplyTorque()
+    RigidBody obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestRigidBody::TestGetAngularVelocity() {
+    // TODO: Implement test for GetAngularVelocity()
+    RigidBody obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestRigidBody::TestGetCollider() {
+    // TODO: Implement test for GetCollider()
+    RigidBody obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestRigidBody::TestGetPointVelocity() {
+    // TODO: Implement test for GetPointVelocity()
+    RigidBody obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestRigidBody::TestGetPose() {
+    // TODO: Implement test for GetPose()
+    RigidBody obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestRigidBody::TestGetPreviousPose() {
+    // TODO: Implement test for GetPreviousPose()
+    RigidBody obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestRigidBody::TestMakeDynamic() {
+    // TODO: Implement test for MakeDynamic()
+    RigidBody obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestRigidBody::TestMakeKinematic() {
+    // TODO: Implement test for MakeKinematic()
+    RigidBody obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestRigidBody::TestMakeStatic() {
+    // TODO: Implement test for MakeStatic()
+    RigidBody obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestRigidBody::TestSetAngularDamping() {
+    // TODO: Implement test for SetAngularDamping()
+    RigidBody obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestRigidBody::TestSetAngularVelocity() {
+    // TODO: Implement test for SetAngularVelocity()
+    RigidBody obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestRigidBody::TestSetCollider() {
+    // TODO: Implement test for SetCollider()
+    RigidBody obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestRigidBody::TestSetInertiaBox() {
+    // TODO: Implement test for SetInertiaBox()
+    RigidBody obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestRigidBody::TestSetInertiaCapsule() {
+    // TODO: Implement test for SetInertiaCapsule()
+    RigidBody obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestRigidBody::TestSetInertiaCylinder() {
+    // TODO: Implement test for SetInertiaCylinder()
+    RigidBody obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestRigidBody::TestSetInertiaSphere() {
+    // TODO: Implement test for SetInertiaSphere()
+    RigidBody obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestRigidBody::TestSetPose() {
+    // TODO: Implement test for SetPose()
+    RigidBody obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestRigidBody::TestGetAllowSleep() {
+    // TODO: Implement test for GetAllowSleep()
+    RigidBody obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestRigidBody::TestIsSleeping() {
+    // TODO: Implement test for IsSleeping()
+    RigidBody obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestRigidBody::TestSetAllowSleep() {
+    // TODO: Implement test for SetAllowSleep()
+    RigidBody obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestRigidBody::TestSleep() {
+    // TODO: Implement test for Sleep()
+    RigidBody obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestRigidBody::TestWake() {
+    // TODO: Implement test for Wake()
+    RigidBody obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
 
 void TestRigidBody::RunAllTests() {
     RUN_TEST(TestDefaultConstructor);
@@ -170,4 +318,29 @@ void TestRigidBody::RunAllTests() {
     RUN_TEST(TestSetFriction);
     RUN_TEST(TestSetLinearDamping);
     RUN_TEST(TestEdgeCases);
+
+    RUN_TEST(TestApplyAngularImpulse);
+    RUN_TEST(TestApplyForceAtPoint);
+    RUN_TEST(TestApplyTorque);
+    RUN_TEST(TestGetAngularVelocity);
+    RUN_TEST(TestGetCollider);
+    RUN_TEST(TestGetPointVelocity);
+    RUN_TEST(TestGetPose);
+    RUN_TEST(TestGetPreviousPose);
+    RUN_TEST(TestMakeDynamic);
+    RUN_TEST(TestMakeKinematic);
+    RUN_TEST(TestMakeStatic);
+    RUN_TEST(TestSetAngularDamping);
+    RUN_TEST(TestSetAngularVelocity);
+    RUN_TEST(TestSetCollider);
+    RUN_TEST(TestSetInertiaBox);
+    RUN_TEST(TestSetInertiaCapsule);
+    RUN_TEST(TestSetInertiaCylinder);
+    RUN_TEST(TestSetInertiaSphere);
+    RUN_TEST(TestSetPose);
+    RUN_TEST(TestGetAllowSleep);
+    RUN_TEST(TestIsSleeping);
+    RUN_TEST(TestSetAllowSleep);
+    RUN_TEST(TestSleep);
+    RUN_TEST(TestWake);
 }

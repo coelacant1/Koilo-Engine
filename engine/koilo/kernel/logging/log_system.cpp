@@ -78,6 +78,7 @@ LogSystem::LogSystem() {
             fprintf(out, "%s[%s] %s%s\n", colorOn, rec.channel,
                     rec.message, colorOff);
         }
+        fflush(out);
     });
 
     g_logSystem = this;

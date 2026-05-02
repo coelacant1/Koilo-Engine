@@ -60,9 +60,20 @@ struct EngineError {
         EngineError e{};
         e.severity = sev;
         e.system = sys;
-        if (code) std::strncpy(e.code, code, sizeof(e.code) - 1);
-        if (msg) std::strncpy(e.message, msg, sizeof(e.message) - 1);
-        if (suggest) std::strncpy(e.suggestion, suggest, sizeof(e.suggestion) - 1);
+        if (code) {
+            std::strncpy(e.code, code, sizeof(e.code) - 1);
+            e.code[sizeof(e.code) - 1] = '\0';
+        }
+        if (msg) {
+            const size_t mlen = std::strlen(msg);
+            const size_t mcap = sizeof(e.message) - 1;
+            std::memcpy(e.message, msg, mlen < mcap ? mlen : mcap);
+            e.message[mlen < mcap ? mlen : mcap] = '\0';
+        }
+        if (suggest) {
+            std::strncpy(e.suggestion, suggest, sizeof(e.suggestion) - 1);
+            e.suggestion[sizeof(e.suggestion) - 1] = '\0';
+        }
         return e;
     }
 };

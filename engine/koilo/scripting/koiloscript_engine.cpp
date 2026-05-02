@@ -370,9 +370,19 @@ void KoiloScriptEngine::ExecuteUpdate() {
     activeCtx_->currentTime += deltaTime;
     
     // Set built-in activeCtx_->variables in global scope
-    activeCtx_->variables["time"]      = Value(activeCtx_->currentTime);
-    activeCtx_->variables["deltaTime"] = Value(deltaTime);
-    activeCtx_->variables["fps"]       = Value(TimeManager::GetInstance().GetFPS());
+    // Built-in time variables: cached Value* slots.
+    // First call (or after rehash) does try_emplace + pointer fetch; steady
+    // state is direct pointer write - no hashing, no string allocation.
+    if (activeCtx_->builtinSlotsBucketCount != activeCtx_->variables.bucket_count()
+        || !activeCtx_->builtinTimeSlot) {
+        activeCtx_->builtinTimeSlot      = &activeCtx_->variables.try_emplace("time").first->second;
+        activeCtx_->builtinDeltaTimeSlot = &activeCtx_->variables.try_emplace("deltaTime").first->second;
+        activeCtx_->builtinFpsSlot       = &activeCtx_->variables.try_emplace("fps").first->second;
+        activeCtx_->builtinSlotsBucketCount = activeCtx_->variables.bucket_count();
+    }
+    *activeCtx_->builtinTimeSlot      = Value(activeCtx_->currentTime);
+    *activeCtx_->builtinDeltaTimeSlot = Value(deltaTime);
+    *activeCtx_->builtinFpsSlot       = Value(TimeManager::GetInstance().GetFPS());
     
     // Input is now updated by InputModule via moduleLoader_.UpdateAll()
     
@@ -469,6 +479,7 @@ void KoiloScriptEngine::CleanupPersistentObject(const std::string& objectName) {
         }
         it->second.instance = nullptr;
         activeCtx_->reflectedObjects.erase(it);
+        ++activeCtx_->reflectedObjectsGen;
     }
     activeCtx_->persistentObjects.erase(objectName);
 }
@@ -484,6 +495,7 @@ void KoiloScriptEngine::CleanupAllPersistentObjects() {
             }
             it->second.instance = nullptr;
             activeCtx_->reflectedObjects.erase(it);
+            ++activeCtx_->reflectedObjectsGen;
         }
     }
     activeCtx_->persistentObjects.clear();
@@ -547,6 +559,15 @@ bool KoiloScriptEngine::Reload() {
     hasError = true;
     errorMessage = "Reload failed (previous script restored): " + reloadError;
     return false;
+}
+
+void KoiloScriptEngine::Reset() {
+    compiledScript_.reset();
+    vm_.reset();
+    engineState_ = EngineState::Created;
+    hasError = false;
+    errorMessage.clear();
+    currentScriptPath.clear();
 }
 
 std::string KoiloScriptEngine::ResolveAssetPath(const std::string& assetPath) const {
@@ -796,25 +817,28 @@ Value KoiloScriptEngine::GetVariable(const std::string& name) const {
         }
         return Value();
     }
-    // Search scope stack from innermost to outermost
-    for (int i = (int)activeCtx_->scopeStack.size() - 1; i >= 0; i--) {
-        auto it = activeCtx_->scopeStack[i].find(name);
-        if (it != activeCtx_->scopeStack[i].end()) {
-            return it->second;
-        }
+    if (const Value* p = GetVariablePtr(name)) return *p;
+    return Value();
+}
+
+const Value* KoiloScriptEngine::GetVariablePtr(const std::string& name) const {
+    // Search scope stack from innermost to outermost (skipped when empty)
+    auto& scopes = activeCtx_->scopeStack;
+    for (size_t i = scopes.size(); i-- > 0; ) {
+        auto& m = scopes[i];
+        auto it = m.find(name);
+        if (it != m.end()) return &it->second;
     }
-    // Fall back to global activeCtx_->variables
+    // Fall back to active-context globals
     auto it = activeCtx_->variables.find(name);
-    if (it != activeCtx_->variables.end()) {
-        return it->second;
-    }
-    
+    if (it != activeCtx_->variables.end()) return &it->second;
+
     // If in an object context, fall back to primary context globals (shared globals)
     if (activeCtx_ != &ctx_) {
         auto pit = ctx_.variables.find(name);
-        if (pit != ctx_.variables.end()) return pit->second;
+        if (pit != ctx_.variables.end()) return &pit->second;
     }
-    return Value();
+    return nullptr;
 }
 
 void KoiloScriptEngine::SetVariable(const std::string& name, const Value& value) {
@@ -822,31 +846,40 @@ void KoiloScriptEngine::SetVariable(const std::string& name, const Value& value)
     if (value.type == Value::Type::OBJECT && !value.objectName.empty()) {
         PromoteToPersistent(value.objectName);
     }
-    
-    
-    // Find existing variable in scope stack
-    for (int i = (int)activeCtx_->scopeStack.size() - 1; i >= 0; i--) {
-        auto it = activeCtx_->scopeStack[i].find(name);
-        if (it != activeCtx_->scopeStack[i].end()) {
+
+
+    // Find existing variable in scope stack (innermost-first).
+    auto& scopes = activeCtx_->scopeStack;
+    for (size_t i = scopes.size(); i-- > 0;) {
+        auto& scope = scopes[i];
+        if (scope.empty()) continue;
+        auto it = scope.find(name);
+        if (it != scope.end()) {
             // Clean up old persistent object if being overwritten
             if (it->second.type == Value::Type::OBJECT && !it->second.objectName.empty()
-                && activeCtx_->persistentObjects.count(it->second.objectName)
-                && it->second.objectName != value.objectName) {
+                && it->second.objectName != value.objectName
+                && activeCtx_->persistentObjects.count(it->second.objectName)) {
                 CleanupPersistentObject(it->second.objectName);
             }
             it->second = value;
             return;
         }
     }
-    // Fall back to global activeCtx_->variables - check for overwrite
-    auto git = activeCtx_->variables.find(name);
-    if (git != activeCtx_->variables.end() && git->second.type == Value::Type::OBJECT
-        && !git->second.objectName.empty()
-        && activeCtx_->persistentObjects.count(git->second.objectName)
-        && git->second.objectName != value.objectName) {
-        CleanupPersistentObject(git->second.objectName);
+    // Fall back to global activeCtx_->variables. Do a single lookup
+    // and dispatch to assign-or-emplace to avoid the duplicate hash
+    // performed by operator[] on the existing-key path (the common case).
+    auto& vars = activeCtx_->variables;
+    auto git = vars.find(name);
+    if (git != vars.end()) {
+        if (git->second.type == Value::Type::OBJECT && !git->second.objectName.empty()
+            && git->second.objectName != value.objectName
+            && activeCtx_->persistentObjects.count(git->second.objectName)) {
+            CleanupPersistentObject(git->second.objectName);
+        }
+        git->second = value;
+    } else {
+        vars.emplace(name, value);
     }
-    activeCtx_->variables[name] = value;
 }
 
 Value KoiloScriptEngine::GetScriptVariable(const std::string& name) const {
@@ -937,7 +970,7 @@ void KoiloScriptEngine::RenderFrame(Color888* buffer, int width, int height) {
 
     // Clear to black - scene rendering now goes through FrameComposer +
     // SoftwareRHIDevice, so this legacy path only handles overlays.
-    std::memset(buffer, 0, width * height * sizeof(Color888));
+    std::memset(static_cast<void*>(buffer), 0, width * height * sizeof(Color888));
 
     auto* camera = GetCamera();
 
@@ -961,7 +994,8 @@ void KoiloScriptEngine::RenderFrame(Color888* buffer, int width, int height) {
             DebugRenderer::Render(dd, camera, buffer, width, height,
                                   nullptr, 0, 0,
                                   /*renderLines=*/false);
-            dd.Update();
+            // Expiry is now handled centrally in KoiloKernel::EndFrame so
+            // that backends not using this software path also get it.
         }
     }
 

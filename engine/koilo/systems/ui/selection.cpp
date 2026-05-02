@@ -70,4 +70,43 @@ bool SelectionManager::IsSelected(void* instance) const {
         [instance](const SelectionEntry& e) { return e.instance == instance; });
 }
 
+// =====================================================================
+// Multi-listener subscription
+// =====================================================================
+
+SelectionListenerToken SelectionManager::Subscribe(SelectionChangedCallback cb) {
+    if (!cb) return 0;
+    SelectionListenerToken token = nextToken_++;
+    listeners_.push_back({token, std::move(cb)});
+    return token;
+}
+
+void SelectionManager::Unsubscribe(SelectionListenerToken token) {
+    if (token == 0) return;
+    // Erase-remove; safe even if invoked from inside NotifyChanged()
+    // because NotifyChanged copies the list before iterating.
+    listeners_.erase(
+        std::remove_if(listeners_.begin(), listeners_.end(),
+            [token](const Listener& l) { return l.token == token; }),
+        listeners_.end());
+}
+
+void SelectionManager::NotifyChanged() {
+    // Re-entrancy guard: a callback that mutates the selection
+    // shouldn't recursively re-fire all listeners - the outer call
+    // will still complete the original notification round.
+    if (notifying_) return;
+    notifying_ = true;
+
+    // Snapshot listeners so Unsubscribe()/Subscribe() inside a
+    // callback doesn't invalidate our iterator.
+    auto snapshot = listeners_;
+    for (const auto& l : snapshot) {
+        if (l.cb) l.cb();
+    }
+    if (onChange_) onChange_();
+
+    notifying_ = false;
+}
+
 } // namespace koilo

@@ -42,40 +42,53 @@ public:
                   const std::unordered_map<std::string, ReflectedObject>& objects) {
         if (!targetType) return nullptr;
 
-        // Numeric types - accept NUMBER, coerce BOOL (true=1, false=0)
-        if (*targetType == typeid(float)) {
-            if (val.type == Value::Type::NUMBER && floatCount_ < MAX_SLOTS) { floats_[floatCount_] = static_cast<float>(val.numberValue); return &floats_[floatCount_++]; }
-            if (val.type == Value::Type::BOOL && floatCount_ < MAX_SLOTS) { floats_[floatCount_] = val.boolValue ? 1.0f : 0.0f; return &floats_[floatCount_++]; }
-            return nullptr;
-        }
-        if (*targetType == typeid(int)) {
-            if (val.type == Value::Type::NUMBER && intCount_ < MAX_SLOTS) { ints_[intCount_] = static_cast<int>(val.numberValue); return &ints_[intCount_++]; }
-            if (val.type == Value::Type::BOOL && intCount_ < MAX_SLOTS) { ints_[intCount_] = val.boolValue ? 1 : 0; return &ints_[intCount_++]; }
-            return nullptr;
-        }
-        if (*targetType == typeid(double)) {
-            if (val.type == Value::Type::NUMBER && doubleCount_ < MAX_SLOTS) { doubles_[doubleCount_] = val.numberValue; return &doubles_[doubleCount_++]; }
-            if (val.type == Value::Type::BOOL && doubleCount_ < MAX_SLOTS) { doubles_[doubleCount_] = val.boolValue ? 1.0 : 0.0; return &doubles_[doubleCount_++]; }
-            return nullptr;
-        }
-        if (*targetType == typeid(std::size_t)) {
-            if (val.type == Value::Type::NUMBER && sizetCount_ < MAX_SLOTS) { sizets_[sizetCount_] = static_cast<std::size_t>(val.numberValue); return &sizets_[sizetCount_++]; }
-            if (val.type == Value::Type::BOOL && sizetCount_ < MAX_SLOTS) { sizets_[sizetCount_] = val.boolValue ? 1 : 0; return &sizets_[sizetCount_++]; }
-            return nullptr;
-        }
-        if (*targetType == typeid(uint16_t)) {
-            if (val.type == Value::Type::NUMBER && uint16Count_ < MAX_SLOTS) { uint16s_[uint16Count_] = static_cast<uint16_t>(val.numberValue); return &uint16s_[uint16Count_++]; }
-            return nullptr;
-        }
-        if (*targetType == typeid(uint8_t)) {
-            if (val.type == Value::Type::NUMBER && uint8Count_ < MAX_SLOTS) { uint8s_[uint8Count_] = static_cast<uint8_t>(val.numberValue); return &uint8s_[uint8Count_++]; }
-            return nullptr;
-        }
-        if (*targetType == typeid(bool)) {
-            if (boolCount_ >= MAX_SLOTS) return nullptr;
-            if (val.type == Value::Type::BOOL) { bools_[boolCount_] = val.boolValue; return &bools_[boolCount_++]; }
-            if (val.type == Value::Type::NUMBER) { bools_[boolCount_] = (val.numberValue != 0.0); return &bools_[boolCount_++]; }
-            return nullptr;
+        // Numeric primitives: dispatch via FieldKind to avoid a chain of
+        // ~8 sequential typeid pointer-comparisons.
+        switch (KindForType(*targetType)) {
+            case FieldKind::Float: {
+                if (val.type == Value::Type::NUMBER && floatCount_ < MAX_SLOTS) { floats_[floatCount_] = static_cast<float>(val.numberValue); return &floats_[floatCount_++]; }
+                if (val.type == Value::Type::BOOL   && floatCount_ < MAX_SLOTS) { floats_[floatCount_] = val.boolValue ? 1.0f : 0.0f; return &floats_[floatCount_++]; }
+                return nullptr;
+            }
+            case FieldKind::Int: {
+                if (val.type == Value::Type::NUMBER && intCount_ < MAX_SLOTS) { ints_[intCount_] = static_cast<int>(val.numberValue); return &ints_[intCount_++]; }
+                if (val.type == Value::Type::BOOL   && intCount_ < MAX_SLOTS) { ints_[intCount_] = val.boolValue ? 1 : 0; return &ints_[intCount_++]; }
+                return nullptr;
+            }
+            case FieldKind::Double: {
+                if (val.type == Value::Type::NUMBER && doubleCount_ < MAX_SLOTS) { doubles_[doubleCount_] = val.numberValue; return &doubles_[doubleCount_++]; }
+                if (val.type == Value::Type::BOOL   && doubleCount_ < MAX_SLOTS) { doubles_[doubleCount_] = val.boolValue ? 1.0 : 0.0; return &doubles_[doubleCount_++]; }
+                return nullptr;
+            }
+            case FieldKind::Bool: {
+                if (boolCount_ >= MAX_SLOTS) return nullptr;
+                if (val.type == Value::Type::BOOL)   { bools_[boolCount_] = val.boolValue; return &bools_[boolCount_++]; }
+                if (val.type == Value::Type::NUMBER) { bools_[boolCount_] = (val.numberValue != 0.0); return &bools_[boolCount_++]; }
+                return nullptr;
+            }
+            case FieldKind::SizeT: {
+                if (val.type == Value::Type::NUMBER && sizetCount_ < MAX_SLOTS) { sizets_[sizetCount_] = static_cast<std::size_t>(val.numberValue); return &sizets_[sizetCount_++]; }
+                if (val.type == Value::Type::BOOL   && sizetCount_ < MAX_SLOTS) { sizets_[sizetCount_] = val.boolValue ? 1 : 0; return &sizets_[sizetCount_++]; }
+                return nullptr;
+            }
+            case FieldKind::UInt16: {
+                if (val.type == Value::Type::NUMBER && uint16Count_ < MAX_SLOTS) { uint16s_[uint16Count_] = static_cast<uint16_t>(val.numberValue); return &uint16s_[uint16Count_++]; }
+                return nullptr;
+            }
+            case FieldKind::UInt8: {
+                if (val.type == Value::Type::NUMBER && uint8Count_ < MAX_SLOTS) { uint8s_[uint8Count_] = static_cast<uint8_t>(val.numberValue); return &uint8s_[uint8Count_++]; }
+                return nullptr;
+            }
+            case FieldKind::UInt32: {
+                // Reuse int slots: uint32 is 4 bytes like int. Cast through uintptr_t avoids strict-aliasing issues.
+                if (val.type == Value::Type::NUMBER && intCount_ < MAX_SLOTS) {
+                    *reinterpret_cast<uint32_t*>(&ints_[intCount_]) = static_cast<uint32_t>(val.numberValue);
+                    return &ints_[intCount_++];
+                }
+                return nullptr;
+            }
+            case FieldKind::Complex:
+                break;  // Fall through to string/object/enum handling below.
         }
 
         // String types - no silent coercion
@@ -87,27 +100,64 @@ public:
             return nullptr;
         }
         if (*targetType == typeid(std::string)) {
-            if (val.type == Value::Type::STRING && stringCount_ < MAX_SLOTS) { strings_[stringCount_] = val.stringValue; return &strings_[stringCount_++]; }
+            if (val.type == Value::Type::STRING) {
+                // Zero-copy: the Value's own stringValue is alive for the
+                // lifetime of this call (caller holds args by const-ref),
+                // so we can hand the trampoline a pointer straight at it
+                // instead of copying into our scratch slot. The cast drops
+                // const because the marshaller's interface is `void*`; the
+                // C++ function takes a const-reference and will not mutate.
+                return const_cast<std::string*>(&val.stringValue);
+            }
             return nullptr;
         }
 
         // Object reference
         if (val.type == Value::Type::OBJECT) {
             auto it = objects.find(val.objectName);
+            void* instance = nullptr;
             if (it != objects.end() && it->second.instance) {
+                instance = it->second.instance;
+            } else {
+                // Dotted path (e.g. "pose.orientation"): walk the field chain
+                // from the base reflected object so sub-object references can
+                // be passed as args without needing a pre-extracted copy.
+                size_t dot = val.objectName.find('.');
+                if (dot != std::string::npos) {
+                    std::string baseName = val.objectName.substr(0, dot);
+                    auto baseIt = objects.find(baseName);
+                    if (baseIt != objects.end() && baseIt->second.instance && baseIt->second.classDesc) {
+                        void* curInst = baseIt->second.instance;
+                        const ClassDesc* curClass = baseIt->second.classDesc;
+                        size_t pos = dot + 1;
+                        while (pos < val.objectName.size() && curInst && curClass) {
+                            size_t next = val.objectName.find('.', pos);
+                            std::string fname = (next == std::string::npos)
+                                ? val.objectName.substr(pos)
+                                : val.objectName.substr(pos, next - pos);
+                            const FieldDecl* f = ReflectionBridge::FindField(curClass, fname);
+                            if (!f) { curInst = nullptr; break; }
+                            curInst = ReflectionBridge::GetFieldPointer(curInst, f);
+                            if (next == std::string::npos) break;
+                            curClass = (f->kind == FieldKind::Complex && f->type) ? ClassForType(*f->type) : nullptr;
+                            pos = next + 1;
+                        }
+                        instance = curInst;
+                    }
+                }
+            }
+            if (instance) {
                 auto info = LookupType(*targetType);
                 if (info && info->is_pointer) {
-                    if (ptrCount_ < MAX_SLOTS) { ptrs_[ptrCount_] = it->second.instance; return &ptrs_[ptrCount_++]; }
+                    if (ptrCount_ < MAX_SLOTS) { ptrs_[ptrCount_] = instance; return &ptrs_[ptrCount_++]; }
                     return nullptr;
                 }
-                // Fallback: GCC mangling check for pointer types not in registry
-                std::string tname = targetType->name();
-                if (!tname.empty() && tname[0] == 'P') {
-                    if (ptrCount_ < MAX_SLOTS) { ptrs_[ptrCount_] = it->second.instance; return &ptrs_[ptrCount_++]; }
+                const char* tname = targetType->name();
+                if (tname && tname[0] == 'P') {
+                    if (ptrCount_ < MAX_SLOTS) { ptrs_[ptrCount_] = instance; return &ptrs_[ptrCount_++]; }
                     return nullptr;
                 }
-                // Value or reference parameter - return instance directly
-                return it->second.instance;
+                return instance;
             }
             return nullptr;
         }

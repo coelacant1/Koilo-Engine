@@ -13,11 +13,10 @@
 
 class TestFileWatcher {
 public:
-    static void TestWatchCount();
-    static void TestUnwatch();
-    static void TestPollNoChange();
-    static void TestPollDetectsChange();
-    static void TestClear();
 
+    static void TestDefaultConstructor();
+    static void TestEdgeCases();
+    static void TestParameterizedConstructor();
+    static void TestPoll();
     static void RunAllTests();
 };

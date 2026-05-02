@@ -42,7 +42,7 @@ from consoleoutput import print_progress, print_status, print_section, print_war
 
 # Project paths
 REPO_ROOT = Path(__file__).resolve().parents[1]
-ENGINE_INCLUDE = REPO_ROOT / "engine" / "include" / "koiloscript"
+ENGINE_INCLUDE = REPO_ROOT / "engine" / "koilo"
 TESTS_ENGINE = REPO_ROOT / "tests" / "engine"
 REFLECTION_GEN = REPO_ROOT / "build" / "generated" / "reflection_entry_gen.cpp"
 

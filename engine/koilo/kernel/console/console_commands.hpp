@@ -65,6 +65,9 @@ void RegisterModuleFaultCommands(CommandRegistry& registry);
 /// Register schema versioning commands (schema list, schema check).
 void RegisterSchemaCommands(CommandRegistry& registry);
 
+/// Register screenshot capture command (screenshot <path>).
+void RegisterScreenshotCommands(CommandRegistry& registry);
+
 /// Tick the frame-capture system (call once per frame from host loop).
 void TickProfileCapture(KoiloKernel& kernel, int frameNumber);
 

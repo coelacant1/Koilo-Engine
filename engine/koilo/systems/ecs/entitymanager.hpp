@@ -222,7 +222,10 @@ private:
 
     std::vector<ComponentMask> componentMasks;           ///< Component masks for each entity
 
-    std::unordered_map<ComponentTypeID, std::shared_ptr<IComponentArray>> componentArrays;  ///< Component storage
+    // C4: vector<unique_ptr<...>> indexed by ComponentTypeID - removes the
+    // unordered_map hash + the shared_ptr atomic refcount from every component
+    // access. Component IDs are small dense ints so direct indexing is ideal.
+    std::vector<std::unique_ptr<IComponentArray>> componentArrays;
 
 public:
     /**
@@ -313,6 +316,17 @@ public:
     void ForEachComponent(std::function<void(Entity, T&)> callback);
 
     /**
+     * @brief A3: callback-form query - visits each valid entity that has all
+     * required components without allocating a temporary std::vector.
+     *
+     * Use this on hot paths that previously called GetEntitiesWithComponent[s]
+     * each tick.  The functor `F` is called as `f(Entity)` for every match.
+     * Existing GetEntitiesWithComponent[s] is preserved for tools / editor use.
+     */
+    template<typename... Components, typename F>
+    void ForEach(F&& f) const;
+
+    /**
      * @brief Clears all entities and components.
      */
     void Clear();
@@ -320,9 +334,10 @@ public:
 private:
     /**
      * @brief Gets or creates a component array for type T.
+     * Returns a raw pointer with stable storage owned by `componentArrays`.
      */
     template<typename T>
-    std::shared_ptr<ComponentArray<T>> GetComponentArray();
+    ComponentArray<T>* GetComponentArray();
 
     KL_BEGIN_FIELDS(EntityManager)
     KL_END_FIELDS
@@ -394,12 +409,11 @@ const T* EntityManager::GetComponent(Entity entity) const {
     }
 
     ComponentTypeID typeID = GetComponentTypeID<T>();
-    auto it = componentArrays.find(typeID);
-    if (it == componentArrays.end()) {
+    if (typeID >= componentArrays.size() || !componentArrays[typeID]) {
         return nullptr;
     }
 
-    auto componentArray = std::static_pointer_cast<ComponentArray<T>>(it->second);
+    auto* componentArray = static_cast<ComponentArray<T>*>(componentArrays[typeID].get());
     return componentArray->Get(entity);
 }
 
@@ -422,12 +436,11 @@ std::vector<Entity> EntityManager::GetEntitiesWithComponent() const {
     std::vector<Entity> entities;
 
     ComponentTypeID typeID = GetComponentTypeID<T>();
-    auto it = componentArrays.find(typeID);
-    if (it == componentArrays.end()) {
+    if (typeID >= componentArrays.size() || !componentArrays[typeID]) {
         return entities;
     }
 
-    auto componentArray = std::static_pointer_cast<ComponentArray<T>>(it->second);
+    auto* componentArray = static_cast<ComponentArray<T>*>(componentArrays[typeID].get());
     size_t count = componentArray->Size();
 
     for (size_t i = 0; i < count; ++i) {
@@ -475,19 +488,34 @@ void EntityManager::ForEachComponent(std::function<void(Entity, T&)> callback) {
     }
 }
 
+template<typename... Components, typename F>
+void EntityManager::ForEach(F&& f) const {
+    static_assert(sizeof...(Components) > 0,
+                  "EntityManager::ForEach requires at least one Component type");
+
+    ComponentMask requiredMask;
+    (requiredMask.set(GetComponentTypeID<Components>()), ...);
+
+    const size_t n = componentMasks.size();
+    for (uint32_t i = 0; i < n; ++i) {
+        if (i < generations.size() && generations[i] > 0
+            && (componentMasks[i] & requiredMask) == requiredMask) {
+            f(Entity(Entity::MakeID(i, generations[i])));
+        }
+    }
+}
+
 template<typename T>
-std::shared_ptr<ComponentArray<T>> EntityManager::GetComponentArray() {
+ComponentArray<T>* EntityManager::GetComponentArray() {
     ComponentTypeID typeID = GetComponentTypeID<T>();
 
-    auto it = componentArrays.find(typeID);
-    if (it != componentArrays.end()) {
-        return std::static_pointer_cast<ComponentArray<T>>(it->second);
+    if (typeID >= componentArrays.size()) {
+        componentArrays.resize(typeID + 1);
     }
-
-    // Create new component array
-    auto newArray = std::make_shared<ComponentArray<T>>();
-    componentArrays[typeID] = newArray;
-    return newArray;
+    if (!componentArrays[typeID]) {
+        componentArrays[typeID] = std::make_unique<ComponentArray<T>>();
+    }
+    return static_cast<ComponentArray<T>*>(componentArrays[typeID].get());
 }
 
 } // namespace koilo

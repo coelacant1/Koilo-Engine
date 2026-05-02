@@ -62,6 +62,20 @@ public:
     virtual Vector2D GetCoordinate(uint32_t count) = 0;
 
     /**
+     * @brief Retrieves a contiguous array of pre-computed pixel coordinates.
+     *
+     * Hot-path accessor: callers iterating every pixel can fetch the array
+     * once and avoid both the per-pixel virtual dispatch and any per-call
+     * coordinate computation. Returns nullptr if the implementation does
+     * not maintain such a buffer; callers must then fall back to
+     * GetCoordinate(i).
+     *
+     * @return Pointer to an array of `GetPixelCount()` Vector2D entries,
+     *         or nullptr if not available.
+     */
+    virtual const Vector2D* GetCoordinatesArray() { return nullptr; }
+
+    /**
      * @brief Retrieves the index of a pixel at a specific location.
      *
      * @param location The location to search for a pixel.

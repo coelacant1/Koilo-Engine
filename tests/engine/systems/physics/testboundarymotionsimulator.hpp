@@ -27,9 +27,6 @@ public:
     static void TestParameterizedConstructor();
 
     // Method tests
-    static void TestRandomize();
-    static void TestRandomRatio();
-    static void TestUpdate();
 
     // Functionality tests
 

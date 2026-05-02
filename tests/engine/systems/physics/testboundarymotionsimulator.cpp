@@ -15,18 +15,6 @@ void TestBoundaryMotionSimulator::TestDefaultConstructor() {
 }
 
 // ========== Method Tests ==========
-void TestBoundaryMotionSimulator::TestRandomize() {
-    // BoundaryMotionSimulator obj; // Requires constructor parameters
-    TEST_ASSERT_TRUE(false);  // Placeholder
-}
-void TestBoundaryMotionSimulator::TestRandomRatio() {
-    // BoundaryMotionSimulator obj; // Requires constructor parameters
-    TEST_ASSERT_TRUE(false);  // Placeholder
-}
-void TestBoundaryMotionSimulator::TestUpdate() {
-    // BoundaryMotionSimulator obj; // Requires constructor parameters
-    TEST_ASSERT_TRUE(false);  // Placeholder
-}
 // ========== Edge Cases ==========
 
 // ========== Test Runner ==========
@@ -48,8 +36,6 @@ void TestBoundaryMotionSimulator::TestEdgeCases() {
 void TestBoundaryMotionSimulator::RunAllTests() {
     RUN_TEST(TestDefaultConstructor);
     RUN_TEST(TestParameterizedConstructor);
-    RUN_TEST(TestRandomize);
-    RUN_TEST(TestRandomRatio);
-    RUN_TEST(TestUpdate);
+
     RUN_TEST(TestEdgeCases);
 }

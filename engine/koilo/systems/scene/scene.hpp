@@ -17,13 +17,17 @@
 #include <map>
 #include <string>
 #include <memory>
+#include <cstdint>
 
 #include "mesh.hpp"
 #include "scenenode.hpp"
+#include "../../core/geometry/ray.hpp"
 #include <koilo/registry/reflect_macros.hpp>
 
 
 namespace koilo {
+
+struct RaycastHit; // fwd
 
 /**
  * @class Scene
@@ -41,6 +45,7 @@ private:
     // Scene graph nodes (owned by scene)
     std::map<std::string, SceneNode*> nodesByName_;
     std::vector<std::unique_ptr<SceneNode>> ownedNodes_;
+    std::uint64_t hierarchyGen_ = 0; ///< Bumped on structural change.
 
     void RemoveElement(unsigned int element);
 
@@ -65,6 +70,61 @@ public:
     SceneNode* Find(const std::string& name);
     std::size_t GetNodeCount() const;
 
+    /**
+     * @brief All nodes whose parent is null (i.e. graph roots).
+     *
+     * Returned by value to keep the API safe across mutations; the
+     * pointers themselves are stable for the lifetime of the node
+     * (nodes are owned by the Scene via unique_ptr and only destroyed
+     * when the Scene is destroyed).
+     */
+    std::vector<SceneNode*> GetRootNodes() const;
+
+    /**
+     * @brief Monotonic counter bumped whenever the node graph's
+     * structure changes (CreateObject + manual BumpHierarchyGeneration
+     * calls). The editor uses this to skip rebuilding the live
+     * hierarchy panel when nothing has changed.
+     *
+     * NOTE: SceneNode::SetParent is NOT auto-tracked yet - call
+     * BumpHierarchyGeneration() manually after reparenting if the
+     * editor must observe it. See E3 follow-up.
+     */
+    std::uint64_t HierarchyGeneration() const { return hierarchyGen_; }
+
+    /// Manual bump for callers that mutate hierarchy without going
+    /// through CreateObject (e.g. after SceneNode::SetParent).
+    void BumpHierarchyGeneration() { ++hierarchyGen_; }
+
+    /// Walk all SceneNodes that have an attached mesh and return the
+    /// node whose mesh is hit nearest by `ray`.  The ray is in world
+    /// space; for each node it is transformed into the mesh's local
+    /// space using the node's world transform (translation + rotation
+    /// only at present -- non-uniform scale is not yet supported).
+    /// Returns nullptr if nothing is hit.
+    ///
+    /// Used by the editor viewport for click-to-select.  Note: nodes
+    /// hidden in hierarchy that still hold a mesh ARE pickable; the
+    /// editor is responsible for filtering if needed.
+    SceneNode* PickNode(const Ray& worldRay, float maxDistance = 1e30f);
+
+    /**
+     * @brief Serialize the scene's node graph to a `.kscene` file.
+     *
+     * v1 scope (matches `docs/kscene-format.md` rules): only emits
+     * `SceneNode` declarations and their local Transform setters, plus
+     * a second pass for parent links. Mesh attachments, scripts,
+     * physics bodies, colliders, and lights are NOT serialized - Scene
+     * does not own those resources, so the editor cannot reconstruct
+     * them from this object alone.  This is enough to round-trip
+     * editor-authored hierarchy + transforms; richer scenes still rely
+     * on an outer `.ks` runner.
+     *
+     * Returns true on success.  On failure (e.g. file open error) the
+     * file is left untouched.
+     */
+    bool SaveToKScene(const std::string& path) const;
+
     KL_BEGIN_FIELDS(Scene)
     KL_END_FIELDS
 
@@ -79,6 +139,10 @@ public:
         KL_METHOD_AUTO(Scene, CreateObject, "Create a named scene node"),
         KL_METHOD_AUTO(Scene, Find, "Find scene node by name"),
         KL_METHOD_AUTO(Scene, GetNodeCount, "Get number of scene nodes"),
+        KL_METHOD_AUTO(Scene, HierarchyGeneration, "Get hierarchy generation counter"),
+        KL_METHOD_AUTO(Scene, BumpHierarchyGeneration, "Manually bump hierarchy generation"),
+        KL_METHOD_AUTO(Scene, PickNode, "Pick the nearest scene node hit by a ray"),
+        KL_METHOD_AUTO(Scene, SaveToKScene, "Save scene node graph to a .kscene file"),
     KL_END_METHODS
 
     KL_BEGIN_DESCRIBE(Scene)

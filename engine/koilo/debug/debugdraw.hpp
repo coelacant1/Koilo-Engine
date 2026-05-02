@@ -214,6 +214,7 @@ private:
     std::vector<DebugBox> boxes;
     std::vector<DebugText> texts;
     bool enabled;
+    uint64_t linesVersion_ = 1;
 
 public:
 
@@ -387,6 +388,14 @@ public:
     const std::vector<DebugLine>& GetLines() const { return lines; }
 
     /**
+     * @brief Monotonically increasing counter bumped whenever any debug
+     *        geometry (lines, boxes, spheres) changes via DrawLine/DrawBox/
+     *        DrawSphere/Clear/Update expiry. Renderers can compare against a
+     *        cached value to skip vertex rebuild + GPU upload.
+     */
+    uint64_t GetLinesVersion() const { return linesVersion_; }
+
+    /**
      * @brief Gets all debug spheres.
      */
     const std::vector<DebugSphere>& GetSpheres() const { return spheres; }
@@ -414,6 +423,7 @@ public:
         KL_METHOD_AUTO(DebugDraw, DrawLine, "Draw line"),
         KL_METHOD_AUTO(DebugDraw, DrawSphere, "Draw sphere"),
         KL_METHOD_AUTO(DebugDraw, DrawBox, "Draw box"),
+        KL_METHOD_AUTO(DebugDraw, DrawOrientedBox, "Draw oriented box"),
         KL_METHOD_AUTO(DebugDraw, DrawAxes, "Draw axes"),
         KL_METHOD_AUTO(DebugDraw, DrawGrid, "Draw grid"),
         KL_METHOD_AUTO(DebugDraw, DrawText, "Draw text")

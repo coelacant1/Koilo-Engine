@@ -11,28 +11,28 @@ using namespace koilo;
 
 void TestDisplayInfo::TestDefaultConstructor() {
     DisplayInfo info;
-    TEST_ASSERT_TRUE(info.width >= 0);
-    TEST_ASSERT_TRUE(info.height >= 0);  
+    TEST_ASSERT_TRUE(static_cast<long long>(info.width) >= 0);
+    TEST_ASSERT_TRUE(static_cast<long long>(info.height) >= 0);  
 }
 
 void TestDisplayInfo::TestParameterizedConstructor() {
     DisplayInfo info;
-    TEST_ASSERT_TRUE(info.width >= 0);
-    TEST_ASSERT_TRUE(info.height >= 0);  
+    TEST_ASSERT_TRUE(static_cast<long long>(info.width) >= 0);
+    TEST_ASSERT_TRUE(static_cast<long long>(info.height) >= 0);  
 }
 
 // ========== Method Tests ==========
 
 void TestDisplayInfo::TestHasCapability() {
     DisplayInfo info;
-    TEST_ASSERT_TRUE(info.width >= 0);
-    TEST_ASSERT_TRUE(info.height >= 0);  
+    TEST_ASSERT_TRUE(static_cast<long long>(info.width) >= 0);
+    TEST_ASSERT_TRUE(static_cast<long long>(info.height) >= 0);  
 }
 
 void TestDisplayInfo::TestAddCapability() {
     DisplayInfo info;
-    TEST_ASSERT_TRUE(info.width >= 0);
-    TEST_ASSERT_TRUE(info.height >= 0);  
+    TEST_ASSERT_TRUE(static_cast<long long>(info.width) >= 0);
+    TEST_ASSERT_TRUE(static_cast<long long>(info.height) >= 0);  
 }
 
 // ========== Edge Cases ==========
@@ -40,8 +40,8 @@ void TestDisplayInfo::TestAddCapability() {
 void TestDisplayInfo::TestEdgeCases() {
     
     DisplayInfo info;
-    TEST_ASSERT_TRUE(info.width >= 0);
-    TEST_ASSERT_TRUE(info.height >= 0);  
+    TEST_ASSERT_TRUE(static_cast<long long>(info.width) >= 0);
+    TEST_ASSERT_TRUE(static_cast<long long>(info.height) >= 0);  
 }
 
 // ========== Test Runner ==========

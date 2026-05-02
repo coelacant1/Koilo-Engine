@@ -40,5 +40,6 @@ public:
     /**
      * @brief Runs all test methods.
      */
+    static void TestLoadFile();
     static void RunAllTests();
 };

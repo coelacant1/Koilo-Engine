@@ -16,12 +16,17 @@
 #include <vector>
 #include <functional>
 #include <algorithm>
+#include <cstdint>
 #include "../../registry/reflect_macros.hpp"
 
 namespace koilo {
 
 /// Callback signature: invoked when the selection set changes.
 using SelectionChangedCallback = std::function<void()>;
+
+/// Opaque token returned by Subscribe(); pass back to Unsubscribe()
+/// to remove the listener. Zero is reserved as "invalid".
+using SelectionListenerToken = std::uint32_t;
 
 /** @struct SelectionEntry @brief A single selected item - pairs a live pointer with its type. */
 struct SelectionEntry {
@@ -87,15 +92,44 @@ public:
     /** @brief Get all selected entries. */
     const std::vector<SelectionEntry>& Entries() const { return entries_; }
 
-    /** @brief Set callback invoked when selection changes. */
+    /**
+     * @brief Subscribe to selection-changed events.
+     *
+     * Multiple listeners may be registered; each receives every
+     * notification. Returns a non-zero token to use with
+     * Unsubscribe(). Pass the token back when the listener's owner
+     * (e.g. a UI panel) is torn down.
+     */
+    SelectionListenerToken Subscribe(SelectionChangedCallback cb);
+
+    /// Remove a previously-registered listener. No-op if token is 0
+    /// or unknown. Safe to call from inside the callback.
+    void Unsubscribe(SelectionListenerToken token);
+
+    /**
+     * @brief Single-listener convenience (back-compat).
+     *
+     * Replaces the slot used by older callers; does NOT clear
+     * additional listeners registered via Subscribe(). Prefer
+     * Subscribe()/Unsubscribe() for new code so multiple panels
+     * can react to the same selection change.
+     */
     void SetOnChanged(SelectionChangedCallback cb) { onChange_ = std::move(cb); }
 
 private:
-    void NotifyChanged() { if (onChange_) onChange_(); }
+    void NotifyChanged();
 
-    std::vector<SelectionEntry> entries_;   ///< Currently selected items.
-    SelectionChangedCallback onChange_;      ///< Change notification callback.
-    static const SelectionEntry kEmpty_;    ///< Sentinel for empty selection.
+    struct Listener {
+        SelectionListenerToken token;
+        SelectionChangedCallback cb;
+    };
+
+    std::vector<SelectionEntry> entries_;       ///< Currently selected items.
+    SelectionChangedCallback    onChange_;      ///< Legacy single-slot callback.
+    std::vector<Listener>       listeners_;     ///< Multi-cast subscribers.
+    SelectionListenerToken      nextToken_ = 1; ///< Monotonic id (0 = invalid).
+    bool                        notifying_ = false; ///< Re-entrancy guard.
+    static const SelectionEntry kEmpty_;        ///< Sentinel for empty selection.
 
     KL_BEGIN_FIELDS(SelectionManager)
         /* No reflected fields. */

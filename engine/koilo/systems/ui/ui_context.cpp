@@ -909,6 +909,16 @@ void UIContext::ProcessEvent(Event event) {
             if (event.pointerButton == 0) {
                 if (colorPicker_) colorPicker_->HandlePointerUp();
                 HandlePointerUp(event);
+            } else if (pointerCaptureIdx_ >= 0) {
+                // Non-LMB release: just notify the captured widget and
+                // drop capture. We deliberately do NOT clear pressed
+                // flags or dispatch click here -- those are LMB-only
+                // semantics in this UI.
+                Widget* cap = pool_.Get(pointerCaptureIdx_);
+                if (cap && cap->onPointerUpCpp) {
+                    cap->onPointerUpCpp(*cap, event);
+                }
+                pointerCaptureIdx_ = -1;
             }
             break;
         case EventType::PointerMove:
@@ -1226,6 +1236,16 @@ void UIContext::HandlePointerDown(Event& event) {
                 dragCandidate_.startX = event.pointerX;
                 dragCandidate_.startY = event.pointerY;
             }
+
+            // Raw pointer-down callback + pointer capture for widgets
+            // that need drag-style input (editor viewport orbit/pan).
+            // Capture is unconditional when the down callback is set so
+            // the widget can decide what to do with subsequent moves
+            // even if the user drags outside its bounds.
+            if (w->onPointerDownCpp) {
+                pointerCaptureIdx_ = hit;
+                w->onPointerDownCpp(*w, event);
+            }
         }
     } else {
         SetFocus(-1);
@@ -1276,6 +1296,15 @@ void UIContext::HandlePointerUp(Event& event) {
 
     int hit = HitTest(pool_, rootIndex_, event.pointerX, event.pointerY);
 
+    // Captured widget gets the up event regardless of cursor location.
+    if (pointerCaptureIdx_ >= 0) {
+        Widget* cap = pool_.Get(pointerCaptureIdx_);
+        if (cap && cap->onPointerUpCpp) {
+            cap->onPointerUpCpp(*cap, event);
+        }
+        pointerCaptureIdx_ = -1;
+    }
+
     for (size_t i = 0; i < pool_.Capacity(); ++i) {
         Widget* w = pool_.Get(static_cast<int>(i));
         if (w && w->flags.pressed) {
@@ -1290,6 +1319,22 @@ void UIContext::HandlePointerUp(Event& event) {
 
 // Handle pointer move event.
 void UIContext::HandlePointerMove(Event& event) {
+    // Pointer-captured widget (e.g. editor viewport during orbit-drag)
+    // takes precedence over panel/resize/scroll drags below.  We only
+    // fire its callback; we still let the rest of the function run for
+    // hover bookkeeping unless the callback consumes the event.
+    if (pointerCaptureIdx_ >= 0) {
+        Widget* cap = pool_.Get(pointerCaptureIdx_);
+        if (cap && cap->onPointerMoveCpp) {
+            cap->onPointerMoveCpp(*cap, event);
+            if (event.consumed) {
+                lastPointerX_ = event.pointerX;
+                lastPointerY_ = event.pointerY;
+                return;
+            }
+        }
+    }
+
     if (panelDrag_.active) {
         HandlePanelDrag(event.pointerX, event.pointerY);
         return;
@@ -1458,7 +1503,7 @@ void UIContext::HandleKeyDown(Event& event) {
         }
         if (keyName) {
             StringId shortcutId = strings_.Intern(keyName);
-            for (int i = 0; i < pool_.Capacity(); ++i) {
+            for (size_t i = 0; i < pool_.Capacity(); ++i) {
                 if (!pool_.IsAlive(i)) continue;
                 Widget* w = pool_.Get(i);
                 if (w && w->tag == WidgetTag::MenuItem &&
@@ -1630,6 +1675,22 @@ void UIContext::HandleTextInput(Event& event) {
 void UIContext::HandleScroll(Event& event) {
     int hit = HitTest(pool_, rootIndex_, event.pointerX, event.pointerY);
 
+    // Raw scroll callback (editor viewport zoom etc.). Walks ancestor
+    // chain so a callback on a parent panel still fires when the child
+    // is hit.  Any handler that consumes the event suppresses default
+    // scrollview/spinner routing below.
+    int walk = hit;
+    while (walk >= 0) {
+        Widget* w = pool_.Get(walk);
+        if (!w) break;
+        if (w->onScrollCpp) {
+            w->onScrollCpp(*w, event);
+            if (event.consumed) return;
+            break;
+        }
+        walk = w->parent;
+    }
+
     // NumberSpinner: scroll adjusts value
     if (hit >= 0) {
         Widget* w = pool_.Get(hit);
@@ -1676,6 +1737,17 @@ void UIContext::HandleRightClick(Event& event) {
 
     int hit = HitTest(pool_, rootIndex_, event.pointerX, event.pointerY);
     if (hit < 0) return;
+
+    // Raw pointer-down callback + pointer capture also runs for RMB
+    // so widgets like the editor viewport can implement orbit-drag.
+    // Runs before the popup-menu walk so consumers that want to
+    // suppress the context menu can call event.Consume().
+    Widget* hw = pool_.Get(hit);
+    if (hw && hw->onPointerDownCpp) {
+        pointerCaptureIdx_ = hit;
+        hw->onPointerDownCpp(*hw, event);
+        if (event.consumed) return;
+    }
 
     int idx = hit;
     while (idx >= 0) {

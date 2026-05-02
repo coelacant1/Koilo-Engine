@@ -117,6 +117,7 @@ struct ClassDesc {
     size_t size;  /* sizeof(T) for the class */
     void (*destroy)(void*);
     void (*copy_construct)(void* dst, const void* src);  ///< Placement copy-construct src into dst
+    void (*copy_assign)(void* dst, const void* src);     ///< Copy-assign src into already-constructed dst (sub-object safe)
 };
 
 } // namespace koilo

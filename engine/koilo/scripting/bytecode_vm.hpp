@@ -117,6 +117,21 @@ private:
     std::vector<Value> methodArgs_;
     std::vector<Value> constructArgs_;
 
+    // Receiver inline cache for CALL_METHOD: the same script object is
+    // typically the receiver of many consecutive method calls, so caching
+    // the last successful (name -> ReflectedObject*) lookup eliminates the
+    // repeated string-keyed hash table walk in `reflectedObjects.find()`.
+    // Validated by both `reflectedObjectsGen` (erase / clear) and the map's
+    // `bucket_count()` (rehash) so the cached pointer is always safe.
+    struct RecvLookupCache {
+        uint64_t gen = ~0ULL;
+        size_t bucketCount = 0;
+        const std::string* nameSrcPtr = nullptr;  // identity-compare fast path
+        std::string nameSnapshot;
+        struct ReflectedObject* refObj = nullptr;
+    };
+    RecvLookupCache recvCache_;
+
     // Heap pools for NaN-boxed composite values (pointer-stable, bounded growth)
     HeapPool<std::string> stringPool_{512};
     HeapPool<HeapArray> arrayPool_{128};

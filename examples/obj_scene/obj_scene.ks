@@ -9,7 +9,7 @@ display.SetHeight(1080);
 display.SetPixelWidth(1920);
 display.SetPixelHeight(1080);
 display.SetTargetFPS(60);
-display.SetCapFPS(true);
+display.SetCapFPS(false);
 
 var canvas = Canvas2D();
 canvas.Resize(192, 108);

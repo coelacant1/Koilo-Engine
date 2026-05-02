@@ -104,6 +104,17 @@ public:
     /// Total registered CVar count.
     size_t Count() const;
 
+    // -- D3: typed handles ---------------------------------------------
+    // `Find()` does an unordered_map<string,...> lookup - fine at startup,
+    // bad on a hot per-frame path.  Resolve a handle once and call `.Get()`
+    // / `.Set()` thereafter for a direct pointer-deref to the stored value.
+    template<typename T> class Handle;
+
+    Handle<int32_t>      GetIntHandle(const std::string& name);
+    Handle<float>        GetFloatHandle(const std::string& name);
+    Handle<bool>         GetBoolHandle(const std::string& name);
+    Handle<std::string>  GetStringHandle(const std::string& name);
+
 private:
     CVarSystem() = default;
     struct Impl;
@@ -240,6 +251,63 @@ private:
         KL_CTOR(AutoCVar_String, const char*, const char*, const char*, CVarFlags)
     KL_END_DESCRIBE(AutoCVar_String)
 
+};
+
+// -- D3: CVarSystem::Handle<T> specialisations ------------------------
+
+template<>
+class CVarSystem::Handle<int32_t> {
+public:
+    Handle() = default;
+    explicit Handle(CVarParameter* p) : param_(p) {}
+    bool Valid() const { return param_ != nullptr; }
+    int32_t Get() const { return param_ ? param_->intVal : 0; }
+    void Set(int32_t v) { if (param_) param_->intVal = v; }
+    CVarParameter* Param() const { return param_; }
+private:
+    CVarParameter* param_ = nullptr;
+};
+
+template<>
+class CVarSystem::Handle<float> {
+public:
+    Handle() = default;
+    explicit Handle(CVarParameter* p) : param_(p) {}
+    bool Valid() const { return param_ != nullptr; }
+    float Get() const { return param_ ? param_->floatVal : 0.0f; }
+    void Set(float v) { if (param_) param_->floatVal = v; }
+    CVarParameter* Param() const { return param_; }
+private:
+    CVarParameter* param_ = nullptr;
+};
+
+template<>
+class CVarSystem::Handle<bool> {
+public:
+    Handle() = default;
+    explicit Handle(CVarParameter* p) : param_(p) {}
+    bool Valid() const { return param_ != nullptr; }
+    bool Get() const { return param_ && param_->boolVal; }
+    void Set(bool v) { if (param_) param_->boolVal = v; }
+    CVarParameter* Param() const { return param_; }
+private:
+    CVarParameter* param_ = nullptr;
+};
+
+template<>
+class CVarSystem::Handle<std::string> {
+public:
+    Handle() = default;
+    explicit Handle(CVarParameter* p) : param_(p) {}
+    bool Valid() const { return param_ != nullptr; }
+    const std::string& Get() const {
+        static const std::string empty;
+        return param_ ? param_->strVal : empty;
+    }
+    void Set(const std::string& v) { if (param_) param_->strVal = v; }
+    CVarParameter* Param() const { return param_; }
+private:
+    CVarParameter* param_ = nullptr;
 };
 
 } // namespace koilo

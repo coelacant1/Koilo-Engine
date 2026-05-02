@@ -34,8 +34,17 @@ public:
 
     PhysicsWorld* GetWorld() { return world_.get(); }
 
+    /// Master gate for stepping the physics world. When false,
+    /// Update() skips PhysicsWorld::Step entirely (and therefore the
+    /// aerodynamics pre-step callback that hangs off it), but the
+    /// world remains alive and queryable. The editor flips this
+    /// based on its PlayState (Editing/Paused = false, Playing = true).
+    void SetSimulationEnabled(bool on) { simulationEnabled_ = on; }
+    bool IsSimulationEnabled() const   { return simulationEnabled_; }
+
 private:
     std::unique_ptr<PhysicsWorld> world_;
+    bool                          simulationEnabled_ = true;
 
     KL_BEGIN_FIELDS(PhysicsModule)
         /* No reflected fields. */

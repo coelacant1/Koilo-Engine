@@ -205,6 +205,35 @@ void SoftwareRHIDevice::UpdateTexture(RHITexture handle,
     std::memcpy(tex.pixels.data(), data, copySize);
 }
 
+void SoftwareRHIDevice::UpdateTextureRegion(RHITexture handle,
+                                             const void* data, size_t dataSize,
+                                             uint32_t x, uint32_t y,
+                                             uint32_t w, uint32_t h) {
+    if (!textures_.Valid(handle.id) || !data || w == 0 || h == 0) return;
+    auto& tex = textures_.Get(handle.id);
+    size_t bpp = RHIFormatBytesPerPixel(tex.format);
+    if (bpp == 0) bpp = 4;
+    if (x + w > tex.width || y + h > tex.height) return;
+    const size_t dstStride = static_cast<size_t>(tex.width) * bpp;
+    const size_t rowBytes  = static_cast<size_t>(w) * bpp;
+    const size_t srcStride = rowBytes;  // tightly packed
+    const size_t need = static_cast<size_t>(h) * srcStride;
+    const size_t take = std::min(dataSize, need);
+    if (tex.pixels.size() < static_cast<size_t>(tex.height) * dstStride) {
+        tex.pixels.resize(static_cast<size_t>(tex.height) * dstStride);
+    }
+    const uint8_t* src = static_cast<const uint8_t*>(data);
+    uint8_t* dst = tex.pixels.data() + (static_cast<size_t>(y) * dstStride + static_cast<size_t>(x) * bpp);
+    size_t bytesRemaining = take;
+    for (uint32_t row = 0; row < h && bytesRemaining > 0; ++row) {
+        size_t copy = std::min(rowBytes, bytesRemaining);
+        std::memcpy(dst, src, copy);
+        src += srcStride;
+        dst += dstStride;
+        bytesRemaining -= copy;
+    }
+}
+
 void* SoftwareRHIDevice::MapBuffer(RHIBuffer handle) {
     if (!buffers_.Valid(handle.id)) return nullptr;
     return buffers_.Get(handle.id).data.data();

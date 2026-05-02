@@ -61,7 +61,7 @@ void TestTransformComponent::TestSetPosition() {
 void TestTransformComponent::TestGetRotation() {
     TransformComponent tc;
     
-    Quaternion rot = tc.GetRotation();
+    [[maybe_unused]] Quaternion rot = tc.GetRotation();
     // Default rotation should be identity
     TEST_ASSERT_TRUE(true);
 }
@@ -72,7 +72,7 @@ void TestTransformComponent::TestSetRotation() {
     Quaternion newRot(0.707f, 0.0f, 0.707f, 0.0f); // 90 degree rotation around Y
     tc.SetRotation(newRot);
     
-    Quaternion rot = tc.GetRotation();
+    [[maybe_unused]] Quaternion rot = tc.GetRotation();
     TEST_ASSERT_FLOAT_WITHIN(0.01f, 0.707f, rot.W);
 }
 

@@ -48,7 +48,7 @@ void TestMesh::TestGetUVIndexGroup() {
 }
 void TestMesh::TestGetCenterOffset() {
     Mesh mesh(nullptr, nullptr, nullptr);
-    Vector3D offset = mesh.GetCenterOffset();
+    [[maybe_unused]] Vector3D offset = mesh.GetCenterOffset();
     TEST_ASSERT_TRUE(true);
 }
 void TestMesh::TestGetMinMaxDimensions() {
@@ -59,7 +59,7 @@ void TestMesh::TestGetMinMaxDimensions() {
 }
 void TestMesh::TestGetSize() {
     Mesh mesh(nullptr, nullptr, nullptr);
-    Vector3D size = mesh.GetSize();
+    [[maybe_unused]] Vector3D size = mesh.GetSize();
     // Should return a Vector3D size
     TEST_ASSERT_TRUE(true);
 }
@@ -143,6 +143,12 @@ void TestMesh::TestUpdateSkinning() {
     TEST_IGNORE_MESSAGE("Stub");
 }
 
+void TestMesh::TestMarkTransformDirty() {
+    // TODO: Implement test for MarkTransformDirty()
+    Mesh obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
 void TestMesh::RunAllTests() {
     RUN_TEST(TestDefaultConstructor);
     RUN_TEST(TestParameterizedConstructor);
@@ -169,4 +175,5 @@ void TestMesh::RunAllTests() {
     RUN_TEST(TestGetSkeleton);
     RUN_TEST(TestSetSkeleton);
     RUN_TEST(TestUpdateSkinning);
+    RUN_TEST(TestMarkTransformDirty);
 }

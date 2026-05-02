@@ -26,4 +26,11 @@ Vector3D koilo::Cube::GetMinimum() {
     return minimum;
 }
 
+void koilo::Cube::SetCenter(const Vector3D& newCenter) {
+    Vector3D delta = newCenter - centerPosition;
+    centerPosition = newCenter;
+    minimum = minimum + delta;
+    maximum = maximum + delta;
+}
+
 } // namespace koilo

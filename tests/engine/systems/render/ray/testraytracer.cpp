@@ -10,7 +10,7 @@ using namespace koilo;
 // ========== Constructor Tests ==========
 
 void TestRayTracer::TestDefaultConstructor() {
-    RayTracer tracer;
+    [[maybe_unused]] RayTracer tracer;
     TEST_ASSERT_TRUE(true);
 }
 
@@ -19,12 +19,12 @@ void TestRayTracer::TestDefaultConstructor() {
 // ========== Test Runner ==========
 
 void TestRayTracer::TestParameterizedConstructor() {
-    RayTracer tracer;
+    [[maybe_unused]] RayTracer tracer;
     TEST_ASSERT_TRUE(true);
 }
 
 void TestRayTracer::TestEdgeCases() {
-    RayTracer tracer;
+    [[maybe_unused]] RayTracer tracer;
     TEST_ASSERT_TRUE(true);
 }
 

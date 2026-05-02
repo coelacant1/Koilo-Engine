@@ -60,6 +60,7 @@
 #include <koilo/systems/profiling/performanceprofiler.hpp>
 #include <koilo/systems/profiling/gpu_timing.hpp>
 #include <koilo/systems/render/rhi/rhi_device.hpp>
+#include <koilo/systems/render/util/screenshot_service.hpp>
 #include <koilo/ksl/ksl_registry.hpp>
 #include <koilo/kernel/console/console_commands.hpp>
 #include <SDL3/SDL.h>
@@ -300,14 +301,19 @@ private:
         uint64_t lastTick = SDL_GetPerformanceCounter();
 
         // Work-time accumulator for estimated max FPS
-        double workTimeAccum = 0.0;
-        int    workFrames    = 0;
-        double estMaxFPS     = 0.0;
+        double estMaxFPS     = 0.0; // smoothed (EMA) projection of max sustainable FPS
+
+        // Flush stale SDL events from any previous display session
+        SDL_FlushEvents(SDL_EVENT_FIRST, SDL_EVENT_LAST);
 
         while (running) {
             if (externalStop && !externalStop->load(std::memory_order_relaxed))
                 { running = false; break; }
-            if (enableProfiler) profiler.BeginFrame();
+            // Always call BeginFrame/EndFrame; the profiler internally
+            // early-outs when disabled.  Calling them unconditionally
+            // keeps `stat.fps` working when the profiler is toggled on
+            // at runtime via `perf-enable`.
+            profiler.BeginFrame();
 
             uint64_t now = SDL_GetPerformanceCounter();
             float  dt  = static_cast<float>(now - lastTick) / static_cast<float>(freq);
@@ -409,7 +415,7 @@ private:
             // Require at least 2 rendered frames first so the initial frame gets
             // presented via SwapOnly (which submits the previous iteration's work).
             if (!sceneActive && uiIdle && !hadEvents && frameNum >= 2) {
-                if (enableProfiler) profiler.EndFrame();
+                profiler.EndFrame();
                 continue;
             }
 
@@ -482,10 +488,18 @@ private:
                 } else {
                     // GPU RHI: swap is handled by the display backend
 #ifdef KL_HAVE_VULKAN_BACKEND
-                    if (!vkDisplay)
+                    if (!vkDisplay && gpuDisplayRaw)
+#else
+                    if (gpuDisplayRaw)
 #endif
                         gpuDisplayRaw->SwapOnly();
                 }
+
+                // Service any pending screenshot request.  No-op when
+                // none is pending; on Software RHI captures from the
+                // just-rendered swPixels.  Vulkan returns an explanatory
+                // error until ReadSwapchainPixels is implemented.
+                render::util::ScreenshotService::Get().ServicePending(dev);
             }
 
             kernel.EndFrame();
@@ -493,19 +507,20 @@ private:
             uint64_t workEnd = SDL_GetPerformanceCounter();
             double workMs = static_cast<double>(workEnd - workStart) /
                             static_cast<double>(freq) * 1000.0;
-            workTimeAccum += workMs;
-            workFrames++;
 
-            // Update rolling estimated max FPS and expose to scripts
-            if (workFrames >= 60) {
-                double avgWorkMs = workTimeAccum / workFrames;
-                estMaxFPS = (avgWorkMs > 0.01) ? 1000.0 / avgWorkMs : 9999.0;
-                workTimeAccum = 0.0;
-                workFrames = 0;
+            // Per-frame instantaneous projection from the just-completed work.
+            // Use an exponential moving average so the value is smooth but
+            // tracks current load with minimal lag. ~20-frame time constant.
+            double instMaxFps = (workMs > 0.01) ? 1000.0 / workMs : 9999.0;
+            const double kSmoothing = 0.05;
+            if (estMaxFPS <= 0.0) {
+                estMaxFPS = instMaxFps;
+            } else {
+                estMaxFPS = estMaxFPS * (1.0 - kSmoothing) + instMaxFps * kSmoothing;
             }
             engine.SetGlobal("mfps", scripting::Value(estMaxFPS));
 
-            if (enableProfiler) profiler.EndFrame();
+            profiler.EndFrame();
             TickProfileCapture(kernel, frameNum);
             frameNum++;
 
@@ -530,10 +545,13 @@ private:
                 }
             }
 
-            // Estimated max FPS console report (every 300 frames when capped)
-            if (cvarMaxFps > 0 && !forceUncapped && frameNum % 300 == 0 && estMaxFPS > 0.0) {
-                KL_LOG("Host", "Est. max FPS: %.0f  (capped at %d)",
-                       estMaxFPS, cvarMaxFps);
+            // MFPS console report (every 300 frames)
+            if (frameNum % 300 == 0 && estMaxFPS > 0.0) {
+                if (cvarMaxFps > 0 && !forceUncapped)
+                    KL_LOG("Host", "Est. max FPS: %.0f  (capped at %d)",
+                           estMaxFPS, cvarMaxFps);
+                else
+                    KL_LOG("Host", "FPS: %.0f", estMaxFPS);
             }
         }
 

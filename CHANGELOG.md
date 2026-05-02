@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.3.17] - 2026-5-2
+Real-time rigid-body physics, supporting math/geometry primitives, and a build-warning sweep.
+
+### Added
+- Rigid-body physics pipeline under `systems/physics/`:
+  - Broadphase: dynamic AABB tree (`DBVT`) with `BroadPhase` interface
+  - Narrowphase: `GJK` distance, `EPA` penetration, box-box SAT clipping, `ManifoldGenerator` dispatch
+  - Solver: `SequentialImpulseSolver`, `IslandBuilder`, `SleepManager`, persistent `ContactCache` and `ContactManifold`
+  - Shapes: sphere, box, capsule, plane, convex hull, triangle mesh (with `MeshBVH`), heightfield
+  - Joints: ball-socket, distance, fixed, hinge, slider
+  - Diagnostics: `PhysicsDiagnostics`, `BodyPose`, `InertiaTensor`, `ColliderProxy`, SoA body state buffers
+- Aerodynamics system under `systems/aerodynamics/` (`AeroModule`): `AerodynamicsWorld` registry, `AerodynamicSurface` (wings/control surfaces) with `AeroCurve` AoA lookup tables, `ThrustEngine` (body-fixed thrust with optional fuel burn), ISA `Atmosphere` model, and `WindField` sampling abstraction
+- Supporting math/geometry primitives: `Matrix3x3` (row-major, used for inertia tensors and quaternion conversion in physics), `OBB`, `ConvexHull`, `ParticlePool`, `ConstraintGraph`, `MeshBVH` (scene-level)
+- `tools/solver_bench/` micro-benchmark harness for solver/scene scenarios
+
+### Changed
+- Stability annotations (`KL_FROZEN`/`KL_UNSTABLE`/`KL_STABLE`/`KL_INTERNAL`) now emit `__attribute__((annotate))` only on Clang; GCC gets a no-op. Source form is preserved for `tools/abi_check.py`'s regex parser.
+- Several `.hpp`-only modules split into `.hpp` + `.cpp` where implementations were non-trivial (broadphase, narrowphase, joints, solver, mesh collider, etc.) to reduce header weight without changing behaviour.
+- `EngineError::Make` swaps `strncpy` for bounded `memcpy` + explicit terminator (silences `-Wstringop-truncation`, identical runtime cost).
+- `render_backend_factory` `searchPaths` promoted to `static const` (one-time init, eliminates allocator false-positive warning).
+- `command_registry.hpp` `CommandDef::completer` gets `{}` default initializer so brace-initialised call sites no longer warn.
+
+### Fixed
+- Build is now warning-free on GCC (665 -> 0): `-Wattributes`, `-Wclass-memaccess` (memset of `Color888` in rasterizer hot path now uses `static_cast<void*>` - zero perf cost), `-Wtype-limits`, `-Wcomment` (`/**` inside doc block in `strict_fp.hpp`), `-Wsign-compare`, `-Wnonnull` (added `gpuDisplayRaw` guard in `sdl3_host`), `-Wswitch` (added `ModuleState::Faulted` case), `-Wmissing-field-initializers`, plus several unused/uninit warnings across tests.
+- `scripts/generatetestskeletons.py` was looking under stale `engine/include/koilo*`
+
 ## [0.3.16] - 2026-4-7
 LED volume pipeline with USB transport, Vulkan on Pi, and deploy tooling.
 

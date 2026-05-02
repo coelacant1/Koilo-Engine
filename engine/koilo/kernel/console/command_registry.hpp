@@ -24,7 +24,7 @@ struct CommandDef {
     std::string usage;       // e.g. "mem [module]"
     std::string description; // one-line help
     std::function<ConsoleResult(KoiloKernel&, const std::vector<std::string>&)> handler;
-    std::function<std::vector<std::string>(KoiloKernel&, const std::vector<std::string>&, const std::string&)> completer;
+    std::function<std::vector<std::string>(KoiloKernel&, const std::vector<std::string>&, const std::string&)> completer{};
 
     KL_BEGIN_FIELDS(CommandDef)
         KL_FIELD(CommandDef, name, "Name", 0, 0),

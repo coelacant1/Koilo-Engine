@@ -15,6 +15,7 @@
 #include <vulkan/vulkan.h>
 #include <vector>
 #include <mutex>
+#include <unordered_map>
 
 // Forward-declare VulkanBackend so callers don't need the full header.
 namespace koilo { class VulkanBackend; }
@@ -70,6 +71,18 @@ public:
     void  UpdateTexture(RHITexture handle, const void* data,
                         size_t dataSize,
                         uint32_t width, uint32_t height) override;
+    bool  SupportsTextureSubUpdate() const override { return true; }
+    void  UpdateTextureRegion(RHITexture handle, const void* data,
+                              size_t dataSize,
+                              uint32_t x, uint32_t y,
+                              uint32_t w, uint32_t h) override;
+    bool  StageTextureFull(RHITexture handle, const void* data,
+                           size_t dataSize,
+                           uint32_t w, uint32_t h) override;
+    bool  StageTextureRegion(RHITexture handle, const void* data,
+                             size_t dataSize,
+                             uint32_t x, uint32_t y,
+                             uint32_t w, uint32_t h) override;
     void* MapBuffer(RHIBuffer handle) override;
     void  UnmapBuffer(RHIBuffer handle) override;
 
@@ -168,6 +181,12 @@ private:
         uint32_t       width   = 0;
         uint32_t       height  = 0;
         VkFormat       format  = VK_FORMAT_UNDEFINED;
+        // Tracks the image's current layout so partial uploads can
+        // transition from the correct prior layout (preserving pixels).
+        // Authoritative only for textures whose layout transitions are
+        // owned by Update*Texture* - render targets / swapchain images
+        // are managed elsewhere.
+        VkImageLayout  currentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     };
 
     struct ShaderSlot {
@@ -235,6 +254,7 @@ private:
     VkCommandBuffer  cmdBuffer_ = VK_NULL_HANDLE;
     VkFence          frameFence_ = VK_NULL_HANDLE;
     bool             frameActive_ = false;
+    bool             insideRenderPass_ = false;
 
     // RHI handle wrapping the display's swapchain render pass.
     // Created lazily in GetSwapchainRenderPass(). Not destroyed
@@ -259,6 +279,35 @@ private:
     static constexpr uint32_t kMaxFramesInFlight = 2;
     VkDescriptorPool      descriptorPools_[kMaxFramesInFlight] = {};
     uint32_t              currentPoolIndex_ = 0;
+
+    // -- Per-frame-in-flight staging arena for Stage* texture uploads.
+    // One arena per `currentPoolIndex_` slot; the slot's prior submission
+    // is guaranteed complete by the time BeginFrame() returns (display
+    // fence-wait), so we may safely overwrite its staging memory and
+    // free any pending grow-destroys.
+    struct StagingArena {
+        VkBuffer       buffer   = VK_NULL_HANDLE;
+        VkDeviceMemory memory   = VK_NULL_HANDLE;
+        void*          mapped   = nullptr;
+        size_t         capacity = 0;
+        size_t         offset   = 0;
+    };
+    StagingArena stagingArenas_[kMaxFramesInFlight];
+    // Buffers retired by a grow event; freed on the slot's next BeginFrame
+    // (after fence-wait) so that the GPU can no longer reference them.
+    struct PendingStaging { VkBuffer b; VkDeviceMemory m; };
+    std::vector<PendingStaging> stagingPendingDestroy_[kMaxFramesInFlight];
+
+    /// Ensure the active staging arena (`stagingArenas_[currentPoolIndex_]`)
+    /// has at least `bytes` of free space from its current offset.  Grows
+    /// by power-of-two on demand, retiring the old buffer for safe destruction
+    /// at the slot's next reset.  Returns false on allocation failure.
+    bool EnsureStagingCapacity(size_t bytes);
+    /// Reset the staging arena for the active slot (called from BeginFrame
+    /// AFTER the per-slot fence has been waited).
+    void ResetActiveStagingSlot();
+    /// Destroy all staging arenas and queued retirees.  Called from Shutdown.
+    void DestroyAllStagingArenas();
 
     // Scene pipeline layout (3 descriptor sets)
     VkDescriptorSetLayout sceneSetLayout_    = VK_NULL_HANDLE; // set 0: 4 bindings
@@ -306,6 +355,16 @@ private:
 
     // Deferred buffer deletion queue - same lifecycle as textures.
     std::vector<BufferSlot> pendingBufferDeletes_[kMaxFramesInFlight];
+
+    // Per-frame cache of (texture id, set, binding) -> descriptor set.
+    // BindTexture is called once per UI batch flush; without caching, every
+    // call would do a fresh vkAllocateDescriptorSets + vkUpdateDescriptorSets
+    // even when re-binding the same texture (e.g. font atlas) several times
+    // per frame. Pool-reset at frame start invalidates these handles, so we
+    // simply clear() the map there. Key: tex id (32) | set (8) | binding (8)
+    // | layout-bucket (8) where layout-bucket distinguishes scene vs blit.
+    std::unordered_map<uint64_t, VkDescriptorSet>
+        textureBindCache_[kMaxFramesInFlight];
 
     // -- Dynamic uniform ring buffer -----------------------------------
     // Per-draw UBO data (e.g. transform matrices) is written here instead

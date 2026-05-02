@@ -27,16 +27,7 @@ public:
     static void TestParameterizedConstructor();
 
     // Method tests
-    static void TestBoundary();
-    static void TestDiffuse();
-    static void TestAdvect();
-    static void TestSineField();
-    static void TestStepField();
-    static void TestMovingSquareField();
-    static void TestSpiralField();
-    static void TestGetCountX();
-    static void TestGetCountY();
-    static void TestRenderDensity();
+
     // ... add tests for remaining 5 methods
 
     // Functionality tests
@@ -47,10 +38,6 @@ public:
     /**
      * @brief Runs all test methods.
      */
-    static void TestGetVectorAtPosition();
-    static void TestRenderVector();
-    static void TestSetPosition();
-    static void TestSetRotation();
-    static void TestSetSize();
+
     static void RunAllTests();
 };

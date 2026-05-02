@@ -62,8 +62,8 @@ void TestRectangle2D::TestGetCorners() {
     // Expected corners: (-2,-1), (2,-1), (2,1), (-2,1)
     bool foundBottomLeft = false;
     bool foundBottomRight = false;
-    bool foundTopLeft = false;
-    bool foundTopRight = false;
+    [[maybe_unused]] bool foundTopLeft = false;
+    [[maybe_unused]] bool foundTopRight = false;
 
     for (int i = 0; i < 4; i++) {
         Vector2D corner = corners.corners[i];

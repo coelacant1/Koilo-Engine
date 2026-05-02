@@ -23,14 +23,16 @@
 #include "texture_cache.hpp"
 #include "material_binder.hpp"
 #include "../../../registry/reflect_macros.hpp"
+#include "../../../core/geometry/ray.hpp"
 
+#include <cstdint>
 #include <functional>
 #include <string>
 #include <unordered_map>
 #include <memory>
 #include <vector>
 
-namespace koilo      { class Scene; class CameraBase; class KSLMaterial; }
+namespace koilo      { class Scene; class CameraBase; class KSLMaterial; class Canvas2D; class DebugDraw; }
 namespace koilo::rhi { class IRHIDevice; }
 namespace ksl        { class KSLRegistry; }
 
@@ -155,7 +157,7 @@ struct FullscreenVertex {
  * sky rendering, debug lines, and overlay compositing are written once
  * here instead of being duplicated across backend implementations.
  */
-class RenderPipeline : public IGPURenderBackend {
+class RenderPipeline final : public IGPURenderBackend {
 public:
     RenderPipeline();
     ~RenderPipeline() override;
@@ -187,6 +189,17 @@ public:
     void CompositeCanvasOverlays(int screenW, int screenH) override;
     void PrepareFrame() override;
     void FinishFrame() override;
+
+    /// Stage canvas overlay texture uploads via the active frame command
+    /// buffer.  MUST be called after PrepareFrame() / BeginFrame() but
+    /// BEFORE any render pass is opened (vkCmdCopyBufferToImage is forbidden
+    /// inside a render pass).  When this is called, a subsequent
+    /// CompositeCanvasOverlays() in the same frame skips its own upload
+    /// step and only issues fullscreen-quad draws.
+    ///
+    /// Backends without proper frame-command-buffer staging fall back to
+    /// the legacy synchronous path (see IRHIDevice::StageTextureFull).
+    void StageCanvasOverlays(int screenW, int screenH);
 
     // -- Granular render methods (for render graph integration) --------
 
@@ -220,6 +233,25 @@ public:
     /// shader sources from the registry.
     void InvalidatePipelineCache();
 
+    /// Underlying RHI handle id of the offscreen color render target
+    /// (the texture the scene is rendered into before BlitToScreen).
+    /// Returns 0 before Initialize() or after Shutdown().  The id can
+    /// change when the target is recreated on resize -- callers should
+    /// re-read it each frame instead of caching long term.
+    /// Used by the editor viewport widget to display the live scene.
+    std::uint32_t GetOffscreenColorTextureId() const {
+        return offscreenColor_.id;
+    }
+    std::uint32_t GetOffscreenWidth()  const { return offscreenWidth_;  }
+    std::uint32_t GetOffscreenHeight() const { return offscreenHeight_; }
+
+    /// Build a world-space picking ray from a point in normalized device
+    /// coordinates ([-1,+1] X right, [-1,+1] Y up) using the same camera
+    /// math the renderer uses (LookAt + Perspective/Ortho), but WITHOUT
+    /// the Vulkan depth remap so unprojection works in canonical clip
+    /// space.  Returns a zero-direction ray if camera is null.
+    Ray BuildPickRay(CameraBase* camera, float ndcX, float ndcY) const;
+
 private:
     // -- Off-screen render target management ---------------------------
 
@@ -242,6 +274,12 @@ private:
                       const float* view, const float* proj,
                       const float* cameraPos);
     void RenderDebugLines(const float* view, const float* proj);
+    // Expand DebugDraw boxes (12 edges each) and spheres (3 great circles)
+    // into line vertices appended to debugLineScratch_. depthTestPass selects
+    // which subset to emit; depthTestedCount is incremented when emitting
+    // depth-tested verts so the draw split stays correct.
+    void AppendDebugShapes(koilo::DebugDraw& dd, bool depthTestPass,
+                           size_t& depthTestedCount);
     void UploadLights(Scene* scene);
     void DrawFullscreenQuad(RHIPipeline pipeline, RHITexture texture, float alpha = 1.0f);
 
@@ -287,15 +325,48 @@ private:
     RHIBuffer sceneQuadVBO_        = {};  // RHIVertex format (sky/effects via scene pipeline)
     RHIBuffer debugLineVBO_        = {};
 
+    // -- DebugLines upload cache (P6) ----------------------------------
+    // Skip the per-frame vertex rebuild + UpdateBuffer when the source
+    // line set hasn't changed.  Tracks the DebugDraw version that was
+    // last uploaded plus the split between depth-tested / no-depth lines.
+    std::vector<DebugLineVertex> debugLineScratch_;
+    uint64_t debugLinesVersionCached_ = 0;
+    size_t   debugLineDepthCount_     = 0;
+    size_t   debugLineUploadCount_    = 0;
+
     // Uniform buffers
     RHIBuffer transformUBO_        = {};
+    RHIBuffer skyTransformUBO_     = {};  // dedicated UBO for sky pass (B1)
     RHIBuffer sceneUBO_            = {};
     RHIBuffer lightSSBO_           = {};
     RHIBuffer audioSSBO_           = {};
     RHIBuffer overlayUBO_          = {};
 
-    // Scene pipeline cache: shader name -> compiled pipeline
-    std::unordered_map<std::string, RHIPipeline> scenePipelineCache_;
+    // -- Light upload dirty tracking (B2) ------------------------------
+    // A snapshot of the last gpuLights / lightCount uploaded.  Lights
+    // typically don't change every frame, so we skip the SSBO + scene
+    // UBO uploads if the contents would be byte-identical.
+    GPULight lastUploadedLights_[kMaxGPULights] = {};
+    int      lastUploadedLightCount_            = -1;
+
+    // Scene pipeline cache: numeric (shaderId, flags) key -> compiled pipeline (B5)
+    // shaderId is interned at resolve time to avoid std::string allocation/hashing
+    // on the per-frame lookup path.
+    struct PipelineKey {
+        uint32_t shaderId;
+        uint16_t flags;
+        bool operator==(const PipelineKey& o) const noexcept {
+            return shaderId == o.shaderId && flags == o.flags;
+        }
+    };
+    struct PipelineKeyHash {
+        size_t operator()(const PipelineKey& k) const noexcept {
+            return (static_cast<size_t>(k.shaderId) * 0x9E3779B97F4A7C15ULL) ^ k.flags;
+        }
+    };
+    std::unordered_map<std::string, uint32_t> shaderIdMap_;
+    uint32_t nextShaderId_ = 1;
+    std::unordered_map<PipelineKey, RHIPipeline, PipelineKeyHash> scenePipelineCache_;
 
     // Render pass for blit / overlay (renders to swapchain)
     RHIRenderPass   swapchainPass_  = {};
@@ -307,6 +378,27 @@ private:
     float    sceneCameraPos_[4] = {};
     float    sceneInvVP_[16]    = {};
     bool     scenePassActive_   = false;
+
+    // Persistent staging buffer + per-canvas overlay textures.
+    // Each Canvas2D pointer maps to its own GPU texture so that partial
+    // (dirty-rect) uploads don't smear pixels from one canvas into
+    // another.  modVersion gates uploads to the frames where the canvas
+    // actually changed; lastDirtyRect is unioned with the current dirty
+    // rect to also re-upload pixels cleared since the prior frame.
+    std::vector<uint8_t> overlayStagingRGBA_;
+    struct OverlayCanvasState {
+        RHITexture texture     = {};
+        uint32_t   texW        = 0;
+        uint32_t   texH        = 0;
+        uint64_t   lastModVer  = ~uint64_t{0};
+        bool       hasUploaded = false;
+        int        lastMinX = 0, lastMinY = 0, lastMaxX = -1, lastMaxY = -1;
+    };
+    std::unordered_map<koilo::Canvas2D*, OverlayCanvasState> overlayStates_;
+    /// Set true by StageCanvasOverlays() so that a subsequent
+    /// CompositeCanvasOverlays() in the same frame skips the upload step
+    /// and only issues fullscreen-quad draws.  Reset in PrepareFrame().
+    bool overlayStagedThisFrame_ = false;
 
     KL_BEGIN_FIELDS(RenderPipeline)
         /* No reflected fields. */

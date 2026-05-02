@@ -34,6 +34,10 @@ bool PhysicsModule::Initialize(KoiloKernel& kernel) {
 
     kernel.Services().RegisterTyped<ICommandProvider>("commands.physics", this);
 
+    // Publish the live PhysicsWorld so peer modules (e.g. AerodynamicsModule)
+    // can attach pre-step callbacks instead of stepping their own clock.
+    kernel.Services().RegisterTyped<PhysicsWorld>("physics.world", world_.get());
+
     return true;
 }
 
@@ -76,7 +80,7 @@ std::vector<CommandDef> PhysicsModule::GetCommands() const {
 
 void PhysicsModule::Update(float dt) {
     if (world_) {
-        world_->Step();
+        world_->Step(dt);
     }
 }
 
@@ -85,6 +89,9 @@ void PhysicsModule::Render(Color888*, int, int) {
 }
 
 void PhysicsModule::Shutdown() {
+    if (kernel_) {
+        kernel_->Services().Unregister("physics.world");
+    }
     world_.reset();
 }
 

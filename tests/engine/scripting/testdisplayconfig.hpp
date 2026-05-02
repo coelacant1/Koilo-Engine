@@ -46,5 +46,7 @@ public:
     /**
      * @brief Runs all test methods.
      */
+    static void TestGetCapFPS();
+    static void TestSetCapFPS();
     static void RunAllTests();
 };

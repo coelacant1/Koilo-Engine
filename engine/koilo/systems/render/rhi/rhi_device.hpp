@@ -76,6 +76,58 @@ public:
                                const void* data, size_t dataSize,
                                uint32_t width, uint32_t height) = 0;
 
+    /// Returns true if the backend supports partial texture uploads via
+    /// UpdateTextureRegion.  When false, callers should perform a full
+    /// UpdateTexture and ignore region helpers.  Used by the canvas
+    /// overlay path to opt into dirty-rect uploads only when the active
+    /// backend can preserve untouched pixels.
+    virtual bool SupportsTextureSubUpdate() const { return false; }
+
+    /// Upload `data` (tightly packed, srcRowPitch = w * bytesPerPixel)
+    /// into the rectangle [x, y, x+w, y+h) of texture `handle`,
+    /// preserving pixels outside the region.  Default impl falls back
+    /// to a full UpdateTexture treating `data` as a w*h image (which
+    /// is incorrect for partial uploads - callers must gate on
+    /// SupportsTextureSubUpdate()).
+    virtual void UpdateTextureRegion(RHITexture handle,
+                                     const void* data, size_t dataSize,
+                                     uint32_t x, uint32_t y,
+                                     uint32_t w, uint32_t h) {
+        (void)x; (void)y;
+        UpdateTexture(handle, data, dataSize, w, h);
+    }
+
+    /// Stage a full-texture upload as part of the active frame's command
+    /// buffer.  Callers MUST invoke this between BeginFrame() and the first
+    /// BeginRenderPass() / BeginSwapchainRenderPass() (vkCmdCopyBufferToImage
+    /// is not permitted inside a render pass).
+    ///
+    /// On backends that implement this (e.g. Vulkan), the upload is recorded
+    /// into the frame command buffer using a per-frame-in-flight persistent
+    /// staging buffer - no per-call vkAllocateMemory / vkQueueSubmit /
+    /// vkQueueWaitIdle.  The default impl falls back to UpdateTexture which
+    /// on most backends is a synchronous one-shot submit.
+    ///
+    /// Returns true on success.  On failure (e.g. no active frame, allocation
+    /// failure), callers should NOT advance dirty-tracking state because the
+    /// GPU contents may be stale.
+    virtual bool StageTextureFull(RHITexture handle,
+                                  const void* data, size_t dataSize,
+                                  uint32_t w, uint32_t h) {
+        UpdateTexture(handle, data, dataSize, w, h);
+        return true;
+    }
+
+    /// Stage a region upload as part of the active frame's command buffer.
+    /// See StageTextureFull for semantics and call-site requirements.
+    virtual bool StageTextureRegion(RHITexture handle,
+                                    const void* data, size_t dataSize,
+                                    uint32_t x, uint32_t y,
+                                    uint32_t w, uint32_t h) {
+        UpdateTextureRegion(handle, data, dataSize, x, y, w, h);
+        return true;
+    }
+
     /// Map a host-visible buffer.  Returns nullptr on failure.
     virtual void* MapBuffer(RHIBuffer handle) = 0;
     virtual void  UnmapBuffer(RHIBuffer handle) = 0;

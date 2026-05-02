@@ -36,11 +36,19 @@ public:
     static void TestClearCollisionCallbacks();
     static void TestStep();
 
+    // Heightfield + mesh raycast.
+
     // Edge case & integration tests
     static void TestEdgeCases();
+
+    // bullet flag plumbing in PhysicsWorld.
+
+    // speculative-contact narrowphase.
 
     /**
      * @brief Runs all test methods.
      */
+    static void TestComputeDiagnostics();
+    static void TestGetDebugContactCount();
     static void RunAllTests();
 };

@@ -27,7 +27,7 @@ ModuleId ModuleManager::RegisterModule(const ModuleDesc& desc, Cap grantedCaps) 
 
     ModuleId id = nextId_++;
     size_t idx = entries_.size();
-    entries_.push_back({desc, id, ModuleState::Registered, grantedCaps});
+    entries_.push_back({desc, id, ModuleState::Registered, grantedCaps, {}});
     nameIndex_[desc.name] = idx;
 
     return id;
@@ -97,6 +97,7 @@ void ModuleManager::TickAll(float dt) {
 
         if (entry.state != ModuleState::Running || !entry.desc.Tick) continue;
 
+#if defined(KL_MODULE_FAULT_ISOLATION) && KL_MODULE_FAULT_ISOLATION
         try {
             entry.desc.Tick(dt);
             // Successful tick clears consecutive fault counter
@@ -130,6 +131,15 @@ void ModuleManager::TickAll(float dt) {
             KL_ERR("Kernel", "Module '%s' threw unknown exception; permanently disabled",
                    entry.desc.name);
         }
+#else
+        // D2: release-mode fast path. No try/catch on the per-frame
+        // module tick. An exception from a module is therefore
+        // unrecoverable in this build flavour; configure with
+        // -DKL_MODULE_FAULT_ISOLATION=ON if you need automatic fault
+        // recovery / restart at the cost of unwind tables and
+        // disabled inlining.
+        entry.desc.Tick(dt);
+#endif
     }
 }
 

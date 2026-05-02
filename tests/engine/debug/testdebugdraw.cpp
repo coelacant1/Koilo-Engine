@@ -84,6 +84,12 @@ void TestDebugDraw::TestEdgeCases() {
 
 // ========== Test Runner ==========
 
+void TestDebugDraw::TestDrawOrientedBox() {
+    // TODO: Implement test for DrawOrientedBox()
+    DebugDraw obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
 void TestDebugDraw::RunAllTests() {
     RUN_TEST(TestDefaultConstructor);
     RUN_TEST(TestParameterizedConstructor);
@@ -99,4 +105,5 @@ void TestDebugDraw::RunAllTests() {
     RUN_TEST(TestDrawGrid);
     RUN_TEST(TestDrawText);
     RUN_TEST(TestEdgeCases);
+    RUN_TEST(TestDrawOrientedBox);
 }

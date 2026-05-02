@@ -39,9 +39,30 @@ void TestSphere::TestEdgeCases() {
     TEST_ASSERT_VECTOR3D_EQUAL(Vector3D(-10.0f, -20.0f, -30.0f), negSphere.position);
 }
 
+void TestSphere::TestCollide() {
+    // TODO: Implement test for Collide()
+    Sphere obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestSphere::TestIsIntersecting() {
+    // TODO: Implement test for IsIntersecting()
+    Sphere obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestSphere::TestUpdate() {
+    // TODO: Implement test for Update()
+    Sphere obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
 void TestSphere::RunAllTests() {
     RUN_TEST(TestParameterizedConstructor);
     RUN_TEST(TestGetRadius);
     RUN_TEST(TestDefaultConstructor);
     RUN_TEST(TestEdgeCases);
+    RUN_TEST(TestCollide);
+    RUN_TEST(TestIsIntersecting);
+    RUN_TEST(TestUpdate);
 }

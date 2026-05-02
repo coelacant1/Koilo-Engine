@@ -5,7 +5,7 @@ namespace koilo {
 
 koilo::Collider::Collider(ColliderType type)
     : type(type), isTrigger(false), isEnabled(true), layer(0),
-      tag(""), material(), owner(nullptr) {
+      tag(""), material(), owner(nullptr), localOffset_() {
 }
 
 koilo::Collider::~Collider() {

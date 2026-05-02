@@ -16,21 +16,42 @@ MessageBus::MessageBus(size_t ringCapacity)
 
 MessageBus::SubscriptionId MessageBus::Subscribe(MessageType type, Handler handler) {
     SubscriptionId id = nextSubId_++;
-    subscriptions_.push_back({id, type, false, std::move(handler)});
+    subsByType_[type].push_back({id, type, false, std::move(handler)});
+    ++totalSubscribers_;
     return id;
 }
 
 MessageBus::SubscriptionId MessageBus::SubscribeAll(Handler handler) {
     SubscriptionId id = nextSubId_++;
-    subscriptions_.push_back({id, MSG_NONE, true, std::move(handler)});
+    wildcardSubs_.push_back({id, MSG_NONE, true, std::move(handler)});
+    ++totalSubscribers_;
     return id;
 }
 
 void MessageBus::Unsubscribe(SubscriptionId id) {
-    subscriptions_.erase(
-        std::remove_if(subscriptions_.begin(), subscriptions_.end(),
-            [id](const Subscription& s) { return s.id == id; }),
-        subscriptions_.end());
+    // Wildcard bucket first (small, hot).
+    {
+        auto it = std::find_if(wildcardSubs_.begin(), wildcardSubs_.end(),
+            [id](const Subscription& s) { return s.id == id; });
+        if (it != wildcardSubs_.end()) {
+            wildcardSubs_.erase(it);
+            if (totalSubscribers_) --totalSubscribers_;
+            return;
+        }
+    }
+    // Otherwise scan type buckets. Subscriptions are infrequent; this
+    // rare O(unique-types + matching-bucket) scan is acceptable.
+    for (auto bucketIt = subsByType_.begin(); bucketIt != subsByType_.end(); ++bucketIt) {
+        auto& bucket = bucketIt->second;
+        auto it = std::find_if(bucket.begin(), bucket.end(),
+            [id](const Subscription& s) { return s.id == id; });
+        if (it != bucket.end()) {
+            bucket.erase(it);
+            if (totalSubscribers_) --totalSubscribers_;
+            if (bucket.empty()) subsByType_.erase(bucketIt);
+            return;
+        }
+    }
 }
 
 void MessageBus::Send(const Message& msg) {
@@ -77,16 +98,19 @@ size_t MessageBus::PendingCount() const {
 }
 
 size_t MessageBus::SubscriberCount() const {
-    return subscriptions_.size();
+    return totalSubscribers_;
 }
 
 void MessageBus::DeliverToSubscribers(const Message& msg) {
     ++totalDispatched_;
-    for (auto& sub : subscriptions_) {
-        if (sub.wildcard || sub.type == msg.type) {
-            sub.handler(msg);
-        }
+    // D1: O(bucket + wildcard) instead of O(all subs); no per-handler
+    // type compare. The bucket lookup itself is O(1) average on the
+    // unordered_map. Bail early when the bucket is empty.
+    auto it = subsByType_.find(msg.type);
+    if (it != subsByType_.end()) {
+        for (auto& sub : it->second) sub.handler(msg);
     }
+    for (auto& sub : wildcardSubs_) sub.handler(msg);
 }
 
 } // namespace koilo

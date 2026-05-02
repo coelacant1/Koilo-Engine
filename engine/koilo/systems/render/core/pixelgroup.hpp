@@ -31,7 +31,7 @@ namespace koilo {
  * and arbitrary pixel arrangements.
  *
  */
-class PixelGroup : public IPixelGroup {
+class PixelGroup final : public IPixelGroup {
 private:
     static constexpr uint32_t kInvalidIndex = 65535;
 
@@ -44,6 +44,16 @@ private:
     std::vector<uint32_t> down; ///< Indices of pixels below each pixel.
     std::vector<uint32_t> left; ///< Indices of pixels to the left of each pixel.
     std::vector<uint32_t> right; ///< Indices of pixels to the right of each pixel.
+
+    /// Pre-computed per-pixel coordinates. The pixel layout is invariant
+    /// for the lifetime of the PixelGroup, so we materialise the entire
+    /// coordinate buffer once and serve all subsequent GetCoordinate /
+    /// GetCoordinatesArray calls from it. Avoids per-call modulo,
+    /// division, and Mathematics::Map work in tight render loops.
+    mutable std::vector<Vector2D> coordinatesCache;
+    mutable bool coordinatesCacheValid = false;
+
+    void EnsureCoordinatesCache() const;
 
     bool isRectangular = false; ///< Indicates if the group forms a rectangular grid.
     uint32_t pixelCount = 0; ///< Total number of pixels in the group.
@@ -79,6 +89,7 @@ public:
     Vector2D GetCenterCoordinate() override;
     Vector2D GetSize() override;
     Vector2D GetCoordinate(uint32_t count) override;
+    const Vector2D* GetCoordinatesArray() override;
     int GetPixelIndex(Vector2D location) override;
     Color888* GetColor(uint32_t count) override;
     Color888* GetColors() override;

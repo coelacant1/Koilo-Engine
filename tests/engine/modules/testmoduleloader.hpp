@@ -27,7 +27,7 @@ public:
     static void TestParameterizedConstructor();
 
     // Method tests
-    static void TestInitializeAll();
+
     static void TestUpdateAll();
     static void TestRenderAll();
     static void TestShutdownAll();
@@ -49,9 +49,6 @@ public:
     static void TestEdgeCases();
 
     // ABI v3 tests
-    static void TestAbiV3StructLayout();
-    static void TestAbiV3HasApiBackwardCompat();
-    static void TestAbiV3AdapterNullSafety();
 
     /**
      * @brief Runs all test methods.

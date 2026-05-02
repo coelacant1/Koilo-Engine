@@ -11,34 +11,34 @@ using namespace koilo;
 
 void TestProfiler::TestDefaultConstructor() {
     // Profiler is a singleton
-    Profiler& profiler = Profiler::GetInstance();
+    [[maybe_unused]] Profiler& profiler = Profiler::GetInstance();
     TEST_ASSERT_TRUE(true);
 }
 
 void TestProfiler::TestParameterizedConstructor() {
     // Profiler is a singleton - no parameterized constructor
-    Profiler& profiler = Profiler::GetInstance();
+    [[maybe_unused]] Profiler& profiler = Profiler::GetInstance();
     TEST_ASSERT_TRUE(true);
 }
 
 // ========== Method Tests ==========
 
 void TestProfiler::TestEnable() {
-    Profiler& profiler = Profiler::GetInstance();
+    [[maybe_unused]] Profiler& profiler = Profiler::GetInstance();
     
     profiler.Enable();
     TEST_ASSERT_EQUAL(true, profiler.IsEnabled());
 }
 
 void TestProfiler::TestDisable() {
-    Profiler& profiler = Profiler::GetInstance();
+    [[maybe_unused]] Profiler& profiler = Profiler::GetInstance();
     
     profiler.Disable();
     TEST_ASSERT_EQUAL(false, profiler.IsEnabled());
 }
 
 void TestProfiler::TestIsEnabled() {
-    Profiler& profiler = Profiler::GetInstance();
+    [[maybe_unused]] Profiler& profiler = Profiler::GetInstance();
     
     profiler.Enable();
     TEST_ASSERT_EQUAL(true, profiler.IsEnabled());
@@ -48,7 +48,7 @@ void TestProfiler::TestIsEnabled() {
 }
 
 void TestProfiler::TestBeginFrame() {
-    Profiler& profiler = Profiler::GetInstance();
+    [[maybe_unused]] Profiler& profiler = Profiler::GetInstance();
     profiler.Enable();
     profiler.ClearStats();
     
@@ -60,7 +60,7 @@ void TestProfiler::TestBeginFrame() {
 }
 
 void TestProfiler::TestEndFrame() {
-    Profiler& profiler = Profiler::GetInstance();
+    [[maybe_unused]] Profiler& profiler = Profiler::GetInstance();
     profiler.Enable();
     profiler.ClearStats();
     
@@ -73,7 +73,7 @@ void TestProfiler::TestEndFrame() {
 }
 
 void TestProfiler::TestGetLastFrameTime() {
-    Profiler& profiler = Profiler::GetInstance();
+    [[maybe_unused]] Profiler& profiler = Profiler::GetInstance();
     profiler.Enable();
     
     profiler.BeginFrame();
@@ -88,7 +88,7 @@ void TestProfiler::TestGetLastFrameTime() {
 }
 
 void TestProfiler::TestGetFPS() {
-    Profiler& profiler = Profiler::GetInstance();
+    [[maybe_unused]] Profiler& profiler = Profiler::GetInstance();
     profiler.Enable();
     profiler.ClearStats();
     
@@ -107,7 +107,7 @@ void TestProfiler::TestGetFPS() {
 }
 
 void TestProfiler::TestClearStats() {
-    Profiler& profiler = Profiler::GetInstance();
+    [[maybe_unused]] Profiler& profiler = Profiler::GetInstance();
     profiler.Enable();
     
     // Record some frames
@@ -124,7 +124,7 @@ void TestProfiler::TestClearStats() {
 }
 
 void TestProfiler::TestPrintStats() {
-    Profiler& profiler = Profiler::GetInstance();
+    [[maybe_unused]] Profiler& profiler = Profiler::GetInstance();
     profiler.Enable();
     profiler.ClearStats();
     
@@ -138,7 +138,7 @@ void TestProfiler::TestPrintStats() {
 // ========== Edge Cases ==========
 
 void TestProfiler::TestEdgeCases() {
-    Profiler& profiler = Profiler::GetInstance();
+    [[maybe_unused]] Profiler& profiler = Profiler::GetInstance();
     
     // Test GetFPS before any frames
     profiler.ClearStats();

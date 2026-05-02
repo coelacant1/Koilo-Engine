@@ -12,7 +12,7 @@ using namespace koilo;
 
 void TestDebugRenderer::TestDefaultConstructor() {
     // TODO: Implement test for default constructor
-    DebugRenderer obj;
+    [[maybe_unused]] DebugRenderer obj;
     TEST_IGNORE_MESSAGE("Stub");
 }
 

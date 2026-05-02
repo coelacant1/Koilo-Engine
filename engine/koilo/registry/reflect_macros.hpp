@@ -3,18 +3,23 @@
 
 #include <type_traits>
 #include <cstring>
+#include <new>
+#include <utility>
 #include "registry.hpp"
 #include "reflect_make.hpp"
 #include "global_registry.hpp"
 #include "type_registry.hpp"
 
 namespace koilo::detail {
-    // GCC 15 incorrectly reports types with deleted implicit copy ctors as
-    // copy-constructible in SFINAE contexts.  Use trivially-copyable as a
-    // safe, portable proxy: trivially-copyable types get memcpy (always
-    // correct), everything else gets nullptr (caller already falls back to
-    // memcpy).  Proper copy_construct for non-trivial types can be added
-    // later via an explicit KL_COPYABLE opt-in macro.
+    // Explicit opt-in: most reflected types use trivial-copyable detection
+    // (memcpy) or no copy at all (nullptr). Types that need real copy
+    // semantics (e.g. ones holding std::vector / std::string) opt in via
+    // KL_COPYABLE(Type) below, which specialises this helper.
+    //
+    // Why opt-in: GCC 15 incorrectly reports types holding std::mutex /
+    // std::once_flag / std::atomic as copy-constructible in both
+    // std::is_copy_constructible AND expression-SFINAE contexts, so we
+    // can't auto-detect safely.
     template<typename T>
     struct CopyConstructHelper {
         static void Invoke(void* dst, const void* src) {
@@ -23,7 +28,49 @@ namespace koilo::detail {
         static constexpr void (*fn)(void*, const void*) =
             std::is_trivially_copyable_v<T> ? &Invoke : nullptr;
     };
+
+    // Default copy-assign: memcpy for trivially-destructible types (safe
+    // since they manage no resources). Types that own resources (vectors,
+    // strings, shared_ptrs) must opt in via KL_END_DESCRIBE_COPYABLE.
+    // We use is_trivially_destructible (not is_copy_assignable) because
+    // GCC 15 falsely reports types holding std::unique_ptr / std::mutex
+    // as copy-assignable in SFINAE contexts.
+    template<typename T>
+    struct CopyAssignHelper {
+        static void Invoke(void* dst, const void* src) {
+            std::memcpy(dst, src, sizeof(T));
+        }
+        static constexpr void (*fn)(void*, const void*) =
+            std::is_trivially_destructible_v<T> ? &Invoke : nullptr;
+    };
 } // namespace koilo::detail
+
+// Opt a non-trivially-copyable reflected type in to proper copy semantics.
+// Use INSIDE the class definition in place of KL_END_DESCRIBE - it expands
+// the same way but installs a placement-new copy_construct instead of
+// memcpy. Required for any reflected struct holding std::vector,
+// std::string, std::shared_ptr, etc. that script code may need to copy
+// (e.g. via `target.field = source` assignment).
+#define KL_END_DESCRIBE_COPYABLE(CLASS) \
+        }; \
+        static const koilo::ClassDesc cd{ \
+            #CLASS, \
+            CLASS::Fields(), \
+            CLASS::Methods(), \
+            _ctors, sizeof(_ctors)/sizeof(_ctors[0]), \
+            sizeof(CLASS), \
+            +[](void* p){ delete static_cast<CLASS*>(p); }, \
+            +[](void* dst, const void* src){ \
+                ::new (dst) CLASS(*static_cast<const CLASS*>(src)); \
+            }, \
+            +[](void* dst, const void* src){ \
+                *static_cast<CLASS*>(dst) = *static_cast<const CLASS*>(src); \
+            } \
+        }; \
+        static const koilo::AutoRegistrar _koilo_autoreg_##CLASS(&cd); \
+        KL_REGISTER_TYPE_INFO(CLASS, cd) \
+        return cd; \
+    }
 
 #if KL_HAS_RTTI
 #define KL_FIELD(CLASS, MEMBER, DESC, MINv, MAXv) \
@@ -179,7 +226,8 @@ public: \
             _ctors, sizeof(_ctors)/sizeof(_ctors[0]), \
             sizeof(CLASS), \
             +[](void* p){ delete static_cast<CLASS*>(p); }, \
-            koilo::detail::CopyConstructHelper<CLASS>::fn \
+            koilo::detail::CopyConstructHelper<CLASS>::fn, \
+            koilo::detail::CopyAssignHelper<CLASS>::fn \
         }; \
         static const koilo::AutoRegistrar _koilo_autoreg_##CLASS(&cd); \
         KL_REGISTER_TYPE_INFO(CLASS, cd) \

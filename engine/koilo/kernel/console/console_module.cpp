@@ -196,13 +196,14 @@ void ConsoleModule::RegisterBuiltinCommands() {
             for (auto& m : mods) {
                 const char* stateStr = "?";
                 switch (m.state) {
-                    case ModuleState::Registered:   stateStr = "registered"; break;
+                    case ModuleState::Registered:    stateStr = "registered"; break;
                     case ModuleState::Resolving:     stateStr = "resolving"; break;
                     case ModuleState::Initialized:   stateStr = "initialized"; break;
                     case ModuleState::Running:       stateStr = "running"; break;
                     case ModuleState::ShuttingDown:  stateStr = "shutting-down"; break;
                     case ModuleState::Unloaded:      stateStr = "unloaded"; break;
                     case ModuleState::Error:         stateStr = "error"; break;
+                    case ModuleState::Faulted:       stateStr = "faulted"; break;
                 }
                 ss << "  " << m.name << " v"
                    << (int)KL_VERSION_MAJOR(m.version) << "."
@@ -435,6 +436,7 @@ void ConsoleModule::RegisterBuiltinCommands() {
     RegisterTaskCommands(commands_);
     RegisterModuleFaultCommands(commands_);
     RegisterSchemaCommands(commands_);
+    RegisterScreenshotCommands(commands_);
 
     // -- listen --
     commands_.Register({"listen", "listen [port]", "Start TCP console server (default: 9090)",

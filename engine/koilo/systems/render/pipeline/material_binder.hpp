@@ -21,6 +21,7 @@
 #include <functional>
 #include <string>
 #include <unordered_map>
+#include <vector>
 #include <cstdint>
 #include "../../../registry/reflect_macros.hpp"
 
@@ -118,6 +119,14 @@ private:
     IRHIDevice*                                  device_;
     PipelineResolver                             resolver_;
     std::unordered_map<uintptr_t, MaterialBinding> cache_;
+
+    // Reusable scratch buffer for marshalling UBO data on the per-frame
+    // hot path. Grows on demand, never shrinks.  Replaces a per-call
+    // std::vector<uint8_t> allocation in Bind() / UpdateUniforms().
+    std::vector<uint8_t> stagingScratch_;
+
+    // Ensure the scratch buffer is at least `size` bytes; zero the prefix.
+    uint8_t* AcquireScratch(size_t size);
 
     // -- Std140 layout helpers ------------------------------------------
 

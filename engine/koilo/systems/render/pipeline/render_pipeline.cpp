@@ -158,6 +158,14 @@ bool RenderPipeline::Initialize() {
         desc.debugName = "Pipeline.TransformUBO";
         transformUBO_  = device->CreateBuffer(desc);
 
+        // Dedicated UBO for the sky pass (B1) - populated at most once
+        // per frame with identity model/view/proj + scene's
+        // inverseViewProj.  Avoids overwriting transformUBO_ and the
+        // matching restore upload that the original code performed.
+        desc.size        = sizeof(TransformUBO);
+        desc.debugName   = "Pipeline.SkyTransformUBO";
+        skyTransformUBO_ = device->CreateBuffer(desc);
+
         desc.size      = sizeof(SceneUBO);
         desc.debugName = "Pipeline.SceneUBO";
         sceneUBO_      = device->CreateBuffer(desc);
@@ -231,6 +239,7 @@ void RenderPipeline::Shutdown() {
     destroyBuffer(sceneQuadVBO_);
     destroyBuffer(debugLineVBO_);
     destroyBuffer(transformUBO_);
+    destroyBuffer(skyTransformUBO_);
     destroyBuffer(sceneUBO_);
     destroyBuffer(lightSSBO_);
     destroyBuffer(audioSSBO_);
@@ -239,6 +248,18 @@ void RenderPipeline::Shutdown() {
     KL_LOG("RenderPipeline", "Shutdown: destroying offscreen target...");
     // Destroy off-screen target
     DestroyOffscreenTarget();
+
+    // Release per-canvas overlay textures.
+    for (auto& kv : overlayStates_) {
+        if (kv.second.texture.IsValid())
+            config_.device->DestroyTexture(kv.second.texture);
+    }
+    overlayStates_.clear();
+    overlayStagingRGBA_.clear();
+    overlayStagingRGBA_.shrink_to_fit();
+
+    // Reset light upload cache (B2) so a fresh Initialize() re-uploads.
+    lastUploadedLightCount_ = -1;
 
     KL_LOG("RenderPipeline", "Shutdown: shutting down device...");
     // Shutdown owned device (after all GPU resources are released)
@@ -276,6 +297,7 @@ bool RenderPipeline::UsesTopLeftOrigin() const {
 
 void RenderPipeline::PrepareFrame() {
     if (!initialized_) return;
+    overlayStagedThisFrame_ = false;
     config_.device->BeginFrame();
 }
 
@@ -406,7 +428,9 @@ void RenderPipeline::RenderSky() {
 
     materialBinder_->UpdateUniforms(kmat);
 
-    // Identity transform for sky (screen-space quad)
+    // Identity transform for sky (screen-space quad).
+    // Uses a dedicated UBO so the scene's transformUBO_ is left intact
+    // - no per-frame "restore" upload needed (B1).
     TransformUBO skyUbo{};
     for (int i = 0; i < 4; ++i) {
         skyUbo.model[i * 4 + i]      = 1.0f;
@@ -415,8 +439,8 @@ void RenderPipeline::RenderSky() {
     }
     std::memcpy(skyUbo.inverseViewProj, sceneInvVP_,
                 sizeof(skyUbo.inverseViewProj));
-    device->UpdateBuffer(transformUBO_, &skyUbo, sizeof(skyUbo));
-    device->BindUniformBuffer(transformUBO_, 0, 0);
+    device->UpdateBuffer(skyTransformUBO_, &skyUbo, sizeof(skyUbo));
+    device->BindUniformBuffer(skyTransformUBO_, 0, 0);
 
     device->BindPipeline(binding->pipeline);
     device->BindUniformBuffer(binding->uniformBuffer, 1, 0,
@@ -434,15 +458,9 @@ void RenderPipeline::RenderSky() {
     device->BindVertexBuffer(sceneQuadVBO_);
     device->Draw(6);
 
-    // Restore camera transform for subsequent draws
-    TransformUBO camUbo{};
-    for (int i = 0; i < 4; ++i) camUbo.model[i * 4 + i] = 1.0f;
-    std::memcpy(camUbo.view, sceneView_, sizeof(camUbo.view));
-    std::memcpy(camUbo.projection, sceneProj_, sizeof(camUbo.projection));
-    std::memcpy(camUbo.cameraPos, sceneCameraPos_, sizeof(camUbo.cameraPos));
-    std::memcpy(camUbo.inverseViewProj, sceneInvVP_,
-                sizeof(camUbo.inverseViewProj));
-    device->UpdateBuffer(transformUBO_, &camUbo, sizeof(camUbo));
+    // Restore camera transform binding for subsequent draws.  The
+    // contents of transformUBO_ were not modified by the sky pass, so a
+    // simple rebind is sufficient - no UpdateBuffer required (B1).
     device->BindUniformBuffer(transformUBO_, 0, 0);
 }
 
@@ -498,53 +516,174 @@ void RenderPipeline::BlitToScreen(int screenW, int screenH) {
 
 // -- IGPURenderBackend: CompositeCanvasOverlays -------------------------
 
-void RenderPipeline::CompositeCanvasOverlays(int screenW, int screenH) {
+void RenderPipeline::StageCanvasOverlays(int /*screenW*/, int /*screenH*/) {
     auto& canvases = Canvas2D::ActiveList();
-    if (canvases.empty() || !initialized_) return;
-    if (!overlayPipeline_.IsValid() || !fullscreenQuadVBO_.IsValid()) return;
+    if (!initialized_) return;
+    if (!overlayPipeline_.IsValid()) return;
 
     auto* device = config_.device;
+    const bool subUpdateOK = device->SupportsTextureSubUpdate();
+
+    // Drop GPU resources for canvases no longer attached.
+    if (!overlayStates_.empty()) {
+        for (auto it = overlayStates_.begin(); it != overlayStates_.end();) {
+            bool stillActive = false;
+            for (auto* c : canvases) { if (c == it->first) { stillActive = true; break; } }
+            if (!stillActive) {
+                if (it->second.texture.IsValid()) device->DestroyTexture(it->second.texture);
+                it = overlayStates_.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+
+    overlayStagedThisFrame_ = true;
+    if (canvases.empty()) return;
 
     for (auto* canvas : canvases) {
         if (!canvas) continue;
 
-        int cw = canvas->GetWidth();
-        int ch = canvas->GetHeight();
+        const int cw = canvas->GetWidth();
+        const int ch = canvas->GetHeight();
         if (cw <= 0 || ch <= 0) continue;
 
-        const Color888* pixels = canvas->GetPixels();
-        const uint8_t*  alpha  = canvas->GetAlpha();
-        if (!pixels || !alpha) continue;
+        const uint8_t* rgba = canvas->GetRGBA8();
+        if (!rgba) continue;
 
-        // Convert RGB + separate alpha -> RGBA for GPU upload
-        size_t pixelCount = static_cast<size_t>(cw) * ch;
-        std::vector<uint8_t> rgba(pixelCount * 4);
-        for (size_t i = 0; i < pixelCount; ++i) {
-            rgba[i * 4 + 0] = pixels[i].r;
-            rgba[i * 4 + 1] = pixels[i].g;
-            rgba[i * 4 + 2] = pixels[i].b;
-            rgba[i * 4 + 3] = alpha[i];
+        auto& st = overlayStates_[canvas];
+        const uint32_t ucw = static_cast<uint32_t>(cw);
+        const uint32_t uch = static_cast<uint32_t>(ch);
+
+        // (Re)create texture on dim change. Resets upload state - first
+        // upload after this must be a full upload (Vulkan needs valid
+        // initial layout, others just need full coverage).
+        if (!st.texture.IsValid() || st.texW != ucw || st.texH != uch) {
+            if (st.texture.IsValid()) {
+                device->DestroyTexture(st.texture);
+                st.texture = {};
+            }
+            RHITextureDesc texDesc{};
+            texDesc.width     = ucw;
+            texDesc.height    = uch;
+            texDesc.format    = RHIFormat::RGBA8_Unorm;
+            texDesc.usage     = RHITextureUsage::Sampled | RHITextureUsage::TransferDst;
+            texDesc.filter    = RHISamplerFilter::Nearest;
+            texDesc.debugName = "Pipeline.CanvasOverlay";
+
+            st.texture = device->CreateTexture(texDesc);
+            if (!st.texture.IsValid()) continue;
+
+            st.texW        = ucw;
+            st.texH        = uch;
+            st.hasUploaded = false;
+            st.lastModVer  = ~uint64_t{0};
+            st.lastMinX = 0; st.lastMinY = 0; st.lastMaxX = -1; st.lastMaxY = -1;
         }
 
-        // Create or reuse a temporary texture for this canvas
-        RHITextureDesc texDesc{};
-        texDesc.width  = static_cast<uint32_t>(cw);
-        texDesc.height = static_cast<uint32_t>(ch);
-        texDesc.format = RHIFormat::RGBA8_Unorm;
-        texDesc.usage  = RHITextureUsage::Sampled | RHITextureUsage::TransferDst;
-        texDesc.filter = RHISamplerFilter::Nearest;
-        texDesc.debugName = "Pipeline.CanvasOverlay";
+        const uint64_t modVer = canvas->GetModVersion();
+        const bool dirty      = canvas->IsDirty();
+        const bool prevDirty  = (st.lastMaxX >= 0);
 
-        RHITexture canvasTexture = device->CreateTexture(texDesc);
-        if (!canvasTexture.IsValid()) continue;
+        // Skip upload entirely when the canvas hasn't been touched since
+        // the last upload AND we have valid GPU contents.
+        if (st.hasUploaded && modVer == st.lastModVer) {
+            continue;
+        }
 
-        device->UpdateTexture(canvasTexture, rgba.data(), rgba.size(),
-                              texDesc.width, texDesc.height);
+        bool uploadOK = true;
+        if (!st.hasUploaded || !subUpdateOK) {
+            // Full upload - Canvas2D already stores packed RGBA8 in the
+            // exact GPU layout, so no per-pixel conversion is needed.
+            const size_t bytes = static_cast<size_t>(cw) * ch * 4;
+            uploadOK = device->StageTextureFull(st.texture, rgba, bytes, st.texW, st.texH);
+            if (uploadOK) st.hasUploaded = true;
+        } else if (dirty || prevDirty) {
+            // Sub-rect upload: union(prev rect, current rect) so that
+            // pixels cleared since the last upload (alpha already set
+            // to 0 by Canvas2D::Clear over its prior dirty rect) are
+            // also re-uploaded. Both rects intersected with [0,w)x[0,h).
+            int rMinX = cw, rMinY = ch, rMaxX = -1, rMaxY = -1;
+            if (dirty) {
+                rMinX = std::min(rMinX, canvas->GetDirtyMinX());
+                rMinY = std::min(rMinY, canvas->GetDirtyMinY());
+                rMaxX = std::max(rMaxX, canvas->GetDirtyMaxX());
+                rMaxY = std::max(rMaxY, canvas->GetDirtyMaxY());
+            }
+            if (prevDirty) {
+                rMinX = std::min(rMinX, st.lastMinX);
+                rMinY = std::min(rMinY, st.lastMinY);
+                rMaxX = std::max(rMaxX, st.lastMaxX);
+                rMaxY = std::max(rMaxY, st.lastMaxY);
+            }
+            // Clamp to texture bounds.
+            if (rMinX < 0) rMinX = 0;
+            if (rMinY < 0) rMinY = 0;
+            if (rMaxX >= cw) rMaxX = cw - 1;
+            if (rMaxY >= ch) rMaxY = ch - 1;
 
-        DrawFullscreenQuad(overlayPipeline_, canvasTexture, 1.0f);
+            if (rMaxX >= rMinX && rMaxY >= rMinY) {
+                const uint32_t rx = static_cast<uint32_t>(rMinX);
+                const uint32_t ry = static_cast<uint32_t>(rMinY);
+                const uint32_t rw = static_cast<uint32_t>(rMaxX - rMinX + 1);
+                const uint32_t rh = static_cast<uint32_t>(rMaxY - rMinY + 1);
+                const size_t   bytes = static_cast<size_t>(rw) * rh * 4;
+                // Repack the dirty sub-rect into a tightly-packed scratch
+                // buffer (rows of width=rw rather than the canvas's stride).
+                if (overlayStagingRGBA_.size() < bytes) overlayStagingRGBA_.resize(bytes);
+                uint8_t* dst = overlayStagingRGBA_.data();
+                const size_t srcStride = static_cast<size_t>(cw) * 4;
+                const size_t dstStride = static_cast<size_t>(rw) * 4;
+                const uint8_t* srcBase  = rgba + ry * srcStride + rx * 4;
+                for (uint32_t row = 0; row < rh; ++row) {
+                    std::memcpy(dst + row * dstStride,
+                                srcBase + row * srcStride,
+                                dstStride);
+                }
+                uploadOK = device->StageTextureRegion(st.texture, dst, bytes, rx, ry, rw, rh);
+            }
+        }
 
-        // Destroy the temporary texture (per-frame upload)
-        device->DestroyTexture(canvasTexture);
+        // Only advance dirty bookkeeping when the upload succeeded - otherwise
+        // GPU contents may be stale and we want a re-upload next frame.
+        if (!uploadOK) continue;
+
+        // Snapshot the *current* dirty rect (not the union) so that next
+        // frame we can re-upload it if the user clears it.
+        if (dirty) {
+            st.lastMinX = canvas->GetDirtyMinX();
+            st.lastMinY = canvas->GetDirtyMinY();
+            st.lastMaxX = canvas->GetDirtyMaxX();
+            st.lastMaxY = canvas->GetDirtyMaxY();
+        } else {
+            st.lastMinX = 0; st.lastMinY = 0; st.lastMaxX = -1; st.lastMaxY = -1;
+        }
+        st.lastModVer = modVer;
+    }
+}
+
+void RenderPipeline::CompositeCanvasOverlays(int screenW, int screenH) {
+    auto& canvases = Canvas2D::ActiveList();
+    if (!initialized_) return;
+    if (!overlayPipeline_.IsValid() || !fullscreenQuadVBO_.IsValid()) return;
+
+    // For backward compat with direct callers (non-render-graph paths) and
+    // backends that don't use the canvas_stage graph pass: stage uploads
+    // here on first call per frame.  When the frame composer's canvas_stage
+    // pass already ran (Vulkan path), this is a no-op.
+    if (!overlayStagedThisFrame_) {
+        StageCanvasOverlays(screenW, screenH);
+    }
+
+    if (canvases.empty()) return;
+
+    for (auto* canvas : canvases) {
+        if (!canvas) continue;
+        auto it = overlayStates_.find(canvas);
+        if (it == overlayStates_.end()) continue;
+        const auto& st = it->second;
+        if (!st.texture.IsValid() || !st.hasUploaded) continue;
+        DrawFullscreenQuad(overlayPipeline_, st.texture, 1.0f);
     }
 }
 
@@ -621,15 +760,26 @@ void RenderPipeline::DestroyOffscreenTarget() {
 
 RHIPipeline RenderPipeline::GetOrCreateScenePipeline(const std::string& shaderName,
                                                       const RenderFlags* flags) {
-    // Build a cache key that includes render flag overrides
-    std::string cacheKey = shaderName;
+    // B5: numeric POD key avoids string concat / heap alloc per lookup.
+    uint16_t flagBits = 0;
     if (flags) {
-        cacheKey += "|d";
-        cacheKey += (flags->depthStencil.depthTest  ? '1' : '0');
-        cacheKey += (flags->depthStencil.depthWrite ? '1' : '0');
-        cacheKey += '|';
-        cacheKey += static_cast<char>('0' + static_cast<int>(flags->cullMode));
+        if (flags->depthStencil.depthTest)  flagBits |= 0x1;
+        if (flags->depthStencil.depthWrite) flagBits |= 0x2;
+        flagBits |= (static_cast<uint16_t>(flags->cullMode) & 0xF) << 2;
     }
+
+    // Intern shader name -> stable id (one-time per unique shader)
+    uint32_t shaderId;
+    {
+        auto sit = shaderIdMap_.find(shaderName);
+        if (sit != shaderIdMap_.end()) {
+            shaderId = sit->second;
+        } else {
+            shaderId = nextShaderId_++;
+            shaderIdMap_.emplace(shaderName, shaderId);
+        }
+    }
+    PipelineKey cacheKey{shaderId, flagBits};
 
     // Check cache
     auto it = scenePipelineCache_.find(cacheKey);
@@ -857,6 +1007,8 @@ void RenderPipeline::DestroyAllPipelines() {
         if (pipeline.IsValid()) device->DestroyPipeline(pipeline);
     }
     scenePipelineCache_.clear();
+    shaderIdMap_.clear();
+    nextShaderId_ = 1;
 
     // Destroy built-in pipelines
     auto destroy = [&](RHIPipeline& p) {
@@ -945,6 +1097,67 @@ void RenderPipeline::BuildViewProjection(CameraBase* camera,
     cameraPosOut[1] = camPos.Y;
     cameraPosOut[2] = camPos.Z;
     cameraPosOut[3] = 0.0f;
+}
+
+Ray RenderPipeline::BuildPickRay(CameraBase* camera, float ndcX, float ndcY) const {
+    if (!camera) return Ray(Vector3D(0, 0, 0), Vector3D(0, 0, 0));
+
+    camera->GetTransform()->SetBaseRotation(
+        camera->GetCameraLayout()->GetRotation());
+
+    Quaternion lookDir = camera->GetTransform()->GetRotation()
+                             .Multiply(camera->GetLookOffset());
+    Vector3D camPos  = camera->GetTransform()->GetPosition();
+    Vector3D forward = lookDir.RotateVector({0, 0, -1});
+    Vector3D up      = lookDir.RotateVector({0, 1, 0});
+
+    Matrix4x4 viewMat = Matrix4x4::LookAt(camPos, camPos + forward, up);
+
+    Vector2D minC = camera->GetCameraMinCoordinate();
+    Vector2D maxC = camera->GetCameraMaxCoordinate();
+    float vpW = maxC.X - minC.X + 1.0f;
+    float vpH = maxC.Y - minC.Y + 1.0f;
+    float aspect = vpW / vpH;
+
+    Matrix4x4 projMat;
+    if (camera->IsPerspective()) {
+        float fovRad = camera->GetFOV() * kPi / 180.0f;
+        projMat = Matrix4x4::Perspective(fovRad, aspect,
+                                          camera->GetNearPlane(),
+                                          camera->GetFarPlane());
+    } else {
+        float halfW = vpW * 0.5f;
+        float halfH = vpH * 0.5f;
+        projMat = Matrix4x4::Orthographic(-halfW, halfW, -halfH, halfH,
+                                            camera->GetNearPlane(),
+                                            camera->GetFarPlane());
+    }
+
+    // Unproject in canonical OpenGL clip space ([-1,+1] depth) - no Vulkan
+    // depth remap, so the inverse is well-conditioned regardless of backend.
+    Matrix4x4 invVP = projMat.Multiply(viewMat).Inverse();
+
+    auto unproject = [&](float z) {
+        Vector3D clip(ndcX, ndcY, z);
+        // Matrix4x4::Multiply(Vector3D) is assumed to do perspective divide
+        // when the matrix has a non-trivial w-row. Fall back to manual w.
+        float wx = invVP.M[0][0]*clip.X + invVP.M[0][1]*clip.Y + invVP.M[0][2]*clip.Z + invVP.M[0][3];
+        float wy = invVP.M[1][0]*clip.X + invVP.M[1][1]*clip.Y + invVP.M[1][2]*clip.Z + invVP.M[1][3];
+        float wz = invVP.M[2][0]*clip.X + invVP.M[2][1]*clip.Y + invVP.M[2][2]*clip.Z + invVP.M[2][3];
+        float ww = invVP.M[3][0]*clip.X + invVP.M[3][1]*clip.Y + invVP.M[3][2]*clip.Z + invVP.M[3][3];
+        if (ww == 0.0f) ww = 1.0f;
+        return Vector3D(wx / ww, wy / ww, wz / ww);
+    };
+
+    Vector3D nearPt = unproject(-1.0f);
+    Vector3D farPt  = unproject( 1.0f);
+
+    Vector3D origin = camera->IsPerspective() ? camPos : nearPt;
+    Vector3D dir    = (farPt - nearPt);
+    float    len    = dir.Magnitude();
+    if (len > 0.0f) dir = dir / len;
+
+    return Ray(origin, dir);
 }
 
 void RenderPipeline::RenderMeshes(Scene* scene,
@@ -1047,60 +1260,159 @@ void RenderPipeline::RenderMeshes(Scene* scene,
     }
 }
 
+// Number of segments per great-circle ring used when expanding a DebugSphere
+// into line geometry for the Vulkan pipeline.  Each sphere becomes 3 rings
+// (XY/XZ/YZ) with this many segments each (kSphereSegments * 6 verts total).
+static constexpr int kSphereSegments = 24;
+
+void RenderPipeline::AppendDebugShapes(koilo::DebugDraw& dd, bool depthTestPass,
+                                       size_t& depthTestedCount) {
+    auto pushVert = [&](float x, float y, float z, const koilo::Color& c) {
+        debugLineScratch_.push_back({x, y, z, c.r, c.g, c.b, c.a});
+    };
+    auto pushSegment = [&](const Vector3D& a, const Vector3D& b,
+                           const koilo::Color& c) {
+        pushVert(a.X, a.Y, a.Z, c);
+        pushVert(b.X, b.Y, b.Z, c);
+        if (depthTestPass) depthTestedCount += 2;
+    };
+
+    // -- Spheres: 3 great-circle rings (XY, XZ, YZ planes) ----------------
+    for (const auto& s : dd.GetSpheres()) {
+        if (s.depthTest != depthTestPass) continue;
+        const float r = s.radius;
+        const Vector3D& C = s.center;
+
+        Vector3D prevXY = C + Vector3D(r, 0.0f, 0.0f);
+        Vector3D prevXZ = C + Vector3D(r, 0.0f, 0.0f);
+        Vector3D prevYZ = C + Vector3D(0.0f, r, 0.0f);
+        for (int i = 1; i <= kSphereSegments; ++i) {
+            const float t  = (static_cast<float>(i) /
+                              static_cast<float>(kSphereSegments)) * 6.2831853f;
+            const float ct = std::cos(t);
+            const float st = std::sin(t);
+
+            const Vector3D nxtXY = C + Vector3D(r * ct, r * st, 0.0f);
+            const Vector3D nxtXZ = C + Vector3D(r * ct, 0.0f, r * st);
+            const Vector3D nxtYZ = C + Vector3D(0.0f, r * ct, r * st);
+
+            pushSegment(prevXY, nxtXY, s.color);
+            pushSegment(prevXZ, nxtXZ, s.color);
+            pushSegment(prevYZ, nxtYZ, s.color);
+
+            prevXY = nxtXY;
+            prevXZ = nxtXZ;
+            prevYZ = nxtYZ;
+        }
+    }
+
+    // -- Boxes: 12 edges (oriented via box.transform if non-identity) ----
+    static const int kEdges[12][2] = {
+        {0,1},{1,3},{3,2},{2,0},  // -Z face
+        {4,5},{5,7},{7,6},{6,4},  // +Z face
+        {0,4},{1,5},{2,6},{3,7}   // connecting edges
+    };
+    for (const auto& b : dd.GetBoxes()) {
+        if (b.depthTest != depthTestPass) continue;
+        const Vector3D& e = b.extents;
+        Vector3D corners[8];
+        int idx = 0;
+        for (int sx = -1; sx <= 1; sx += 2) {
+            for (int sy = -1; sy <= 1; sy += 2) {
+                for (int sz = -1; sz <= 1; sz += 2) {
+                    Vector3D local(e.X * sx, e.Y * sy, e.Z * sz);
+                    // box.transform may carry rotation; translation comes
+                    // from box.center (rotation-only convention used by
+                    // DrawOrientedBox in the script demo).
+                    Vector3D rotated = b.transform.TransformDirection(local);
+                    corners[idx++] = b.center + rotated;
+                }
+            }
+        }
+        for (int i = 0; i < 12; ++i) {
+            pushSegment(corners[kEdges[i][0]], corners[kEdges[i][1]], b.color);
+        }
+    }
+}
+
 void RenderPipeline::RenderDebugLines(const float* view, const float* proj) {
+    (void)view;
+    (void)proj;
     KL_PERF_SCOPE("RenderPipeline.DebugLines");
 
     auto& dd = DebugDraw::GetInstance();
     if (!dd.IsEnabled()) return;
 
-    const auto& lines = dd.GetLines();
-    if (lines.empty() || !debugLinePipeline_.IsValid() || !debugLineVBO_.IsValid())
+    const auto& lines   = dd.GetLines();
+    const auto& spheres = dd.GetSpheres();
+    const auto& boxes   = dd.GetBoxes();
+    if ((lines.empty() && spheres.empty() && boxes.empty())
+        || !debugLinePipeline_.IsValid() || !debugLineVBO_.IsValid())
         return;
 
     auto* device = config_.device;
 
-    // Build vertex data: depth-tested lines first, then non-depth-tested
-    std::vector<DebugLineVertex> verts;
-    verts.reserve(lines.size() * 2);
+    const uint64_t version = dd.GetLinesVersion();
+    const bool unchanged = (version == debugLinesVersionCached_)
+                           && (debugLineUploadCount_ > 0);
 
-    size_t depthTestedCount = 0;
-    for (const auto& line : lines) {
-        if (line.depthTest) {
-            verts.push_back({line.start.X, line.start.Y, line.start.Z,
-                             line.color.r, line.color.g, line.color.b, line.color.a});
-            verts.push_back({line.end.X, line.end.Y, line.end.Z,
-                             line.color.r, line.color.g, line.color.b, line.color.a});
-            depthTestedCount += 2;
+    size_t uploadCount    = debugLineUploadCount_;
+    size_t depthTestedCount = debugLineDepthCount_;
+
+    if (!unchanged) {
+        // Rebuild into the persistent scratch (reuses backing storage).
+        debugLineScratch_.clear();
+        debugLineScratch_.reserve(lines.size() * 2
+                                  + spheres.size() * kSphereSegments * 6
+                                  + boxes.size() * 24);
+
+        depthTestedCount = 0;
+        // Pass 1: depth-tested.
+        for (const auto& line : lines) {
+            if (line.depthTest) {
+                debugLineScratch_.push_back({line.start.X, line.start.Y, line.start.Z,
+                                 line.color.r, line.color.g, line.color.b, line.color.a});
+                debugLineScratch_.push_back({line.end.X, line.end.Y, line.end.Z,
+                                 line.color.r, line.color.g, line.color.b, line.color.a});
+                depthTestedCount += 2;
+            }
         }
-    }
+        AppendDebugShapes(dd, /*depthTestPass=*/true, depthTestedCount);
 
-    // Non-depth-tested lines (TODO: use separate no-depth pipeline)
-    for (const auto& line : lines) {
-        if (!line.depthTest) {
-            verts.push_back({line.start.X, line.start.Y, line.start.Z,
-                             line.color.r, line.color.g, line.color.b, line.color.a});
-            verts.push_back({line.end.X, line.end.Y, line.end.Z,
-                             line.color.r, line.color.g, line.color.b, line.color.a});
+        // Pass 2: non-depth (drawn after, on top of everything).
+        for (const auto& line : lines) {
+            if (!line.depthTest) {
+                debugLineScratch_.push_back({line.start.X, line.start.Y, line.start.Z,
+                                 line.color.r, line.color.g, line.color.b, line.color.a});
+                debugLineScratch_.push_back({line.end.X, line.end.Y, line.end.Z,
+                                 line.color.r, line.color.g, line.color.b, line.color.a});
+            }
         }
+        AppendDebugShapes(dd, /*depthTestPass=*/false, depthTestedCount);
+
+        if (debugLineScratch_.empty()) {
+            debugLineUploadCount_   = 0;
+            debugLineDepthCount_    = 0;
+            debugLinesVersionCached_ = version;
+            return;
+        }
+
+        uploadCount = std::min(debugLineScratch_.size(), kMaxDebugLineVerts);
+        const size_t uploadSize = uploadCount * sizeof(DebugLineVertex);
+        device->UpdateBuffer(debugLineVBO_, debugLineScratch_.data(), uploadSize);
+
+        debugLineUploadCount_    = uploadCount;
+        debugLineDepthCount_     = depthTestedCount;
+        debugLinesVersionCached_ = version;
     }
 
-    if (verts.empty()) return;
+    if (uploadCount == 0) return;
 
-    // Clamp to max buffer size
-    size_t uploadCount = std::min(verts.size(), kMaxDebugLineVerts);
-    size_t uploadSize  = uploadCount * sizeof(DebugLineVertex);
-    device->UpdateBuffer(debugLineVBO_, verts.data(), uploadSize);
-
-    // Upload view/projection for line shader via transform UBO
-    // (reuse transform UBO with identity model)
-    {
-        TransformUBO ubo{};
-        for (int i = 0; i < 4; ++i) ubo.model[i * 4 + i] = 1.0f;
-        std::memcpy(ubo.view, view, 64);
-        std::memcpy(ubo.projection, proj, 64);
-        device->UpdateBuffer(transformUBO_, &ubo, sizeof(ubo));
-        device->BindUniformBuffer(transformUBO_, 0, 0);
-    }
+    // Bind the transform UBO populated by BeginScenePass.  view/proj
+    // already match what the debug-line shader needs (model = identity);
+    // the prior implementation re-uploaded an identical buffer here every
+    // frame, which is now elided (B1).
+    device->BindUniformBuffer(transformUBO_, 0, 0);
 
     device->BindPipeline(debugLinePipeline_);
     device->BindVertexBuffer(debugLineVBO_);
@@ -1113,8 +1425,8 @@ void RenderPipeline::RenderDebugLines(const float* view, const float* proj) {
     // Draw non-depth-tested lines (drawn after, on top of everything)
     size_t noDepthCount = uploadCount - std::min(depthTestedCount, uploadCount);
     if (noDepthCount > 0) {
-        // TODO: In 17g, ideally switch to a no-depth-test pipeline variant
-        // for the second draw call. For now, all lines use the same pipeline.
+        // These reuse the depth-tested pipeline; a no-depth-test pipeline
+        // variant could be used to actually disable depth testing for them.
         device->Draw(static_cast<uint32_t>(noDepthCount),
                      1,
                      static_cast<uint32_t>(depthTestedCount));
@@ -1157,18 +1469,34 @@ void RenderPipeline::UploadLights(Scene* scene) {
         }
     }
 
-    // Upload scene UBO (light count) -- binding 2 matches SPIR-V layout
-    SceneUBO sceneData{};
-    sceneData.lightCount = lightCount;
-    device->UpdateBuffer(sceneUBO_, &sceneData, sizeof(sceneData));
-    device->BindUniformBuffer(sceneUBO_, 0, 2);
-
-    // Upload light data -- binding 1 matches SPIR-V layout (LightBuffer SSBO)
-    // Always bind even if empty -- all 4 set-0 descriptors must be valid
-    if (lightCount > 0) {
-        device->UpdateBuffer(lightSSBO_, gpuLights,
-                             sizeof(GPULight) * lightCount);
+    // -- Light upload dirty check (B2) --------------------------------
+    // The light data rarely changes every frame.  Compare against the
+    // previously-uploaded snapshot and skip the SSBO + scene UBO writes
+    // when nothing has changed.  Bindings still happen unconditionally
+    // because the descriptor set must be valid for every draw.
+    const size_t lightBytes = sizeof(GPULight) * static_cast<size_t>(lightCount);
+    bool lightsChanged = (lightCount != lastUploadedLightCount_);
+    if (!lightsChanged && lightCount > 0) {
+        lightsChanged = (std::memcmp(gpuLights, lastUploadedLights_,
+                                     lightBytes) != 0);
     }
+
+    if (lightsChanged) {
+        // Upload scene UBO (light count) -- binding 2 matches SPIR-V layout
+        SceneUBO sceneData{};
+        sceneData.lightCount = lightCount;
+        device->UpdateBuffer(sceneUBO_, &sceneData, sizeof(sceneData));
+
+        // Upload light data -- binding 1 matches SPIR-V layout (LightBuffer SSBO)
+        if (lightCount > 0) {
+            device->UpdateBuffer(lightSSBO_, gpuLights, lightBytes);
+            std::memcpy(lastUploadedLights_, gpuLights, lightBytes);
+        }
+        lastUploadedLightCount_ = lightCount;
+    }
+
+    device->BindUniformBuffer(sceneUBO_, 0, 2);
+    // Always bind even if empty -- all 4 set-0 descriptors must be valid
     device->BindUniformBuffer(lightSSBO_, 0, 1, 0,
                               sizeof(GPULight) * kMaxGPULights);
 

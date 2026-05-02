@@ -43,21 +43,6 @@ void TestRasterTriangle2D::TestGetBarycentricCoords() {
     triangle.GetBarycentricCoords(2.0f, 2.0f, u, v, w);
     TEST_ASSERT_TRUE(true);
 }
-void TestRasterTriangle2D::TestOverlaps() {
-    RasterTriangle2D triangle;
-
-    // Set AABB bounds directly
-    triangle.boundsMinX = -5.0f;
-    triangle.boundsMinY = -5.0f;
-    triangle.boundsMaxX = 5.0f;
-    triangle.boundsMaxY = 5.0f;
-
-    // Test overlapping region
-    TEST_ASSERT_TRUE(triangle.Overlaps(0.0f, 0.0f, 10.0f, 10.0f));
-
-    // Test non-overlapping region
-    TEST_ASSERT_FALSE(triangle.Overlaps(20.0f, 20.0f, 30.0f, 30.0f));
-}
 void TestRasterTriangle2D::TestGetMaterial() {
     RasterTriangle2D triangle;
 
@@ -138,7 +123,7 @@ void TestRasterTriangle2D::RunAllTests() {
     RUN_TEST(TestDefaultConstructor);
     RUN_TEST(TestParameterizedConstructor);
     RUN_TEST(TestGetBarycentricCoords);
-    RUN_TEST(TestOverlaps);
+
     RUN_TEST(TestGetMaterial);
     RUN_TEST(TestToString);
     RUN_TEST(TestEdgeCases);

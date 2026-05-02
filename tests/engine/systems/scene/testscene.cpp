@@ -6,6 +6,10 @@
 
 #include "testscene.hpp"
 #include <koilo/systems/scene/primitivemesh.hpp>
+#include <koilo/systems/scene/scenenode.hpp>
+#include <fstream>
+#include <string>
+#include <cstdio>
 
 using namespace koilo;
 // ========== Constructor Tests ==========
@@ -176,6 +180,52 @@ void TestScene::TestGetMesh() {
     TEST_ASSERT_TRUE(scene.GetMesh(1) == nullptr);
 }
 
+void TestScene::TestSaveToKScene() {
+    Scene scene;
+    SceneNode* a = scene.CreateObject("root_a");
+    a->SetPosition(Vector3D(1.0f, 2.0f, 3.0f));
+    a->SetScale(Vector3D(2.0f, 2.0f, 2.0f));
+    SceneNode* b = scene.CreateObject("child b");
+    b->SetParent(a);
+
+    const char* path = "/tmp/koilo_savetoks_test.kscene";
+    bool ok = scene.SaveToKScene(path);
+    TEST_ASSERT_TRUE(ok);
+
+    std::ifstream f(path);
+    TEST_ASSERT_TRUE(f.is_open());
+    std::string body((std::istreambuf_iterator<char>(f)),
+                     std::istreambuf_iterator<char>());
+
+    // Both nodes must be declared, names quoted, and special chars in
+    // identifiers sanitized ("child b" -> node_child_b).
+    TEST_ASSERT_TRUE(body.find("var node_root_a = SceneNode(\"root_a\")") != std::string::npos);
+    TEST_ASSERT_TRUE(body.find("var node_child_b = SceneNode(\"child b\")") != std::string::npos);
+    // Position pass writes an XYZ vector matching what we set.
+    TEST_ASSERT_TRUE(body.find("node_root_a.SetPosition(Vector3D(1") != std::string::npos);
+    // Parent link pass connects b -> a.
+    TEST_ASSERT_TRUE(body.find("node_child_b.SetParent(node_root_a)") != std::string::npos);
+    std::remove(path);
+}
+
+void TestScene::TestBumpHierarchyGeneration() {
+    // TODO: Implement test for BumpHierarchyGeneration()
+    Scene obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestScene::TestHierarchyGeneration() {
+    // TODO: Implement test for HierarchyGeneration()
+    Scene obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestScene::TestPickNode() {
+    // TODO: Implement test for PickNode()
+    Scene obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
 void TestScene::RunAllTests() {
     RUN_TEST(TestDefaultConstructor);
     RUN_TEST(TestParameterizedConstructor);
@@ -189,4 +239,8 @@ void TestScene::RunAllTests() {
     RUN_TEST(TestFind);
     RUN_TEST(TestGetNodeCount);
     RUN_TEST(TestGetMesh);
+    RUN_TEST(TestSaveToKScene);
+    RUN_TEST(TestBumpHierarchyGeneration);
+    RUN_TEST(TestHierarchyGeneration);
+    RUN_TEST(TestPickNode);
 }

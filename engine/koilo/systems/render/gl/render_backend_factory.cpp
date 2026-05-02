@@ -357,7 +357,7 @@ static std::unique_ptr<IRenderBackend> TryCreateVulkanRHIPipeline(VulkanBackend*
     ksl::KSLSymbolTable symbols;
     symbols.RegisterAll();
 
-    std::vector<std::string> searchPaths = {
+    static const std::vector<std::string> searchPaths = {
         "build/shaders/spirv",
         "../build/shaders/spirv",
         "shaders/spirv",

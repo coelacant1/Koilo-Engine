@@ -314,7 +314,6 @@ bool KoiloMeshLoader::LoadAscii(const char* filepath) {
     
     std::string line;
     MorphTarget* currentMorph = nullptr;
-    bool inVectors = false;
     
     // Parser state
     enum class State {
@@ -422,7 +421,6 @@ bool KoiloMeshLoader::LoadAscii(const char* filepath) {
         }
         else if (line.find("VECTORS") == 0) {
             state = State::MORPH_VECTORS;
-            inVectors = true;
         }
         else {
             // Parse data based on state

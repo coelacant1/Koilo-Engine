@@ -84,6 +84,18 @@ void TestSky::TestEdgeCases() {
 
 // ========== Test Runner ==========
 
+void TestSky::TestHasMaterial() {
+    // TODO: Implement test for HasMaterial()
+    Sky obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestSky::TestSetMaterial() {
+    // TODO: Implement test for SetMaterial()
+    Sky obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
 void TestSky::RunAllTests() {
     RUN_TEST(TestDefaultConstructor);
     RUN_TEST(TestParameterizedConstructor);
@@ -95,4 +107,6 @@ void TestSky::RunAllTests() {
     RUN_TEST(TestSetTimeSpeed);
     RUN_TEST(TestGetTimeSpeed);
     RUN_TEST(TestEdgeCases);
+    RUN_TEST(TestHasMaterial);
+    RUN_TEST(TestSetMaterial);
 }

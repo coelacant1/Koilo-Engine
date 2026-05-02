@@ -15,6 +15,7 @@
 #include <koilo/core/geometry/ray.hpp>
 #include "physicsmaterial.hpp"
 #include "raycasthit.hpp"
+#include "bodypose.hpp"
 #include <koilo/registry/reflect_macros.hpp>
 
 namespace koilo {
@@ -28,6 +29,8 @@ enum class ColliderType {
     Box,
     Capsule,
     Plane,
+    Mesh,        ///< Static triangle mesh. Wraps shared TriangleMeshData + BVH.
+    Heightfield, ///< Static heightfield grid. Wraps shared HeightfieldData.
     Custom
 };
 
@@ -47,6 +50,12 @@ protected:
     std::string tag;             ///< User-defined tag for identification
     PhysicsMaterial material;    ///< Physics material properties
     void* owner;                 ///< Pointer to owning game object (optional)
+    BodyPose localOffset_;       ///< Pose of this collider in its parent body's local frame.
+                                 ///< Identity by default; world pose = body.pose.Compose(localOffset_).
+                                 ///< NOTE: collision math still consumes
+                                 ///< GetPosition()/SetPosition() directly. localOffset_ is
+                                 ///< stored so angular dynamics and broadphase proxies can
+                                 ///< transition without re-architecting.
 
 public:
     /**
@@ -135,6 +144,18 @@ public:
      * @brief Sets the owner pointer.
      */
     void SetOwner(void* o) { owner = o; }
+
+    // === Local Offset ===
+
+    /**
+     * @brief Gets the collider's pose in its parent body's local frame.
+     */
+    const BodyPose& GetLocalOffset() const { return localOffset_; }
+
+    /**
+     * @brief Sets the collider's local offset relative to its parent body.
+     */
+    void SetLocalOffset(const BodyPose& offset) { localOffset_ = offset; }
 
     // === Virtual Interface (Pure Virtual) ===
 

@@ -74,7 +74,7 @@ void TestWidget::TestPoolCapacity() {
 void TestWidget::TestPoolFreeReuse() {
     WidgetPool pool(4);
     int a = pool.Allocate();
-    int b = pool.Allocate();
+    [[maybe_unused]] int b = pool.Allocate();
     pool.Free(a);
     int c = pool.Allocate();
     TEST_ASSERT_EQUAL(a, c); // reuses freed slot

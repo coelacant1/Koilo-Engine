@@ -348,6 +348,24 @@ public:
      * @return true if reloaded successfully
      */
     bool Reload();
+
+    /**
+     * @brief Path of the script most recently passed to LoadScript().
+     *
+     * Empty until LoadScript succeeds; cleared by Reset(). Used by the
+     * editor to drive hot-reload of the open scene file (the editor
+     * delegates `.kscene` reload to `Reload()` when its watched path
+     * matches `GetCurrentScriptPath()`).
+     */
+    const std::string& GetCurrentScriptPath() const { return currentScriptPath; }
+
+    /**
+     * @brief Reset engine state so a new script can be loaded.
+     * 
+     * Called between display sessions to allow re-running scripts
+     * from the console without restarting the process.
+     */
+    void Reset();
     
     /**
      * @brief Set a global script variable from host code
@@ -482,6 +500,7 @@ private:
     std::string FlattenMemberAccessToPath(ExpressionNode* expr);
     void SetMemberValue(const std::string& path, const Value& value);
     void SetReflectedMemberValue(const std::string& objectId, const SplitPath& sp, const Value& value);
+    bool AssignComplexField(void* ownerInstance, const FieldDecl* field, const Value& value);
     
     // Built-in functions
     Value CallBuiltinFunction(const std::string& name, const std::vector<Value>& args);
@@ -489,6 +508,25 @@ private:
     Value CallReflectedMethodDirect(void* instance, const ClassDesc* classDesc,
                                      const std::string& methodName, int argc,
                                      const std::vector<Value>& args);
+
+    /// Fast-path direct dispatch using a pre-interned method name atom for
+    /// O(1) cache lookups without per-call string hashing.  `atomTable`
+    /// must be the table that produced `methodAtom`; `methodName` is used
+    /// only on the cold path (cache miss -> FindMethodTyped) and for error
+    /// messages.
+    Value CallReflectedMethodDirectAtom(void* instance, const ClassDesc* classDesc,
+                                        const class AtomTable* atomTable,
+                                        uint32_t methodAtom,
+                                        const std::string& methodName, int argc,
+                                        const std::vector<Value>& args);
+
+    /// Shared invocation tail used by both reflected-direct entry points
+    /// once a MethodDesc has been resolved.  Public for translation-unit
+    /// access from reflected_method_call.cpp; not part of the scripting API.
+    Value InvokeResolvedReflectedMethod(void* instance, const ClassDesc* classDesc,
+                                         const struct MethodDesc* method,
+                                         const std::string& methodName, int argc,
+                                         const std::vector<Value>& args);
     
     // Built-in type method dispatch (arrays and tables)
     Value DispatchArrayMethod(Value* arrPtr, const std::string& methodName, const std::vector<Value>& args);
@@ -499,6 +537,12 @@ private:
     void PushScope();
     void PopScope();
     Value GetVariable(const std::string& name) const;
+    /// Zero-copy lookup for hot paths (e.g. bytecode LOAD_GLOBAL).
+    /// Returns a pointer to the stored Value or nullptr if not found.
+    /// The pointer is valid until the next mutation of the active scope
+    /// stack or variables map. Does NOT handle the "self" keyword -
+    /// call GetVariable for that.
+    const Value* GetVariablePtr(const std::string& name) const;
     void SetVariable(const std::string& name, const Value& value);
     void DeclareVariable(const std::string& name, const Value& value);
     

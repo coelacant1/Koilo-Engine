@@ -31,8 +31,22 @@ void TestScriptClass::TestEdgeCases() {
 
 // ========== Test Runner ==========
 
+void TestScriptClass::TestFindField() {
+    // TODO: Implement test for FindField()
+    ScriptClass obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestScriptClass::TestHasMethod() {
+    // TODO: Implement test for HasMethod()
+    ScriptClass obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
 void TestScriptClass::RunAllTests() {
     RUN_TEST(TestDefaultConstructor);
     RUN_TEST(TestParameterizedConstructor);
     RUN_TEST(TestEdgeCases);
+    RUN_TEST(TestFindField);
+    RUN_TEST(TestHasMethod);
 }

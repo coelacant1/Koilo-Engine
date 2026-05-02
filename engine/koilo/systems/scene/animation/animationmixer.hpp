@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 #include <functional>
+#include <unordered_map>
+#include <cstdint>
 #include "animationclip.hpp"
 #include <koilo/registry/reflect_macros.hpp>
 
@@ -87,6 +89,15 @@ public:
 private:
     std::size_t maxLayers_;
     std::vector<AnimationLayer> layers_;
+
+    // A4: persistent blend accumulator, keyed on packed channel id.
+    // Reused across frames to avoid re-allocating the map every Update().
+    struct BlendEntry {
+        const AnimationChannel* channel = nullptr;
+        float value   = 0.0f;
+        bool  written = false;  // reset each frame
+    };
+    std::unordered_map<std::uint32_t, BlendEntry> blended_;
 
     // Crossfade state
     bool crossfading_ = false;

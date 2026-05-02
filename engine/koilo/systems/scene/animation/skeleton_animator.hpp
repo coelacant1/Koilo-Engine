@@ -27,6 +27,8 @@
 #include <koilo/systems/scene/animation/animationclip.hpp>
 #include <koilo/core/math/mathematics.hpp>
 #include <string>
+#include <unordered_map>
+#include <cstdint>
 #include "../../../registry/reflect_macros.hpp"
 
 namespace koilo {
@@ -68,24 +70,40 @@ public:
         std::string component = targetProperty.substr(0, dot);
         std::string axis = targetProperty.substr(dot + 1);
 
-        if (component == "position") {
-            if (axis == "x") bone->localPosition.X = value;
-            else if (axis == "y") bone->localPosition.Y = value;
-            else if (axis == "z") bone->localPosition.Z = value;
-        } else if (component == "rotation") {
-            // Value is angle in degrees around the specified axis
-            float rad = value * 3.14159265f / 180.0f;
-            float halfAngle = rad * 0.5f;
-            float s = Mathematics::Sin(halfAngle);
-            float c = Mathematics::Cos(halfAngle);
-            if (axis == "x")      bone->localRotation = Quaternion(c, s, 0, 0);
-            else if (axis == "y") bone->localRotation = Quaternion(c, 0, s, 0);
-            else if (axis == "z") bone->localRotation = Quaternion(c, 0, 0, s);
-        } else if (component == "scale") {
-            if (axis == "x") bone->localScale.X = value;
-            else if (axis == "y") bone->localScale.Y = value;
-            else if (axis == "z") bone->localScale.Z = value;
+        Component comp;
+        if      (component == "position") comp = Component::Position;
+        else if (component == "rotation") comp = Component::Rotation;
+        else if (component == "scale")    comp = Component::Scale;
+        else return;
+
+        Axis ax;
+        if      (axis == "x") ax = Axis::X;
+        else if (axis == "y") ax = Axis::Y;
+        else if (axis == "z") ax = Axis::Z;
+        else return;
+
+        ApplyResolved(bone, comp, ax, value);
+    }
+
+    /**
+     * @brief A5: apply a pre-resolved channel by reference.
+     *
+     * Caches (Bone*, Component, Axis) keyed on AnimationChannel::GetChannelId()
+     * after first resolution; subsequent applies skip all string parsing /
+     * skeleton bone-name lookups.
+     */
+    void ApplyChannelCached(const AnimationChannel& ch, float value) {
+        if (!skeleton_) return;
+        std::uint32_t id = ch.GetChannelId();
+        auto it = resolveCache_.find(id);
+        const ResolvedTarget* rt;
+        if (it == resolveCache_.end()) {
+            ResolvedTarget r = ResolveChannel(ch);
+            it = resolveCache_.emplace(id, r).first;
         }
+        rt = &it->second;
+        if (!rt->bone) return;
+        ApplyResolved(rt->bone, rt->component, rt->axis, value);
     }
 
     /**
@@ -99,18 +117,87 @@ public:
      */
     void ApplyClip(const AnimationClip* clip, float time) {
         if (!clip || !skeleton_) return;
-        clip->Evaluate(time, [this](const std::string& node,
-                                     const std::string& prop,
-                                     float val) {
-            ApplyChannel(node, prop, val);
+        // A5: use the packed-channel callback so we can use cached resolution.
+        clip->EvaluatePacked(time, [this](const AnimationChannel& ch, float val) {
+            ApplyChannelCached(ch, val);
         });
     }
 
-    void SetSkeleton(Skeleton* skeleton) { skeleton_ = skeleton; }
+    void SetSkeleton(Skeleton* skeleton) {
+        if (skeleton_ != skeleton) resolveCache_.clear();
+        skeleton_ = skeleton;
+    }
     Skeleton* GetSkeleton() const { return skeleton_; }
 
+    // Drop the resolution cache (e.g. after re-binding channels in a clip).
+    void ClearResolveCache() { resolveCache_.clear(); }
+
 private:
+    enum class Component : std::uint8_t { Position, Rotation, Scale };
+    enum class Axis      : std::uint8_t { X, Y, Z };
+
+    struct ResolvedTarget {
+        Bone*     bone      = nullptr;
+        Component component = Component::Position;
+        Axis      axis      = Axis::X;
+    };
+
+    ResolvedTarget ResolveChannel(const AnimationChannel& ch) const {
+        ResolvedTarget r{};
+        const std::string& node = ch.targetNode;
+        const std::string& prop = ch.targetProperty;
+        if (node.size() <= 5 || node.compare(0, 5, "bone.") != 0) return r;
+        Bone* bone = skeleton_->GetBone(node.substr(5));
+        if (!bone) return r;
+
+        auto dot = prop.find('.');
+        if (dot == std::string::npos) return r;
+
+        // component
+        if      (prop.compare(0, dot, "position") == 0) r.component = Component::Position;
+        else if (prop.compare(0, dot, "rotation") == 0) r.component = Component::Rotation;
+        else if (prop.compare(0, dot, "scale")    == 0) r.component = Component::Scale;
+        else return r;
+
+        // axis (single char)
+        if (dot + 1 >= prop.size()) return r;
+        char axc = prop[dot + 1];
+        if      (axc == 'x') r.axis = Axis::X;
+        else if (axc == 'y') r.axis = Axis::Y;
+        else if (axc == 'z') r.axis = Axis::Z;
+        else return r;
+
+        r.bone = bone;
+        return r;
+    }
+
+    void ApplyResolved(Bone* bone, Component comp, Axis ax, float value) const {
+        switch (comp) {
+            case Component::Position:
+                if      (ax == Axis::X) bone->localPosition.X = value;
+                else if (ax == Axis::Y) bone->localPosition.Y = value;
+                else                    bone->localPosition.Z = value;
+                break;
+            case Component::Rotation: {
+                float rad = value * 3.14159265f / 180.0f;
+                float halfAngle = rad * 0.5f;
+                float s = Mathematics::Sin(halfAngle);
+                float c = Mathematics::Cos(halfAngle);
+                if      (ax == Axis::X) bone->localRotation = Quaternion(c, s, 0, 0);
+                else if (ax == Axis::Y) bone->localRotation = Quaternion(c, 0, s, 0);
+                else                    bone->localRotation = Quaternion(c, 0, 0, s);
+                break;
+            }
+            case Component::Scale:
+                if      (ax == Axis::X) bone->localScale.X = value;
+                else if (ax == Axis::Y) bone->localScale.Y = value;
+                else                    bone->localScale.Z = value;
+                break;
+        }
+    }
+
     Skeleton* skeleton_ = nullptr;
+    std::unordered_map<std::uint32_t, ResolvedTarget> resolveCache_;
 
     KL_BEGIN_FIELDS(SkeletonAnimator)
         /* No reflected fields. */

@@ -10,6 +10,7 @@
 #include <SDL3/SDL_vulkan.h>
 #include <koilo/kernel/logging/log.hpp>
 #include <cstring>
+#include <cstdlib>
 #include <algorithm>
 #include <limits>
 
@@ -532,16 +533,33 @@ bool VulkanBackend::CreateInstance() {
 
     std::vector<const char*> extensions(sdlExts, sdlExts + sdlExtCount);
 
-    // Check for validation layer support
-    uint32_t layerCount = 0;
-    vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-    std::vector<VkLayerProperties> layers(layerCount);
-    vkEnumerateInstanceLayerProperties(&layerCount, layers.data());
+    // Check for validation layer support.
+    //
+    // Auto-enabling the Khronos validation layer in Release adds 10-15%
+    // CPU overhead per frame (instrumentation on every Vulkan call).
+    // Default policy:
+    //   - Debug builds: enable if the layer is installed.
+    //   - Release builds: only enable when the user explicitly opts in
+    //     via the KL_VK_VALIDATION=1 environment variable.
+    bool wantValidation = false;
+#ifndef NDEBUG
+    wantValidation = true;
+#endif
+    if (const char* env = std::getenv("KL_VK_VALIDATION")) {
+        wantValidation = (env[0] == '1' || env[0] == 't' || env[0] == 'T');
+    }
 
-    for (const auto& layer : layers) {
-        if (strcmp(layer.layerName, kValidationLayer) == 0) {
-            validationEnabled_ = true;
-            break;
+    if (wantValidation) {
+        uint32_t layerCount = 0;
+        vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+        std::vector<VkLayerProperties> layers(layerCount);
+        vkEnumerateInstanceLayerProperties(&layerCount, layers.data());
+
+        for (const auto& layer : layers) {
+            if (strcmp(layer.layerName, kValidationLayer) == 0) {
+                validationEnabled_ = true;
+                break;
+            }
         }
     }
 

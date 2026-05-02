@@ -71,6 +71,44 @@ public:
 
     // Human-readable backend name (e.g., "Software Rasterizer", "OpenGL 3.3")
     virtual const char* GetName() const = 0;
+
+    // -- GPU-oriented hooks (default no-op) ----------------------------
+    // Originally defined on the now-collapsed IGPURenderBackend; merged
+    // here so callers no longer need a dynamic_cast to reach them. Non-
+    // GPU backends (software, LED) keep the default no-op behaviour and
+    // are unaffected. (C1)
+
+    /**
+     * @brief Blit the render target to the default framebuffer (screen).
+     * @param screenW Screen/window width in pixels.
+     * @param screenH Screen/window height in pixels.
+     *
+     * Default: no-op (non-GPU backends present pixels via ReadPixels()).
+     */
+    virtual void BlitToScreen(int /*screenW*/, int /*screenH*/) {}
+
+    /**
+     * @brief Composite Canvas2D overlays onto the current framebuffer.
+     * @param screenW Screen/window width in pixels.
+     * @param screenH Screen/window height in pixels.
+     *
+     * Default: no-op.
+     */
+    virtual void CompositeCanvasOverlays(int /*screenW*/, int /*screenH*/) {}
+
+    /**
+     * @brief Prepare GPU state for a new frame.
+     *
+     * Called before any rendering. Default: no-op.
+     */
+    virtual void PrepareFrame() {}
+
+    /**
+     * @brief Finalize GPU state after rendering.
+     *
+     * Called after all rendering and compositing. Default: no-op.
+     */
+    virtual void FinishFrame() {}
 };
 
 } // namespace koilo

@@ -24,5 +24,8 @@ public:
     static void TestGetRadius();
     static void TestDefaultConstructor();
     static void TestEdgeCases();
+    static void TestCollide();
+    static void TestIsIntersecting();
+    static void TestUpdate();
     static void RunAllTests();
 };

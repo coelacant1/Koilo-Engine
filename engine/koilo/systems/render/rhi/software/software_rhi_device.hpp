@@ -69,6 +69,11 @@ public:
     void  UpdateTexture(RHITexture handle, const void* data,
                         size_t dataSize,
                         uint32_t width, uint32_t height) override;
+    bool  SupportsTextureSubUpdate() const override { return true; }
+    void  UpdateTextureRegion(RHITexture handle, const void* data,
+                              size_t dataSize,
+                              uint32_t x, uint32_t y,
+                              uint32_t w, uint32_t h) override;
     void* MapBuffer(RHIBuffer handle) override;
     void  UnmapBuffer(RHIBuffer handle) override;
 

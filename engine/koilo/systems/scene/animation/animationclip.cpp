@@ -77,6 +77,13 @@ AnimationChannel* AnimationClip::GetChannel(std::size_t index) {
 
 void AnimationClip::Evaluate(float time,
     const std::function<void(const std::string&, const std::string&, float)>& applicator) const {
+    EvaluatePacked(time, [&](const AnimationChannel& ch, float value) {
+        applicator(ch.targetNode, ch.targetProperty, value);
+    });
+}
+
+void AnimationClip::EvaluatePacked(float time,
+    const std::function<void(const AnimationChannel&, float)>& cb) const {
     float evalTime = time;
     if (looping_ && duration_ > 0.0f) {
         evalTime = std::fmod(time, duration_);
@@ -84,8 +91,28 @@ void AnimationClip::Evaluate(float time,
     }
     for (auto& ch : channels_) {
         float value = ch.Evaluate(evalTime);
-        applicator(ch.targetNode, ch.targetProperty, value);
+        cb(ch, value);
     }
+}
+
+// FNV-1a 32-bit hash of "node:prop" - gives a stable per-channel id without
+// having to materialise the concatenated string.
+std::uint32_t AnimationChannel::GetChannelId() const {
+    if (cachedId_ != 0) return cachedId_;
+    std::uint32_t h = 2166136261u;
+    auto mix = [&](const std::string& s) {
+        for (unsigned char c : s) {
+            h ^= c;
+            h *= 16777619u;
+        }
+    };
+    mix(targetNode);
+    h ^= ':';
+    h *= 16777619u;
+    mix(targetProperty);
+    if (h == 0) h = 1;  // reserve 0 as "uncomputed" sentinel
+    cachedId_ = h;
+    return h;
 }
 
 } // namespace koilo

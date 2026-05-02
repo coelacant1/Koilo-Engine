@@ -17,6 +17,7 @@
 // Direct system headers (replacing module wrappers)
 #include <koilo/systems/physics/physicsworld.hpp>
 #include <koilo/systems/physics/physics_module.hpp>
+#include <koilo/systems/aerodynamics/aero_module.hpp>
 #include <koilo/systems/input/input_module.hpp>
 #include <koilo/systems/ui/ui_module.hpp>
 #include <koilo/systems/ui/ui.hpp>
@@ -69,6 +70,9 @@ void KoiloScriptEngine::RegisterDefaultModules() {
 
     // Physics - registered as a module, Step() called from module Update()
     moduleLoader_.Register(std::make_unique<PhysicsModule>());
+
+    // Aerodynamics - depends on Physics; applies wind/thrust forces to bodies.
+    moduleLoader_.Register(std::make_unique<aero::AerodynamicsModule>());
 
     // Scene - managed as a module with Core phase (camera built later)
     moduleLoader_.Register(std::make_unique<SceneModule>());

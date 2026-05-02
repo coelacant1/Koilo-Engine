@@ -22,6 +22,7 @@
 #include <vector>
 #include <functional>
 #include <unordered_map>
+#include <cstdint>
 
 namespace koilo { class GPUTimingManager; }
 
@@ -103,6 +104,15 @@ private:
     std::vector<size_t>         order_;       ///< Indices into passes_ in execution order.
     std::unordered_map<std::string, ResourceLifetime> lifetimes_;
     bool compiled_ = false;
+
+    // -- Compile cache -------------------------------------------------
+    // The frame composer produces a structurally identical pass graph
+    // every frame (same names / reads / writes; only captured execute
+    // state varies). We FNV-1a hash the structural fields and reuse
+    // the topological sort result + lifetimes when the hash matches.
+    uint64_t            cachedFingerprint_ = 0;
+    std::vector<size_t> cachedOrder_;
+    bool                cacheValid_        = false;
 };
 
 } // namespace koilo::rhi

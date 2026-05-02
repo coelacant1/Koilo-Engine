@@ -50,10 +50,10 @@ public:
     void Resize(int w, int h) {
         width_  = w;
         height_ = h;
-        pixels_.assign(w * h, Color888(0, 0, 0));
-        alpha_.assign(w * h, 0);
+        rgba_.assign(static_cast<size_t>(w) * h, 0u);
         dirtyMinX_ = w; dirtyMinY_ = h;
         dirtyMaxX_ = -1; dirtyMaxY_ = -1;
+        ++modVersion_;
     }
 
     /// @brief Ensure the canvas is at least the given size. Only resizes if needed.
@@ -63,14 +63,13 @@ public:
 
     /// @brief Clear all drawn pixels (make transparent).
     void Clear() {
-        // Only clear the dirty region, not the whole buffer
+        // Only clear the dirty region, not the whole buffer.
         if (dirtyMaxX_ >= 0) {
+            const int rowSpan = dirtyMaxX_ - dirtyMinX_ + 1;
             for (int y = dirtyMinY_; y <= dirtyMaxY_; ++y) {
-                int rowOff = y * width_;
-                for (int x = dirtyMinX_; x <= dirtyMaxX_; ++x) {
-                    alpha_[rowOff + x] = 0;
-                }
+                std::fill_n(rgba_.data() + y * width_ + dirtyMinX_, rowSpan, 0u);
             }
+            ++modVersion_;
         }
         dirtyMinX_ = width_; dirtyMinY_ = height_;
         dirtyMaxX_ = -1; dirtyMaxY_ = -1;
@@ -78,45 +77,56 @@ public:
 
     /// @brief Fill the entire canvas with a solid color.
     void ClearWithColor(uint8_t r, uint8_t g, uint8_t b) {
-        Color888 c(r, g, b);
-        for (size_t i = 0; i < pixels_.size(); ++i) {
-            pixels_[i] = c;
-            alpha_[i]  = 255;
-        }
+        const uint32_t packed = PackRGBA(r, g, b, 255);
+        std::fill(rgba_.begin(), rgba_.end(), packed);
         dirtyMinX_ = 0; dirtyMinY_ = 0;
         dirtyMaxX_ = width_ - 1; dirtyMaxY_ = height_ - 1;
+        ++modVersion_;
     }
 
     /// @brief Set a single pixel.
     void SetPixel(int x, int y, uint8_t r, uint8_t g, uint8_t b) {
         if (x >= 0 && x < width_ && y >= 0 && y < height_) {
-            int i = y * width_ + x;
-            pixels_[i] = Color888(r, g, b);
-            alpha_[i]  = 255;
+            rgba_[y * width_ + x] = PackRGBA(r, g, b, 255);
             if (x < dirtyMinX_) dirtyMinX_ = x;
             if (x > dirtyMaxX_) dirtyMaxX_ = x;
             if (y < dirtyMinY_) dirtyMinY_ = y;
             if (y > dirtyMaxY_) dirtyMaxY_ = y;
+            ++modVersion_;
         }
     }
 
     /// @brief Fill a rectangle with a solid color.
     void FillRect(int x, int y, int w, int h, uint8_t r, uint8_t g, uint8_t b) {
-        for (int dy = 0; dy < h; ++dy)
-            for (int dx = 0; dx < w; ++dx)
-                SetPixel(x + dx, y + dy, r, g, b);
+        // Clip to canvas bounds and use a packed-uint32_t row fill - far
+        // faster than the per-pixel bounds check + dirty-rect bump that
+        // SetPixel does for each of (w*h) pixels.
+        const int x0 = std::max(0, x);
+        const int y0 = std::max(0, y);
+        const int x1 = std::min(width_,  x + w);
+        const int y1 = std::min(height_, y + h);
+        if (x1 <= x0 || y1 <= y0) return;
+        const uint32_t packed = PackRGBA(r, g, b, 255);
+        const int span = x1 - x0;
+        for (int yy = y0; yy < y1; ++yy) {
+            std::fill_n(rgba_.data() + yy * width_ + x0, span, packed);
+        }
+        ExpandDirty(x0, y0, x1 - 1, y1 - 1);
     }
 
     /// @brief Draw a rectangle outline.
     void DrawRect(int x, int y, int w, int h, uint8_t r, uint8_t g, uint8_t b) {
         for (int dx = 0; dx < w; ++dx) {
-            SetPixel(x + dx, y,         r, g, b);
-            SetPixel(x + dx, y + h - 1, r, g, b);
+            WritePixel(x + dx, y,         r, g, b);
+            WritePixel(x + dx, y + h - 1, r, g, b);
         }
         for (int dy = 0; dy < h; ++dy) {
-            SetPixel(x,         y + dy, r, g, b);
-            SetPixel(x + w - 1, y + dy, r, g, b);
+            WritePixel(x,         y + dy, r, g, b);
+            WritePixel(x + w - 1, y + dy, r, g, b);
         }
+        ExpandDirty(std::max(0, x), std::max(0, y),
+                    std::min(width_  - 1, x + w - 1),
+                    std::min(height_ - 1, y + h - 1));
     }
 
     /// @brief Draw a line using Bresenham's algorithm.
@@ -126,35 +136,61 @@ public:
         int sx = x0 < x1 ? 1 : -1;
         int sy = y0 < y1 ? 1 : -1;
         int err = dx + dy;
+        const int bx0 = std::max(0, std::min(x0, x1));
+        const int by0 = std::max(0, std::min(y0, y1));
+        const int bx1 = std::min(width_  - 1, std::max(x0, x1));
+        const int by1 = std::min(height_ - 1, std::max(y0, y1));
         while (true) {
-            SetPixel(x0, y0, r, g, b);
+            WritePixel(x0, y0, r, g, b);
             if (x0 == x1 && y0 == y1) break;
             int e2 = 2 * err;
             if (e2 >= dy) { err += dy; x0 += sx; }
             if (e2 <= dx) { err += dx; y0 += sy; }
         }
+        if (bx1 >= bx0 && by1 >= by0) ExpandDirty(bx0, by0, bx1, by1);
     }
 
     /// @brief Draw a circle outline using the midpoint algorithm.
     void DrawCircle(int cx, int cy, int radius, uint8_t r, uint8_t g, uint8_t b) {
         int x = radius, y = 0, err = 1 - radius;
         while (x >= y) {
-            SetPixel(cx+x, cy+y, r, g, b); SetPixel(cx-x, cy+y, r, g, b);
-            SetPixel(cx+x, cy-y, r, g, b); SetPixel(cx-x, cy-y, r, g, b);
-            SetPixel(cx+y, cy+x, r, g, b); SetPixel(cx-y, cy+x, r, g, b);
-            SetPixel(cx+y, cy-x, r, g, b); SetPixel(cx-y, cy-x, r, g, b);
+            WritePixel(cx+x, cy+y, r, g, b); WritePixel(cx-x, cy+y, r, g, b);
+            WritePixel(cx+x, cy-y, r, g, b); WritePixel(cx-x, cy-y, r, g, b);
+            WritePixel(cx+y, cy+x, r, g, b); WritePixel(cx-y, cy+x, r, g, b);
+            WritePixel(cx+y, cy-x, r, g, b); WritePixel(cx-y, cy-x, r, g, b);
             y++;
             if (err < 0) { err += 2*y + 1; }
             else { x--; err += 2*(y - x) + 1; }
         }
+        ExpandDirty(std::max(0, cx - radius), std::max(0, cy - radius),
+                    std::min(width_  - 1, cx + radius),
+                    std::min(height_ - 1, cy + radius));
     }
 
     /// @brief Draw a filled circle.
     void FillCircle(int cx, int cy, int radius, uint8_t r, uint8_t g, uint8_t b) {
-        for (int dy = -radius; dy <= radius; ++dy)
-            for (int dx = -radius; dx <= radius; ++dx)
-                if (dx*dx + dy*dy <= radius*radius)
-                    SetPixel(cx + dx, cy + dy, r, g, b);
+        // Span-fill: one row at a time, clipped to canvas, bookkeeping
+        // amortized across the whole circle.
+        const uint32_t packed = PackRGBA(r, g, b, 255);
+        const int r2 = radius * radius;
+        const int y0 = std::max(0, cy - radius);
+        const int y1 = std::min(height_ - 1, cy + radius);
+        if (y0 > y1) return;
+        for (int yy = y0; yy <= y1; ++yy) {
+            const int dy = yy - cy;
+            const int dxMax2 = r2 - dy * dy;
+            if (dxMax2 < 0) continue;
+            // integer sqrt - radius is small (UI-scale) so this is cheap
+            int dxMax = 0;
+            while ((dxMax + 1) * (dxMax + 1) <= dxMax2) ++dxMax;
+            const int x0 = std::max(0, cx - dxMax);
+            const int x1 = std::min(width_ - 1, cx + dxMax);
+            if (x1 < x0) continue;
+            std::fill_n(rgba_.data() + yy * width_ + x0,
+                        static_cast<size_t>(x1 - x0 + 1), packed);
+        }
+        ExpandDirty(std::max(0, cx - radius), y0,
+                    std::min(width_ - 1, cx + radius), y1);
     }
 
     /// @brief Resize the canvas pixel buffer (alias for Resize).
@@ -166,17 +202,50 @@ public:
     void Scale(int w, int h) { displayW_ = w; displayH_ = h; }
     void DrawText(int x, int y, const std::string& text,
                   uint8_t r, uint8_t g, uint8_t b) {
-        for (size_t ci = 0; ci < text.size(); ++ci) {
-            const uint8_t* glyph = GetTinyGlyph(text[ci]);
-            if (!glyph) continue;
-            int cx = x + static_cast<int>(ci) * 4; // 3px wide + 1px gap
-            for (int row = 0; row < 5; ++row) {
-                uint8_t bits = glyph[row];
-                for (int col = 0; col < 3; ++col)
-                    if (bits & (0x4 >> col))
-                        SetPixel(cx + col, y + row, r, g, b);
+        if (text.empty() || width_ <= 0 || height_ <= 0) return;
+        const uint32_t packed = PackRGBA(r, g, b, 255);
+        const int textPxW = static_cast<int>(text.size()) * 4 - 1; // 3px + 1px gap, last char no gap
+        // Compute clipped bounding box once for dirty-rect bookkeeping.
+        const int bx0 = std::max(0, x);
+        const int by0 = std::max(0, y);
+        const int bx1 = std::min(width_  - 1, x + textPxW - 1);
+        const int by1 = std::min(height_ - 1, y + 5      - 1);
+        const bool anyVisible = (bx1 >= bx0 && by1 >= by0);
+
+        // Fast path: when the entire text bbox is fully inside the canvas
+        // we can write each glyph pixel without a per-pixel bounds check.
+        const bool fullyInside = (x >= 0 && y >= 0
+                               && x + textPxW <= width_
+                               && y + 5      <= height_);
+        if (fullyInside) {
+            for (size_t ci = 0; ci < text.size(); ++ci) {
+                const uint8_t* glyph = GetTinyGlyph(text[ci]);
+                if (!glyph) continue;
+                const int cx = x + static_cast<int>(ci) * 4;
+                for (int row = 0; row < 5; ++row) {
+                    const uint8_t bits = glyph[row];
+                    if (!bits) continue;
+                    uint32_t* dst = rgba_.data() + (y + row) * width_ + cx;
+                    if (bits & 0x4) dst[0] = packed;
+                    if (bits & 0x2) dst[1] = packed;
+                    if (bits & 0x1) dst[2] = packed;
+                }
+            }
+        } else {
+            for (size_t ci = 0; ci < text.size(); ++ci) {
+                const uint8_t* glyph = GetTinyGlyph(text[ci]);
+                if (!glyph) continue;
+                const int cx = x + static_cast<int>(ci) * 4;
+                for (int row = 0; row < 5; ++row) {
+                    const uint8_t bits = glyph[row];
+                    if (!bits) continue;
+                    for (int col = 0; col < 3; ++col) {
+                        if (bits & (0x4 >> col)) WritePixel(cx + col, y + row, r, g, b);
+                    }
+                }
             }
         }
+        if (anyVisible) ExpandDirty(bx0, by0, bx1, by1);
     }
 
     /// @brief Composite drawn pixels over an existing framebuffer.
@@ -204,21 +273,39 @@ public:
             int sy = y * ch / dh;
             for (int x = minX; x < maxX; ++x) {
                 int sx = x * cw / dw;
-                int ci = sy * cw + sx;
-                if (alpha_[ci]) buf[y * bw + x] = pixels_[ci];
+                uint32_t p = rgba_[sy * cw + sx];
+                if ((p >> 24) & 0xFFu) {
+                    buf[y * bw + x] = Color888(
+                        static_cast<uint8_t>( p        & 0xFFu),
+                        static_cast<uint8_t>((p >> 8 ) & 0xFFu),
+                        static_cast<uint8_t>((p >> 16) & 0xFFu));
+                }
             }
         }
     }
 
     int GetWidth()  const { return width_; }
     int GetHeight() const { return height_; }
-    const Color888* GetPixels() const { return pixels_.data(); }
-    const uint8_t*  GetAlpha()  const { return alpha_.data(); }
+
+    /// @brief GPU-ready packed RGBA8 pixel buffer.
+    ///        Layout in memory: [R][G][B][A] per pixel, tightly packed,
+    ///        rows in scanline order.  This matches VK_FORMAT_R8G8B8A8_UNORM
+    ///        so the upload path can `memcpy` (or vkCmdCopyBufferToImage)
+    ///        without per-pixel format conversion.
+    const uint8_t* GetRGBA8() const {
+        return reinterpret_cast<const uint8_t*>(rgba_.data());
+    }
+    /// @brief Size in bytes of the packed RGBA8 buffer (rows tightly packed).
+    size_t GetRGBA8Bytes() const { return rgba_.size() * sizeof(uint32_t); }
     int GetDirtyMinX() const { return dirtyMinX_; }
     int GetDirtyMinY() const { return dirtyMinY_; }
     int GetDirtyMaxX() const { return dirtyMaxX_; }
     int GetDirtyMaxY() const { return dirtyMaxY_; }
     bool IsDirty() const { return dirtyMaxX_ >= 0; }
+    /// Monotonic counter; bumps on any pixel mutation. Used by the GPU
+    /// upload path to detect "no change since last upload" without
+    /// hashing pixel data.
+    uint64_t GetModVersion() const { return modVersion_; }
 
     // -- Static canvas management --------------------------------------
 
@@ -245,8 +332,36 @@ public:
     }
 
 private:
-    std::vector<Color888> pixels_;
-    std::vector<uint8_t>  alpha_;
+    /// @brief Pack 4 bytes into a uint32_t in [R][G][B][A] memory order.
+    ///        On little-endian (every platform we target) this is the
+    ///        same as `(a<<24)|(b<<16)|(g<<8)|r`.
+    static constexpr uint32_t PackRGBA(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+        return  static_cast<uint32_t>(r)
+             | (static_cast<uint32_t>(g) << 8)
+             | (static_cast<uint32_t>(b) << 16)
+             | (static_cast<uint32_t>(a) << 24);
+    }
+
+    /// @brief Bounds-checked single-pixel write.  Does NOT update dirty
+    ///        rect or modVersion - callers MUST batch ExpandDirty() once
+    ///        per logical drawing op.
+    void WritePixel(int x, int y, uint8_t r, uint8_t g, uint8_t b) {
+        if (x >= 0 && x < width_ && y >= 0 && y < height_) {
+            rgba_[y * width_ + x] = PackRGBA(r, g, b, 255);
+        }
+    }
+
+    /// @brief Union the rect [x0..x1, y0..y1] (inclusive, already clipped
+    ///        to canvas bounds) into the dirty rect, and bump modVersion.
+    void ExpandDirty(int x0, int y0, int x1, int y1) {
+        if (x0 < dirtyMinX_) dirtyMinX_ = x0;
+        if (y0 < dirtyMinY_) dirtyMinY_ = y0;
+        if (x1 > dirtyMaxX_) dirtyMaxX_ = x1;
+        if (y1 > dirtyMaxY_) dirtyMaxY_ = y1;
+        ++modVersion_;
+    }
+
+    std::vector<uint32_t> rgba_;  // packed RGBA8, row-major
     int width_    = 0;
     int height_   = 0;
     int displayW_ = 0;
@@ -256,6 +371,7 @@ private:
     int dirtyMaxX_ = -1;
     int dirtyMaxY_ = -1;
     bool attached_ = false;
+    uint64_t modVersion_ = 0;
 
     /// @brief 3x5 bitmap font glyph lookup. Returns 5-byte array (rows),
     ///        each byte uses lower 3 bits (bit2=left, bit0=right).

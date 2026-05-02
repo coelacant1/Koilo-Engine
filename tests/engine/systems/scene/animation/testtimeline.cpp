@@ -23,78 +23,6 @@ void TestTimeline::TestParameterizedConstructor() {
 
 // ========== Method Tests ==========
 
-void TestTimeline::TestPlay() {
-    // TODO: Implement test for Play()
-    Timeline obj;
-    TEST_IGNORE_MESSAGE("Stub");
-}
-
-void TestTimeline::TestStop() {
-    // TODO: Implement test for Stop()
-    Timeline obj;
-    TEST_IGNORE_MESSAGE("Stub");
-}
-
-void TestTimeline::TestPause() {
-    // TODO: Implement test for Pause()
-    Timeline obj;
-    TEST_IGNORE_MESSAGE("Stub");
-}
-
-void TestTimeline::TestResume() {
-    // TODO: Implement test for Resume()
-    Timeline obj;
-    TEST_IGNORE_MESSAGE("Stub");
-}
-
-void TestTimeline::TestUpdate() {
-    // TODO: Implement test for Update()
-    Timeline obj;
-    TEST_IGNORE_MESSAGE("Stub");
-}
-
-void TestTimeline::TestIsPlaying() {
-    // TODO: Implement test for IsPlaying()
-    Timeline obj;
-    TEST_IGNORE_MESSAGE("Stub");
-}
-
-void TestTimeline::TestSetLooping() {
-    // TODO: Implement test for SetLooping()
-    Timeline obj;
-    TEST_IGNORE_MESSAGE("Stub");
-}
-
-void TestTimeline::TestIsLooping() {
-    // TODO: Implement test for IsLooping()
-    Timeline obj;
-    TEST_IGNORE_MESSAGE("Stub");
-}
-
-void TestTimeline::TestSetDuration() {
-    // TODO: Implement test for SetDuration()
-    Timeline obj;
-    TEST_IGNORE_MESSAGE("Stub");
-}
-
-void TestTimeline::TestGetDuration() {
-    // TODO: Implement test for GetDuration()
-    Timeline obj;
-    TEST_IGNORE_MESSAGE("Stub");
-}
-
-void TestTimeline::TestSetCurrentTime() {
-    // TODO: Implement test for SetCurrentTime()
-    Timeline obj;
-    TEST_IGNORE_MESSAGE("Stub");
-}
-
-void TestTimeline::TestGetCurrentTime() {
-    // TODO: Implement test for GetCurrentTime()
-    Timeline obj;
-    TEST_IGNORE_MESSAGE("Stub");
-}
-
 // ========== Edge Cases ==========
 
 void TestTimeline::TestEdgeCases() {
@@ -104,20 +32,79 @@ void TestTimeline::TestEdgeCases() {
 
 // ========== Test Runner ==========
 
+void TestTimeline::TestAddKeyframe() {
+    // TODO: Implement test for AddKeyframe()
+    Timeline obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestTimeline::TestClearKeyframes() {
+    // TODO: Implement test for ClearKeyframes()
+    Timeline obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestTimeline::TestGetCurrentFrame() {
+    // TODO: Implement test for GetCurrentFrame()
+    Timeline obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestTimeline::TestGetEndFrame() {
+    // TODO: Implement test for GetEndFrame()
+    Timeline obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestTimeline::TestGetFPS() {
+    // TODO: Implement test for GetFPS()
+    Timeline obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestTimeline::TestGetStartFrame() {
+    // TODO: Implement test for GetStartFrame()
+    Timeline obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestTimeline::TestHandleInput() {
+    // TODO: Implement test for HandleInput()
+    Timeline obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestTimeline::TestKeyframes() {
+    // TODO: Implement test for Keyframes()
+    Timeline obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestTimeline::TestSetCurrentFrame() {
+    // TODO: Implement test for SetCurrentFrame()
+    Timeline obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
+void TestTimeline::TestSetFPS() {
+    // TODO: Implement test for SetFPS()
+    Timeline obj;
+    TEST_ASSERT_TRUE(false);  // Not implemented
+}
+
 void TestTimeline::RunAllTests() {
     RUN_TEST(TestDefaultConstructor);
     RUN_TEST(TestParameterizedConstructor);
-    RUN_TEST(TestPlay);
-    RUN_TEST(TestStop);
-    RUN_TEST(TestPause);
-    RUN_TEST(TestResume);
-    RUN_TEST(TestUpdate);
-    RUN_TEST(TestIsPlaying);
-    RUN_TEST(TestSetLooping);
-    RUN_TEST(TestIsLooping);
-    RUN_TEST(TestSetDuration);
-    RUN_TEST(TestGetDuration);
-    RUN_TEST(TestSetCurrentTime);
-    RUN_TEST(TestGetCurrentTime);
+
     RUN_TEST(TestEdgeCases);
+    RUN_TEST(TestAddKeyframe);
+    RUN_TEST(TestClearKeyframes);
+    RUN_TEST(TestGetCurrentFrame);
+    RUN_TEST(TestGetEndFrame);
+    RUN_TEST(TestGetFPS);
+    RUN_TEST(TestGetStartFrame);
+    RUN_TEST(TestHandleInput);
+    RUN_TEST(TestKeyframes);
+    RUN_TEST(TestSetCurrentFrame);
+    RUN_TEST(TestSetFPS);
 }

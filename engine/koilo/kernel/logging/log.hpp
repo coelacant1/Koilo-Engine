@@ -72,5 +72,15 @@ void LogEmitV(LogLevel level, const char* channel, const char* fmt, va_list args
 #define KL_LOG(channel, fmt, ...)   ::koilo::LogEmit(::koilo::LogLevel::Info,  channel, fmt, ##__VA_ARGS__)
 #define KL_WARN(channel, fmt, ...)  ::koilo::LogEmit(::koilo::LogLevel::Warn,  channel, fmt, ##__VA_ARGS__)
 #define KL_ERR(channel, fmt, ...)   ::koilo::LogEmit(::koilo::LogLevel::Error, channel, fmt, ##__VA_ARGS__)
-#define KL_DBG(channel, fmt, ...)   ::koilo::LogEmit(::koilo::LogLevel::Debug, channel, fmt, ##__VA_ARGS__)
-#define KL_TRACE(channel, fmt, ...) ::koilo::LogEmit(::koilo::LogLevel::Trace, channel, fmt, ##__VA_ARGS__)
+
+// F3: KL_DBG and KL_TRACE compile to no-ops in NDEBUG builds.  This
+// removes the variadic-call overhead and any side-effects from argument
+// evaluation in registry/cvar/console hot paths.  The cast-to-void
+// preserves expression-context semantics and silences unused-arg warnings.
+#ifdef NDEBUG
+  #define KL_DBG(channel, fmt, ...)   ((void)0)
+  #define KL_TRACE(channel, fmt, ...) ((void)0)
+#else
+  #define KL_DBG(channel, fmt, ...)   ::koilo::LogEmit(::koilo::LogLevel::Debug, channel, fmt, ##__VA_ARGS__)
+  #define KL_TRACE(channel, fmt, ...) ::koilo::LogEmit(::koilo::LogLevel::Trace, channel, fmt, ##__VA_ARGS__)
+#endif

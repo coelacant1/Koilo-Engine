@@ -62,6 +62,13 @@ public:
      */
     Vector3D GetMinimum();
 
+    /**
+     * @brief Recenters the cube on a new origin while preserving its size.
+     * Used by collider subclasses to keep cached min/max bounds in sync
+     * with the body's pose.
+     */
+    void SetCenter(const Vector3D& newCenter);
+
     KL_BEGIN_FIELDS(Cube)
         KL_FIELD(Cube, position, "Position", 0, 0)
     KL_END_FIELDS

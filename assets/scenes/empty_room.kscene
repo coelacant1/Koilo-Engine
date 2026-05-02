@@ -1,0 +1,32 @@
+// empty_room.kscene - minimal authored scene.
+// 80x80 ground + 2 long walls (north/south).
+// Designed to be imported from a .ks runner; declarative subset only.
+//
+// See docs/kscene-format.md for authoring rules.
+
+// -- Ground plane ---------------------------------------------------
+var groundCol  = BoxCollider(Vector3D(0.0, 0.0 - 0.5, 0.0),
+                             Vector3D(80.0, 1.0, 80.0));
+var groundBody = RigidBody();
+groundBody.MakeStatic();
+groundBody.SetCollider(groundCol);
+groundBody.SetRestitution(0.4);
+groundBody.SetFriction(0.7);
+
+// -- North wall -----------------------------------------------------
+var wallNCol  = BoxCollider(Vector3D(0.0, 5.0, 40.0),
+                            Vector3D(80.0, 10.0, 1.0));
+var wallNBody = RigidBody();
+wallNBody.MakeStatic();
+wallNBody.SetCollider(wallNCol);
+wallNBody.SetRestitution(0.5);
+wallNBody.SetFriction(0.5);
+
+// -- South wall -----------------------------------------------------
+var wallSCol  = BoxCollider(Vector3D(0.0, 5.0, 0.0 - 40.0),
+                            Vector3D(80.0, 10.0, 1.0));
+var wallSBody = RigidBody();
+wallSBody.MakeStatic();
+wallSBody.SetCollider(wallSCol);
+wallSBody.SetRestitution(0.5);
+wallSBody.SetFriction(0.5);

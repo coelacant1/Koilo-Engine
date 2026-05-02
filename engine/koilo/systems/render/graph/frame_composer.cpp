@@ -64,10 +64,13 @@ void FrameComposer::RegisterStandardPasses() {
             AddSceneEndPass(g, ctx.pipeline);
         });
 
-    // Compose: blit offscreen to swapchain + canvas overlays
+    // Compose: stage canvas uploads, blit offscreen to swapchain, draw overlays.
+    // Canvas staging MUST run before any render pass is opened, since it may
+    // record vkCmdCopyBufferToImage on the active frame command buffer.
     RegisterProvider("compose", PassPhase::Compose,
         [](RenderGraph& g, const FrameContext& ctx) {
             if (!ctx.pipeline) return;
+            AddCanvasStagePass(g, ctx.pipeline, ctx.screenW, ctx.screenH);
             AddBlitPass(g, ctx.pipeline, ctx.screenW, ctx.screenH);
             AddOverlayPass(g, ctx.pipeline, ctx.screenW, ctx.screenH);
         });

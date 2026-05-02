@@ -30,5 +30,7 @@ public:
     /**
      * @brief Runs all test methods.
      */
+    static void TestFindField();
+    static void TestHasMethod();
     static void RunAllTests();
 };

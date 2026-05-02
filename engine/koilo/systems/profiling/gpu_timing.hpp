@@ -69,11 +69,13 @@ private:
     rhi::IRHIDevice* device_ = nullptr;
     bool             enabled_ = false;
 
-    // Current frame recording
+    // Current frame recording. Slots store an interned name atom (8B
+    // total) instead of an owning std::string - eliminates the per-call
+    // heap allocation that was the dominant cost of BeginPass.
     struct PassSlot {
-        std::string name;
-        uint32_t    beginIdx = 0;
-        uint32_t    endIdx   = 0;
+        uint16_t atom     = 0;
+        uint32_t beginIdx = 0;
+        uint32_t endIdx   = 0;
     };
     std::vector<PassSlot> currentPasses_;
     uint32_t              nextQueryIdx_ = 0;
@@ -81,6 +83,14 @@ private:
     // Previous frame's pass layout (for interpreting readback data)
     std::vector<PassSlot> prevPasses_;
     uint32_t              prevQueryCount_ = 0;
+
+    // Atom table: pass-name strings owned by the manager. Pass names
+    // are stable across frames (the render graph re-issues the same
+    // labels every frame), so after warmup BeginPass/EndPass become
+    // a hashed lookup + uint16_t comparison with no allocations.
+    std::vector<std::string>                  atomNames_;
+    std::unordered_map<std::string, uint16_t> atomMap_;
+    uint16_t InternAtom(const std::string& name);
 
     // Resolved results
     std::vector<GPUPassTiming> resolved_;

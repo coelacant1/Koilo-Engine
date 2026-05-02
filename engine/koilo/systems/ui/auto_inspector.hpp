@@ -16,9 +16,19 @@
 #include <koilo/registry/registry.hpp>
 #include "ui_context.hpp"
 #include "../../registry/reflect_macros.hpp"
+#include <functional>
 
 namespace koilo {
 namespace ui {
+
+/**
+ * @brief Optional callback fired after the user edits any inspector
+ * field. EditorModule uses this for dirty-flag tracking.
+ *
+ * Copied by value into per-widget change handlers, so a captured
+ * std::function or a stateless lambda are both fine.
+ */
+using InspectorEditCallback = std::function<void()>;
 
 /**
  * @class InspectorResult
@@ -51,7 +61,8 @@ struct InspectorResult {
  * @return InspectorResult with root panel index and visible field count.
  */
 InspectorResult GenerateInspector(const ClassDesc* desc, void* instance,
-                                  UIContext& ctx, int parentIdx = -1);
+                                  UIContext& ctx, int parentIdx = -1,
+                                  InspectorEditCallback onEdit = nullptr);
 
 /**
  * @brief Update inspector widget values from the current object state.

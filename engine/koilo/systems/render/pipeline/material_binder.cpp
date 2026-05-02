@@ -91,11 +91,13 @@ const MaterialBinding* MaterialBinder::Bind(const KSLMaterial* material)
         binding.uniformBuffer = device_->CreateBuffer(desc);
         binding.uniformSize   = uboSize;
 
-        // Marshal current parameter values and upload.
-        std::vector<uint8_t> staging(uboSize, 0);
-        MarshalUBOData(material, staging.data(), uboSize);
+        // Marshal current parameter values and upload using the shared
+        // scratch buffer (see AcquireScratch - avoids a per-call heap alloc
+        // on this hot path).
+        uint8_t* staging = AcquireScratch(uboSize);
+        MarshalUBOData(material, staging, uboSize);
         device_->UpdateBuffer(binding.uniformBuffer,
-                              staging.data(), uboSize, 0);
+                              staging, uboSize, 0);
     }
 
     binding.valid = true;
@@ -118,10 +120,10 @@ void MaterialBinder::UpdateUniforms(const KSLMaterial* material)
     if (binding.uniformSize == 0)
         return;
 
-    std::vector<uint8_t> staging(binding.uniformSize, 0);
-    MarshalUBOData(material, staging.data(), binding.uniformSize);
+    uint8_t* staging = AcquireScratch(binding.uniformSize);
+    MarshalUBOData(material, staging, binding.uniformSize);
     device_->UpdateBuffer(binding.uniformBuffer,
-                          staging.data(), binding.uniformSize, 0);
+                          staging, binding.uniformSize, 0);
 }
 
 // -- Invalidation -------------------------------------------------------
@@ -154,6 +156,19 @@ void MaterialBinder::Clear()
 // -- Accessors ----------------------------------------------------------
 
 size_t MaterialBinder::Size() const { return cache_.size(); }
+
+// -- Scratch buffer -----------------------------------------------------
+
+uint8_t* MaterialBinder::AcquireScratch(size_t size)
+{
+    if (stagingScratch_.size() < size) {
+        stagingScratch_.resize(size);
+    }
+    if (size > 0) {
+        std::memset(stagingScratch_.data(), 0, size);
+    }
+    return stagingScratch_.data();
+}
 
 // -- Std140 layout helpers ----------------------------------------------
 

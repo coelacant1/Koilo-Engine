@@ -55,7 +55,7 @@ void TestRasterTriangle3D::TestGetNormal() {
 
     RasterTriangle3D triangle(&v1, &v2, &v3);
 
-    const Vector3D& normal = triangle.GetNormal();
+    [[maybe_unused]] const Vector3D& normal = triangle.GetNormal();
 
     // Normal should be pointing in Z direction for triangle in XY plane
     // Just verify we got a normal back
@@ -110,7 +110,7 @@ void TestRasterTriangle3D::TestEdgeCases() {
     Vector3D largeV3(1000.0f, 2000.0f, 1000.0f);
 
     RasterTriangle3D largeTriangle(&largeV1, &largeV2, &largeV3);
-    const Vector3D& normal = largeTriangle.GetNormal();
+    [[maybe_unused]] const Vector3D& normal = largeTriangle.GetNormal();
 
     TEST_ASSERT_TRUE(true);
 }

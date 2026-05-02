@@ -15,7 +15,7 @@ void TestPhase12DebugTools() {
     {
         TEST("DrawLine2D horizontal")
         Color888 buf[100]; // 10x10
-        memset(buf, 0, sizeof(buf));
+        memset(static_cast<void*>(buf), 0, sizeof(buf));
         DebugRenderer::DrawLine2D(buf, 10, 10, 0, 5, 9, 5, Color888(255, 0, 0));
         // All 10 pixels on row 5 should be red
         bool ok = true;
@@ -29,7 +29,7 @@ void TestPhase12DebugTools() {
     {
         TEST("DrawLine2D vertical")
         Color888 buf[100];
-        memset(buf, 0, sizeof(buf));
+        memset(static_cast<void*>(buf), 0, sizeof(buf));
         DebugRenderer::DrawLine2D(buf, 10, 10, 3, 0, 3, 9, Color888(0, 255, 0));
         bool ok = true;
         for (int y = 0; y < 10; y++) {
@@ -42,7 +42,7 @@ void TestPhase12DebugTools() {
     {
         TEST("DrawLine2D diagonal")
         Color888 buf[100];
-        memset(buf, 0, sizeof(buf));
+        memset(static_cast<void*>(buf), 0, sizeof(buf));
         DebugRenderer::DrawLine2D(buf, 10, 10, 0, 0, 9, 9, Color888(0, 0, 255));
         // Diagonal should have pixels along the line
         int count = 0;
@@ -56,7 +56,7 @@ void TestPhase12DebugTools() {
     {
         TEST("DrawLine2D clips safely")
         Color888 buf[100];
-        memset(buf, 0, sizeof(buf));
+        memset(static_cast<void*>(buf), 0, sizeof(buf));
         DebugRenderer::DrawLine2D(buf, 10, 10, -5, -5, 20, 20, Color888(255, 255, 255));
         // Should not crash, and some pixels in buffer should be lit
         int count = 0;
@@ -70,7 +70,7 @@ void TestPhase12DebugTools() {
     {
         TEST("BlitText renders text")
         Color888 buf[640]; // 80x8, enough for a few chars
-        memset(buf, 0, sizeof(buf));
+        memset(static_cast<void*>(buf), 0, sizeof(buf));
         DebugRenderer::BlitText(buf, 80, 8, 0, 0, "AB", Color888(255, 255, 255), 1);
         // Count lit pixels - each 8x8 char should have some
         int count = 0;
@@ -84,7 +84,7 @@ void TestPhase12DebugTools() {
     {
         TEST("BlitText scaled 2x")
         Color888 buf[2560]; // 80x32
-        memset(buf, 0, sizeof(buf));
+        memset(static_cast<void*>(buf), 0, sizeof(buf));
         DebugRenderer::BlitText(buf, 80, 32, 0, 0, "A", Color888(255, 0, 0), 2);
         // At 2x scale, each lit pixel becomes a 2x2 block
         int count = 0;
@@ -163,7 +163,7 @@ void TestPhase12DebugTools() {
     {
         TEST("RenderOverlay writes stats")
         Color888 buf[4800]; // 80x60
-        memset(buf, 0, sizeof(buf));
+        memset(static_cast<void*>(buf), 0, sizeof(buf));
         DebugOverlayStats stats;
         stats.fps = 60.0f;
         stats.frameTimeMs = 16.6f;
@@ -253,7 +253,7 @@ void TestPhase12ADebugAdditions() {
         TEST("DrawSphere3D renders to buffer without crash")
         const int W = 32, H = 32;
         Color888 buf[W * H];
-        memset(buf, 0, sizeof(buf));
+        memset(static_cast<void*>(buf), 0, sizeof(buf));
         Vector3D camPos(0, 0, -10);
         Quaternion invRot;
         Vector3D camScale(1, 1, 1);
@@ -306,7 +306,7 @@ void TestPhase12ADebugAdditions() {
         b.SetCollider(&scb);
         world.AddBody(&a);
         world.AddBody(&b);
-        koilo::TimeManager::GetInstance().Tick(0.02f); world.Step(); // Slightly larger than fixedDt (1/60 ≈ 0.0167)
+        koilo::TimeManager::GetInstance().Tick(0.02f); world.Step(0.02f); // Slightly larger than fixedDt (1/60 ≈ 0.0167)
         // Should have detected the collision
         if (world.GetDebugContactCount() > 0) PASS()
         else FAIL("Expected at least 1 contact, got " + std::to_string(world.GetDebugContactCount()))
@@ -329,7 +329,7 @@ void TestPhase12ADebugAdditions() {
         Rasterizer::EnableDebugBuffers(false);
         const int W = 8, H = 8;
         Color888 buf[W * H];
-        memset(buf, 0, sizeof(buf));
+        memset(static_cast<void*>(buf), 0, sizeof(buf));
         // No depth data (disabled), should be a no-op
         DebugRenderer::RenderDepthView(buf, W, H);
         PASS()
@@ -339,7 +339,7 @@ void TestPhase12ADebugAdditions() {
         TEST("RenderNormalView on empty buffer no crash")
         const int W = 8, H = 8;
         Color888 buf[W * H];
-        memset(buf, 0, sizeof(buf));
+        memset(static_cast<void*>(buf), 0, sizeof(buf));
         DebugRenderer::RenderNormalView(buf, W, H);
         PASS()
     }

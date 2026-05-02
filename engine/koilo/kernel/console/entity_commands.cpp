@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * @file entity_commands.cpp
- * @brief Console commands for runtime entity/scene inspection (Phase 15).
+ * @brief Console commands for runtime entity/scene inspection.
  *
  * Provides entity.list, entity.inspect, entity.set, entity.watch/unwatch,
  * scene.hierarchy, and help --json commands for runtime introspection.

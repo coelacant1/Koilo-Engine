@@ -43,8 +43,36 @@ public:
     // Edge case & integration tests
     static void TestEdgeCases();
 
+    // split integration semantics.
+
+    // CCD bullet flag.
+
     /**
      * @brief Runs all test methods.
      */
+    static void TestApplyAngularImpulse();
+    static void TestApplyForceAtPoint();
+    static void TestApplyTorque();
+    static void TestGetAngularVelocity();
+    static void TestGetCollider();
+    static void TestGetPointVelocity();
+    static void TestGetPose();
+    static void TestGetPreviousPose();
+    static void TestMakeDynamic();
+    static void TestMakeKinematic();
+    static void TestMakeStatic();
+    static void TestSetAngularDamping();
+    static void TestSetAngularVelocity();
+    static void TestSetCollider();
+    static void TestSetInertiaBox();
+    static void TestSetInertiaCapsule();
+    static void TestSetInertiaCylinder();
+    static void TestSetInertiaSphere();
+    static void TestSetPose();
+    static void TestGetAllowSleep();
+    static void TestIsSleeping();
+    static void TestSetAllowSleep();
+    static void TestSleep();
+    static void TestWake();
     static void RunAllTests();
 };

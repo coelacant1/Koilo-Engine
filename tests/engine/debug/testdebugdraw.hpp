@@ -43,5 +43,6 @@ public:
     /**
      * @brief Runs all test methods.
      */
+    static void TestDrawOrientedBox();
     static void RunAllTests();
 };

@@ -46,7 +46,7 @@ void TestWorldManager::TestGetLevelCount() {
 void TestWorldManager::TestGetActiveLevelName() {
     WorldManager manager;
     std::string name = manager.GetActiveLevelName();
-    TEST_ASSERT_TRUE(name.empty() || name.length() >= 0);
+    TEST_ASSERT_TRUE(name.empty() || !name.empty());
 }
 
 void TestWorldManager::TestLoadLevel() {

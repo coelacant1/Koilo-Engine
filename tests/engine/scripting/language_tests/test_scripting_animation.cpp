@@ -360,11 +360,11 @@ void TestPhase35Skeleton() {
     {
         TEST("Bone hierarchy construction");
         koilo::Skeleton skel;
-        auto root = skel.AddBone("root");
-        auto spine = skel.AddBone("spine", 0);
-        auto head = skel.AddBone("head", 1);
-        auto armL = skel.AddBone("arm_l", 1);
-        auto armR = skel.AddBone("arm_r", 1);
+        [[maybe_unused]] auto root = skel.AddBone("root");
+        [[maybe_unused]] auto spine = skel.AddBone("spine", 0);
+        [[maybe_unused]] auto head = skel.AddBone("head", 1);
+        [[maybe_unused]] auto armL = skel.AddBone("arm_l", 1);
+        [[maybe_unused]] auto armR = skel.AddBone("arm_r", 1);
 
         if (skel.GetBoneCount() == 5 &&
             skel.GetBoneIndex("root") == 0 &&

@@ -73,7 +73,7 @@ struct VulkanGPUInfo {
         KL_FIELD(VulkanGPUInfo, vendorID, "Vendor id", 0, 4294967295),
         KL_FIELD(VulkanGPUInfo, deviceID, "Device id", 0, 4294967295),
         KL_FIELD(VulkanGPUInfo, isDiscrete, "Is discrete", 0, 1),
-        KL_FIELD(VulkanGPUInfo, vramBytes, "Vram bytes", 0, 18446744073709551615)
+        KL_FIELD(VulkanGPUInfo, vramBytes, "Vram bytes", 0, 18446744073709551615ULL)
     KL_END_FIELDS
 
     KL_BEGIN_METHODS(VulkanGPUInfo)

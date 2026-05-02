@@ -68,37 +68,59 @@ Vector2D koilo::PixelGroup::GetCoordinate(uint32_t count) {
     if (pixelCount == 0) {
         return {};
     }
+    if (count >= pixelCount) {
+        // Match historical behaviour: clamp to the last valid index.
+        count = pixelCount - 1;
+    }
+    EnsureCoordinatesCache();
+    return coordinatesCache[count];
+}
 
-    count = Mathematics::Constrain<int>(count, 0, pixelCount);
+const Vector2D* koilo::PixelGroup::GetCoordinatesArray() {
+    if (pixelCount == 0) return nullptr;
+    EnsureCoordinatesCache();
+    return coordinatesCache.data();
+}
+
+void koilo::PixelGroup::EnsureCoordinatesCache() const {
+    if (coordinatesCacheValid) return;
+    coordinatesCache.resize(pixelCount);
+    if (pixelCount == 0) {
+        coordinatesCacheValid = true;
+        return;
+    }
 
     if (isRectangular) {
         if (rowCount == 0 || colCount == 0) {
-            return {};
+            for (auto& v : coordinatesCache) v = {};
+            coordinatesCacheValid = true;
+            return;
         }
-
-        // rowCount is the number of pixels per row (i.e., width)
-        // colCount is the number of rows (i.e., height)
-        // For index-to-coordinate mapping:
-        //   col (X) = index % rowCount (which column in the row?)
-        //   row (Y) = index / rowCount (which row?)
-        float col = static_cast<float>(count % rowCount);
-        float row = static_cast<float>(count / rowCount);
-
-        tempLocation.X = Mathematics::Map(col, 0.0f, static_cast<float>(rowCount), position.X, position.X + size.X);
-        tempLocation.Y = Mathematics::Map(row, 0.0f, static_cast<float>(colCount), position.Y, position.Y + size.Y);
-
-        return tempLocation;
+        // rowCount = pixels per row (X span), colCount = number of rows (Y span).
+        // Hoist the Map() linear interpolation to (offset, step) form so the
+        // per-pixel cost is two multiply-adds.
+        const float invRow = 1.0f / static_cast<float>(rowCount);
+        const float invCol = 1.0f / static_cast<float>(colCount);
+        for (uint32_t i = 0; i < pixelCount; ++i) {
+            const uint32_t col = i % rowCount;
+            const uint32_t row = i / rowCount;
+            coordinatesCache[i].X = position.X + size.X * (static_cast<float>(col) * invRow);
+            coordinatesCache[i].Y = position.Y + size.Y * (static_cast<float>(row) * invCol);
+        }
+    } else if (pixelPositions) {
+        if (direction == ZEROTOMAX) {
+            for (uint32_t i = 0; i < pixelCount; ++i) {
+                coordinatesCache[i] = pixelPositions[i];
+            }
+        } else {
+            for (uint32_t i = 0; i < pixelCount; ++i) {
+                coordinatesCache[i] = pixelPositions[pixelCount - i - 1];
+            }
+        }
+    } else {
+        for (auto& v : coordinatesCache) v = {};
     }
-
-    if (!pixelPositions) {
-        return {};
-    }
-
-    if (direction == ZEROTOMAX) {
-        return pixelPositions[count];
-    }
-
-    return pixelPositions[pixelCount - count - 1];
+    coordinatesCacheValid = true;
 }
 
 int koilo::PixelGroup::GetPixelIndex(Vector2D location) {

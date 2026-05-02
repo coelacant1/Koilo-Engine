@@ -177,6 +177,7 @@ void KoiloScriptEngine::SetReflectedMemberValue(const std::string& objectId, con
             return;
         }
         
+        if (AssignComplexField(currentInstance, field, value)) return;
         if (!MarshalToField(currentInstance, field, value)) {
             SetError(std::string("Failed to set field: ") + sp.fieldChain[0] + " (type: " + field->type->name() + ")");
         }
@@ -208,10 +209,51 @@ void KoiloScriptEngine::SetReflectedMemberValue(const std::string& objectId, con
             return;
         }
         
+        if (AssignComplexField(currentInstance, nestedField, value)) return;
         if (!MarshalToField(currentInstance, nestedField, value)) {
             SetError(std::string("Failed to set nested field: ") + termField + " (type: " + nestedField->type->name() + ")");
         }
     }
+}
+
+bool KoiloScriptEngine::AssignComplexField(void* ownerInstance, const FieldDecl* field, const Value& value) {
+    if (!ownerInstance || !field) return false;
+    if (field->kind != FieldKind::Complex) return false;
+    if (value.type != Value::Type::OBJECT || value.objectName.empty()) return false;
+
+    const ClassDesc* fieldClass = ClassForType(*field->type);
+    if (!fieldClass || !fieldClass->copy_assign) return false;
+
+    // Look up the source object. Could be a top-level reflected object or a
+    // dotted path (member of another reflected object) - try both.
+    void* srcInstance = nullptr;
+    auto refIt = activeCtx_->reflectedObjects.find(value.objectName);
+    if (refIt != activeCtx_->reflectedObjects.end()) {
+        if (refIt->second.classDesc != fieldClass) return false;
+        srcInstance = refIt->second.instance;
+    } else {
+        // Resolve dotted path manually (mirrors EvaluateMemberAccess).
+        const SplitPath& sp = SplitMemberPath(value.objectName);
+        if (sp.fieldChain.empty()) return false;
+        auto baseIt = activeCtx_->reflectedObjects.find(sp.baseName);
+        if (baseIt == activeCtx_->reflectedObjects.end()) return false;
+        void* inst = baseIt->second.instance;
+        const ClassDesc* cls = baseIt->second.classDesc;
+        for (size_t i = 0; i < sp.fieldChain.size() && cls && inst; ++i) {
+            const FieldDecl* f = ReflectionBridge::FindField(cls, sp.fieldChain[i]);
+            if (!f || f->kind != FieldKind::Complex) return false;
+            inst = ReflectionBridge::GetFieldPointer(inst, f);
+            cls = ClassForType(*f->type);
+        }
+        if (cls != fieldClass) return false;
+        srcInstance = inst;
+    }
+    if (!srcInstance) return false;
+
+    void* dstPtr = field->access.get_ptr(ownerInstance);
+    if (!dstPtr) return false;
+    fieldClass->copy_assign(dstPtr, srcInstance);
+    return true;
 }
 
 } // namespace scripting

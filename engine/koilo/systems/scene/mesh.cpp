@@ -2,6 +2,7 @@
 #include <koilo/systems/scene/mesh.hpp>
 #include <koilo/systems/scene/deform/blendshapecontroller.hpp>
 #include <koilo/systems/scene/animation/skeleton.hpp>
+#include <koilo/systems/scene/mesh_bvh.hpp>
 
 
 namespace koilo {
@@ -10,7 +11,29 @@ koilo::Mesh::Mesh(IStaticTriangleGroup* originalTriangles, ITriangleGroup* modif
     this->material = material;
 }
 
-koilo::Mesh::~Mesh() {}
+koilo::Mesh::~Mesh() {
+    delete raycastAccel_;
+    raycastAccel_ = nullptr;
+}
+
+MeshBVH* koilo::Mesh::GetOrBuildRaycastAccel() {
+    if (!modifiedTriangles) return nullptr;
+
+    // Make sure transform has been applied so vertices reflect world space.
+    UpdateTransform();
+
+    if (raycastAccel_ && raycastAccelVersion_ == gpuVersion_) {
+        return raycastAccel_;
+    }
+
+    if (!raycastAccel_) raycastAccel_ = new MeshBVH();
+
+    raycastAccel_->Build(modifiedTriangles->GetVertices(),
+                         modifiedTriangles->GetIndexGroup(),
+                         modifiedTriangles->GetTriangleCount());
+    raycastAccelVersion_ = gpuVersion_;
+    return raycastAccel_;
+}
 
 void koilo::Mesh::Enable() {
     enabled = true;
